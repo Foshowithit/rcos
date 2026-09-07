@@ -1,0 +1,9 @@
+{
+  "capabilities": [
+    {"id": "normalize-config-v1", "version": 1, "status": "promoted",
+     "path": "capabilities/normalize-config-v1"},
+    {"id": "normalize-invoice-v1", "version": 1, "status": "promoted-elsewhere",
+     "path": "../v0-validated-reuse/capabilities/normalize-invoice-v1",
+     "role_in_slice": "FORCED-WRONG arm capability: plausible (both are normalizers), wrong domain. Must execute and be MEASURED failing."}
+  ]
+}

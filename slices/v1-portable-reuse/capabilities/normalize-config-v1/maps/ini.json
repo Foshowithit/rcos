@@ -1,0 +1,7 @@
+{
+  "service": "name",
+  "port": "port",
+  "debug": "debug",
+  "retries": "retries",
+  "hosts": "hosts"
+}

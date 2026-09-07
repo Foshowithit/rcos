@@ -1,0 +1,15 @@
+{
+  "id": "normalize-config-v1",
+  "version": 1,
+  "status": "promoted",
+  "applicability": {
+    "description": "Canonical service-config normalization + coercion + defaults + validation over an already-parsed flat string map. Does NOT parse source formats — readers are composed adapters.",
+    "requires_markers": ["port", "host", "service", "debug", "retries", "svc", "name"],
+    "claims": ["canonical config", "type coercion", "defaults", "validation"]
+  },
+  "lineage": {"derived_from": ["runs/c1 (c1-ini ship)", "runs/c2 (c2-json ship)"]},
+  "evals": [
+    {"task_id": "c1-ini", "verdict": "ship", "run_id": "c1"},
+    {"task_id": "c2-json", "verdict": "ship", "run_id": "c2"}
+  ]
+}
