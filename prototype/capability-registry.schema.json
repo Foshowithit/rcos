@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RCOS capability-registry",
+  "description": "Shared registry of promoted capabilities. Entries are admitted only via the promotion gate (prototype/promotion-gate.md).",
+  "type": "object",
+  "required": ["registry_version", "capabilities"],
+  "additionalProperties": false,
+  "properties": {
+    "registry_version": {
+      "type": "string",
+      "description": "Registry schema version, e.g. 'v1'"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "kind", "version", "status", "admitted_after", "evals", "reuse_count", "last_eval"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "description": "Stable slug, e.g. 'jsonl-log-writer'" },
+          "name": { "type": "string" },
+          "kind": {
+            "type": "string",
+            "enum": ["prompt-template", "script", "model-node", "agent-team", "workflow"],
+            "description": "Heterogeneous capability kinds the registry holds"
+          },
+          "version": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["candidate", "promoted", "retired"],
+            "description": "candidate = under evaluation; promoted = admitted; retired = decayed/unused"
+          },
+          "admitted_after": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "string" },
+            "description": "The two distinct task ids whose ship verdicts admitted this capability"
+          },
+          "evals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["task_id", "verdict", "run_id"],
+              "additionalProperties": false,
+              "properties": {
+                "task_id": { "type": "string" },
+                "verdict": { "type": "string", "enum": ["ship", "fix", "blocked"] },
+                "run_id": { "type": "string" }
+              }
+            }
+          },
+          "reuse_count": { "type": "integer", "minimum": 0 },
+          "last_eval": { "type": "string", "description": "ISO date of most recent eval" },
+          "retire_reason": { "type": "string" }
+        }
+      }
+    }
+  }
+}
