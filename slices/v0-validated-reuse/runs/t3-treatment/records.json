@@ -1,0 +1,20 @@
+{
+ "header": {
+  "INVOICE": "INV-3110",
+  "DAY": "2026-09-05",
+  "AMOUNT_CENTS": 21000,
+  "CCY": "USD"
+ },
+ "lines": [
+  {
+   "sku": "SKU-410",
+   "qty": 5,
+   "unit_cents": 3000
+  },
+  {
+   "sku": "SKU-207",
+   "qty": 2,
+   "unit_cents": 3000
+  }
+ ]
+}

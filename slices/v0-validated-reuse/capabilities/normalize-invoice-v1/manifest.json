@@ -3,7 +3,7 @@
   "version": 1,
   "status": "promoted",
   "applicability": {
-    "description": "Delimited or JSON records naming an invoice, a date, monetary amounts, and line items -> canonical invoice JSON with verified totals.",
+    "description": "Canonical invoice normalization and invariant-validation engine over an already-parsed invoice representation (field map + header/lines records). It does NOT parse source formats — per-format readers are composed adapters, not part of the capability. Verifies totals.",
     "requires_markers": ["inv", "total", "amount", "price", "qty", "item", "line"],
     "claims": ["canonical totals verification", "field normalization"]
   },

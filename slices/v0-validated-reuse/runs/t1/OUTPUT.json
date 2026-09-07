@@ -1,0 +1,18 @@
+{
+ "invoice_id": "INV-1042",
+ "date": "2026-08-14",
+ "total_cents": 14250,
+ "currency": "USD",
+ "line_items": [
+  {
+   "sku": "SKU-101",
+   "qty": 2,
+   "unit_cents": 5000
+  },
+  {
+   "sku": "SKU-207",
+   "qty": 1,
+   "unit_cents": 4250
+  }
+ ]
+}

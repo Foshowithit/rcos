@@ -1,0 +1,3 @@
+cf62373daf594a4970848b88f9a28b27b4778b2624bf3cc592d52f7a6bf91eaa  capabilities/normalize-invoice-v1/engine.py
+c26a9e6e261e64292f8f509fb359a65b4df35f0bf21e719a4bc0b2588ef8fd2a  capabilities/normalize-invoice-v1/maps/csv.json
+f607cc49c07ebf42ad03ada0c647775ff295dbf4cdaff9f7bf02b92aefcb0fc3  capabilities/normalize-invoice-v1/maps/json.json

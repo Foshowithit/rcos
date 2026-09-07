@@ -1,0 +1,8 @@
+{
+  "invoice_id": "INVOICE",
+  "date": "DAY",
+  "total_cents": "AMOUNT_CENTS",
+  "currency": "CCY",
+  "lines": "lines",
+  "line": {"sku": "sku", "qty": "qty", "unit_cents": "unit_cents"}
+}

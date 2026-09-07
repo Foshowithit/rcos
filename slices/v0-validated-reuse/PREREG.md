@@ -1,5 +1,12 @@
 # Vertical Slice 0: Validated Capability Reuse — PRE-REGISTRATION
 
+> Audit disclosure: this protocol was frozen locally before any run
+> (fixtures + checker + this file written first, hashes recorded below),
+> but the public commit occurred post-run alongside results. Treat as
+> "protocol frozen locally before execution," NOT externally proven
+> preregistration. Slice 1 fixes this permanently (prereg pushed first,
+> runs committed second).
+
 Frozen BEFORE any run. Task 3 is held out: the capability builder never sees
 it until after promotion, and this file (plus task hashes) proves it.
 
