@@ -8,7 +8,8 @@
 > runs committed second).
 
 Frozen BEFORE any run. Task 3 is held out: the capability builder never sees
-it until after promotion, and this file (plus task hashes) proves it.
+it until after promotion, and this file (plus task hashes) records the
+intended holdout.
 
 ## Milestone name (deliberately NOT "compounding")
 
@@ -75,8 +76,9 @@ frozen in this commit; fixtures carry sha256 recorded below at freeze time.
 
 Solver attempts in all arms are authored by the same human (no separate
 agent available for this slice). Mitigations: T3 held out by hash, acceptance
-fully mechanical, control arm executed BEFORE treatment arm, all artifacts
-committed. A multi-agent replication is future work.
+fully mechanical; planned control-before-treatment (actual order deviated,
+see RESULTS.md); all artifacts committed. A multi-agent replication is
+future work.
 
 ## Decision rule
 

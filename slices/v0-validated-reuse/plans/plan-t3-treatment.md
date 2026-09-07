@@ -19,6 +19,4 @@
 - approval_gates: []
 - capability_refs:
   - {id: normalize-invoice-v1, version: 1, role: executed,
-     invocation: t3-invocation-1}
-  - {id: normalize-invoice-v1, version: 1, role: composed,
-     invocation: t3-adapter (reader + field map)}
+     invocation_id: t3-invocation-1}

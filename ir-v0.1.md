@@ -70,5 +70,5 @@ dependencies: []
 memory: {workdir: run-artifacts/<run-id>/, promotion: inbox-then-standing}
 approval_gates: []
 capability_refs: [{id: reconcile-v3, version: 2, role: executed,
-  invocation: run-041-invocation-1}]
+  invocation_id: run-041-invocation-1}]
 ```
