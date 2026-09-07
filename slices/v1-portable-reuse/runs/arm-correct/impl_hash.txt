@@ -1,0 +1,1 @@
+a59acd789b387449d96a9517747a7a471d0a999b8da5db633c6d455aab73b140  capabilities/normalize-config-v1/engine.py

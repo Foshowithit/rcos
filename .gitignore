@@ -5,6 +5,9 @@ runs/
 # Exception: slice-0 audited evidence IS committed (auditor must reconstruct runs)
 !slices/v0-validated-reuse/runs/
 !slices/v0-validated-reuse/runs/**
+# Exception: slice-1 audited evidence IS committed (same reason)
+!slices/v1-portable-reuse/runs/
+!slices/v1-portable-reuse/runs/**
 *.log
 
 # Credentials / vaults / auth (belt and suspenders — these must NEVER appear in history)

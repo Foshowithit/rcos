@@ -1,0 +1,8 @@
+{
+ "SVC_NAME": "ledger-api",
+ "PORT": "8080",
+ "JUNK": "1",
+ "DEBUG": "on",
+ "HOSTS": "api.internal,db.internal",
+ "EXTRA": "zzz"
+}

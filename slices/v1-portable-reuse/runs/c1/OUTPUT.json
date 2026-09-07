@@ -1,0 +1,10 @@
+{
+ "service": "ledger-api",
+ "port": 8080,
+ "debug": true,
+ "retries": 5,
+ "allowed_hosts": [
+  "api.internal",
+  "db.internal"
+ ]
+}

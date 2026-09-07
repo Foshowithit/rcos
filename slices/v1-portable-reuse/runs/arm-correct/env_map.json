@@ -1,0 +1,9 @@
+{
+  "service": "SVC_NAME",
+  "port": "PORT",
+  "debug": "DEBUG",
+  "retries": "RETRY_COUNT",
+  "hosts": "HOSTS",
+  "retries_default": 3,
+  "hosts_default": []
+}

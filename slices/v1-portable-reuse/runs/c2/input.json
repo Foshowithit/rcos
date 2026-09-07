@@ -1,0 +1,14 @@
+{
+ "svc": "ledger-api",
+ "network": {
+  "port": 8080,
+  "allow": [
+   "api.internal"
+  ]
+ },
+ "debug": true,
+ "notes": "primary region",
+ "tags": [
+  "prod"
+ ]
+}

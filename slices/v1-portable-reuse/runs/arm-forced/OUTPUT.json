@@ -1,0 +1,13 @@
+{
+ "invoice_id": "ledger-api",
+ "date": "2026-09-07",
+ "total_cents": 8080,
+ "currency": "USD",
+ "line_items": [
+  {
+   "sku": "SKU-X",
+   "qty": 1,
+   "unit_cents": 8080
+  }
+ ]
+}
