@@ -1,0 +1,80 @@
+{
+  "family": "R",
+  "tasks": [
+    {
+      "id": "r01",
+      "kind": "file-ops",
+      "title": "csv-to-jsonl"
+    },
+    {
+      "id": "r02",
+      "kind": "file-ops",
+      "title": "normalize-filenames"
+    },
+    {
+      "id": "r03",
+      "kind": "file-ops",
+      "title": "grep-to-file"
+    },
+    {
+      "id": "r04",
+      "kind": "file-ops",
+      "title": "merge-json"
+    },
+    {
+      "id": "r05",
+      "kind": "file-ops",
+      "title": "validate-records"
+    },
+    {
+      "id": "r06",
+      "kind": "repo-scan",
+      "title": "count-py-lines"
+    },
+    {
+      "id": "r07",
+      "kind": "repo-scan",
+      "title": "find-todos"
+    },
+    {
+      "id": "r08",
+      "kind": "repo-scan",
+      "title": "largest-file"
+    },
+    {
+      "id": "r09",
+      "kind": "repo-scan",
+      "title": "dep-edges"
+    },
+    {
+      "id": "r10",
+      "kind": "repo-scan",
+      "title": "secret-scan"
+    },
+    {
+      "id": "r11",
+      "kind": "fix-loop",
+      "title": "fix-json"
+    },
+    {
+      "id": "r12",
+      "kind": "fix-loop",
+      "title": "fix-shell"
+    },
+    {
+      "id": "r13",
+      "kind": "fix-loop",
+      "title": "fix-frontmatter"
+    },
+    {
+      "id": "r14",
+      "kind": "fix-loop",
+      "title": "fix-csv"
+    },
+    {
+      "id": "r15",
+      "kind": "fix-loop",
+      "title": "fix-python"
+    }
+  ]
+}

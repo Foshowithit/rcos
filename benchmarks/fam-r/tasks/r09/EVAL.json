@@ -1,0 +1,7 @@
+{
+  "task_id": "r09",
+  "family": "R",
+  "pass_threshold": 1.0,
+  "verdict_map": {"pass": "ship", "fail": "fix", "error": "blocked"},
+  "cost_numeraire": "wall_seconds"
+}
