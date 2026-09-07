@@ -1,0 +1,37 @@
+# Secrets + local state — never committed
+.env
+*.env
+runs/
+*.log
+
+# Credentials / vaults / auth (belt and suspenders — these must NEVER appear in history)
+*credentials*.yaml
+*credentials*.yml
+*credentials*.json
+auth.json
+.agent-vault/
+.dsh/
+.pi/
+.archon/
+**/.agent-vault/
+**/auth.json
+
+# API keys / tokens / private keys by pattern
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+*_TOKEN*
+*_SECRET*
+
+# Large artifacts
+*.mp4
+*.mov
+*.blend
+*.ckpt
+*.pt
+*.bin
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
