@@ -1,0 +1,8 @@
+{
+  "capabilities": [
+    {"id": "normalize-invoice-v1", "version": 1, "status": "promoted",
+     "path": "capabilities/normalize-invoice-v1"},
+    {"id": "date-reformat-v1", "version": 1, "status": "promoted",
+     "path": "capabilities/date-reformat-v1"}
+  ]
+}

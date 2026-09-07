@@ -1,0 +1,8 @@
+{
+  "invoice_id": "inv_id",
+  "date": "inv_date",
+  "total_cents": "total_cents",
+  "currency": "currency",
+  "lines": "lines",
+  "line": {"sku": "sku", "qty": "qty", "unit_cents": "unit_cents"}
+}

@@ -1,0 +1,6 @@
+inv_id,inv_date,total_usd,currency
+INV-1042,2026-08-14,142.50,USD
+
+sku,qty,unit_usd
+SKU-101,2,50.00
+SKU-207,1,42.50

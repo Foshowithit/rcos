@@ -1,0 +1,18 @@
+{
+ "id": "INV-2091",
+ "issued": "2026-09-02",
+ "lines": [
+  {
+   "code": "SKU-330",
+   "n": 3,
+   "price_cents": 2000
+  },
+  {
+   "code": "SKU-101",
+   "n": 1,
+   "price_cents": 2999
+  }
+ ],
+ "notes": "rush delivery requested",
+ "priority": 2
+}

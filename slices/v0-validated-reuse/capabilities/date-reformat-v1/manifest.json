@@ -1,0 +1,13 @@
+{
+  "id": "date-reformat-v1",
+  "version": 1,
+  "status": "promoted",
+  "role_in_slice": "NEGATIVE CONTROL — plausible but wrong: reformats dates, normalizes nothing, verifies no totals. The router must reject it on T3 with a logged reason.",
+  "applicability": {
+    "description": "Rewrites date strings between formats. Claims nothing about amounts, items, or totals.",
+    "requires_markers": ["date", "day", "issued"],
+    "claims": ["date reformatting"]
+  },
+  "lineage": {"derived_from": ["planted for slice-0 negative control"]},
+  "evals": []
+}

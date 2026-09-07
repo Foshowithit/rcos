@@ -1,0 +1,15 @@
+{
+  "id": "normalize-invoice-v1",
+  "version": 1,
+  "status": "promoted",
+  "applicability": {
+    "description": "Delimited or JSON records naming an invoice, a date, monetary amounts, and line items -> canonical invoice JSON with verified totals.",
+    "requires_markers": ["inv", "total", "amount", "price", "qty", "item", "line"],
+    "claims": ["canonical totals verification", "field normalization"]
+  },
+  "lineage": {"derived_from": ["runs/t1 (t1-csv ship)", "runs/t2 (t2-json ship)"]},
+  "evals": [
+    {"task_id": "t1-csv", "verdict": "ship", "run_id": "t1"},
+    {"task_id": "t2-json", "verdict": "ship", "run_id": "t2"}
+  ]
+}

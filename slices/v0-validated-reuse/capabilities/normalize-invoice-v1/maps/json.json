@@ -1,0 +1,8 @@
+{
+  "invoice_id": "id",
+  "date": "issued",
+  "total_cents": {"sum_lines": true},
+  "currency": {"const": "USD"},
+  "lines": "lines",
+  "line": {"sku": "code", "qty": "n", "unit_cents": "price_cents"}
+}

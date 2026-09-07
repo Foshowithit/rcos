@@ -29,8 +29,13 @@ through this schema and logged.
 - `approval_gates` (list) — human checkpoints; each names its node boundary
   and its approve/reject/rework decisions.
 - `capability_refs` (list) — registry `capability_id/version` pairs this plan
-  reuses; empty on a first-solve plan, non-empty on a reuse plan. The reuse
-  claim of any run is exactly this list, verified against the trace.
+  reuses; empty on a first-solve plan, non-empty on a reuse plan. Each entry
+  carries `role: executed | composed | dependency` and an `invocation_id`.
+  The reuse claim of any run is verified against the trace, never
+  self-certified: the runtime must prove the resolved implementation
+  (immutable hash) executed and its output artifact was consumed by a
+  downstream node or the eval. `selected ≠ executed ≠ consumed` — only the
+  last counts as reuse. (v0.1 patch, slice-0 proven need.)
 
 ## Tier rule (authoring time)
 
