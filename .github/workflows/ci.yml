@@ -14,7 +14,8 @@ jobs:
           python-version: "3.12"
       - name: Secret grep (blocks on keys/tokens/credentials)
         run: |
-          if git grep -n -i -E 'sk-[A-Za-z0-9]{8,}|gho_[A-Za-z0-9]+|ghp_[A-Za-z0-9]+|api[_-]?key\s*[:=]\s*["'\"'']?[A-Za-z0-9_\-]{8,}|bearer [A-Za-z0-9_\-\.]{8,}|BEGIN (RSA )?PRIVATE KEY' -- . ':!.git'; then
+          SECRET_RE='sk-[A-Za-z0-9]{8,}|gho_[A-Za-z0-9]+|ghp_[A-Za-z0-9]+|api[_-]?key[[:space:]]*[:=][[:space:]]*"?[^[:space:]"]{8,}|bearer [A-Za-z0-9_.-]{8,}|BEGIN (RSA )?PRIVATE KEY'
+          if git grep -n -i -E "$SECRET_RE" -- . ':!.git'; then
             echo "SECRET PATTERN FOUND — failing"; exit 1
           fi
           echo "secret grep clean"
