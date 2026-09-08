@@ -1,0 +1,81 @@
+<think>Let me analyze the task:
+
+1. Read `input.csv` from the source directory
+2. Normalize to canonical JSON with fields: id, name, amount_cents (integer), tags (list)
+3. Write to `OUTPUT.json`
+
+The CSV has columns: id, name, amount_usd, tags
+The amount_usd is in dollars, need to convert to cents (integer).
+
+Looking at the CSV:
+```
+id,name,amount_usd,tags
+D-1,Omicron Box,11.00,red
+D-2,Pi Crate,23.50,sale
+SUMMARY,,,34.50,
+```
+
+There are some tricky parts:
+- The last row appears to be a summary row that shouldn't be included (id="SUMMARY", no name, no tags)
+- The empty trailing line should be handled
+- The SUMMARY row has "34.50" in amount_usd column but no id that looks like a record
+
+Looking more carefully, the SUMMARY row has no tags and the amount is a total. We should skip it.
+
+For tags - "red" and "sale" - they appear to be single tags, but the task says tags should be a list. So each is a list with one item.
+
+Wait, let me re-read. The tags column might contain comma-separated values or single values. In this case, "red" and "sale" are single values. So tags would be ["red"] and ["sale"].
+
+For amount_cents:
+- 11.00 → 1100
+- 23.50 → 2350
+
+Need to use Decimal or careful float handling to avoid floating point issues. 11.00 * 100 = 1100.0 (fine), 23.50 * 100 = 2350.0000000000002 (issue with float). Better to use Decimal or string parsing.
+
+Let me write the solution using csv module and Decimal for safe conversion.
+
+```python
+import csv
+import json
+import os
+from decimal import Decimal
+
+def solve(src_dir, dst_path):
+    csv_path = os.path.join(src_dir, 'input.csv')
+    records = []
+    with open(csv_path, 'r', newline='') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Skip rows without an id (empty rows or summary rows)
+            if not row.get('id'):
+                continue
+            # Skip the SUMMARY row
+            if row['id'] == 'SUMMARY':
+                continue
+            amount_str = row.get('amount_usd', '') or '0'
+            # Convert amount to cents
+            amount_cents = int((Decimal(amount_str) * 100).to_integral_value())
+            tags_str = row.get('tags', '') or ''
+            tags = [t.strip() for t in tags_str.split(',') if t.strip()] if tags_str else []
+            records.append({
+                'id': row['id'],
+                'name': row.get('name', '') or '',
+                'amount_cents': amount_cents,
+                'tags': tags,
+            })
+    
+    with open(dst_path, 'w') as f:
+        json.dump(records, f, indent=2)
+```
+
+Wait, I need to think about the output. The task says "Write the list to OUTPUT.json" - so it should be a JSON list directly.
+
+Let me also consider: should I skip empty rows (the trailing blank line)? The CSV has an empty line at the end. DictReader should handle that, but the row's id field might be None or empty.
+
+Also, what about the SUMMARY row? It has id="SUMMARY", no name, no tags, and amount_usd="34.50". This looks like a totals row that should not be included as a regular record.
+
+I'll skip any row where the id is missing or where id equals "SUMMARY".
+
+Let me finalize my solution.</think>
+
+{"solver_py": "import csv, json, os\nfrom decimal import Decimal\n\ndef solve(src_dir, dst_path):\n    csv_path = os.path.join(src_dir, 'input.csv')\n    records = []\n    with open(csv_path, 'r', newline='') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            rid = (row.get('id') or '').strip()\n            if not rid or rid.upper() == 'SUMMARY':\n                continue\n            amount_str = (row.get('amount_usd') or '0').strip() or '0'\n            amount_cents = int((Decimal(amount_str) * 100).to_integral_value())\n            tags_str = (row.get('tags') or '').strip()\n            tags = [t.strip() for t in tags_str.split(',') if t.strip()] if tags_str else []\n            name = (row.get('name') or '').strip()\n            records.append({\n                'id': rid,\n                'name': name,\n                'amount_cents': amount_cents,\n                'tags': tags,\n            })\n    with open(dst_path, 'w') as f:\n        json.dump(records, f, indent=2)\n\nif __name__ == '__main__':\n    import sys\n    src = sys.argv[1]\n    dst = sys.argv[2]\n    solve(src, dst)\n", "notes": "Parses CSV, converts amount_usd to integer cents via Decimal, splits tags into a list, skips SUMMARY/totals rows and blanks, writes canonical JSON list."}

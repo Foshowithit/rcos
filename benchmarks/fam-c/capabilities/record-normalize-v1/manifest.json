@@ -1,0 +1,31 @@
+{
+ "id": "record-normalize-v1",
+ "version": 1,
+ "applicability": {
+  "description": "Normalize heterogeneous record collections into a canonical schema {id, name, amount_cents, tags}. Engine consumes pre-parsed records plus a field map declaring which source keys correspond to id/name/amount/tags; it coerces USD-formatted strings to integer cents, splits delimited tag fields, and preserves input order.",
+  "requires_markers": [
+   "records contain a monetary field formatted as USD string (e.g. $1,234.56, 12.50, -5.00, ($3.00))",
+   "records contain a tags field as delimited string or as a list",
+   "the source key names for id/name/amount/tags are identifiable, possibly with alternates",
+   "a field map is provided binding canonical names to those source keys"
+  ],
+  "claims": [
+   "emits JSON list of objects with exactly {id, name, amount_cents, tags}",
+   "coerces USD strings to integer cents handling '$', thousands commas, decimals, leading '-', and accounting parentheses",
+   "splits delimited tag strings into a trimmed non-empty list",
+   "accepts tag fields already given as a list",
+   "accepts alternate candidate keys per canonical field (string-or-list)",
+   "preserves input record order",
+   "exits 0 on success and 1 on any exception"
+  ]
+ },
+ "limitations": [
+  "engine does not parse source formats; adapter must deliver pre-parsed records",
+  "USD-only currency semantics; non-USD symbols beyond '$' are stripped but not converted",
+  "no nested-key resolution in engine; adapter must flatten or supply dotted keys",
+  "single tag delimiter per run as configured in field map",
+  "no tag deduplication or case normalization",
+  "no schema validation beyond the four canonical fields",
+  "amount coercion assumes the value represents whole or fractional dollars, not cents"
+ ]
+}

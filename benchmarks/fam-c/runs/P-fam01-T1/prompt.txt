@@ -1,0 +1,27 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T1):
+```
+# fam01-T1 — nested-JSON record normalization
+
+Normalize `input.json` to canonical JSON: a list of
+`{id, name, amount_cents (integer), tags (list)}`.
+Keys differ from other instances; `labels` may be absent (means `[]`).
+Ignore non-record fields. Write the list to `OUTPUT.json`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, input.json, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- input.json (304 bytes) ---
+{"records": [{"code": "B-1", "label": "Delta Part", "price": {"usd": 3.25}, "labels": ["green"]}, {"code": "B-2", "label": "Epsilon Bit", "price": {"usd": 45.0}}, {"code": "B-3", "label": "Zeta Piece", "price": {"usd": 0.99}, "labels": []}], "exported_by": "tool v2", "export_note": "ignore this field"}
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

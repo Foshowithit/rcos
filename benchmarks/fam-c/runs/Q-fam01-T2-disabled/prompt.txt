@@ -1,0 +1,35 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T2):
+```
+# fam01-T2 — pipe-delimited record normalization
+
+Normalize `input.psv` (pipe-delimited, reordered columns) to canonical
+JSON: a list of `{id, name, amount_cents (integer), tags (list)}`.
+Write the list to `OUTPUT.json`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, input.psv, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- input.psv (243 bytes) ---
+NAME|ID|TAGS|AMOUNT_USD
+Theta Unit|C-1|bulk|22.10
+Iota Module|C-2||9.99
+Kappa System|C-3|new|150.75
+Lambda Gear|C-4|bulk|sale|3.05
+Mu Coil|C-5||77.77
+Nu Valve|C-6|new|0.50
+Xi Pump|C-7|bulk|310.00
+Omic Relay|C-8|sale|12.12
+Pi Sensor|C-9||99.95
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

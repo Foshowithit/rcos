@@ -1,0 +1,1 @@
+{"task": "fam01/T4", "lane": "Q", "arm": "correct", "verdict": "fix", "detail": "included SUMMARY aggregate row; null gate ignores it"}

@@ -1,0 +1,1 @@
+{"records": [{"code": "B-1", "label": "Delta Part", "price": {"usd": 3.25}, "labels": ["green"]}, {"code": "B-2", "label": "Epsilon Bit", "price": {"usd": 45.0}}, {"code": "B-3", "label": "Zeta Piece", "price": {"usd": 0.99}, "labels": []}], "exported_by": "tool v2", "export_note": "ignore this field"}

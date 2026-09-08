@@ -1,0 +1,17 @@
+{
+ "lane": "P",
+ "model": "minimax-m3",
+ "wall_s": 24.9,
+ "usage": {
+  "total_tokens": 2355,
+  "total_characters": 0,
+  "prompt_tokens": 603,
+  "completion_tokens": 1752,
+  "completion_tokens_details": {
+   "reasoning_tokens": 1334
+  },
+  "prompt_tokens_details": {
+   "cached_tokens": 128
+  }
+ }
+}

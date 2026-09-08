@@ -1,0 +1,63 @@
+[
+  {
+    "id": "R-1",
+    "name": "Lambda Core",
+    "amount_cents": 5555,
+    "tags": [
+      "red"
+    ]
+  },
+  {
+    "id": "R-2",
+    "name": "Mu Shell",
+    "amount_cents": 840,
+    "tags": []
+  },
+  {
+    "id": "R-3",
+    "name": "Nu Frame",
+    "amount_cents": 19999,
+    "tags": [
+      "bulk",
+      "sale"
+    ]
+  },
+  {
+    "id": "R-4",
+    "name": "Omicron Axle",
+    "amount_cents": 1414,
+    "tags": []
+  },
+  {
+    "id": "R-5",
+    "name": "Pi Rotor",
+    "amount_cents": 50000,
+    "tags": [
+      "bulk"
+    ]
+  },
+  {
+    "id": "R-6",
+    "name": "Rho Seal",
+    "amount_cents": 202,
+    "tags": [
+      "new",
+      "sale"
+    ]
+  },
+  {
+    "id": "R-7",
+    "name": "Sigma Belt",
+    "amount_cents": 7333,
+    "tags": []
+  },
+  {
+    "id": "R-8",
+    "name": "Tau Disc",
+    "amount_cents": 1995,
+    "tags": [
+      "red",
+      "new"
+    ]
+  }
+]

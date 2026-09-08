@@ -1,0 +1,17 @@
+{
+ "capability_id": "record-normalize-v1",
+ "version": 1,
+ "artifacts": {
+  "engine.py": "8bf9a2b25ce2ad57b8b28d6fe73ffdc53c2dd0c724fa798a8c807dff6271e05b"
+ },
+ "manifest_sha256": "e0c5155458a9b533739acc45d1a2f4563cf8cb898c7670d1064669201b42c836",
+ "training_receipts": [
+  "runs/P-fam01-T0/usage.json",
+  "runs/P-fam01-T1/usage.json"
+ ],
+ "builder_identity": {
+  "provider": "router9",
+  "model": "minimax-m3"
+ },
+ "locked_at": "2026-09-08T06:43:03Z"
+}

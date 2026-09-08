@@ -1,0 +1,52 @@
+<think>We need to write a Python script that reads input.json from src_dir, normalizes records, and writes to OUTPUT.json.
+
+The task: normalize input.json to canonical JSON: a list of {id, name, amount_cents (integer), tags (list)}.
+
+Input has:
+- records: list of objects with:
+  - code → id
+  - label → name
+  - price: {"usd": float} → amount_cents (integer, so multiply by 100 and round)
+  - labels → tags (may be absent, means [])
+
+Ignore non-record fields (exported_by, export_note, etc.)
+
+Let me write the script.
+
+```python
+import json
+import os
+import sys
+
+def main():
+    src_dir, dst_path = sys.argv[1], sys.argv[2]
+    input_path = os.path.join(src_dir, "input.json")
+    with open(input_path, 'r') as f:
+        data = json.load(f)
+    
+    records = data.get("records", [])
+    result = []
+    for rec in records:
+        item = {
+            "id": rec["code"],
+            "name": rec["label"],
+            "amount_cents": int(round(rec["price"]["usd"] * 100)),
+            "tags": rec.get("labels", [])
+        }
+        result.append(item)
+    
+    with open(dst_path, 'w') as f:
+        json.dump(result, f)
+
+if __name__ == "__main__":
+    main()
+```
+
+Let me verify with the example:
+- B-1: code="B-1", label="Delta Part", price.usd=3.25 → 325, labels=["green"] → tags=["green"]
+- B-2: code="B-2", label="Epsilon Bit", price.usd=45.0 → 4500, no labels → tags=[]
+- B-3: code="B-3", label="Zeta Piece", price.usd=0.99 → 99, labels=[] → tags=[]
+
+That looks correct.</think>
+
+{"solver_py": "import json\nimport os\nimport sys\n\ndef main():\n    src_dir = sys.argv[1]\n    dst_path = sys.argv[2]\n    input_path = os.path.join(src_dir, \"input.json\")\n    with open(input_path, 'r') as f:\n        data = json.load(f)\n    records = data.get(\"records\", [])\n    result = []\n    for rec in records:\n        item = {\n            \"id\": rec[\"code\"],\n            \"name\": rec[\"label\"],\n            \"amount_cents\": int(round(rec[\"price\"][\"usd\"] * 100)),\n            \"tags\": rec.get(\"labels\", [])\n        }\n        result.append(item)\n    with open(dst_path, 'w') as f:\n        json.dump(result, f)\n\nif __name__ == \"__main__\":\n    main()\n", "notes": "Reads records from input.json, maps code->id, label->name, price.usd*100->amount_cents, labels->tags (defaults to [])."}

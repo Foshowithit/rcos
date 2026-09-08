@@ -1,0 +1,31 @@
+
+
+{
+  "records": [
+    {
+      "id": "D-1",
+      "name": "Omicron Box",
+      "amount_usd": "11.00",
+      "tags": "red"
+    },
+    {
+      "id": "D-2",
+      "name": "Pi Crate",
+      "amount_usd": "23.50",
+      "tags": "sale"
+    },
+    {
+      "id": "SUMMARY",
+      "name": "",
+      "amount_usd": "34.50",
+      "tags": ""
+    }
+  ],
+  "field_map": {
+    "id": "id",
+    "name": "name",
+    "amount": "amount_usd",
+    "tags": "tags"
+  },
+  "notes": "CSV has 3 rows including a summary row; field map uses source keys id, name, amount_usd, tags with default comma tag separator"
+}

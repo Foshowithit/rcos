@@ -1,0 +1,285 @@
+<think>The user wants a reusable capability description for a record normalization engine. They want me to output only a JSON object with three keys: engine_py, manifest, and adapter_notes.
+
+Let me analyze the requirements:
+1. engine_py: A complete Python 3 stdlib script that takes argv (field_map_path, records_path, out_path)
+2. Reads a field map with {id, name, amount, tags} key-names + pre-parsed record list
+3. Coerces USD strings to integer cents
+4. Splits tag delimiters
+5. Emits canonical [{id, name, amount_cents, tags}] preserving order
+6. Exit 0 on success, 1 on crash
+7. Under 80 lines
+
+Manifest needs:
+- id: "record-normalize-v1"
+- version: 1
+- applicability with description, requires_markers, claims
+- limitations
+
+Adapter notes: how to turn a NEW record format into records + field map
+
+Let me think about what T0/T1 demonstrate:
+- T0: CSV normalization
+- T1: nested JSON normalization
+
+The common capability: normalizing heterogeneous record formats into a canonical schema by:
+- Mapping fields via a field_map (from source names to canonical names)
+- Coercing monetary amounts to integer cents
+- Splitting delimiter-separated tag strings
+- Preserving order
+
+The adapter does parsing (CSV parse, JSON parse, etc.) and produces a uniform intermediate: a list of dicts (records) + a field_map telling the engine which keys in those records correspond to id/name/amount/tags.
+
+Let me write the engine:
+
+```python
+#!/usr/bin/env python3
+import sys, json, re
+
+def main():
+    try:
+        fmap_path, recs_path, out_path = sys.argv[1], sys.argv[2], sys.argv[3]
+        with open(fmap_path) as f:
+            fmap = json.load(f)
+        with open(recs_path) as f:
+            records = json.load(f)
+        
+        id_keys = fmap.get('id', [])
+        name_keys = fmap.get('name', [])
+        amount_keys = fmap.get('amount', [])
+        tags_keys = fmap.get('tags', [])
+        tag_sep = fmap.get('tag_sep', ',')
+        currency_marker = fmap.get('currency_marker', '$')
+        
+        out = []
+        for rec in records:
+            # find id
+            rid = None
+            for k in id_keys:
+                if k in rec and rec[k] is not None:
+                    rid = rec[k]
+                    break
+            # find name
+            name = ''
+            for k in name_keys:
+                if k in rec and rec[k] is not None:
+                    name = rec[k]
+                    break
+            # find amount
+            cents = 0
+            for k in amount_keys:
+                if k in rec and rec[k] is not None:
+                    cents = parse_usd_to_cents(str(rec[k]), currency_marker)
+                    break
+            # find tags
+            tags = []
+            for k in tags_keys:
+                if k in rec and rec[k] is not None:
+                    val = rec[k]
+                    if isinstance(val, list):
+                        tags = [str(t).strip() for t in val if str(t).strip()]
+                    else:
+                        tags = [t.strip() for t in str(val).split(tag_sep) if t.strip()]
+                    break
+            
+            out.append({
+                'id': rid,
+                'name': name,
+                'amount_cents': cents,
+                'tags': tags,
+            })
+        
+        with open(out_path, 'w') as f:
+            json.dump(out, f, indent=2)
+        sys.exit(0)
+    except Exception as e:
+        sys.stderr.write(f'error: {e}\n')
+        sys.exit(1)
+
+def parse_usd_to_cents(s, marker='$'):
+    s = s.strip()
+    if marker and s.startswith(marker):
+        s = s[len(marker):]
+    s = s.replace(',', '')
+    neg = s.startswith('-')
+    if neg:
+        s = s[1:]
+    if '.' in s:
+        a, b = s.split('.', 1)
+        b = (b + '00')[:2]
+    else:
+        a, b = s, '00'
+    cents = int(a or '0') * 100 + int(b)
+    return -cents if neg else cents
+
+if __name__ == '__main__':
+    main()
+```
+
+Wait, the engine should handle currency markers like $ or none. Let me make the parse function handle that better.
+
+Actually the task says "coerces USD strings to integer cents" - so we assume USD. The marker could be configurable.
+
+Let me check line count... should be under 80 lines.
+
+Let me reconsider the field_map format. The task says: "reads a field map {id,name,amount,tags} key-names". So it's a dict where each key maps to the source field name(s). It could be a single string or a list. Let me support both.
+
+Actually, looking more carefully: "key-names" suggests it tells which key in the record to look at. Could be a string or list of candidates. Let me allow string or list.
+
+Let me finalize:
+
+```python
+#!/usr/bin/env python3
+import sys, json
+
+def parse_usd_to_cents(s):
+    if s is None:
+        return 0
+    s = str(s).strip()
+    neg = s.startswith('-') or s.startswith('(')
+    if s.startswith('('):
+        s = s.strip(')')
+    s = s.lstrip('$€£¥').strip()
+    s = s.replace(',', '')
+    if neg and not s.startswith('-'):
+        s = '-' + s
+    neg = s.startswith('-')
+    if neg:
+        s = s[1:]
+    if '.' in s:
+        a, b = s.split('.', 1)
+        b = (b + '00')[:2]
+    else:
+        a, b = s, '00'
+    cents = (int(a) if a else 0) * 100 + int(b)
+    return -cents if neg else cents
+
+def pick(rec, keys):
+    if isinstance(keys, str):
+        keys = [keys]
+    for k in keys:
+        if k in rec and rec[k] is not None:
+            return rec[k]
+    return None
+
+def main():
+    try:
+        with open(sys.argv[1]) as f:
+            fmap = json.load(f)
+        with open(sys.argv[2]) as f:
+            records = json.load(f)
+        sep = fmap.get('tag_sep', ',')
+        out = []
+        for rec in records:
+            name_val = pick(rec, fmap.get('name', ''))
+            tags_val = pick(rec, fmap.get('tags', ''))
+            if isinstance(tags_val, list):
+                tags = [str(t).strip() for t in tags_val if str(t).strip()]
+            elif tags_val is None:
+                tags = []
+            else:
+                tags = [t.strip() for t in str(tags_val).split(sep) if t.strip()]
+            out.append({
+                'id': pick(rec, fmap.get('id', '')),
+                'name': name_val if name_val is not None else '',
+                'amount_cents': parse_usd_to_cents(pick(rec, fmap.get('amount', ''))),
+                'tags': tags,
+            })
+        with open(sys.argv[3], 'w') as f:
+            json.dump(out, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        sys.stderr.write(str(e) + '\n')
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
+```
+
+Let me count lines... that's about 45 lines, good.
+
+Now the manifest. T0/T1 demonstrate:
+- Heterogeneous record formats (CSV, nested JSON) → canonical
+- Field name mapping (source keys → canonical)
+- USD string → integer cents coercion
+- Tag delimiter splitting (could be ',', ';', '|')
+- Order preservation
+
+requires_markers: evidence of these operations being applicable
+- records contain monetary fields (with $ or currency symbols)
+- records contain delimited tag fields
+- heterogeneous source formats
+
+claims:
+- normalize to canonical schema
+- coerce USD to cents
+- split tag delimiters
+- preserve order
+- handle field name variations via field map
+
+limitations:
+- requires pre-parsed records (adapter does parsing)
+- USD only (other currencies may need adapter)
+- single-level field map (no nested key resolution in engine)
+- single delimiter per run
+- no type coercion beyond amount/tags
+
+adapter_notes:
+- Parse source format (CSV/JSON/etc.)
+- Build field_map mapping canonical keys → source keys
+- Output uniform list of dicts as records.json
+- Optionally specify tag_sep
+
+Let me write the final JSON output. The whole thing must be valid JSON with newlines escaped appropriately. The adapter_notes is a string with text content.
+
+Actually the user says "Under 80 lines" - I think this refers to the overall JSON content, or maybe the engine specifically. Let me keep everything concise.
+
+Let me finalize:
+
+```json
+{
+  "engine_py": "#!/usr/bin/env python3\nimport sys, json\n\ndef parse_usd_to_cents(s):\n    if s is None:\n        return 0\n    s = str(s).strip()\n    neg = s.startswith('-') or (s.startswith('(') and s.endswith(')'))\n    if s.startswith('('):\n        s = s[1:-1].strip()\n    s = s.lstrip('$').strip()\n    s = s.replace(',', '')\n    if neg and not s.startswith('-'):\n        s = '-' + s\n    neg = s.startswith('-')\n    if neg:\n        s = s[1:]\n    if '.' in s:\n        a, b = s.split('.', 1)\n        b = (b + '00')[:2]\n    else:\n        a, b = s, '00'\n    cents = (int(a) if a else 0) * 100 + int(b)\n    return -cents if neg else cents\n\ndef pick(rec, keys):\n    if isinstance(keys, str):\n        keys = [keys]\n    if not keys:\n        return None\n    for k in keys:\n        if k in rec and rec[k] is not None:\n            return rec[k]\n    return None\n\ndef main():\n    try:\n        with open(sys.argv[1]) as f:\n            fmap = json.load(f)\n        with open(sys.argv[2]) as f:\n            records = json.load(f)\n        sep = fmap.get('tag_sep', ',')\n        out = []\n        for rec in records:\n            name_val = pick(rec, fmap.get('name', ''))\n            tags_val = pick(rec, fmap.get('tags', ''))\n            if isinstance(tags_val, list):\n                tags = [str(t).strip() for t in tags_val if str(t).strip()]\n            elif tags_val is None:\n                tags = []\n            else:\n                tags = [t.strip() for t in str(tags_val).split(sep) if t.strip()]\n            out.append({\n                'id': pick(rec, fmap.get('id', '')),\n                'name': name_val if name_val is not None else '',\n                'amount_cents': parse_usd_to_cents(pick(rec, fmap.get('amount', ''))),\n                'tags': tags,\n            })\n        with open(sys.argv[3], 'w') as f:\n            json.dump(out, f, indent=2, ensure_ascii=False)\n        sys.exit(0)\n    except Exception as e:\n        sys.stderr.write(str(e) + '\\n')\n        sys.exit(1)\n\nif __name__ == '__main__':\n    main()\n",
+  "manifest": {
+    "id": "record-normalize-v1",
+    "version": 1,
+    "applicability": {
+      "description": "Normalize heterogeneous record collections into a canonical schema with integer-cent amounts and list-valued tags. Engine consumes pre-parsed records and a field map that names which source keys correspond to id/name/amount/tags.",
+      "requires_markers": [
+        "records contain a monetary field formatted as USD string (e.g. $1,234.56, 12.50, -5.00)",
+        "records contain a tags field as delimited string (e.g. 'a,b,c') or list",
+        "source keys for id/name/amount/tags can be identified (possibly with alternates)",
+        "field map declares the canonical-to-source key bindings"
+      ],
+      "claims": [
+        "emits list of objects with keys {id, name, amount_cents, tags}",
+        "coerces USD strings to integer cents (handles $, commas, negatives, parentheses, decimals)",
+        "splits delimited tag strings into trimmed non-empty list",
+        "preserves input order",
+        "accepts alternate key candidates per canonical field",
+        "tolerates already-list tag values",
+        "exit 0 on success, 1 on crash"
+      ]
+    },
+    "limitations": [
+      "engine does not parse source formats; adapter must deliver pre-parsed records",
+      "USD-only currency semantics; non-USD symbols beyond '$' are stripped but not converted",
+      "no nested-key resolution in engine; adapter must flatten or supply dotted keys",
+      "single tag delimiter per run (configured in field map)",
+      "no deduplication of tags",
+      "no schema validation beyond the four canonical fields"
+    ]
+  },
+  "adapter_notes": "Adapter turns a new record format into the engine's two inputs: (1) records.json — a JSON list of flat dicts, one per input record, using raw source keys verbatim; (2) field_map.json — a JSON object with keys 'id','name','amount','tags' mapping to either a string (source key) or a list of candidate keys tried in order; optional 'tag_sep' sets the delimiter (default ','). For CSV: read with csv.DictReader, write rows to records.json, infer field_map from header. For nested JSON: walk to the record array (e.g. data['results'][0]['items']), flatten if needed, and emit. Pass USD strings exactly as they appear in source — the engine handles '$', thousands commas, decimals, negatives, and accounting parentheses."
+}
+```
+
+This looks good. Let me verify line count is reasonable. The JSON itself when pretty-printed has about 50 lines.
+
+Let me also double-check the engine handles edge cases:
+- Empty amount → 0 cents
+- No tags → empty list
+- List tags → kept as list
+- Negative amounts → handled
+- Parentheses for negative → handled (e.g. "($5.00)")
+
+I think this is good. Let me output it.</think>
+
+{"engine_py": "#!/usr/bin/env python3\nimport sys, json\n\ndef parse_usd_to_cents(s):\n    if s is None:\n        return 0\n    s = str(s).strip()\n    neg = s.startswith('-') or (s.startswith('(') and s.endswith(')'))\n    if s.startswith('('):\n        s = s[1:-1].strip()\n    s = s.lstrip('$').strip()\n    s = s.replace(',', '')\n    if neg and not s.startswith('-'):\n        s = '-' + s\n    neg = s.startswith('-')\n    if neg:\n        s = s[1:]\n    if '.' in s:\n        a, b = s.split('.', 1)\n        b = (b + '00')[:2]\n    else:\n        a, b = s, '00'\n    cents = (int(a) if a else 0) * 100 + int(b)\n    return -cents if neg else cents\n\ndef pick(rec, keys):\n    if isinstance(keys, str):\n        keys = [keys]\n    if not keys:\n        return None\n    for k in keys:\n        if k in rec and rec[k] is not None:\n            return rec[k]\n    return None\n\ndef main():\n    try:\n        with open(sys.argv[1]) as f:\n            fmap = json.load(f)\n        with open(sys.argv[2]) as f:\n            records = json.load(f)\n        sep = fmap.get('tag_sep', ',')\n        out = []\n        for rec in records:\n            name_val = pick(rec, fmap.get('name', ''))\n            tags_val = pick(rec, fmap.get('tags', ''))\n            if isinstance(tags_val, list):\n                tags = [str(t).strip() for t in tags_val if str(t).strip()]\n            elif tags_val is None:\n                tags = []\n            else:\n                tags = [t.strip() for t in str(tags_val).split(sep) if t.strip()]\n            out.append({\n                'id': pick(rec, fmap.get('id', '')),\n                'name': name_val if name_val is not None else '',\n                'amount_cents': parse_usd_to_cents(pick(rec, fmap.get('amount', ''))),\n                'tags': tags,\n            })\n        with open(sys.argv[3], 'w') as f:\n            json.dump(out, f, indent=2, ensure_ascii=False)\n        sys.exit(0)\n    except Exception as e:\n        sys.stderr.write(str(e) + '\\n')\n        sys.exit(1)\n\nif __name__ == '__main__':\n    main()\n", "manifest": {"id": "record-normalize-v1", "version": 1, "applicability": {"description": "Normalize heterogeneous record collections into a canonical schema {id, name, amount_cents, tags}. Engine consumes pre-parsed records plus a field map declaring which source keys correspond to id/name/amount/tags; it coerces USD-formatted strings to integer cents, splits delimited tag fields, and preserves input order.", "requires_markers": ["records contain a monetary field formatted as USD string (e.g. $1,234.56, 12.50, -5.00, ($3.00))", "records contain a tags field as delimited string or as a list", "the source key names for id/name/amount/tags are identifiable, possibly with alternates", "a field map is provided binding canonical names to those source keys"], "claims": ["emits JSON list of objects with exactly {id, name, amount_cents, tags}", "coerces USD strings to integer cents handling '$', thousands commas, decimals, leading '-', and accounting parentheses", "splits delimited tag strings into a trimmed non-empty list", "accepts tag fields already given as a list", "accepts alternate candidate keys per canonical field (string-or-list)", "preserves input record order", "exits 0 on success and 1 on any exception"]}, "limitations": ["engine does not parse source formats; adapter must deliver pre-parsed records", "USD-only currency semantics; non-USD symbols beyond '$' are stripped but not converted", "no nested-key resolution in engine; adapter must flatten or supply dotted keys", "single tag delimiter per run as configured in field map", "no tag deduplication or case normalization", "no schema validation beyond the four canonical fields", "amount coercion assumes the value represents whole or fractional dollars, not cents"]}, "adapter_notes": "The adapter turns a new record format into the engine's two inputs: (1) records.json — a JSON list of flat dicts, one per source record, using the raw source keys verbatim; (2) field_map.json — a JSON object with keys 'id', 'name', 'amount', 'tags' each mapped to either a string (the source key) or a list of candidate keys tried in order, plus optional 'tag_sep' (default ','). For CSV: read with csv.DictWriter/DictReader, dump rows to records.json, derive field_map from the header (e.g. {id:['OrderID','order_id'], name:'Item', amount:'Price', tags:'Labels', tag_sep:'|'}). For nested JSON: walk to the record array (e.g. payload['results'][0]['items']), flatten if nested keys are needed, and emit. Pass USD strings exactly as they appear in source — the engine handles '$', thousands commas, decimals, leading minus, and accounting parentheses. Adapter is responsible for any source-specific quirks (timezone, encoding, date parsing); engine does no other type coercion."}
