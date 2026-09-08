@@ -1,0 +1,1 @@
+{"task": "fam04/T4", "lane": "P", "arm": "correct", "verdict": "ship", "detail": "P correct engine ships; T4 actual capability generalizes to cycle detection (contract-conformance check needed; T4 non-discriminating unless lock declares fam04.promised_acyclic limitation)"}

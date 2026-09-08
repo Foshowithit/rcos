@@ -1,0 +1,24 @@
+
+
+{
+  "records": {
+    "edges": [
+      {"source": "fetch", "target": "compile"},
+      {"source": "compile", "target": "unit-test"},
+      {"source": "compile", "target": "lint"},
+      {"source": "unit-test", "target": "package"},
+      {"source": "lint", "target": "package"},
+      {"source": "package", "target": "deploy-staging"},
+      {"source": "deploy-staging", "target": "smoke"},
+      {"source": "smoke", "target": "deploy-prod"}
+    ]
+  },
+  "field_map": {
+    "nodes": ["nodes", "vertices"],
+    "edges": ["edges", "links", "arcs"],
+    "node_id": [],
+    "edge_source": ["source", "from", "src", "u", "tail"],
+    "edge_target": ["target", "to", "dst", "v", "head"]
+  },
+  "notes": "Parsed edge-list format, auto-promoted all referenced nodes, ran Kahn topological sort; graph is acyclic."
+}

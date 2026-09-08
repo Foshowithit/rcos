@@ -1,0 +1,21 @@
+{
+ "id": "dag-validate-v1",
+ "version": 1,
+ "applicability": {
+  "description": "Validates acyclicity of graph-structured JSON records under variable schemas (nodes/edges, vertices/links, arcs, etc.) by normalizing field names via a field_map before Kahn topological sort with DFS cycle extraction.",
+  "requires_markers": [
+   "graph record dict containing node/edge lists",
+   "field_map listing candidate keys for nodes/edges/node_id/edge_source/edge_target"
+  ],
+  "claims": [
+   "T0:deterministic output regardless of input edge order via sorted Kahn queue",
+   "T1:reports valid:true with stable topological order, or valid:false with extracted cycle path"
+  ]
+ },
+ "limitations": [
+  "does not support multi-edges or hyperedges",
+  "does not validate schema beyond field-name resolution",
+  "nodes referenced only by edges are auto-promoted into the node set",
+  "field_map defaults are best-effort; custom schemas require explicit mapping"
+ ]
+}

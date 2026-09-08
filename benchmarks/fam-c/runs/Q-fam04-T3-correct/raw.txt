@@ -1,0 +1,25 @@
+
+
+```json
+{
+  "records": {
+    "nodes": ["ingest", "clean", "split", "train", "eval", "report"],
+    "edges": [
+      {"source": "ingest", "target": "clean"},
+      {"source": "clean", "target": "split"},
+      {"source": "split", "target": "train"},
+      {"source": "split", "target": "eval"},
+      {"source": "train", "target": "eval"},
+      {"source": "eval", "target": "report"}
+    ]
+  },
+  "field_map": {
+    "nodes": ["nodes", "vertices"],
+    "edges": ["edges", "links", "arcs"],
+    "node_id": ["id", "name", "node_id", "vertex_id"],
+    "edge_source": ["source", "from", "src", "u", "tail"],
+    "edge_target": ["target", "to", "dst", "v", "head"]
+  },
+  "notes": "Parsed graph.env NODES and EDGES into normalized canonical form for DAG validation via Kahn's algorithm with DFS cycle fallback."
+}
+```

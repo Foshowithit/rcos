@@ -1,0 +1,39 @@
+{
+  "nodes": [
+    "ingest",
+    "clean",
+    "split",
+    "train",
+    "eval",
+    "report"
+  ],
+  "edges": [
+    {
+      "from": "ingest",
+      "to": "clean"
+    },
+    {
+      "from": "clean",
+      "to": "split"
+    },
+    {
+      "from": "split",
+      "to": "train"
+    },
+    {
+      "from": "split",
+      "to": "eval"
+    },
+    {
+      "from": "train",
+      "to": "eval"
+    },
+    {
+      "from": "eval",
+      "to": "report"
+    }
+  ],
+  "is_dag": true,
+  "num_nodes": 6,
+  "num_edges": 6
+}

@@ -1,0 +1,25 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T3):
+```
+# fam04-T3 — validate DAG, env format
+Read `graph.env` (`NODES=a,b`, `EDGES=a>b,...`). Same output contract
+in `OUTPUT.json`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, graph.env, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- graph.env (120 bytes) ---
+NODES=ingest,clean,split,train,eval,report
+EDGES=ingest>clean,clean>split,split>train,split>eval,train>eval,eval>report
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

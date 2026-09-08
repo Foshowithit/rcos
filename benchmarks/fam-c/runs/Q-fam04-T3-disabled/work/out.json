@@ -1,0 +1,39 @@
+{
+  "valid": true,
+  "is_dag": true,
+  "nodes": [
+    "ingest",
+    "clean",
+    "split",
+    "train",
+    "eval",
+    "report"
+  ],
+  "edges": [
+    {
+      "from": "ingest",
+      "to": "clean"
+    },
+    {
+      "from": "clean",
+      "to": "split"
+    },
+    {
+      "from": "split",
+      "to": "train"
+    },
+    {
+      "from": "split",
+      "to": "eval"
+    },
+    {
+      "from": "train",
+      "to": "eval"
+    },
+    {
+      "from": "eval",
+      "to": "report"
+    }
+  ],
+  "errors": []
+}

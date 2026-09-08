@@ -1,0 +1,561 @@
+<think>The user wants me to create a reusable capability for DAG validation that works on unseen graph schemas. Let me analyze the two tasks:
+
+1. First task: JSON nodes/edges format
+2. Second task: alternate JSON vertices/links format
+
+Both promised acyclic. I need to create a reusable Python script that:
+- Takes a field_map_path (mapping of schema field names to canonical names)
+- Takes a records_path (the graph data file)
+- Takes out_path (output file)
+- Reads pre-parsed graph dict {nodes:list, edges:list}
+- Validates acyclic
+- Emits {valid:true, order:[...]} or {valid:false, cycle:[...]}
+- Uses only Python stdlib
+- Exit 0
+
+Let me design the field_map structure. The field_map will map canonical names to a list of possible field names. For example:
+```json
+{
+  "nodes": ["nodes", "vertices"],
+  "edges": ["edges", "links", "arcs"],
+  "node_id": ["id", "node_id", "vertex_id", "name"],
+  "edge_source": ["source", "from", "src", "u", "tail"],
+  "edge_target": ["target", "to", "dst", "v", "head"]
+}
+```
+
+The script will:
+1. Load the field_map
+2. Load the records (the graph)
+3. Normalize the schema using the field_map
+4. Validate it's a DAG using Kahn's algorithm or DFS
+5. Output result
+
+Let me write this concisely under 100 lines.
+
+For DAG validation, I'll use Kahn's algorithm (topological sort) which naturally detects cycles. If we can't process all nodes, there's a cycle. For cycle detection, I need to find the actual cycle. Let me use DFS with coloring for cycle detection.
+
+Actually, let me think more carefully. Kahn's algorithm can tell us if there's a cycle, but to extract the cycle itself, DFS with back-edge detection is better.
+
+Let me use DFS with three colors (white/gray/black) to find cycles. If we find a back edge, we can reconstruct the cycle.
+
+Here's my plan:
+
+```python
+#!/usr/bin/env python3
+import sys, json
+
+def load_field_map(path):
+    with open(path) as f:
+        return json.load(f)
+
+def load_records(path):
+    with open(path) as f:
+        return json.load(f)
+
+def normalize(graph, field_map):
+    # Find canonical keys
+    nodes = None
+    edges = None
+    for k in field_map.get('nodes', []):
+        if k in graph:
+            nodes = graph[k]
+            break
+    for k in field_map.get('edges', []):
+        if k in graph:
+            edges = graph[k]
+            break
+    if nodes is None:
+        nodes = graph.get('nodes', graph.get('vertices', []))
+    if edges is None:
+        edges = graph.get('edges', graph.get('links', []))
+    
+    # Get id fields
+    node_id_keys = field_map.get('node_id', ['id'])
+    edge_source_keys = field_map.get('edge_source', ['source'])
+    edge_target_keys = field_map.get('edge_target', ['target'])
+    
+    def get_id(node):
+        for k in node_id_keys:
+            if k in node:
+                return node[k]
+        # try common
+        for k in ['id', 'name', 'node_id']:
+            if k in node:
+                return node[k]
+        return None
+    
+    def get_source(edge):
+        for k in edge_source_keys:
+            if k in edge:
+                return edge[k]
+        for k in ['source', 'from', 'src', 'u']:
+            if k in edge:
+                return edge[k]
+        return None
+    
+    def get_target(edge):
+        for k in edge_target_keys:
+            if k in edge:
+                return edge[k]
+        for k in ['target', 'to', 'dst', 'v']:
+            if k in edge:
+                return edge[k]
+        return None
+    
+    # Build normalized graph
+    norm_nodes = []
+    seen_ids = set()
+    for n in nodes:
+        nid = get_id(n)
+        if nid is None:
+            nid = f"__n{len(norm_nodes)}"
+        norm_nodes.append({'id': nid})
+        seen_ids.add(nid)
+    
+    norm_edges = []
+    for e in edges:
+        src = get_source(e)
+        tgt = get_target(e)
+        if src is None or tgt is None:
+            continue
+        # Auto-create missing nodes
+        if src not in seen_ids:
+            norm_nodes.append({'id': src})
+            seen_ids.add(src)
+        if tgt not in seen_ids:
+            norm_nodes.append({'id': tgt})
+            seen_ids.add(tgt)
+        norm_edges.append({'source': src, 'target': tgt})
+    
+    return {'nodes': norm_nodes, 'edges': norm_edges}
+
+def validate_dag(graph):
+    nodes = [n['id'] for n in graph['nodes']]
+    edges = graph['edges']
+    
+    adj = {n: [] for n in nodes}
+    in_degree = {n: 0 for n in nodes}
+    
+    for e in edges:
+        src, tgt = e['source'], e['target']
+        if src not in adj:
+            adj[src] = []
+            in_degree[src] = 0
+        if tgt not in adj:
+            adj[tgt] = []
+            in_degree[tgt] = 0
+        adj[src].append(tgt)
+        in_degree[tgt] += 1
+    
+    # Kahn's algorithm
+    queue = [n for n in nodes if in_degree.get(n, 0) == 0]
+    order = []
+    
+    while queue:
+        queue.sort()  # deterministic
+        n = queue.pop(0)
+        order.append(n)
+        for m in adj.get(n, []):
+            in_degree[m] -= 1
+            if in_degree[m] == 0:
+                queue.append(m)
+    
+    if len(order) == len(adj):
+        return {'valid': True, 'order': order}
+    
+    # Find cycle using DFS
+    color = {n: 0 for n in adj}  # 0=white, 1=gray, 2=black
+    parent = {}
+    cycle_start = None
+    cycle_end = None
+    
+    def dfs(u):
+        nonlocal cycle_start, cycle_end
+        color[u] = 1
+        for v in adj.get(u, []):
+            if color[v] == 1:
+                cycle_start = v
+                cycle_end = u
+                return True
+            if color[v] == 0:
+                parent[v] = u
+                if dfs(v):
+                    return True
+        color[u] = 2
+        return False
+    
+    for n in adj:
+        if color[n] == 0:
+            if dfs(n):
+                # Reconstruct cycle
+                cycle = [cycle_end]
+                v = cycle_end
+                while v != cycle_start:
+                    v = parent.get(v)
+                    if v is None:
+                        break
+                    cycle.append(v)
+                cycle.append(cycle_start)
+                cycle.reverse()
+                return {'valid': False, 'cycle': cycle}
+    
+    return {'valid': False, 'cycle': []}
+
+def main():
+    if len(sys.argv) != 4:
+        sys.exit(1)
+    
+    field_map = load_field_map(sys.argv[1])
+    records = load_records(sys.argv[2])
+    out_path = sys.argv[3]
+    
+    normalized = normalize(records, field_map)
+    result = validate_dag(normalized)
+    
+    with open(out_path, 'w') as f:
+        json.dump(result, f)
+    
+    sys.exit(0)
+
+if __name__ == '__main__':
+    main()
+```
+
+Wait, I need to be careful about the cycle reconstruction. Let me think again. When DFS finds a back edge from u to v where v is gray, the cycle is v -> ... -> u -> v. So we need to trace back from u to v using parent pointers, then append v.
+
+Let me fix that:
+```python
+if color[v] == 1:
+    cycle_start = v
+    cycle_end = u
+    # Reconstruct: trace back from u to v
+    cycle = [u]
+    curr = u
+    while curr != v:
+        curr = parent[curr]
+        cycle.append(curr)
+    cycle.append(v)  # close the cycle
+    cycle.reverse()
+    return True
+```
+
+Actually, let me make it cleaner. When we find the back edge u->v:
+- The path from v to u is in the DFS tree (parents)
+- The cycle is: v -> ... -> u -> v
+- So we trace from u back through parents to v, then append v
+
+Let me reconsider the line count. I need to keep it under 100 lines. Let me be more compact.
+
+Also, I should think about determinism for the order output. Using sorted() on the initial queue makes it deterministic.
+
+Let me finalize:
+
+```python
+#!/usr/bin/env python3
+import sys, json
+
+def get_value(obj, keys, defaults):
+    for k in keys:
+        if k in obj:
+            return obj[k]
+    for k in defaults:
+        if k in obj:
+            return obj[k]
+    return None
+
+def normalize(graph, fm):
+    nk = fm.get('nodes', ['nodes'])
+    ek = fm.get('edges', ['edges'])
+    nodes = next((graph[k] for k in nk if k in graph), [])
+    edges = next((graph[k] for k in ek if k in graph), [])
+    nid_k = fm.get('node_id', []) + ['id', 'name']
+    src_k = fm.get('edge_source', []) + ['source', 'from', 'src']
+    tgt_k = fm.get('edge_target', []) + ['target', 'to', 'dst']
+    norm_n = []
+    seen = set()
+    for n in nodes:
+        nid = get_value(n, nid_k, ['id', 'name']) or f"__n{len(norm_n)}"
+        norm_n.append(nid)
+        seen.add(nid)
+    norm_e = []
+    for e in edges:
+        s = get_value(e, src_k, ['source'])
+        t = get_value(e, tgt_k, ['target'])
+        if s is None or t is None:
+            continue
+        if s not in seen:
+            norm_n.append(s); seen.add(s)
+        if t not in seen:
+            norm_n.append(t); seen.add(t)
+        norm_e.append((s, t))
+    return norm_n, norm_e
+
+def validate(nodes, edges):
+    adj = {n: [] for n in nodes}
+    ind = {n: 0 for n in nodes}
+    for s, t in edges:
+        adj.setdefault(s, []).append(t)
+        adj.setdefault(t, [])
+        ind[t] = ind.get(t, 0) + 1
+    q = sorted([n for n in nodes if ind[n] == 0])
+    order = []
+    while q:
+        u = q.pop(0)
+        order.append(u)
+        for v in adj[u]:
+            ind[v] -= 1
+            if ind[v] == 0:
+                q.append(v)
+        q.sort()
+    if len(order) == len(adj):
+        return {'valid': True, 'order': order}
+    color = {n: 0 for n in adj}
+    parent = {}
+    cycle = []
+    def dfs(u):
+        color[u] = 1
+        for v in adj.get(u, []):
+            if color[v] == 1:
+                c = [u]
+                x = u
+                while x != v:
+                    x = parent[x]
+                    c.append(x)
+                c.append(v)
+                cycle.extend(reversed(c))
+                return True
+            if color[v] == 0:
+                parent[v] = u
+                if dfs(v):
+                    return True
+        color[u] = 2
+        return False
+    for n in adj:
+        if color[n] == 0 and dfs(n):
+            return {'valid': False, 'cycle': cycle}
+    return {'valid': False, 'cycle': []}
+
+def main():
+    fm = json.load(open(sys.argv[1]))
+    rec = json.load(open(sys.argv[2]))
+    nodes, edges = normalize(rec, fm)
+    result = validate(nodes, edges)
+    json.dump(result, open(sys.argv[3], 'w'))
+    sys.exit(0)
+
+if __name__ == '__main__':
+    main()
+```
+
+Let me count lines... that's around 55-60 lines. Good.
+
+Let me verify the cycle reconstruction logic. In DFS:
+- We start at u, mark gray
+- Recursively visit neighbors
+- When we encounter a neighbor v that is gray, we've found a back edge u->v
+- The path from v to u in the DFS tree is: v -> parent[v] -> parent[parent[v]] -> ... -> u
+- The cycle is: v -> ... -> u -> v
+
+So:
+- Start with [u]
+- While x != v: x = parent[x]; append x
+- After loop, x == v, so append v
+- The result is [u, ..., v, v] but that's wrong order
+- Reverse it to get [v, ..., u] then we need to close with v again? 
+
+Wait. Let me trace:
+- Suppose path in DFS tree: v -> a -> b -> u
+- Back edge: u -> v
+- Cycle is: v -> a -> b -> u -> v
+- In my code:
+  - c = [u]
+  - x = u, x != v, so x = parent[u] = b, c = [u, b]
+  - x = b, x != v, so x = parent[b] = a, c = [u, b, a]
+  - x = a, x != v, so x = parent[a] = v, c = [u, b, a, v]
+  - x = v, exit loop
+  - c.append(v), c = [u, b, a, v, v]
+  - reversed: [v, v, a, b, u]
+
+That's wrong, it has v twice. Let me fix:
+
+```python
+c = [u]
+x = u
+while x != v:
+    x = parent[x]
+    c.append(x)
+# Now c = [u, ..., v]
+# We want cycle: v -> ... -> u -> v
+# So prepend v... no wait, the cycle is v, parent[v], ..., u, v
+# c in reverse is: v, ..., u
+# We need to add v at the end: v, ..., u, v
+# So: reversed(c) + [v] = [v, ..., u, v] ✓
+```
+
+Let me fix the code:
+```python
+if color[v] == 1:
+    c = [u]
+    x = u
+    while x != v:
+        x = parent[x]
+        c.append(x)
+    # c = [u, ..., v]
+    cycle.extend(reversed(c) + [v])
+    return True
+```
+
+Let me verify: reversed([u, b, a, v]) = [v, a, b, u], then + [v] = [v, a, b, u, v]. That's correct!
+
+Good. Let me also make sure the queue sorting is correct. Actually, sorting after each pop is O(n log n) per pop which is wasteful. Let me use a simpler approach: collect all zero-indegree nodes, sort once initially, but maintain sorted order. Actually, for determinism and simplicity, sorting the queue before each pop is fine for moderate sizes.
+
+Actually, a better approach: use the initial sorted zero-indegree nodes, and since Kahn's algorithm processes in BFS order, we just need to ensure ties are broken consistently. Let me sort once at the start and use a stable approach. Actually, for determinism without complex structures, sorting at each iteration is simplest.
+
+Let me finalize and make sure it's under 100 lines and clean.
+
+Actually I realize I should double-check the adjacency building. In my code:
+```python
+adj = {n: [] for n in nodes}
+ind = {n: 0 for n in nodes}
+for s, t in edges:
+    adj.setdefault(s, []).append(t)
+    adj.setdefault(t, [])
+    ind[t] = ind.get(t, 0) + 1
+```
+
+Wait, this is buggy. `adj[s]` might already be `[]` from initialization, but `adj.setdefault(s, [])` returns the existing list, so it works. But for `t`, if `t` isn't in adj, we add it with empty list. That's fine. And ind[t] gets incremented. But what if t isn't in initial nodes? Then it's added to adj via setdefault, but not to the initial nodes list, so it won't be in the zero-indegree calculation. Hmm.
+
+Actually, in normalize(), I add nodes whenever I see them in edges. So all nodes referenced in edges should be in the nodes list. But to be safe, let me make sure all referenced nodes are in adj:
+
+```python
+for s, t in edges:
+    if s not in adj:
+        adj[s] = []
+        ind[s] = 0
+        nodes.append(s)
+    if t not in adj:
+        adj[t] = []
+        ind[t] = 0
+        nodes.append(t)
+    adj[s].append(t)
+    ind[t] += 1
+```
+
+Actually let me simplify. Since normalize adds all edge endpoints to nodes, the initial nodes list is complete. But to be defensive:
+
+```python
+all_ids = set(nodes)
+for s, t in edges:
+    all_ids.add(s)
+    all_ids.add(t)
+adj = {n: [] for n in all_ids}
+ind = {n: 0 for n in all_ids}
+for s, t in edges:
+    adj[s].append(t)
+    ind[t] += 1
+```
+
+This is cleaner. Let me use this.
+
+Now let me write the final version, counting lines carefully:
+
+```python
+#!/usr/bin/env python3
+import sys, json
+
+def gv(o, ks, df):
+    for k in ks:
+        if k in o: return o[k]
+    for k in df:
+        if k in o: return o[k]
+    return None
+
+def norm(g, fm):
+    nk = fm.get('nodes', ['nodes'])
+    ek = fm.get('edges', ['edges'])
+    nodes = next((g[k] for k in nk if k in g), [])
+    edges = next((g[k] for k in ek if k in g), [])
+    nk2 = fm.get('node_id', []) + ['id', 'name']
+    sk = fm.get('edge_source', []) + ['source', 'from', 'src']
+    tk = fm.get('edge_target', []) + ['target', 'to', 'dst']
+    nlist, seen = [], set()
+    for n in nodes:
+        nid = gv(n, nk2, ['id', 'name']) or f"__n{len(nlist)}"
+        nlist.append(nid); seen.add(nid)
+    elist = []
+    for e in edges:
+        s, t = gv(e, sk, ['source']), gv(e, tk, ['target'])
+        if s is None or t is None: continue
+        for x in (s, t):
+            if x not in seen: nlist.append(x); seen.add(x)
+        elist.append((s, t))
+    return nlist, elist
+
+def valid(ns, es):
+    ids = set(ns)
+    for s, t in es: ids.update([s, t])
+    adj = {i: [] for i in ids}
+    ind = {i: 0 for i in ids}
+    for s, t in es:
+        adj[s].append(t); ind[t] += 1
+    q = sorted([i for i in ids if ind[i] == 0])
+    order = []
+    while q:
+        u = q.pop(0); order.append(u)
+        for v in adj[u]:
+            ind[v] -= 1
+            if ind[v] == 0: q.append(v)
+        q.sort()
+    if len(order) == len(ids):
+        return {'valid': True, 'order': order}
+    color = {i: 0 for i in ids}
+    par = {}
+    cycle = []
+    def dfs(u):
+        color[u] = 1
+        for v in adj[u]:
+            if color[v] == 1:
+                c, x = [u], u
+                while x != v:
+                    x = par[x]; c.append(x)
+                cycle.extend(list(reversed(c)) + [v])
+                return True
+            if color[v] == 0:
+                par[v] = u
+                if dfs(v): return True
+        color[u] = 2
+        return False
+    for i in ids:
+        if color[i] == 0 and dfs(i):
+            return {'valid': False, 'cycle': cycle}
+    return {'valid': False, 'cycle': []}
+
+def main():
+    fm = json.load(open(sys.argv[1]))
+    rec = json.load(open(sys.argv[2]))
+    ns, es = norm(rec, fm)
+    r = valid(ns, es)
+    json.dump(r, open(sys.argv[3], 'w'))
+    sys.exit(0)
+
+if __name__ == '__main__':
+    main()
+```
+
+Let me count: about 50 lines. Good, well under 100.
+
+Now for the manifest:
+- id: "dag-validate-v1"
+- version: 1
+- applicability: validates DAG-ness of graphs in various JSON schemas
+- requires_markers: field_map with nodes/edges or vertices/links etc.
+- claims: T0 (deterministic) and T1 (acyclic detection valid output)
+
+Limitations: doesn't handle nested graphs, doesn't validate schema beyond field mapping, no support for weighted edges in cycle detection.
+
+Adapter notes: explains how field_map works to bridge different schemas.
+
+Let me write the final JSON.</think>
+
+{"engine_py":"#!/usr/bin/env python3\nimport sys, json\n\ndef gv(o, ks, df):\n    for k in ks:\n        if k in o: return o[k]\n    for k in df:\n        if k in o: return o[k]\n    return None\n\ndef norm(g, fm):\n    nk = fm.get('nodes', ['nodes', 'vertices'])\n    ek = fm.get('edges', ['edges', 'links', 'arcs'])\n    nodes = next((g[k] for k in nk if k in g), [])\n    edges = next((g[k] for k in ek if k in g), [])\n    nk2 = fm.get('node_id', []) + ['id', 'name', 'node_id', 'vertex_id']\n    sk = fm.get('edge_source', []) + ['source', 'from', 'src', 'u', 'tail']\n    tk = fm.get('edge_target', []) + ['target', 'to', 'dst', 'v', 'head']\n    nlist, seen = [], set()\n    for n in nodes:\n        nid = gv(n, nk2, ['id', 'name']) or f\"__n{len(nlist)}\"\n        nlist.append(nid); seen.add(nid)\n    elist = []\n    for e in edges:\n        s, t = gv(e, sk, ['source']), gv(e, tk, ['target'])\n        if s is None or t is None: continue\n        for x in (s, t):\n            if x not in seen: nlist.append(x); seen.add(x)\n        elist.append((s, t))\n    return nlist, elist\n\ndef valid(ns, es):\n    ids = set(ns)\n    for s, t in es: ids.update([s, t])\n    adj = {i: [] for i in ids}\n    ind = {i: 0 for i in ids}\n    for s, t in es:\n        adj[s].append(t); ind[t] += 1\n    q = sorted([i for i in ids if ind[i] == 0])\n    order = []\n    while q:\n        u = q.pop(0); order.append(u)\n        for v in adj[u]:\n            ind[v] -= 1\n            if ind[v] == 0: q.append(v)\n        q.sort()\n    if len(order) == len(ids):\n        return {'valid': True, 'order': order}\n    color = {i: 0 for i in ids}\n    par = {}\n    cycle = []\n    def dfs(u):\n        color[u] = 1\n        for v in adj[u]:\n            if color[v] == 1:\n                c, x = [u], u\n                while x != v:\n                    x = par[x]; c.append(x)\n                cycle.extend(list(reversed(c)) + [v])\n                return True\n            if color[v] == 0:\n                par[v] = u\n                if dfs(v): return True\n        color[u] = 2\n        return False\n    for i in ids:\n        if color[i] == 0 and dfs(i):\n            return {'valid': False, 'cycle': cycle}\n    return {'valid': False, 'cycle': []}\n\ndef main():\n    fm = json.load(open(sys.argv[1]))\n    rec = json.load(open(sys.argv[2]))\n    ns, es = norm(rec, fm)\n    r = valid(ns, es)\n    json.dump(r, open(sys.argv[3], 'w'))\n    sys.exit(0)\n\nif __name__ == '__main__':\n    main()\n","manifest":{"id":"dag-validate-v1","version":1,"applicability":{"description":"Validates acyclicity of graph-structured JSON records under variable schemas (nodes/edges, vertices/links, arcs, etc.) by normalizing field names via a field_map before Kahn topological sort with DFS cycle extraction.","requires_markers":["graph record dict containing node/edge lists","field_map listing candidate keys for nodes/edges/node_id/edge_source/edge_target"],"claims":["T0:deterministic output regardless of input edge order via sorted Kahn queue","T1:reports valid:true with stable topological order, or valid:false with extracted cycle path"]},"limitations":["does not support multi-edges or hyperedges","does not validate schema beyond field-name resolution","nodes referenced only by edges are auto-promoted into the node set","field_map defaults are best-effort; custom schemas require explicit mapping"]},"adapter_notes":"Provide field_map_path containing a JSON object with keys: nodes (list of candidate top-level keys), edges (list), node_id (list of candidate node identifier fields), edge_source (list), edge_target (list). Records path holds the raw graph dict. Script normalizes into canonical {id, source, target} form, runs Kahn's algorithm; on cycle falls back to colored DFS to extract the offending path. Output is a single JSON object written to out_path."}

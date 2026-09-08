@@ -1,0 +1,9 @@
+# build pipeline with test and deploy stages
+fetch -> compile
+compile -> unit-test
+compile -> lint
+unit-test -> package
+lint -> package
+package -> deploy-staging
+deploy-staging -> smoke
+smoke -> deploy-prod
