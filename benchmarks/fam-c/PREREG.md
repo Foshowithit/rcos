@@ -600,6 +600,41 @@ across ALL eligible T2/T3 instances (§17). PASS requires ALL of:
 * Cross-cognition PASS requires correct rejection / non-material
   invocation on ALL preregistered T4 instances (6/6). Anything below is
   reported as specificity failure and blocks an unqualified PASS.
+* Narrow A−B PASS requires the same 6/6 T4 gate on lane A. Specificity
+  is symmetric; §20 applies to both lanes equally.
+
+## Genuine-reuse predicate and coverage (frozen)
+
+```text
+genuine_reuse =
+    capability_loaded
+    AND capability_invoked
+    AND capability_output_consumed
+    AND capability_materially_contributed
+```
+
+Cross-cognition and narrow PASS each require genuine_reuse on ≥11 of
+the 12 eligible T2/T3 instances, with every family contributing ≥1.
+A missed instance is reported by family; omitted-work disputes are
+resolved ONLY through hidden tests and artifact-completeness checks,
+never auditor judgment.
+
+## INCONCLUSIVE vs FALSIFIED precedence (frozen)
+
+If reuse coverage, correctness, and specificity are sufficient but the
+frozen primary efficiency gate fails: → FALSIFIED for the tested regime.
+INCONCLUSIVE is reserved strictly for insufficient evaluable evidence
+(missing metrics, invalid runs) or insufficient genuine reuse exposure.
+A clean gate failure is never relabeled INCONCLUSIVE after the fact.
+
+## Compounding verdict (frozen, numeric)
+
+PASS — compounding requires, in addition to cross-cognition PASS:
+
+* cumulative C−D (and A−B) delta < 0 at every reuse index k ≥ 1;
+* final cumulative delta negative in ≥4 of 6 families;
+* leave-one-family-out: both conditions above still hold with any
+  single family removed (no single-family/outlier dependence).
 
 ## PASS — narrow reuse claim
 
