@@ -15,9 +15,14 @@ def _sha(path):
 
 
 def promote(out_dir, capability_id, version, artifact_paths,
-            manifest_obj, training_receipts, builder_identity):
+            manifest_obj, training_receipts, builder_identity,
+            promotion_receipt_sha256=None):
     """Write an immutable CAPABILITY_LOCK. Returns path. Fails if the
-    lock file already exists (promotion writes once; no repromotion)."""
+    lock file already exists (promotion writes once; no repromotion).
+    `promotion_receipt_sha256` (optional, additive) records the sha256 of
+    the PROMOTION receipt of the same (block, universe, family), binding
+    the lock to its promotion — promotion + locked reuse under workflow
+    control."""
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "CAPABILITY_LOCK.json")
     if os.path.exists(path):
@@ -27,6 +32,7 @@ def promote(out_dir, capability_id, version, artifact_paths,
         art[os.path.basename(p)] = _sha(p)
     lock = {"capability_id": capability_id, "version": version,
             "artifacts": art,
+            "promotion_receipt_sha256": promotion_receipt_sha256,
             "manifest_sha256": hashlib.sha256(
                 json.dumps(manifest_obj, sort_keys=True).encode()).hexdigest(),
             "manifest": manifest_obj,
