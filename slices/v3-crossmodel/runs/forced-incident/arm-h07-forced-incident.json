@@ -1,0 +1,26 @@
+{
+ "incident_id": "shipment-h07-slice3-forced-incident",
+ "severity": "INFO",
+ "service": "shipment-h07",
+ "first_seen": "2026-09-08T00:00:00Z",
+ "last_seen": "2026-09-08T00:00:19Z",
+ "event_count": 20,
+ "signatures": [
+  "   \"sku-101\",",
+  "   \"sku-207\",",
+  "   \"sku-330\",",
+  "   2",
+  "   5",
+  "  [",
+  "  ]",
+  "  ],",
+  " \"d\": \"busan\",",
+  " \"i\": [",
+  " \"o\": \"haifa\",",
+  " \"sid\": \"s-217\",",
+  " \"w\": 212.2,",
+  " ]",
+  "{",
+  "}"
+ ]
+}

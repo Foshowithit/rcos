@@ -1,0 +1,35 @@
+{
+ "service": "shipment-h04",
+ "events": [
+  {
+   "ts": "2026-09-08T00:00:00Z",
+   "level": "INFO",
+   "msg": "to,from,weight_kg,ship_id"
+  },
+  {
+   "ts": "2026-09-08T00:00:01Z",
+   "level": "INFO",
+   "msg": "SINGAPORE,OSLO,265.9,S-214"
+  },
+  {
+   "ts": "2026-09-08T00:00:02Z",
+   "level": "INFO",
+   "msg": "qty,sku"
+  },
+  {
+   "ts": "2026-09-08T00:00:03Z",
+   "level": "INFO",
+   "msg": "3,SKU-410"
+  },
+  {
+   "ts": "2026-09-08T00:00:04Z",
+   "level": "INFO",
+   "msg": "8,SKU-555"
+  },
+  {
+   "ts": "2026-09-08T00:00:05Z",
+   "level": "INFO",
+   "msg": "9,SKU-330"
+  }
+ ]
+}

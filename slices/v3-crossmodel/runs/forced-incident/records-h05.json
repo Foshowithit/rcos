@@ -1,0 +1,40 @@
+{
+ "service": "shipment-h05",
+ "events": [
+  {
+   "ts": "2026-09-08T00:00:00Z",
+   "level": "INFO",
+   "msg": "# manifest"
+  },
+  {
+   "ts": "2026-09-08T00:00:01Z",
+   "level": "INFO",
+   "msg": "SHIP=S-215"
+  },
+  {
+   "ts": "2026-09-08T00:00:02Z",
+   "level": "INFO",
+   "msg": "ORIG=OSLO"
+  },
+  {
+   "ts": "2026-09-08T00:00:03Z",
+   "level": "INFO",
+   "msg": "DEST=SANTOS"
+  },
+  {
+   "ts": "2026-09-08T00:00:04Z",
+   "level": "INFO",
+   "msg": "KG=795.6"
+  },
+  {
+   "ts": "2026-09-08T00:00:05Z",
+   "level": "INFO",
+   "msg": "ITEMS=SKU-410=7,SKU-555=5,SKU-207=8"
+  },
+  {
+   "ts": "2026-09-08T00:00:06Z",
+   "level": "INFO",
+   "msg": "NOISE=1"
+  }
+ ]
+}

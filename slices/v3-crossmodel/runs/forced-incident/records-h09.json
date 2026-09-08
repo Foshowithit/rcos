@@ -1,0 +1,15 @@
+{
+ "service": "shipment-h09",
+ "events": [
+  {
+   "ts": "2026-09-08T00:00:00Z",
+   "level": "INFO",
+   "msg": "SID|ORG|DST|KG|DET"
+  },
+  {
+   "ts": "2026-09-08T00:00:01Z",
+   "level": "INFO",
+   "msg": "S-219|OSLO|SANTOS|232.1|SKU-207|9;SKU-410|4;SKU-330|5"
+  }
+ ]
+}

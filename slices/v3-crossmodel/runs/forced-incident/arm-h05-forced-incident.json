@@ -1,0 +1,17 @@
+{
+ "incident_id": "shipment-h05-slice3-forced-incident",
+ "severity": "INFO",
+ "service": "shipment-h05",
+ "first_seen": "2026-09-08T00:00:00Z",
+ "last_seen": "2026-09-08T00:00:06Z",
+ "event_count": 7,
+ "signatures": [
+  "# manifest",
+  "dest=#",
+  "items=#",
+  "kg=#",
+  "noise=#",
+  "orig=#",
+  "ship=#"
+ ]
+}

@@ -1,0 +1,15 @@
+{
+ "service": "shipment-h02",
+ "events": [
+  {
+   "ts": "2026-09-08T00:00:00Z",
+   "level": "INFO",
+   "msg": "SHIPID\tFROM\tTO\tWEIGHT\tITEMS\tJUNK"
+  },
+  {
+   "ts": "2026-09-08T00:00:01Z",
+   "level": "INFO",
+   "msg": "S-212\tGDANSK\tSINGAPORE\t173.1\tSKU-207#5,SKU-101#7,SKU-555#9\tzzz"
+  }
+ ]
+}

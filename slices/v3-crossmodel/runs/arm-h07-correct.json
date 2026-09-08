@@ -1,0 +1,20 @@
+{
+ "shipment_id": "S-217",
+ "origin": "HAIFA",
+ "destination": "BUSAN",
+ "weight_kg": 212.2,
+ "items": [
+  {
+   "sku": "SKU-101",
+   "qty": 2
+  },
+  {
+   "sku": "SKU-330",
+   "qty": 5
+  },
+  {
+   "sku": "SKU-207",
+   "qty": 5
+  }
+ ]
+}

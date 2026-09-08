@@ -8,6 +8,14 @@ runs/
 # Exception: slice-1 audited evidence IS committed (same reason)
 !slices/v1-portable-reuse/runs/
 !slices/v1-portable-reuse/runs/**
+# Exception: slice-3 audited evidence IS committed (arm outputs, correct-arm
+# records, and the forced-incident correction only — not harness scripts,
+# quarantine, or pycache)
+!slices/v3-crossmodel/runs/
+!slices/v3-crossmodel/runs/arm-h*.json
+!slices/v3-crossmodel/runs/rec-h*.json
+!slices/v3-crossmodel/runs/forced-incident/
+!slices/v3-crossmodel/runs/forced-incident/**
 *.log
 
 # Credentials / vaults / auth (belt and suspenders — these must NEVER appear in history)

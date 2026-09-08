@@ -1,0 +1,20 @@
+{
+ "shipment_id": "S-216",
+ "origin": "GDANSK",
+ "destination": "BUSAN",
+ "weight_kg": 513.8,
+ "items": [
+  {
+   "sku": "SKU-555",
+   "qty": 2
+  },
+  {
+   "sku": "SKU-207",
+   "qty": 6
+  },
+  {
+   "sku": "SKU-330",
+   "qty": 8
+  }
+ ]
+}

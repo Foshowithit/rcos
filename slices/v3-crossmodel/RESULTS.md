@@ -1,12 +1,25 @@
-# Slice 3 Results: Cross-Lane Design, Procedural Execution — MIXED verdict
+# Slice 3 — Paired Benefit Test (cross-model design aborted pre-run)
 
 ## Paired table (9 held-outs × 3 arms)
 
 | arm | ships | fails |
 |---|---|---|
 | correct (capability executes, consumed) | 9/9 | 0 |
-| forced-wrong (invoice engine, best-effort) | 0/9 | 9/9 FIX as predicted |
+| forced-wrong (preregistered incident engine) | 0/9 | 9/9 FIX as predicted |
 | disabled (fresh solve) | 9/9 | 0 |
+
+## Null-arm correction (post-run, prereg unchanged)
+
+The shipped run initially executed the wrong null: Slice-0
+`normalize-invoice-v1` instead of the preregistered Slice-2
+`extract-incident-v1`. The invoice outputs are preserved untouched as
+`runs/arm-<id>-forced.json` (superseded evidence, not counted). The
+corrected arm re-ran all nine held-outs through the exact frozen
+`extract-incident-v1` engine (`runs/forced-incident/run_forced_incident.py`;
+engine sha `10a8fa4eec0f…`, matching the committed blob): engine rc=0 on
+all nine, shipment checker rc=1 on all nine. Corrected trace rows carry
+`record_kind: forced-wrong-corrected` plus `supersedes_output_sha256`
+pointing at the invoice outputs. Tally above counts only corrected rows.
 
 ## What this proves
 

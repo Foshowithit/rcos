@@ -1,0 +1,16 @@
+{
+ "incident_id": "shipment-h04-slice3-forced-incident",
+ "severity": "INFO",
+ "service": "shipment-h04",
+ "first_seen": "2026-09-08T00:00:00Z",
+ "last_seen": "2026-09-08T00:00:05Z",
+ "event_count": 6,
+ "signatures": [
+  "3,sku-410",
+  "8,sku-555",
+  "9,sku-330",
+  "qty,sku",
+  "singapore,oslo,265.9,s-214",
+  "to,from,weight_kg,ship_id"
+ ]
+}

@@ -1,0 +1,20 @@
+{
+ "shipment_id": "S-213",
+ "origin": "HAIFA",
+ "destination": "SANTOS",
+ "weight_kg": 635.0,
+ "items": [
+  {
+   "sku": "SKU-207",
+   "qty": 1
+  },
+  {
+   "sku": "SKU-101",
+   "qty": 7
+  },
+  {
+   "sku": "SKU-555",
+   "qty": 4
+  }
+ ]
+}

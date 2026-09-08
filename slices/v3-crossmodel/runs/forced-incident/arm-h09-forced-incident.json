@@ -1,0 +1,12 @@
+{
+ "incident_id": "shipment-h09-slice3-forced-incident",
+ "severity": "INFO",
+ "service": "shipment-h09",
+ "first_seen": "2026-09-08T00:00:00Z",
+ "last_seen": "2026-09-08T00:00:01Z",
+ "event_count": 2,
+ "signatures": [
+  "s-219|oslo|santos|232.1|sku-207|9;sku-410|4;sku-330|5",
+  "sid|org|dst|kg|det"
+ ]
+}

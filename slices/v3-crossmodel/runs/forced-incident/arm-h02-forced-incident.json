@@ -1,0 +1,12 @@
+{
+ "incident_id": "shipment-h02-slice3-forced-incident",
+ "severity": "INFO",
+ "service": "shipment-h02",
+ "first_seen": "2026-09-08T00:00:00Z",
+ "last_seen": "2026-09-08T00:00:01Z",
+ "event_count": 2,
+ "signatures": [
+  "s-212\tgdansk\tsingapore\t173.1\tsku-207#5,sku-101#7,sku-555#9\tzzz",
+  "shipid\tfrom\tto\tweight\titems\tjunk"
+ ]
+}

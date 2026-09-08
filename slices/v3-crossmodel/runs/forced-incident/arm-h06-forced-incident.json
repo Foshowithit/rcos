@@ -1,0 +1,12 @@
+{
+ "incident_id": "shipment-h06-slice3-forced-incident",
+ "severity": "INFO",
+ "service": "shipment-h06",
+ "first_seen": "2026-09-08T00:00:00Z",
+ "last_seen": "2026-09-08T00:00:01Z",
+ "event_count": 2,
+ "signatures": [
+  "busan|s-216|2xsku-555,6xsku-207,8xsku-330|513.8|gdansk",
+  "dst|sid|det|kg|org"
+ ]
+}

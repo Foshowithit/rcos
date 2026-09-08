@@ -1,0 +1,20 @@
+{
+ "shipment_id": "S-219",
+ "origin": "OSLO",
+ "destination": "SANTOS",
+ "weight_kg": 232.1,
+ "items": [
+  {
+   "sku": "SKU-207",
+   "qty": 9
+  },
+  {
+   "sku": "SKU-410",
+   "qty": 4
+  },
+  {
+   "sku": "SKU-330",
+   "qty": 5
+  }
+ ]
+}

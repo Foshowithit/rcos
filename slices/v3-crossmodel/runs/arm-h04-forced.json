@@ -1,0 +1,23 @@
+{
+ "invoice_id": "S-214",
+ "date": "2026-09-07",
+ "total_cents": 795,
+ "currency": "USD",
+ "line_items": [
+  {
+   "sku": "SKU-410",
+   "qty": 1,
+   "unit_cents": 265
+  },
+  {
+   "sku": "SKU-555",
+   "qty": 1,
+   "unit_cents": 265
+  },
+  {
+   "sku": "SKU-330",
+   "qty": 1,
+   "unit_cents": 265
+  }
+ ]
+}

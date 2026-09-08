@@ -1,0 +1,31 @@
+{
+ "incident_id": "shipment-h10-slice3-forced-incident",
+ "severity": "INFO",
+ "service": "shipment-h10",
+ "first_seen": "2026-09-08T00:00:00Z",
+ "last_seen": "2026-09-08T00:00:23Z",
+ "event_count": 24,
+ "signatures": [
+  "   \"q\": 3",
+  "   \"q\": 5",
+  "   \"q\": 6",
+  "   \"s\": \"sku-207\",",
+  "   \"s\": \"sku-410\",",
+  "   \"s\": \"sku-555\",",
+  "  1,",
+  "  2",
+  "  {",
+  "  }",
+  "  },",
+  " \"extra\": [",
+  " \"from\": \"oslo\",",
+  " \"kg\": 442.8,",
+  " \"lines\": [",
+  " \"shipment\": \"s-220\",",
+  " \"to\": \"rotterdam\",",
+  " ]",
+  " ],",
+  "{",
+  "}"
+ ]
+}

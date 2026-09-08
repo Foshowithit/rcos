@@ -1,0 +1,12 @@
+{
+ "incident_id": "shipment-h08-slice3-forced-incident",
+ "severity": "INFO",
+ "service": "shipment-h08",
+ "first_seen": "2026-09-08T00:00:00Z",
+ "last_seen": "2026-09-08T00:00:01Z",
+ "event_count": 2,
+ "signatures": [
+  "0\tbusan\ts-218\t652.7\thaifa\tsku-207:3;sku-330:9;sku-101:7",
+  "x\tdest\tship\tw\tsrc\tlist"
+ ]
+}

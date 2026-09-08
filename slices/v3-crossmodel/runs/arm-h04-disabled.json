@@ -1,0 +1,20 @@
+{
+ "shipment_id": "S-214",
+ "origin": "OSLO",
+ "destination": "SINGAPORE",
+ "weight_kg": 265.9,
+ "items": [
+  {
+   "sku": "SKU-410",
+   "qty": 3
+  },
+  {
+   "sku": "SKU-555",
+   "qty": 8
+  },
+  {
+   "sku": "SKU-330",
+   "qty": 9
+  }
+ ]
+}
