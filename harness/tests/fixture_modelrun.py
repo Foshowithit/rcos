@@ -147,54 +147,76 @@ def _clean_run_dir(d):
             os.unlink(p)
 
 
-def _read_frozen_contract(fam_c_dir, family):
-    """Producer-stand-in frozen-text reader (test support ONLY, NOT
-    evidence). The offline fixture cannot have a real model author a
-    contract, so the stand-in declares the frozen K.md text VERBATIM —
-    which is exactly what the auditor-side governance cross-check
-    (order.py: receipt text must occur in K.md) demands. This reader lives
-    HERE, in test support: the production controller (harness/promotion.py)
-    has no hidden-contract parser by design (A12b.1/AC6b). Returns
-    (semantic_core, preconditions, limitations)."""
-    import re as _re
-    p = os.path.join(fam_c_dir, "families", family, "K.md")
-    if not os.path.isfile(p):
-        raise PermissionError(f"fixture needs frozen K.md at {p}")
-    text = open(p).read()
-    core = []
-    pre, lim, cur = [], [], None
-    for raw in text.splitlines():
-        line = raw.rstrip()
-        low = line.strip().lower()
-        if low.startswith("reusable core:"):
-            core.append(line.split(":", 1)[1].strip())
-            cur = "core"
-            continue
-        if low.startswith("preconditions"):
-            cur = "pre"
-            continue
-        if low.startswith("limitations"):
-            cur = "lim"
-            continue
-        if not line.strip():
-            cur = None if cur != "core" else cur
-            continue
-        if cur == "core":
-            core.append(line.strip())
-        elif cur == "pre":
-            m = _re.match(r"^\s*\d+[.)]\s*(.+)$", line)
-            if m:
-                pre.append(m.group(1).strip())
-        elif cur == "lim":
-            m = _re.match(r"^\s*[-*\d.)]+\s*(.+)$", line)
-            if m:
-                lim.append(m.group(1).strip())
-    semantic_core = "\n".join(x for x in core if x).strip()
-    if not semantic_core:
-        raise PermissionError("fixture: frozen K.md has no 'Reusable core:'")
-    if not pre:
-        raise PermissionError("fixture: frozen K.md has no PRECONDITIONS")
-    return semantic_core, pre, lim
+# Producer-authored capability contracts (A12c slice B / B5 — test support
+# ONLY, NOT evidence). The offline fixture cannot have a real model author
+# a contract, so the stand-in declares this independently written text:
+# paraphrased here from the families' visible task surfaces, in our own
+# words, never copied from hidden K.md — and the stand-in never reads
+# K.md at all (no hidden-contract reader lives in this module: the real
+# producer authors its own words from visible information, and the
+# K.md-mutation-invariance invariant requires consumer bytes to hold
+# still when hidden wording changes). Shapes mirror the retired reader
+# (non-empty core, non-empty preconditions, empty limitations for all six
+# families, so every default lock stays non-discriminating exactly as
+# before). Callers testing a limitation-carrying variant pass an explicit
+# `producer_contract=` declaration instead.
+PRODUCER_CONTRACTS = {
+    "fam01": (
+        "Clean up flat data rows: treat every row as a single record, "
+        "turn dollar figures into integer cents, expand tag strings "
+        "into tag lists, and return uniform records carrying an id, a "
+        "name, a cent amount, and tags, in the same order as the input.",
+        ["Every input row stands for one record; rolled-up summary rows "
+         "are excluded.",
+         "Money values are ordinary US-dollar decimals with a single "
+         "currency throughout.",
+         "Any tags present arrive as strings joined by a delimiter."],
+        []),
+    "fam02": (
+        "Pull every page of a paged listing: chase the next-page cursor "
+        "until it runs out, retry briefly on hiccups, and join all "
+        "fetched entries into one collection.",
+        ["No entry shows up on more than one page.",
+         "Each task uses one stable response shape and one steady paging "
+         "marker.",
+         "Any hiccup is short-lived and announced up front.",
+         "A task-supplied duplicate policy never widens this: "
+         "overlapping pages stay out of scope no matter what a POLICY "
+         "file says."],
+        []),
+    "fam03": (
+        "Deduplicate an event window: tally the arrivals, fold exact "
+        "repeats into shared identity buckets, and report the overall "
+        "count, the distinct count, and how many were dropped.",
+        ["A repeat means the same happening was seen twice, never two "
+         "separate happenings or a status change.",
+         "Each task spells out its own identity rule in its prompt, and "
+         "that rule does not shift mid-task."],
+        []),
+    "fam04": (
+        "Check a directed graph for cycles and, when it is clean, list "
+        "its nodes in a valid execution order.",
+        ["The caller guarantees the graph has no cycles; this step "
+         "double-checks that promise instead of finding cycles.",
+         "Every edge means its tail must come before its head."],
+        []),
+    "fam05": (
+        "Audit a file listing: measure every named file on disk and "
+        "match its byte count and digest against the listing, then file "
+        "each entry as good or bad.",
+        ["The listing follows the v1 layout of on-disk paths plus byte "
+         "counts plus digests.",
+         "Each named file sits on local disk and can be opened for "
+         "reading."],
+        []),
+    "fam06": (
+        "Reconcile two ledgers: pair rows by identifier, then call out "
+        "the pairs that agree, the rows missing on one side, and the "
+        "rows whose amounts disagree, quoting both figures.",
+        ["The two sources count in the same units.",
+         "Identifiers repeat nowhere inside either source."],
+        []),
+}
 
 
 def _fixture_evidence_sha(role, cell_id):
@@ -226,7 +248,7 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                     decision="fresh", solver_py=None, capability=None,
                     reuse_overrides=None, manifest_overrides=None,
                     validates_candidate=None, adapter_py=None,
-                    candidate_validation=None):
+                    candidate_validation=None, producer_contract=None):
     """Build ONE hermetic, production-eligible model-run cell. Returns the
     derived run directory. `cell` is an expansion cell (or any dict with the
     same keys). Raises on any evidence defect (fail closed).
@@ -249,7 +271,14 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
     stand-in falls back to this run's own solver bytes so pre-A12c
     callers stay green. `candidate_validation` optionally overrides any
     of the nine values with real host-checker evidence (the A12c N7
-    positive control threads real checker shas/rc/verdict here)."""
+    positive control threads real checker shas/rc/verdict here).
+
+    `producer_contract`: an explicit producer declaration
+    {"semantic_core": str, "preconditions": [str, ...], "limitations":
+    [str, ...]} for callers testing a non-default contract (e.g. a
+    limitation-carrying variant). When absent, the stand-in declares its
+    independently written per-family text (PRODUCER_CONTRACTS) — never
+    hidden K.md wording."""
     d = order.ensure_namespace(root, cell["block"], cell["universe"],
                                cell["family"], tail=("runs", cell["cell_id"]))
     _clean_run_dir(d)
@@ -289,14 +318,43 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                                      "nonempty python source string")
                 payload["adapter_py"] = adapter_py
         # A12b.1/AC6b: the producer stand-in declares its capability
-        # contract in its OWN arrival payload (verbatim frozen text, so the
-        # governance cross-check passes). The promotion controller sources
-        # the receipt/lock contract SOLELY from this declaration — never by
-        # parsing hidden K.md itself.
-        _core, _pre, _lim = _read_frozen_contract(root, cell["family"])
+        # contract in its OWN arrival payload (independently written
+        # stand-in text, or the caller's explicit `producer_contract=`
+        # declaration). The promotion controller sources the receipt/lock
+        # contract SOLELY from this declaration — never by parsing
+        # hidden K.md — and the order.py governance cross-check compares
+        # the receipt against this same declaration verbatim.
+        if producer_contract is not None:
+            if (not isinstance(producer_contract, dict)
+                    or not isinstance(
+                        producer_contract.get("semantic_core"), str)
+                    or not producer_contract["semantic_core"].strip()
+                    or not isinstance(
+                        producer_contract.get("preconditions"), list)
+                    or not producer_contract["preconditions"]
+                    or not all(isinstance(x, str) and x.strip()
+                               for x in producer_contract["preconditions"])
+                    or not isinstance(
+                        producer_contract.get("limitations"), list)
+                    or not all(isinstance(x, str)
+                               for x in producer_contract["limitations"])):
+                raise ValueError(
+                    "fixture misuse: producer_contract must be "
+                    "{semantic_core: nonempty str, preconditions: "
+                    "nonempty [str, ...], limitations: [str, ...]}")
+            _core = producer_contract["semantic_core"]
+            _pre = list(producer_contract["preconditions"])
+            _lim = list(producer_contract["limitations"])
+        else:
+            try:
+                _core, _pre, _lim = PRODUCER_CONTRACTS[cell["family"]]
+            except KeyError:
+                raise ValueError(
+                    "fixture misuse: no stand-in producer contract for "
+                    f"family {cell['family']!r}") from None
         payload["capability_contract"] = {"semantic_core": _core,
-                                          "preconditions": _pre,
-                                          "limitations": _lim}
+                                          "preconditions": list(_pre),
+                                          "limitations": list(_lim)}
     arrival = {"decision": decision, "execution_payload": payload,
                "notes": "fixture_modelrun (NOT evidence)"}
     with open(os.path.join(d, "arrival.json"), "w") as f:

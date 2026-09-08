@@ -183,6 +183,40 @@ _OUT = ('\nOutput one JSON object with the keys "decision", '
         'choose use_capability only when a capability-access block is present '
         'and applicable; otherwise choose fresh. '
         'No explanations, no code fences.')
+# A12c slice B (B1) — T0 producer instruction gains a required
+# `capability_contract` (T0 ONLY). The T0 acquisition prompt requests, in
+# addition to `solver_py`, a `capability_contract` object with the keys
+# `semantic_core` (non-empty string: the producer's own statement of what
+# the reusable capability does), `preconditions` (list of strings, may be
+# empty), and `limitations` (list of strings, may be empty). The wording
+# names only producer-visible concepts — never hidden files, semantic
+# IDs, conformance, ratification, or any auditor artifact — and states
+# that omitting the contract makes the run unpromotable. Every
+# non-acquisition arm prompt (correct/disabled, B/D fresh controls) keeps
+# the byte-identical shared _OUT below and is unchanged by this slice;
+# the T1 acquisition instruction (_OUT_T1) is likewise unchanged.
+_OUT_T0 = ('\nOutput one JSON object with the keys "decision", '
+        '"execution_payload", "notes". "decision" is exactly '
+        '"use_capability" or "fresh". When "decision" is "use_capability", '
+        '"execution_payload" is {"field_map": <object>, "records": <object>}. '
+        'When "decision" is "fresh", "execution_payload" is '
+        '{"solver_py": <python source string of a self-contained solver>, '
+        '"capability_contract": <object describing the reusable capability '
+        'in your own words>}. '
+        'The capability contract has the keys "semantic_core", '
+        '"preconditions", "limitations": "semantic_core" is a non-empty '
+        'string stating in your own words what the reusable capability '
+        'does; "preconditions" is a list of strings (possibly empty) '
+        'stating when it applies; "limitations" is a list of strings '
+        '(possibly empty) stating what it does not cover. '
+        'Write the contract from the task in front of you, in your own '
+        'words about the reusable capability. '
+        'Omitting the capability contract makes the run unpromotable '
+        '(promotion requires the contract). '
+        '"notes" is one line. '
+        'choose use_capability only when a capability-access block is present '
+        'and applicable; otherwise choose fresh. '
+        'No explanations, no code fences.')
 # A12c D1 — T1 producer instruction gains a required `adapter_py` (T0
 # unchanged). The T1 acquisition prompt requests, in addition to
 # `solver_py`, a field `adapter_py` (a string of Python source) with the
@@ -1393,6 +1427,8 @@ def prepare_arm(lane, family, task, arm, capdir, wire, run_id,
         base = build_arm_prompt("disabled", envelope)
         acq_t1 = (arm == "acquisition" and cell is not None
                   and cell.get("event") == "T1")
+        acq_t0 = (arm == "acquisition" and cell is not None
+                  and cell.get("event") == "T0")
         if acq_t1:
             # A12b.2: a T1 acquisition prompt carries the frozen T0
             # candidate in the delimited candidate-validation block (T1
@@ -1428,6 +1464,29 @@ def prepare_arm(lane, family, task, arm, capdir, wire, run_id,
             if not prompt.startswith(_PRE) or not prompt.endswith(_OUT_T1):
                 sym.append("SYMMETRY-FAIL: T1 prompt does not carry the "
                            "shared preamble and output contract")
+        elif acq_t0:
+            # A12c slice B (B1): a T0 acquisition prompt carries the T0
+            # producer instruction (_OUT_T0: solver_py + producer-authored
+            # capability_contract), with no capability-access block and no
+            # candidate-validation block (neither exists at T0). Removing
+            # both block types must be a no-op on these bytes.
+            prompt = _PRE + envelope + _OUT_T0
+            sym = []
+            for _begin, _end, _what in (
+                    (_CAP_BEGIN, _CAP_END, "capability-access"),
+                    (_CAND_BEGIN, _CAND_END, "candidate-validation")):
+                if _begin in prompt or _end in prompt:
+                    sym.append("SYMMETRY-FAIL: " + _what + " block present "
+                               "in the T0 acquisition prompt (neither "
+                               "exists before PROMOTION)")
+            if not prompt.startswith(_PRE) or not prompt.endswith(_OUT_T0):
+                sym.append("SYMMETRY-FAIL: T0 prompt does not carry the "
+                           "shared preamble and the T0 producer instruction")
+            if strip_capability_block(prompt) != prompt:
+                sym.append("SYMMETRY-FAIL: T0 prompt carries a strippable "
+                           "block - shared-region divergence at "
+                           + _first_diff(strip_capability_block(prompt),
+                                         prompt))
         else:
             prompt = base
             twin = build_arm_prompt("correct", envelope, COUNTERFACTUAL_CAP,

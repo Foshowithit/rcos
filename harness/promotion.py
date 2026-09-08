@@ -27,7 +27,6 @@ import hashlib
 import json
 import os
 import sys
-import time
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
@@ -60,8 +59,8 @@ ENGINE_TEMPLATE = '''#!/usr/bin/env python3
 
 Interface (frozen): engine.py <field_map.json> <records.json> <OUTPUT.json>
 
-The semantic core below is the content-addressed acquisition candidate
-sha256 __CANDIDATE_SHA256__ (source cells __T0_CELL__ / __T1_CELL__).
+The capability below is the content-addressed acquisition candidate
+sha256 __CANDIDATE_SHA256__.
 The adapter is harness plumbing; it does not contain task knowledge.
 """
 import hashlib
@@ -149,10 +148,12 @@ def _read_json(p):
 # NOTE: there is deliberately NO hidden-contract parser in this module.
 # A prior revision derived the receipt/lock contract by parsing the
 # frozen families/<family>/K.md here; that synthesis path is DELETED.
-# Hidden K.md is read ONLY auditor-side (order.py governance cross-checks
-# and the CAPABILITY_LOCK conformance verdict) — never in this controller,
-# never into consumer artifacts. Test-support producer stand-ins carry
-# their own local frozen-text reader (harness/tests/fixture_modelrun.py).
+# Hidden K.md is read NOWHERE in the promotion path — not in this
+# controller, not in the order.py governance cross-checks (those compare
+# the receipt against the T0 arrival's own declaration, verbatim), never
+# into consumer artifacts. Test-support producer stand-ins carry their
+# own independently written contract text
+# (harness/tests/fixture_modelrun.py).
 
 def _producer_contract(t0_run_dir):
     """Read the PRODUCER-declared capability contract from the T0 arrival's
@@ -614,53 +615,72 @@ def derive_candidate(t0_ev, t1_ev, t0_run_dir):
 
 def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
                     version, evidence_grade, t4_id, t4_ratified):
-    # A12b.1: the consumer-visible contract is authored/acquired by the
-    # PRODUCER (the arrival payload), never synthesized from hidden K.md.
-    # The K.md-derived contract (semantic core, preconditions, limitations,
-    # contract sha) and the auditor T4 semantic id / ratification state go
-    # ONLY into the promotion receipt and CAPABILITY_LOCK auditor metadata
-    # — never into manifest.json, adapter_notes.md, engine.py, or any model
-    # prompt. `contract`, `t4_id` and `t4_ratified` are therefore accepted
-    # here for signature stability but are NOT written to these artifacts.
-    _core, _pre, _lim = contract
-    _auditor = (t4_id, t4_ratified)
+    # A12c slice B (B2/B3): the consumer-visible artifacts are aggressively
+    # minimal — capability id, version, candidate hash, interface, the
+    # PRODUCER-authored contract, the engine, and adapter-use instructions.
+    # Source cells, chain tips, lock hashes, evidence grade, producer
+    # identity, auditor T4 ids, conformance fields, timestamps, and every
+    # chain/receipt pointer ride the auditor-side promotion receipt and
+    # CAPABILITY_LOCK only — never these files. `cell`, `protocol_sha`,
+    # `exec_sha`, `version`, `evidence_grade`, `t4_id`, `t4_ratified` are
+    # therefore accepted here for signature stability (and `version` plus
+    # the namespace fields ARE consumer-visible below) but no provenance
+    # beyond block/universe/family is written to these artifacts. The
+    # producer contract below comes from the SAME T0 arrival declaration
+    # the promotion receipt uses (one source of truth).
+    core, pre, lim = contract
+    _auditor = (protocol_sha, exec_sha, evidence_grade, t4_id, t4_ratified)
     engine = (ENGINE_TEMPLATE
               .replace("__CANDIDATE_SHA256__", cand["sha256"])
-              .replace("__T0_CELL__", cell["source_cells"]["T0"])
-              .replace("__T1_CELL__", cell["source_cells"]["T1"])
               .replace("__CANDIDATE_SOURCE__", repr(cand["source"])))
-    notes = (
-        f"# {cell['capability_id']} — promoted capability\n\n"
-        f"- candidate sha256: {cand['sha256']} (from "
-        f"{cell['source_cells']['T0']} arrival.{CANDIDATE_FIELD})\n"
-        f"- validated by: {cell['source_cells']['T1']} (distinct task/surface)\n"
-        f"- evidence grade: {evidence_grade}\n"
-        f"- interface: engine.py <field_map.json> <records.json> <OUTPUT.json>\n"
-        f"- engine template sha256: {_sha_bytes(ENGINE_TEMPLATE.encode())}\n")
+    interface = ("engine.py <field_map.json> <records.json> <OUTPUT.json>")
+    contract_lines = [f"# {cell['capability_id']} — promoted capability",
+                      "",
+                      f"candidate sha256: {cand['sha256']}",
+                      "",
+                      "## interface",
+                      "",
+                      interface,
+                      "",
+                      "## producer contract",
+                      "",
+                      core,
+                      ""]
+    contract_lines.append("preconditions:")
+    contract_lines.extend(f"- {p}" for p in pre)
+    contract_lines.append("limitations:"
+                          if lim else "limitations: none declared")
+    contract_lines.extend(f"- {x}" for x in lim)
+    contract_lines.extend([
+        "",
+        "## use",
+        "",
+        "Run `python3 engine.py <field_map.json> <records.json> "
+        "<OUTPUT.json>`: the field map describes the capability inputs, "
+        "the records file carries the input records, and the engine "
+        "writes its result object to the output path. "
+        "Do not modify engine.py."])
+    notes = "\n".join(contract_lines) + "\n"
     manifest = {
         "capability_id": cell["capability_id"], "version": version,
         "block": cell["block"], "universe": cell["universe"],
         "family": cell["family"],
         "candidate_sha256": cand["sha256"],
+        "interface": interface,
         # The producer-authored contract: rooted in THIS universe's own
-        # acquisition arrival payload (candidate bytes + interface), never
-        # in hidden auditor K.md text. The arrival sha is deliberately NOT
-        # recorded here: the producer declaration travels in the arrival,
-        # so its hash would couple consumer bytes to hidden-contract
-        # wording (KMD-invariance); it rides the receipt instead.
+        # acquisition arrival payload (the T0 declaration the receipt
+        # uses), never in hidden auditor text.
         "producer_contract": {
-            "candidate_sha256": cand["sha256"],
-            "candidate_field": cand["field"],
-            "interface": "argv: candidate.py <materialized_input_dir> "
-                         "<output_path>"},
-        "source_cells": dict(cell["source_cells"]),
-        "acquisition_chain_tips": dict(cell["acquisition_chain_tips"]),
-        "protocol_lock_sha256": protocol_sha,
-        "execution_lock_sha256": exec_sha,
-        "evidence_grade": evidence_grade,
-        "engine_interface": "engine.py <field_map.json> <records.json> "
-                            "<OUTPUT.json>",
-        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+            "semantic_core": core,
+            "preconditions": list(pre),
+            "limitations": list(lim)},
+        "usage": ("Invoke the frozen engine as `python3 engine.py "
+                  "<field_map.json> <records.json> <OUTPUT.json>`: the "
+                  "field map describes the capability inputs, the records "
+                  "file carries the input records, and the engine writes "
+                  "its result object to the output path. The producer "
+                  "contract above states what the capability does and "
+                  "when it applies; do not modify engine.py.")}
     for name, text in (("engine.py", engine), ("adapter_notes.md", notes)):
         p = os.path.join(capdir, name)
         if os.path.exists(p):
@@ -731,8 +751,8 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     cand = derive_candidate(t0_ev, t1_ev, t0_ev["run_dir"])
     # A12b.1/AC6b: the promoted contract is authored by the PRODUCER — it
     # is read from the T0 arrival's own `capability_contract` declaration,
-    # never synthesized from hidden K.md. The K.md file sha still binds
-    # which hidden contract was operative (auditor metadata only).
+    # never synthesized from hidden K.md (which nothing in the promotion
+    # path reads).
     contract = _producer_contract(t0_ev["run_dir"])
     core_sha = _sha_bytes(contract[0].encode())
     t4_id, t4_ratified = t4_semantic_id(fam_c_dir, cell["family"],

@@ -22,8 +22,9 @@ the REAL fixture writer + production promotion controller:
       set equals the families with committed locks under the root.
 
 Stdlib only. Hermetic fixtures live in throwaway dirs under /tmp (no
-live-tree mutation); live-tree reads are read-only. Existing suites
-and harness/tests/fixture_modelrun.py are untouched.
+live-tree mutation); live-tree reads are read-only. The limitation
+variant declares its contract through the fixture's explicit
+producer-declaration path (A12c slice B); every check below is unchanged.
 """
 import json
 import os
@@ -86,15 +87,18 @@ def hermetic(k_append=""):
     return root
 
 
-def mint_fam05(root):
+def mint_fam05(root, producer_contract=None):
     """Acquire T0/T1 through the production fixture writer, promote
     through the production controller, and lock. Returns the lock dict
-    read back from the committed capability dir (never hand-built)."""
+    read back from the committed capability dir (never hand-built).
+    `producer_contract` optionally overrides the stand-in's default
+    declaration for the T0 arrival (variant b)."""
     exp = order.load_expansion(root)
     t0 = order.expected_event(exp, "PQ", "fam05", "T0", "A")
     t1 = order.expected_event(exp, "PQ", "fam05", "T1", "A")
     d0 = build_model_run(root, cell=t0, freeze_commit=FREEZE,
-                         solver_py=SOLVER)
+                         solver_py=SOLVER,
+                         producer_contract=producer_contract)
     build_model_run(root, cell=t1, freeze_commit=FREEZE, solver_py=SOLVER,
                     validates_candidate=t0_candidate_sha256(d0))
     res = promotion.advance(root, "PQ", "fam05", "A", FREEZE,
@@ -163,8 +167,20 @@ check("CLI stdout carries the JSON failure verdict",
       '"verdict": "specificity-failure"' in cli_a.stdout)
 
 # --- (b) lock variant with a real limitation ---------------------------
+# A12c slice B: the stand-in no longer reads K.md, so the K.md append
+# above is inert w.r.t. the declared contract (kept: hidden-text mutation
+# must still leave promotion intact); the variant's limitation now comes
+# from the producer's own explicit arrival declaration — the same source
+# of truth the receipt uses.
+from fixture_modelrun import PRODUCER_CONTRACTS as _STANDIN_CONTRACTS
+_b_core, _b_pre, _b_lim = _STANDIN_CONTRACTS["fam05"]
+LIMITATION_CONTRACT = {"semantic_core": _b_core,
+                       "preconditions": list(_b_pre),
+                       "limitations": ["Synthetic H18 limitation: payloads "
+                                       "larger than 1 MiB are rejected."]}
 root_b = hermetic(LIMITATION_APPEND)
-res_b, res2_b, cap_b, lock_b = mint_fam05(root_b)
+res_b, res2_b, cap_b, lock_b = mint_fam05(
+    root_b, producer_contract=LIMITATION_CONTRACT)
 check("limitation variant promotes then locks (not vacuous)",
       res_b.get("event") == "PROMOTION"
       and res2_b.get("event") == "CAPABILITY_LOCK")

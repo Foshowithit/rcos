@@ -982,16 +982,40 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
                                    "T1 chain event "
                                    f"({_rec_cv.get(_k)!r} != {_cv.get(_k)!r})")
                         break
-    # semantic core must be the FROZEN family contract, not a receipt claim
-    kp = os.path.join(fam_c_dir, "families", cell["family"], "K.md")
+    # A12c slice B: the producer authors its own contract text from
+    # visible information, so the receipt's contract is cross-checked
+    # against the FROZEN T0 arrival declaration — verbatim equality on
+    # semantic_core/preconditions/limitations, the same declaration the
+    # promotion controller used (one source of truth) — never against
+    # hidden K.md. A receipt that rewrites the producer's declared text
+    # is refused here, exactly as a non-frozen contract was before.
     sc = r.get("semantic_core")
-    if os.path.isfile(kp):
-        if not isinstance(sc, str) or not sc.strip():
-            out.append("promotion provenance: receipt has no semantic_core")
-        elif sc not in open(kp).read():
-            out.append("promotion provenance: semantic_core is not the "
-                       "frozen families/%s/K.md contract text"
-                       % cell["family"])
+    if not isinstance(sc, str) or not sc.strip():
+        out.append("promotion provenance: receipt has no semantic_core")
+    elif "T0" not in runs:
+        out.append("promotion provenance: T0 acquisition run not "
+                   "validated (contract cross-check not derivable)")
+    else:
+        try:
+            _t0_arrival = _read_json(os.path.join(runs["T0"],
+                                                  "arrival.json"))
+            _t0_declared = ((_t0_arrival.get("execution_payload") or {})
+                            .get("capability_contract"))
+        except (ValueError, OSError) as e:
+            _t0_declared = None
+            out.append("promotion provenance: T0 arrival unreadable for "
+                       f"the contract cross-check: {e}")
+        if isinstance(_t0_declared, dict):
+            for _k in ("semantic_core", "preconditions", "limitations"):
+                if r.get(_k) != _t0_declared.get(_k):
+                    out.append(f"promotion provenance: receipt {_k} is not "
+                               f"the frozen T0 arrival declaration (the "
+                               f"promoted contract must be the producer's "
+                               f"own declared text, verbatim)")
+                    break
+        elif _t0_declared is not None:
+            out.append("promotion provenance: the frozen T0 arrival "
+                       "declares no producer capability contract")
     if isinstance(sc, str) and r.get("semantic_core_sha256") != \
             hashlib.sha256(sc.encode()).hexdigest():
         out.append("promotion provenance: semantic_core_sha256 mismatch")
