@@ -1,7 +1,139 @@
 {
-  "T0": {"nodes": ["a", "b", "c"], "edges": [["a", "b"], ["b", "c"]]},
-  "T1": {"nodes": ["x", "y", "z", "w"], "edges": [["x", "y"], ["x", "z"], ["y", "w"], ["z", "w"]]},
-  "T2": {"nodes": ["m", "n", "p"], "edges": [["m", "n"], ["n", "p"], ["m", "p"]]},
-  "T3": {"nodes": ["a", "b"], "edges": [["a", "b"]]},
-  "T4": {"nodes": ["a", "b", "c"], "edges": [["a", "b"], ["b", "c"], ["c", "a"]], "cycle": ["a", "b", "c", "a"]}
+ "T0": {
+  "nodes": [
+   "a",
+   "b",
+   "c"
+  ],
+  "edges": [
+   [
+    "a",
+    "b"
+   ],
+   [
+    "b",
+    "c"
+   ]
+  ]
+ },
+ "T1": {
+  "nodes": [
+   "x",
+   "y",
+   "z",
+   "w"
+  ],
+  "edges": [
+   [
+    "x",
+    "y"
+   ],
+   [
+    "x",
+    "z"
+   ],
+   [
+    "y",
+    "w"
+   ],
+   [
+    "z",
+    "w"
+   ]
+  ]
+ },
+ "T2": {
+  "nodes": [
+   "fetch",
+   "compile",
+   "unit-test",
+   "lint",
+   "package",
+   "deploy-staging",
+   "smoke",
+   "deploy-prod"
+  ],
+  "edges": [
+   [
+    "fetch",
+    "compile"
+   ],
+   [
+    "compile",
+    "unit-test"
+   ],
+   [
+    "compile",
+    "lint"
+   ],
+   [
+    "unit-test",
+    "package"
+   ],
+   [
+    "lint",
+    "package"
+   ],
+   [
+    "package",
+    "deploy-staging"
+   ],
+   [
+    "deploy-staging",
+    "smoke"
+   ],
+   [
+    "smoke",
+    "deploy-prod"
+   ]
+  ]
+ },
+ "T3": {
+  "nodes": [
+   "ingest",
+   "clean",
+   "split",
+   "train",
+   "eval",
+   "report"
+  ],
+  "edges": [
+   [
+    "ingest",
+    "clean"
+   ],
+   [
+    "clean",
+    "split"
+   ],
+   [
+    "split",
+    "train"
+   ],
+   [
+    "split",
+    "eval"
+   ],
+   [
+    "train",
+    "eval"
+   ],
+   [
+    "eval",
+    "report"
+   ]
+  ]
+ },
+ "T4": {
+  "abstained": true,
+  "answer": {
+   "valid": false,
+   "cycle": [
+    "a",
+    "b",
+    "c",
+    "a"
+   ]
+  }
+ }
 }

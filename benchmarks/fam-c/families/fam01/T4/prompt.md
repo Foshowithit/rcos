@@ -1,6 +1,6 @@
-# fam01-T4 — CSV with aggregate row (near-neighbor null)
-
+# fam01-T4 — normalize records file
 Normalize `input.csv` to canonical JSON: a list of
 `{id, name, amount_cents (integer), tags (list)}`.
-Not every row is a record: decide which rows qualify before emitting.
-Write the list to `OUTPUT.json`.
+If the file cannot be normalized as records, emit
+`{"abstained": true, "reason": "...", "answer": ...}` with your best
+independent answer instead. Write the result to `OUTPUT.json`.

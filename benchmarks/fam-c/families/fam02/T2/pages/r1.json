@@ -1,1 +1,1 @@
-{"items": [{"k": "a", "v": 100}, {"k": "b", "v": 200}], "next": "r2"}
+{"data": [{"product": "a", "count": 100}, {"product": "b", "count": 200}], "paging": {"next": "r2", "total": 2}}

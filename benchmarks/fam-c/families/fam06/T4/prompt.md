@@ -1,4 +1,6 @@
-# fam06-T4 — conflicting amounts (near-neighbor null)
-Match `a.csv` against `b.csv` by id as usual — but do NOT assume equal
-ids agree: compare amounts and report genuine disagreements under
-`conflicts` with both values. Same output contract in `OUTPUT.json`.
+# fam06-T4 — reconcile two sources
+Match `a.csv` against `b.csv` by id per the usual contract
+(`{matched, missing_in_b, missing_in_a, conflicts}`).
+If the sources cannot be reconciled under one consistent unit basis,
+emit `{"abstained": true, "reason": "...", "answer": ...}` with your
+best independent answer instead.

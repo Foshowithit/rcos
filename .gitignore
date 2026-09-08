@@ -1,6 +1,15 @@
 # Secrets + local state — never committed
 .env
 *.env
+# Exception: Fam-C frozen fixtures ARE committed (exact paths only; the
+# *.env rule otherwise stays). No other .env/log files may be added
+# without a matching exception line.
+!benchmarks/fam-c/families/fam01/T3/input.env
+!benchmarks/fam-c/families/fam04/T3/graph.env
+!benchmarks/fam-c/families/fam05/T3/manifest.env
+!benchmarks/fam-c/families/fam06/T3/a.env
+!benchmarks/fam-c/families/fam06/T3/b.env
+!benchmarks/fam-c/families/fam03/T2/events.log
 runs/
 # Exception: slice-0 audited evidence IS committed (auditor must reconstruct runs)
 !slices/v0-validated-reuse/runs/
@@ -17,6 +26,8 @@ runs/
 !slices/v3-crossmodel/runs/forced-incident/
 !slices/v3-crossmodel/runs/forced-incident/**
 *.log
+# Exception (must come AFTER *.log): the single frozen Fam-C fixture.
+!benchmarks/fam-c/families/fam03/T2/events.log
 
 # Credentials / vaults / auth (belt and suspenders — these must NEVER appear in history)
 *credentials*.yaml

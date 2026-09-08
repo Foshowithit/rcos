@@ -1,7 +1,204 @@
 {
-  "T0": [{"id": "A-1", "name": "Alpha Widget", "amount_cents": 1250, "tags": ["red", "sale"]}, {"id": "A-2", "name": "Beta Gadget", "amount_cents": 799, "tags": []}, {"id": "A-3", "name": "Gamma Thing", "amount_cents": 10000, "tags": ["blue", "new", "sale"]}],
-  "T1": [{"id": "B-1", "name": "Delta Part", "amount_cents": 325, "tags": ["green"]}, {"id": "B-2", "name": "Epsilon Bit", "amount_cents": 4500, "tags": []}, {"id": "B-3", "name": "Zeta Piece", "amount_cents": 99, "tags": []}],
-  "T2": [{"id": "C-1", "name": "Theta Unit", "amount_cents": 2210, "tags": ["bulk"]}, {"id": "C-2", "name": "Iota Module", "amount_cents": 999, "tags": []}, {"id": "C-3", "name": "Kappa System", "amount_cents": 15075, "tags": ["new"]}],
-  "T3": [{"id": "R-1", "name": "Lambda Core", "amount_cents": 5555, "tags": ["red"]}, {"id": "R-2", "name": "Mu Shell", "amount_cents": 840, "tags": []}, {"id": "R-3", "name": "Nu Frame", "amount_cents": 19999, "tags": ["bulk", "sale"]}],
-  "T4": [{"id": "D-1", "name": "Omicron Box", "amount_cents": 1100, "tags": ["red"]}, {"id": "D-2", "name": "Pi Crate", "amount_cents": 2350, "tags": ["sale"]}]
+ "T0": [
+  {
+   "id": "A-1",
+   "name": "Alpha Widget",
+   "amount_cents": 1250,
+   "tags": [
+    "red",
+    "sale"
+   ]
+  },
+  {
+   "id": "A-2",
+   "name": "Beta Gadget",
+   "amount_cents": 799,
+   "tags": []
+  },
+  {
+   "id": "A-3",
+   "name": "Gamma Thing",
+   "amount_cents": 10000,
+   "tags": [
+    "blue",
+    "new",
+    "sale"
+   ]
+  }
+ ],
+ "T1": [
+  {
+   "id": "B-1",
+   "name": "Delta Part",
+   "amount_cents": 325,
+   "tags": [
+    "green"
+   ]
+  },
+  {
+   "id": "B-2",
+   "name": "Epsilon Bit",
+   "amount_cents": 4500,
+   "tags": []
+  },
+  {
+   "id": "B-3",
+   "name": "Zeta Piece",
+   "amount_cents": 99,
+   "tags": []
+  }
+ ],
+ "T2": [
+  {
+   "id": "C-1",
+   "name": "Theta Unit",
+   "amount_cents": 2210,
+   "tags": [
+    "bulk"
+   ]
+  },
+  {
+   "id": "C-2",
+   "name": "Iota Module",
+   "amount_cents": 999,
+   "tags": []
+  },
+  {
+   "id": "C-3",
+   "name": "Kappa System",
+   "amount_cents": 15075,
+   "tags": [
+    "new"
+   ]
+  },
+  {
+   "id": "C-4",
+   "name": "Lambda Gear",
+   "amount_cents": 305,
+   "tags": [
+    "bulk",
+    "sale"
+   ]
+  },
+  {
+   "id": "C-5",
+   "name": "Mu Coil",
+   "amount_cents": 7777,
+   "tags": []
+  },
+  {
+   "id": "C-6",
+   "name": "Nu Valve",
+   "amount_cents": 50,
+   "tags": [
+    "new"
+   ]
+  },
+  {
+   "id": "C-7",
+   "name": "Xi Pump",
+   "amount_cents": 31000,
+   "tags": [
+    "bulk"
+   ]
+  },
+  {
+   "id": "C-8",
+   "name": "Omic Relay",
+   "amount_cents": 1212,
+   "tags": [
+    "sale"
+   ]
+  },
+  {
+   "id": "C-9",
+   "name": "Pi Sensor",
+   "amount_cents": 9995,
+   "tags": []
+  }
+ ],
+ "T3": [
+  {
+   "id": "R-1",
+   "name": "Lambda Core",
+   "amount_cents": 5555,
+   "tags": [
+    "red"
+   ]
+  },
+  {
+   "id": "R-2",
+   "name": "Mu Shell",
+   "amount_cents": 840,
+   "tags": []
+  },
+  {
+   "id": "R-3",
+   "name": "Nu Frame",
+   "amount_cents": 19999,
+   "tags": [
+    "bulk",
+    "sale"
+   ]
+  },
+  {
+   "id": "R-4",
+   "name": "Omicron Axle",
+   "amount_cents": 1414,
+   "tags": []
+  },
+  {
+   "id": "R-5",
+   "name": "Pi Rotor",
+   "amount_cents": 50000,
+   "tags": [
+    "bulk"
+   ]
+  },
+  {
+   "id": "R-6",
+   "name": "Rho Seal",
+   "amount_cents": 202,
+   "tags": [
+    "new",
+    "sale"
+   ]
+  },
+  {
+   "id": "R-7",
+   "name": "Sigma Belt",
+   "amount_cents": 7333,
+   "tags": []
+  },
+  {
+   "id": "R-8",
+   "name": "Tau Disc",
+   "amount_cents": 1995,
+   "tags": [
+    "red",
+    "new"
+   ]
+  }
+ ],
+ "T4": {
+  "abstained": true,
+  "answer": [
+   {
+    "id": "D-1",
+    "name": "Omicron Box",
+    "amount_cents": 1100,
+    "tags": [
+     "red"
+    ]
+   },
+   {
+    "id": "D-2",
+    "name": "Pi Crate",
+    "amount_cents": 2350,
+    "tags": [
+     "sale"
+    ]
+   }
+  ]
+ }
 }

@@ -17,3 +17,20 @@ documenting the flipped invariant. All T4 nulls proven discriminating
 Truth values were independently re-derived from fixtures during
 construction (not copied from generators). No runs exist against these
 instances as of this commit.
+
+## v2 supersession notes (audit-driven, pre-run)
+
+- T2/T3 scaled above script-scale in every family (8–12 records, 6–8
+  node graphs, 4–5 file manifests); truths re-derived from fixtures.
+- fam05 T2/T3 rebuilt with fully distinct content (T1 replay fails
+  mechanically on both).
+- fam02 T2 uses a genuinely different envelope (nested data/paging,
+  product/count keys); old-shape readers fail on it.
+- All six T4s redesigned as true K-inapplicability nulls with neutral
+  prompts, per-family K preconditions (K.md), and abstention truths;
+  all blind misapplications proven to fail.
+- Clustering caveat (acknowledged): fam01/02/03/05/06 cluster around
+  small structured-data transforms; fam04 is the algorithmic outlier.
+  Do NOT treat 4-of-6 as four independent confirmations. Mitigations:
+  leave-one-family-out rule, fam04 as independence anchor, and this
+  limitation rides in every reported headline.

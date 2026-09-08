@@ -1,5 +1,7 @@
-# fam05 T4 near-neighbor null
-Surface: same manifest shape. Flipped invariant: the beta.txt entry is
-tampered (size 21 vs actual 19). Blind trust-the-manifest behavior
-reports all-ok and fails; correct behavior reports beta.txt bad with a
-size reason.
+# fam05 T4 near-neighbor null (redesigned per audit)
+Surface: same manifest shape. Flipped invariant: v2 schema with BLAKE3
+hashes over REMOTE s3:// objects — outside K's contract (local files,
+sha256). Correct = abstain with the entries listed as unverified.
+A v1-style verification report (or fabricated local hashes) fails.
+Prior tampered-manifest design removed: tamper detection is a POSITIVE
+use of this K, not a null.

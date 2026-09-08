@@ -1,3 +1,3 @@
-id,amount
-X,50
-Y,600
+id,amount,unit_note
+X,5000,cents
+Y,6000,cents

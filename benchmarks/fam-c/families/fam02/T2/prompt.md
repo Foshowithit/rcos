@@ -1,5 +1,6 @@
-# fam02-T2 — paginated acquisition, alternate layout
+# fam02-T2 — paginated acquisition, enveloped pages
 
-Same protocol as T0/T1 over `pages/r1.json…` (different page shapes).
-Follow `next`, retry transient faults via `fetch.py`, log attempts in
-`retry.log`, merge into `OUTPUT.json`.
+Pages here are ENVELOPES: `{"data": [...], "paging": {"next": ...}}`
+with item keys `product`/`count` (not `items`/`k`/`v`/`next`).
+Follow `paging.next` until null, retry transient faults via `fetch.py`,
+log in `retry.log`, merge `{k: v}` into `OUTPUT.json`.

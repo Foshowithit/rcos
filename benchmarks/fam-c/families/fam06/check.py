@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""fam06 checker: reconciliation report vs sealed truth.
+"""fam06 checker: reconciliation vs sealed truth; T4 abstention contract.
 Usage: check.py <T> <json>. exit 0=SHIP 1=fix 2=blocked."""
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -13,6 +13,15 @@ def main(task, path):
         got = json.load(open(path))
     except Exception as e:
         print(f"unreadable output: {e}"); return 2
+    if task == "T4":
+        w = truth["T4"]["answer"]
+        if (isinstance(got, dict) and got.get("abstained") is True
+                and isinstance(got.get("reason"), str) and got["reason"].strip()
+                and sorted(got.get("answer", {}).get("unreconcilable", [])) == sorted(w["unreconcilable"])):
+            print("SHIP T4: abstention recorded, unreconcilable exact")
+            return 0
+        print(f"FIX (T4): want abstained=true + reason + unreconcilable list, got {got!r}")
+        return 1
     want = truth[task]
     ok = (sorted(got.get("matched", [])) == sorted(want["matched"])
           and sorted(got.get("missing_in_b", [])) == sorted(want["missing_in_b"])

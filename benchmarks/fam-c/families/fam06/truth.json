@@ -1,7 +1,68 @@
 {
-  "T0": {"matched": ["A", "B"], "missing_in_b": ["C"], "missing_in_a": ["D"], "conflicts": []},
-  "T1": {"matched": ["A"], "missing_in_b": ["B"], "missing_in_a": ["C"], "conflicts": []},
-  "T2": {"matched": ["A", "B"], "missing_in_b": [], "missing_in_a": ["C"], "conflicts": []},
-  "T3": {"matched": ["A", "B"], "missing_in_b": [], "missing_in_a": [], "conflicts": []},
-  "T4": {"matched": ["X"], "missing_in_b": [], "missing_in_a": [], "conflicts": [{"id": "Y", "a": 60, "b": 600}]}
+ "T0": {
+  "matched": [
+   "A",
+   "B"
+  ],
+  "missing_in_b": [
+   "C"
+  ],
+  "missing_in_a": [
+   "D"
+  ],
+  "conflicts": []
+ },
+ "T1": {
+  "matched": [
+   "A"
+  ],
+  "missing_in_b": [
+   "B"
+  ],
+  "missing_in_a": [
+   "C"
+  ],
+  "conflicts": []
+ },
+ "T2": {
+  "matched": [
+   "A",
+   "B",
+   "C",
+   "D"
+  ],
+  "missing_in_b": [
+   "E"
+  ],
+  "missing_in_a": [
+   "F"
+  ],
+  "conflicts": []
+ },
+ "T3": {
+  "matched": [
+   "B",
+   "C",
+   "D"
+  ],
+  "missing_in_b": [
+   "A"
+  ],
+  "missing_in_a": [
+   "G"
+  ],
+  "conflicts": []
+ },
+ "T4": {
+  "abstained": true,
+  "answer": {
+   "matched": [],
+   "missing_in_b": [],
+   "missing_in_a": [],
+   "unreconcilable": [
+    "X",
+    "Y"
+   ]
+  }
+ }
 }

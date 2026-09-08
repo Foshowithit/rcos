@@ -1,1 +1,1 @@
-{"items": [{"k": "c", "v": 300}], "next": null}
+{"data": [{"product": "c", "count": 300}], "paging": {"next": null, "total": 2}}

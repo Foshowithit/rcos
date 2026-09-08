@@ -1,7 +1,44 @@
 {
-  "T0": {"ok": ["alpha.txt", "beta.txt"], "bad": []},
-  "T1": {"ok": ["a.txt", "b.txt"], "bad": []},
-  "T2": {"ok": ["a.txt", "b.txt"], "bad": []},
-  "T3": {"ok": ["a.txt", "b.txt"], "bad": []},
-  "T4": {"ok": ["alpha.txt"], "bad": [{"path": "beta.txt", "reason_includes": "size"}]}
+ "T0": {
+  "ok": [
+   "alpha.txt",
+   "beta.txt"
+  ],
+  "bad": []
+ },
+ "T1": {
+  "ok": [
+   "a.txt",
+   "b.txt"
+  ],
+  "bad": []
+ },
+ "T2": {
+  "ok": [
+   "c.txt",
+   "d.txt",
+   "e.txt",
+   "f.txt"
+  ],
+  "bad": []
+ },
+ "T3": {
+  "ok": [
+   "sub/n1.txt",
+   "sub/n2.txt",
+   "top.txt"
+  ],
+  "bad": []
+ },
+ "T4": {
+  "abstained": true,
+  "answer": {
+   "ok": [],
+   "bad": [],
+   "unverified": [
+    "s3://bucket/alpha.txt",
+    "s3://bucket/beta.txt"
+   ]
+  }
+ }
 }

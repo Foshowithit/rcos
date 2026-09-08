@@ -1,4 +1,5 @@
-# fam04-T4 — cyclic graph (near-neighbor null)
-Read `graph.json`. Do NOT assume acyclicity: detect the cycle and write
-`OUTPUT.json` `{"valid": false, "cycle": [...]}` tracing it back to start.
-A bare topological sort that ignores the cycle is wrong.
+# fam04-T4 — validate graph file
+Read `graph.json` and write `OUTPUT.json` with the validation result.
+If the input violates the acyclicity precondition, emit
+`{"abstained": true, "reason": "...", "answer": ...}` with your best
+independent answer instead.

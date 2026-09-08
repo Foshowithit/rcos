@@ -1,4 +1,5 @@
-# fam03-T4 — transitions are NOT duplicates (near-neighbor null)
-Count lines in `events.txt`. Here repeated ids are legitimate STATE
-TRANSITIONS (CREATED→PAID→SHIPPED), each line a distinct event: do NOT
-deduplicate. Emit `OUTPUT.json`: `{total, unique, removed}`.
+# fam03-T4 — count events with repeated ids
+Count lines in `events.txt`. Emit `OUTPUT.json`:
+`{total, unique, removed}`. If the file cannot be counted as repeats
+of identical events, emit `{"abstained": true, "reason": "...",
+"answer": ...}` with your best independent answer instead.
