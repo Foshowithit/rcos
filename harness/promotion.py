@@ -142,13 +142,21 @@ def _read_json(p):
 
 
 # ---------------------------------------------------------------------------
-# frozen per-family capability contract (K.md is part of the instance)
+# producer-declared capability contract (A12b.1/AC6b: the producer's own
+# arrival payload is the ONLY source of the promoted contract)
 # ---------------------------------------------------------------------------
 
 def capability_contract(fam_c_dir, family):
-    """Derive the machine-readable semantic contract from the FROZEN
-    families/<family>/K.md — never from operator input. Returns
-    (semantic_core, preconditions, limitations, contract_sha256)."""
+    """Parse the FROZEN families/<family>/K.md into machine-readable form.
+    Returns (semantic_core, preconditions, limitations, contract_sha256).
+
+    A12b.1: the promotion controller NO LONGER calls this to author the
+    receipt/lock contract — the producer's own arrival declaration is the
+    sole source there (see _producer_contract). This parser is retained
+    for test-support producer stand-ins (which must declare the frozen
+    text verbatim so the governance cross-check passes) and for
+    downstream actual-contract conformance work. It is never a source of
+    consumer-visible bytes."""
     p = os.path.join(fam_c_dir, "families", family, "K.md")
     if not os.path.isfile(p):
         raise PermissionError(f"PROMOTION-DENY no frozen capability contract "
@@ -194,6 +202,52 @@ def capability_contract(fam_c_dir, family):
         raise PermissionError("PROMOTION-DENY frozen capability contract has "
                               "no PRECONDITIONS")
     return semantic_core, pre, lim, _sha_file(p)
+
+
+def _producer_contract(t0_run_dir, fam_c_dir, family):
+    """Read the PRODUCER-declared capability contract from the T0 arrival's
+    own `execution_payload.capability_contract` ({semantic_core,
+    preconditions, limitations}) — the SOLE source of the promoted
+    contract text (A12b.1/AC6b). Fail closed when absent or malformed; the
+    frozen K.md file is only hash-bound as operative-auditor metadata.
+    Returns (semantic_core, preconditions, limitations, contract_sha256)
+    with the declaration bytes copied exactly (no normalization: the
+    governance validator compares them verbatim)."""
+    try:
+        arrival = _read_json(os.path.join(t0_run_dir, "arrival.json"))
+    except (ValueError, OSError) as e:
+        raise PermissionError(f"PROMOTION-DENY T0 arrival unreadable: {e}")
+    payload = _arrival_payload(arrival)
+    declared = payload.get("capability_contract")
+    if declared is None:
+        declared = payload.get("contract")
+    if not isinstance(declared, dict):
+        raise PermissionError(
+            "PROMOTION-DENY T0 arrival declares no producer capability "
+            "contract (execution_payload.capability_contract "
+            "{semantic_core, preconditions, limitations} is required; the "
+            "promoted contract is producer-authored, never synthesized)")
+    core = declared.get("semantic_core")
+    pre = declared.get("preconditions")
+    lim = declared.get("limitations", [])
+    if not isinstance(core, str) or not core.strip():
+        raise PermissionError(
+            "PROMOTION-DENY producer capability contract has an empty "
+            "semantic_core")
+    if not isinstance(pre, list) or not pre or not all(
+            isinstance(x, str) and x.strip() for x in pre):
+        raise PermissionError(
+            "PROMOTION-DENY producer capability contract has no "
+            "preconditions list")
+    if not isinstance(lim, list) or not all(isinstance(x, str) for x in lim):
+        raise PermissionError(
+            "PROMOTION-DENY producer capability contract limitations must "
+            "be a list of strings")
+    kp = os.path.join(fam_c_dir, "families", family, "K.md")
+    if not os.path.isfile(kp):
+        raise PermissionError(f"PROMOTION-DENY no frozen capability contract "
+                              f"at {kp}")
+    return core, list(pre), list(lim), _sha_file(kp)
 
 
 def t4_semantic_id(fam_c_dir, capability_id, semantic_core_sha256,
@@ -356,6 +410,33 @@ def _identity_evidence(run_dir, manifest, cell):
                 f"{mc['model_echoed']!r} committed at capture (post-hoc "
                 f"echo edit -> deny)")
         family = family or mc.get("identity_prereg_family")
+    # A12b.7 (AC1b): semantic identity check against the PREREGISTERED lane
+    # entry. Bindings alone cannot catch an echo-only rewrite (endpoint,
+    # requested id, and request bytes all stay valid), so the echoed model
+    # must be one the frozen lane entry actually allows.
+    try:
+        from run_arm_h1 import LANES as _LANES
+    except ImportError as e:
+        raise PermissionError(
+            f"PROMOTION-DENY {event} lane registry unreadable, cannot "
+            f"verify producer identity against the preregistered entry: {e}")
+    lane = manifest.get("lane")
+    entry = _LANES.get(lane)
+    if entry is None:
+        raise PermissionError(
+            f"PROMOTION-DENY {event} lane {lane!r} has no preregistered "
+            f"entry (unknown producer lane -> deny)")
+    try:
+        _identity.check_against_prereg(idp, {
+            "endpoint": entry["base"], "requested_id": entry["model"],
+            "acceptable_echoed_ids": entry["echo_acceptable"],
+            "family": entry["family"]})
+    except (ValueError, OSError, KeyError) as e:
+        raise PermissionError(
+            f"PROMOTION-DENY {event} producer identity is not the "
+            f"preregistered lane-{lane} identity (echo/requested/endpoint "
+            f"outside the frozen entry -> deny): {e}")
+    family = family or entry["family"]
     return {"source_cell": cell["cell_id"], "lane": manifest.get("lane"),
             "endpoint": id_rec.get("endpoint"),
             "model_requested": id_rec.get("model_requested"),
@@ -408,6 +489,30 @@ def run_evidence(fam_c_dir, cell, freeze_commit=None):
                               f"{cell['cell_id']} verdict {ev['verdict']!r} "
                               f"!= 'ship'")
     return ev
+
+
+def _per_cell_evidence(ev):
+    """One source cell's promotion evidence (AC4/AC5): flat evaluator shas
+    taken from the VERIFIED evaluator chain link (never null, never
+    re-derived) and flat identity provenance taken from the VALIDATED
+    identity record — plus the full nested blocks for audit depth."""
+    ident = ev["identity"]
+    evaluator = ev["evaluator"]
+    return {
+        "cell_id": ev["cell_id"], "task": ev["task"], "lane": ev["lane"],
+        "verdict": ev["verdict"], "chain_tip": ev["chain_tip"],
+        "manifest_sha256": ev["manifest_sha256"],
+        "arrival_sha256": ev["arrival_sha256"], "decision": ev["decision"],
+        "checker_sha256": evaluator["checker_sha256"],
+        "truth_sha256": evaluator["truth_sha256"],
+        "output_sha256": evaluator["output_sha256"],
+        "evaluator_link_hash": evaluator["evaluator_link_hash"],
+        "requested_model": ident["model_requested"],
+        "echoed_model": ident["model_echoed"],
+        "provider_response_id": ident["provider_response_id"],
+        "identity_sha256": ident["identity_sha256"],
+        "evaluator": evaluator, "identity": ident,
+    }
 
 
 def _producer_identity(t0_ev, t1_ev):
@@ -516,11 +621,13 @@ def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
         "candidate_sha256": cand["sha256"],
         # The producer-authored contract: rooted in THIS universe's own
         # acquisition arrival payload (candidate bytes + interface), never
-        # in hidden auditor K.md text.
+        # in hidden auditor K.md text. The arrival sha is deliberately NOT
+        # recorded here: the producer declaration travels in the arrival,
+        # so its hash would couple consumer bytes to hidden-contract
+        # wording (KMD-invariance); it rides the receipt instead.
         "producer_contract": {
             "candidate_sha256": cand["sha256"],
             "candidate_field": cand["field"],
-            "arrival_sha256": cand["arrival_sha256"],
             "interface": "argv: candidate.py <materialized_input_dir> "
                          "<output_path>"},
         "source_cells": dict(cell["source_cells"]),
@@ -599,7 +706,11 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     t1_ev = run_evidence(fam_c_dir, t1, freeze_commit)
     producer_identity = _producer_identity(t0_ev, t1_ev)
     cand = derive_candidate(t0_ev, t1_ev, t0_ev["run_dir"])
-    contract = capability_contract(fam_c_dir, family)
+    # A12b.1/AC6b: the promoted contract is authored by the PRODUCER — it
+    # is read from the T0 arrival's own `capability_contract` declaration,
+    # never synthesized from hidden K.md. The K.md file sha still binds
+    # which hidden contract was operative (auditor metadata only).
+    contract = _producer_contract(t0_ev["run_dir"], fam_c_dir, family)
     core_sha = _sha_bytes(contract[0].encode())
     t4_id, t4_ratified = t4_semantic_id(fam_c_dir, cell["capability_id"],
                                         core_sha, evidence_grade)
@@ -639,22 +750,8 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
             "order_sha256": exp_sha, "event_index": cell["index"],
             "done_cells_at_emit": sorted(done),
             "event": "PROMOTION"},
-        "t0_evidence": {"cell_id": t0_ev["cell_id"], "task": t0_ev["task"],
-                        "lane": t0_ev["lane"], "verdict": t0_ev["verdict"],
-                        "chain_tip": t0_ev["chain_tip"],
-                        "manifest_sha256": t0_ev["manifest_sha256"],
-                        "arrival_sha256": t0_ev["arrival_sha256"],
-                        "decision": t0_ev["decision"],
-                        "evaluator": t0_ev["evaluator"],
-                        "identity": t0_ev["identity"]},
-        "t1_evidence": {"cell_id": t1_ev["cell_id"], "task": t1_ev["task"],
-                        "lane": t1_ev["lane"], "verdict": t1_ev["verdict"],
-                        "chain_tip": t1_ev["chain_tip"],
-                        "manifest_sha256": t1_ev["manifest_sha256"],
-                        "arrival_sha256": t1_ev["arrival_sha256"],
-                        "decision": t1_ev["decision"],
-                        "evaluator": t1_ev["evaluator"],
-                        "identity": t1_ev["identity"]},
+        "t0_evidence": _per_cell_evidence(t0_ev),
+        "t1_evidence": _per_cell_evidence(t1_ev),
     }
     rp = order.emit_promotion_receipt(fam_c_dir, cell,
                                       cell["acquisition_chain_tips"]["T0"],

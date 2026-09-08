@@ -41,6 +41,7 @@ sys.path.insert(0, os.path.join(FAMC, "harness-run"))
 import chain as CH            # noqa: E402
 import identity as ID         # noqa: E402
 import order                  # noqa: E402
+import promotion as PROM      # noqa: E402
 import reuse_log as RL        # noqa: E402
 import usage as UG            # noqa: E402
 from run_arm_h1 import LANES  # noqa: E402
@@ -177,6 +178,16 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                    "records": {}}
     else:
         payload = {"solver_py": solver_py or DEFAULT_SOLVER}
+        # A12b.1/AC6b: the producer stand-in declares its capability
+        # contract in its OWN arrival payload (verbatim frozen text, so the
+        # governance cross-check passes). The promotion controller sources
+        # the receipt/lock contract SOLELY from this declaration — never by
+        # parsing hidden K.md itself.
+        _core, _pre, _lim, _csha = PROM.capability_contract(
+            root, cell["family"])
+        payload["capability_contract"] = {"semantic_core": _core,
+                                          "preconditions": _pre,
+                                          "limitations": _lim}
     arrival = {"decision": decision, "execution_payload": payload,
                "notes": "fixture_modelrun (NOT evidence)"}
     with open(os.path.join(d, "arrival.json"), "w") as f:

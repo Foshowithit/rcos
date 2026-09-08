@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "03f3aea647a5808f8e17dbbd7c429e1de9d3eba901e2e7728e8e714f98775bfe",
+ "harness_manifest_sha256": "3bf86cc744f0a79bdc9b6ee379332a50803e4ce51148b1a6575aea03c4fcd316",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -18,7 +18,7 @@
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "e188e39a0e69cf9b6835a082049aec7fd147e1d220f8df2a5dad58fcc4864821",
+  "harness/promotion.py": "a1af89808630cc83571565007f873748c284bf716492d1c3bd724088d7ed64b2",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4"
  },
@@ -235,6 +235,19 @@
    },
    "reason": "A12b.1 de-leak consumer artifacts from hidden K.md/T4 (promotion.py _mint_artifacts); A12b.3 argv-ABI engine (ENGINE_TEMPLATE subprocess candidate.py, no exec); A12b.4 ledger-driven chain lifecycle + model_echoed capture binding (run_arm_h1.py _wire_chain)",
    "slice": "a12b-slice1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "03f3aea647a5808f8e17dbbd7c429e1de9d3eba901e2e7728e8e714f98775bfe",
+   "to_manifest": "3bf86cc744f0a79bdc9b6ee379332a50803e4ce51148b1a6575aea03c4fcd316",
+   "files": {
+    "harness/promotion.py": {
+     "from_sha": "e188e39a0e69cf9b6835a082049aec7fd147e1d220f8df2a5dad58fcc4864821",
+     "to_sha": "a1af89808630cc83571565007f873748c284bf716492d1c3bd724088d7ed64b2"
+    }
+   },
+   "reason": "A12b.7 sharpened gate: promotion sources receipt contract solely from producer arrival declaration (_producer_contract); per-cell flat evaluator+identity evidence; preregistered-lane echo check (lazy LANES import)",
+   "slice": "a12b-slice1-followup",
    "status_after": "open-round2"
   }
  ],
