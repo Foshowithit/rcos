@@ -1,54 +1,96 @@
 #!/usr/bin/env python3
-"""H1 enforcement v2: kernel-boundary sandboxes via Docker. SUPERSEDES the
-sitecustomize monkeypatch approach in sandbox.py (kept for reference only;
-it was correctly identified as a Python-library policy, not isolation).
+"""H1 enforcement v3: kernel-boundary sandboxes via Docker. The LAUNCHER
+owns the mount policy — callers cannot express an unsafe configuration
+because the constructor signature makes it unrepresentable.
+
+Trusted computing base (explicit): host kernel (netns/mount isolation),
+Docker daemon + runtime (boundary construction), this launcher module
+(policy), and the pinned image digest below. Agent code, model outputs,
+and caller-constructed paths are OUTSIDE the TCB.
 
 Enforcement actually in force per invocation:
-  --network none      kernel netns: no interfaces except DOWN lo.
-                      curl/wget/git/node/python/dns ALL fail identically
-                      because there is no route, not because binaries
-                      are missing.
-  mounts              ONLY the lane workdir (rw) + declared visible
-                      files (ro). The host tree — including truth,
-                      sibling lanes, repos, vault — is not mounted and
-                      therefore not addressable at any path.
-  --user <invoking-uid> agent code never runs as container root; uid
-                      separation across lanes is NOT claimed (same uid) —
-                      filesystem isolation comes from the mount
-                      restriction (peers simply unmounted), network
-                      isolation from the netns.
-  --read-only + tmpfs container rootfs immutable except /tmp + /work.
-  --cap-drop=ALL, --pids-limit, --memory cap.
+  --network none      isolated netns: no external interface, no default
+                      route, no gateway, no DNS. curl/wget/git/node/python
+                      ALL fail identically for lack of route, not lack of
+                      binaries. Loopback-listener presence is NOT treated
+                      as contamination either way.
+  mounts              EXACTLY: assigned_workdir -> /work (rw) +
+                      visible_root -> /task (ro). Nothing else, enforced
+                      in __init__ (see _check_source).
+  image               pinned by digest (reproducibility; tag drift cannot
+                      change paired-invocation bytes). Digest recorded in
+                      every run manifest.
+  --user <invoking-uid>, --read-only, --tmpfs /tmp, --cap-drop=ALL,
+  --pids-limit 64, --memory 1g.
   env                 constructed minimal allowlist; host env (and all
                       secrets) never enters the container.
-Model-API calls happen ONLY in the harness process (audited client);
-agent containers have no network to exfiltrate through anyway.
+Model-API calls happen ONLY in the harness process (audited client).
 Stdlib only on the harness side.
 """
 import json
 import os
-import shutil
+import stat
 import subprocess
 import uuid
 
-IMAGE = "python:3.12-slim"
+IMAGE = ("python:3.12-slim@sha256:"
+         "78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea")
 WHO = "%d:%d" % (os.getuid(), os.getgid())
+
+# Host roots the launcher trusts sources under. Workdirs must live
+# under WORK_ROOT; visible roots under VISIBLE_ROOT. Anything else is
+# refused no matter what the caller passes.
+WORK_ROOT = "/tmp/rcos-runs"
+VISIBLE_ROOT = "/tmp/rcos-visible"
+
+BANNED_BASENAMES = {"docker.sock", "daemon.json"}
+BANNED_PREFIXES = ("/var/run", "/run/docker", "/home/chow/.agent-vault",
+                   "/home/chow/.dsh", "/home/chow/.pi", "/home/chow/.ssh",
+                   "/home/chow/chow-work/rcos/benchmarks")
 
 
 def _run(cmd, **kw):
     return subprocess.run(cmd, capture_output=True, text=True, **kw)
 
 
-class DockerSandbox:
-    """One lane/run kernel jail. `mounts` = list of (host_path, cont_path,
-    mode) with mode 'ro' (default) or 'rw' for exactly one workdir."""
+def _check_source(path, kind):
+    """Launcher-side mount policy. Raises PermissionError on violation."""
+    real = os.path.realpath(path)
+    root = WORK_ROOT if kind == "work" else VISIBLE_ROOT
+    if os.path.commonpath([real, os.path.abspath(root)]) != os.path.abspath(root):
+        raise PermissionError(
+            f"MOUNT-POLICY-DENY {kind} source outside {root}: {path!r}")
+    base = os.path.basename(real.rstrip("/"))
+    if base in BANNED_BASENAMES:
+        raise PermissionError(f"MOUNT-POLICY-DENY banned basename: {base}")
+    if any(real == p or real.startswith(p.rstrip("/") + "/")
+           for p in BANNED_PREFIXES):
+        raise PermissionError(f"MOUNT-POLICY-DENY banned prefix: {real}")
+    try:
+        st = os.stat(real)
+    except FileNotFoundError:
+        raise PermissionError(f"MOUNT-POLICY-DENY missing source: {path!r}")
+    if not (stat.S_ISDIR(st.st_mode) or stat.S_ISREG(st.st_mode)):
+        raise PermissionError(
+            f"MOUNT-POLICY-DENY not a regular file/dir: {path!r} "
+            f"(no devices, sockets, FIFOs)")
+    return real
 
-    def __init__(self, root, mounts=()):
-        self.root = os.path.abspath(root)
+
+class DockerSandbox:
+    """One lane/run kernel jail. ONLY representable configuration:
+    assigned_workdir -> /work (rw) + visible_root -> /task (ro)."""
+
+    def __init__(self, assigned_workdir, visible_root):
+        work = _check_source(assigned_workdir, "work")
+        vis = _check_source(visible_root, "task")
+        if work == vis:
+            raise PermissionError("MOUNT-POLICY-DENY work == visible")
+        os.makedirs(work, exist_ok=True)
+        os.chmod(work, 0o700)
         self.name = "rcos-" + uuid.uuid4().hex[:12]
-        os.makedirs(self.root, exist_ok=True)
-        os.chmod(self.root, 0o700)
-        self.mounts = list(mounts)
+        self.mounts = [(work, "/work", "rw"), (vis, "/task", "ro")]
+        self.image = IMAGE
         self._base = [
             "docker", "run", "--rm", "--name", self.name,
             "--network", "none",
@@ -59,12 +101,16 @@ class DockerSandbox:
             "--pids-limit", "64",
             "--memory", "1g",
             "--workdir", "/work",
+            "-v", f"{work}:/work:rw",
+            "-v", f"{vis}:/task:ro",
         ]
-        for host, cont, mode in self.mounts:
-            flag = "rw" if mode == "rw" else "ro"
-            self._base += ["-v", f"{host}:{cont}:{flag}"]
         # NOTE: IMAGE is appended by run(), AFTER all -e flags.
         # Docker treats everything after IMAGE as the command.
+
+    def manifest(self):
+        return {"sandbox": self.name, "image": self.image,
+                "mounts": [{"host": h, "container": c, "mode": m}
+                           for h, c, m in self.mounts]}
 
     def run(self, argv, input_text=None, timeout=120, extra_env=None):
         """Execute inside the jail. Returns CompletedProcess (host side).
@@ -77,16 +123,15 @@ class DockerSandbox:
                    ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL")):
                 raise ValueError(f"refusing secret env into sandbox: {k}")
             env += ["-e", f"{k}={v}"]
-        return _run(self._base + env + [IMAGE] + argv, input=input_text,
-                    timeout=timeout)
+        return _run(self._base + env + [self.image] + argv,
+                    input=input_text, timeout=timeout)
 
     def inspect_mounts(self):
-        """Harness-side audit: prove ONLY declared binds exist. Returns
-        (source, destination) list from a live container view."""
-        cid = _run(["docker", "create", "--network", "none"] + [
-            x for triple in self.mounts for x in
-            ("-v", f"{triple[0]}:{triple[1]}:{'rw' if triple[2] == 'rw' else 'ro'}")
-        ] + [IMAGE, "true"], check=True).stdout.strip()
+        """Harness-side audit: prove ONLY the two declared binds exist."""
+        cid = _run(["docker", "create", "--network", "none",
+                    "-v", f"{self.mounts[0][0]}:/work:rw",
+                    "-v", f"{self.mounts[1][0]}:/task:ro",
+                    self.image, "true"], check=True).stdout.strip()
         try:
             data = json.loads(_run(
                 ["docker", "inspect", cid], check=True).stdout)[0]
