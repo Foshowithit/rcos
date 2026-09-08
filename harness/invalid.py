@@ -75,9 +75,41 @@ class PairLedger:
             return False, "settings differ from frozen original"
         runs["replacements"] += 1
         runs["settings_id"] = frozen_settings_id
+        runs["expected_arms"] = sorted(
+            {r["arm"] for r in runs["runs"]})
         runs["status"] = "replaced-once"
         self._save()
         return True, "one whole-pair replacement allowed"
 
     def pair_status(self, pair_id):
         return self.state["pairs"].get(pair_id, {}).get("status", "unknown")
+
+    def complete_replacement(self, pair_id, arm, run_id, settings_id):
+        """Record one replacement arm execution. The pair becomes
+        `replacement-complete` ONLY when BOTH arms have recorded runs
+        under the SAME frozen settings as the authorization. Grading
+        may consume replacement results only in that state."""
+        runs = self.state["pairs"].get(pair_id)
+        if runs is None:
+            raise ValueError(f"unknown pair {pair_id}")
+        if runs.get("status") != "replaced-once":
+            raise ValueError(f"pair {pair_id} has no open replacement "
+                             f"(status={runs.get('status')})")
+        if settings_id != runs.get("settings_id"):
+            raise ValueError("replacement settings differ from authorized")
+        if arm not in runs.get("expected_arms", []):
+            raise ValueError(f"arm {arm} not in authorized pair arms "
+                             f"{runs.get('expected_arms')}")
+        done = runs.setdefault("replacement_runs", {})
+        if arm in done:
+            raise ValueError(f"arm {arm} already recorded for replacement")
+        done[arm] = run_id
+        if set(done) >= set(runs["expected_arms"]):
+            runs["status"] = "replacement-complete"
+        self._save()
+        return runs["status"]
+
+    def replacement_complete(self, pair_id):
+        """Gate for grading: True only with both replacement arms linked."""
+        runs = self.state["pairs"].get(pair_id, {})
+        return runs.get("status") == "replacement-complete"

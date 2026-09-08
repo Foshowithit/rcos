@@ -80,6 +80,24 @@ ok, why = led.request_replacement("p2", "provider-outage", "settings-v2")
 check("first replacement allowed (p2)", ok, why)
 ok, why = led.request_replacement("p2", "provider-outage", "settings-v3")
 check("changed-settings replacement refused", not ok, why)
+# replacement completion: both arms required before grading
+led.record_run("p3", "A", "blocked", failure_kind="provider-outage")
+led.record_run("p3", "B", "blocked", failure_kind="provider-outage")
+ok, _ = led.request_replacement("p3", "provider-outage", "settings-v1")
+check("p3 replacement authorized", ok)
+check("grading gate closed before completion",
+      not led.replacement_complete("p3"))
+led.complete_replacement("p3", "A", "run-new-A", "settings-v1")
+check("grading gate still closed on partial pair",
+      not led.replacement_complete("p3"))
+led.complete_replacement("p3", "B", "run-new-B", "settings-v1")
+check("grading gate opens on complete pair",
+      led.replacement_complete("p3"))
+try:
+    led.complete_replacement("p3", "A", "run-dup-A", "settings-v1")
+    check("duplicate arm recording refused", False)
+except ValueError:
+    check("duplicate arm recording refused", True)
 
 # --- chain: intact, deletion, reorder, substitution, tamper ---
 ch = Chain(os.path.join(BASE, "chain.jsonl"), "FREEZE-abc",
@@ -87,7 +105,10 @@ ch = Chain(os.path.join(BASE, "chain.jsonl"), "FREEZE-abc",
 ch.append("model-call", {"usage": "u1"})
 ch.append("capability-event", {"invoked": "k1"})
 ch.append("evaluator", {"verdict": "ship"})
-ch.append("grade", {"grade": "PASS"})
+_evh = ch.links[-1]["link_hash"]
+ch.append("grade", {"grade": "PASS", "evaluator_link_hash": _evh,
+                     "grading_rule_hash": "gr1",
+                     "grading_rule_version": "v1"})
 check("intact chain audits clean",
       ch.audit("FREEZE-abc", {"run": "r1", "lane": "A"}) == [])
 # deletion
@@ -127,6 +148,38 @@ check("unterminated chain flagged",
       any("grade" in f for f in
           ch5.audit("FREEZE-abc", {"run": "r1", "lane": "A"})))
 
+# --- terminal grade: append-after-grade refused at write time ---
+chT = Chain(os.path.join(BASE, "chain-term.jsonl"), "FREEZE-x", {"run": "t"})
+chT.append("model-call", {"u": 1})
+chT.append("evaluator", {"v": "ship"})
+chT.append("grade", {"evaluator_link_hash": chT.links[-1]["link_hash"],
+                     "grading_rule_hash": "gr1", "grading_rule_version": "v1"})
+try:
+    chT.append("note", {"x": 1})
+    check("append-after-grade refused", False)
+except PermissionError:
+    check("append-after-grade refused", True)
+try:
+    chT.append("grade", {"evaluator_link_hash": chT.links[-1]["link_hash"],
+                         "grading_rule_hash": "gr1", "grading_rule_version": "v1"})
+    check("grade-after-grade refused", False)
+except PermissionError:
+    check("grade-after-grade refused", True)
+# grade missing binding fields refused
+chU = Chain(os.path.join(BASE, "chain-u.jsonl"), "FREEZE-x", {"run": "u"})
+try:
+    chU.append("grade", {"verdict": "ship"})
+    check("unbound grade refused", False)
+except ValueError:
+    check("unbound grade refused", True)
+# grade binding wrong evaluator fails audit
+chV = Chain(os.path.join(BASE, "chain-v.jsonl"), "FREEZE-x", {"run": "v"})
+chV.append("evaluator", {"v": "a"})
+chV.append("note", {"n": 1})
+chV.append("grade", {"evaluator_link_hash": "wrong-hash",
+                     "grading_rule_hash": "gr1", "grading_rule_version": "v1"})
+check("misbound grade fails audit",
+      any("bind" in f for f in chV.audit("FREEZE-x", {"run": "v"})))
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH3 smoke: {len(results) - len(bad)}/{len(results)} closed")
 sys.exit(1 if bad else 0)
