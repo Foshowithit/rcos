@@ -34,8 +34,11 @@ for line in open(os.path.join(HERE, "FREEZE-HASHES.sha256")):
     freeze[p] = h
 on_disk = set()
 for root, dirs, files in os.walk(HERE):
-    # PREREG.md visibility seal: runs/ evidence dirs are not freeze inputs
-    if os.path.basename(root) == "runs":
+    # Operational dirs are not freeze inputs: runs/ (evidence),
+    # capabilities/ (produced artifacts), harness-run/ (tooling).
+    # The freeze covers experimental inputs only (tasks, truth,
+    # checkers, prompts, seals, protocol docs).
+    if os.path.basename(root) in ("runs", "capabilities", "harness-run"):
         dirs[:] = []
         continue
     for fn in files:
