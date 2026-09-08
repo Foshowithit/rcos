@@ -921,29 +921,67 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
             _cvs = [l for l in _t1_links
                     if l.get("kind") == "candidate-validation"]
             _cv = _cvs[0].get("payload") or {} if len(_cvs) == 1 else {}
-            try:
-                _adapter_ok = (isinstance(_cv.get("adapter_sha256"), str)
-                               and len(_cv["adapter_sha256"]) == 64
-                               and int(_cv["adapter_sha256"], 16) >= 0)
-            except (ValueError, TypeError):
-                _adapter_ok = False
-            if len(_cvs) != 1 or \
-                    _cv.get("candidate_sha256") != want_sha or \
-                    _cv.get("executed_sha256") != want_sha or \
-                    _cv.get("validated") is not True or not _adapter_ok:
+            # A12c D3: re-derive the same nine-field fail-closed predicate
+            # from the committed chain (no trust in the receipt).
+            _cv_reasons = []
+            if len(_cvs) != 1:
+                _cv_reasons.append(
+                    f"need exactly one candidate-validation event, got "
+                    f"{len(_cvs)}")
+            else:
+                for _f in ("candidate_sha256", "executed_sha256",
+                           "adapter_sha256", "candidate_output_sha256",
+                           "checker_sha256", "truth_sha256",
+                           "checker_returncode", "validation_verdict",
+                           "validated"):
+                    if _cv.get(_f) is None:
+                        _cv_reasons.append(f"no {_f}")
+                for _f in ("candidate_sha256", "executed_sha256",
+                           "adapter_sha256", "candidate_output_sha256",
+                           "checker_sha256", "truth_sha256"):
+                    _v = _cv.get(_f)
+                    if _v is not None and not (
+                            isinstance(_v, str) and len(_v) == 64):
+                        _cv_reasons.append(f"no 64-hex {_f}")
+                    elif isinstance(_v, str) and len(_v) == 64:
+                        try:
+                            int(_v, 16)
+                        except ValueError:
+                            _cv_reasons.append(f"no 64-hex {_f}")
+                if (_cv.get("candidate_sha256") is not None
+                        and _cv.get("candidate_sha256") != want_sha):
+                    _cv_reasons.append("candidate_sha256 != frozen T0 sha")
+                if (_cv.get("executed_sha256") is not None
+                        and _cv.get("executed_sha256") != want_sha):
+                    _cv_reasons.append("executed_sha256 != frozen T0 sha")
+                if (_cv.get("checker_returncode") is not None
+                        and _cv.get("checker_returncode") != 0):
+                    _cv_reasons.append("checker_returncode != 0")
+                if (_cv.get("validation_verdict") is not None
+                        and _cv.get("validation_verdict") != "ship"):
+                    _cv_reasons.append("validation_verdict != ship")
+                if (_cv.get("validated") is not None
+                        and _cv.get("validated") is not True):
+                    _cv_reasons.append("validated is not True")
+            if _cv_reasons:
                 out.append("promotion provenance: T1 chain carries no "
                            "valid candidate-validation event for the "
-                           "frozen candidate (a T1 with no "
+                           "frozen candidate "
+                           f"({'; '.join(_cv_reasons)[:220]}; a T1 with no "
                            "candidate-validation event can never promote)")
             else:
                 _rec_cv = cand.get("t1_validation") or {}
-                if _rec_cv.get("validated") is not True or any(
-                        _rec_cv.get(k) != _cv.get(k)
-                        for k in ("candidate_sha256", "executed_sha256",
-                                  "adapter_sha256")):
-                    out.append("promotion provenance: receipt candidate "
-                               "t1_validation != the committed T1 chain "
-                               "event")
+                for _k in ("candidate_sha256", "executed_sha256",
+                           "adapter_sha256", "candidate_output_sha256",
+                           "checker_sha256", "truth_sha256",
+                           "checker_returncode", "validation_verdict",
+                           "validated"):
+                    if _rec_cv.get(_k) != _cv.get(_k):
+                        out.append("promotion provenance: receipt candidate "
+                                   f"t1_validation[{_k}] != the committed "
+                                   "T1 chain event "
+                                   f"({_rec_cv.get(_k)!r} != {_cv.get(_k)!r})")
+                        break
     # semantic core must be the FROZEN family contract, not a receipt claim
     kp = os.path.join(fam_c_dir, "families", cell["family"], "K.md")
     sc = r.get("semantic_core")

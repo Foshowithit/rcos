@@ -183,6 +183,30 @@ _OUT = ('\nOutput one JSON object with the keys "decision", '
         'choose use_capability only when a capability-access block is present '
         'and applicable; otherwise choose fresh. '
         'No explanations, no code fences.')
+# A12c D1 — T1 producer instruction gains a required `adapter_py` (T0
+# unchanged). The T1 acquisition prompt requests, in addition to
+# `solver_py`, a field `adapter_py` (a string of Python source) with the
+# frozen ABI: python3 adapter.py <task_dir> <out_input_dir>. It
+# materializes the candidate's expected input directory from the T1 task
+# surface. The adapter must exit non-zero on failure, and omitting
+# adapter_py makes the run unpromotable (no candidate validation, no
+# promotion). T0's instruction (_OUT) is unchanged in this slice.
+_OUT_T1 = ('\nOutput one JSON object with the keys "decision", '
+        '"execution_payload", "notes". "decision" is exactly '
+        '"use_capability" or "fresh". When "decision" is "use_capability", '
+        '"execution_payload" is {"field_map": <object>, "records": <object>}. '
+        'When "decision" is "fresh", "execution_payload" is '
+        '{"solver_py": <python source string of a self-contained solver>, '
+        '"adapter_py": <python source string of a self-contained adapter>}. '
+        'The adapter materializes the candidate\'s expected input directory '
+        'from the T1 task surface with the frozen ABI: '
+        'python3 adapter.py <task_dir> <out_input_dir> — it must exit '
+        'non-zero on failure, and omitting adapter_py makes the run '
+        'unpromotable (no candidate validation, no promotion). '
+        '"notes" is one line. '
+        'choose use_capability only when a capability-access block is present '
+        'and applicable; otherwise choose fresh. '
+        'No explanations, no code fences.')
 CORRECT = _PRE + _ENVELOPE_FMT + _CAP_FMT + _OUT
 DISABLED = _PRE + _ENVELOPE_FMT + _OUT
 # Counterfactual capability content (disabled-arm runs): builds the
@@ -560,6 +584,166 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
             "truth_sha256": truth_sha256}
 
 
+def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
+                          work, taskdir, sb, checker_sha256, truth_sha256,
+                          outdir=None):
+    """A12c D2 — T1 candidate validation path (replace the former one).
+
+    In the T1 arm, after the T1 cell's own verdict is computed, the runner
+    must, in this exact order, in-jail:
+      1. write the T1 response's `adapter_py` to `<work>/adapter.py`;
+         `adapter_sha256` = sha256 of exactly those bytes;
+      2. run `python3 /work/adapter.py /task /work/cand_in` (jail); a
+         non-zero rc is a validation failure;
+      3. write the frozen T0 candidate source to `<work>/candidate.py` and
+         verify sha256(candidate.py) == frozen T0 candidate sha;
+      4. run `python3 /work/candidate.py /work/cand_in
+         /work/CANDIDATE-OUTPUT.json` (jail);
+      5. HOST-SIDE: run the FROZEN T1 evaluator — the same checker + truth
+         the T1 cell verdict uses (their sha256 recorded from the committed
+         evaluator link) — over `CANDIDATE-OUTPUT.json` against the frozen
+         T1 truth;
+      6. `validated = (adapter rc == 0) and (candidate rc == 0) and
+         (checker_returncode == 0) and (validation_verdict == "ship") and
+         (executed_sha == frozen T0 candidate sha)`;
+      7. the caller commits EXACTLY ONE `candidate-validation` chain event
+         carrying the nine keys (see _wire_chain).
+
+    On any failure this helper raises RuntimeError with a
+    CANDIDATE-VALIDATION-FAIL cause BEFORE any chain is wired (no chain, no
+    COMPLETE cell, no promotion) — the T1 cell's own SHIP verdict (computed
+    before this call) is unaffected. Stdlib only; never asserts.
+    """
+    # 1. adapter bytes (fail closed when the T1 response omits adapter_py;
+    #    never silently validate).
+    if not isinstance(adapter_py, str) or not adapter_py.strip():
+        raise RuntimeError(
+            "CANDIDATE-VALIDATION-FAIL: T1 response omits adapter_py "
+            "(the T1 instruction requires adapter_py with the frozen ABI "
+            "python3 adapter.py <task_dir> <out_input_dir>; omitting it "
+            "makes the run unpromotable, never silently validated)")
+    adapter_path = os.path.join(work, "adapter.py")
+    with open(adapter_path, "wb") as f:
+        f.write(adapter_py.encode())
+    adapter_sha = h(adapter_path)
+    if outdir is not None:
+        try:
+            shutil.copy2(adapter_path, os.path.join(outdir, "adapter.py"))
+        except OSError:
+            pass
+    # Fresh cand_in for this validation (an adapter that does not
+    # materialize the input dir fails closed at the candidate step).
+    cand_in = os.path.join(work, "cand_in")
+    if os.path.lexists(cand_in):
+        shutil.rmtree(cand_in, ignore_errors=True)
+    # 2. run the adapter IN-JAIL (the adapter is executed, not merely
+    #    hashed: adapter_sha256 above is the sha256 of exactly these bytes).
+    adapter_p = sb.run(["python3", "/work/adapter.py", "/task",
+                        "/work/cand_in"], timeout=120)
+    adapter_rc = adapter_p.returncode
+    if adapter_rc != 0:
+        raise RuntimeError(
+            "CANDIDATE-VALIDATION-FAIL: adapter exited non-zero "
+            f"(rc={adapter_rc}); the candidate was not validated on this "
+            "T1 surface")
+    # 3. frozen T0 candidate bytes (hash-verified before execution,
+    #    engine-style — fail closed on mismatch).
+    cand_path = os.path.join(work, "candidate.py")
+    with open(cand_path, "wb") as f:
+        f.write(candidate_source.encode()
+                if isinstance(candidate_source, str) else candidate_source)
+    executed_sha = h(cand_path)
+    if executed_sha != candidate_sha256:
+        raise RuntimeError(
+            "CANDIDATE-VALIDATION-FAIL: materialized candidate bytes "
+            f"{executed_sha[:12]} != frozen candidate "
+            f"{candidate_sha256[:12]}")
+    if outdir is not None:
+        try:
+            shutil.copy2(cand_path, os.path.join(outdir, "candidate.py"))
+        except OSError:
+            pass
+    # 4. run the EXACT T0 candidate bytes IN-JAIL on the adapter's input.
+    cand_out_work = os.path.join(work, "CANDIDATE-OUTPUT.json")
+    if os.path.lexists(cand_out_work):
+        try:
+            os.unlink(cand_out_work)
+        except OSError:
+            pass
+    candidate_p = sb.run(["python3", "/work/candidate.py", "/work/cand_in",
+                          "/work/CANDIDATE-OUTPUT.json"], timeout=120)
+    candidate_rc = candidate_p.returncode
+    if os.path.exists(cand_out_work) and outdir is not None:
+        try:
+            shutil.copy2(cand_out_work,
+                         os.path.join(outdir, "CANDIDATE-OUTPUT.json"))
+        except OSError:
+            pass
+    # 5. HOST-SIDE frozen T1 evaluator over CANDIDATE-OUTPUT.json. The
+    #    checker + truth are the SAME bytes the T1 cell verdict used: their
+    #    shas must equal the committed evaluator link's shas (passed in as
+    #    checker_sha256 / truth_sha256); any drift or absence fails closed.
+    checker = os.path.normpath(os.path.join(taskdir, "..", "check.py"))
+    truth_path = os.path.normpath(os.path.join(taskdir, "..", "truth.json"))
+    live_checker_sha = h(checker) if os.path.exists(checker) else None
+    live_truth_sha = h(truth_path) if os.path.exists(truth_path) else None
+    if not isinstance(checker_sha256, str) or not isinstance(truth_sha256,
+                                                             str):
+        raise RuntimeError(
+            "CANDIDATE-VALIDATION-FAIL: T1 evaluator provenance absent "
+            f"(checker_sha256={checker_sha256!r}, "
+            f"truth_sha256={truth_sha256!r}); the frozen T1 checker + "
+            "truth must bind the validation")
+    if live_checker_sha != checker_sha256 or live_truth_sha != truth_sha256:
+        raise RuntimeError(
+            "CANDIDATE-VALIDATION-FAIL: frozen T1 evaluator bytes drifted "
+            f"(checker {str(live_checker_sha)[:12]} != "
+            f"{checker_sha256[:12]} or truth {str(live_truth_sha)[:12]} != "
+            f"{truth_sha256[:12]}); validation runs only the frozen T1 "
+            "checker + truth the T1 cell verdict used")
+    cand_out_committed = (os.path.join(outdir, "CANDIDATE-OUTPUT.json")
+                          if outdir is not None and os.path.exists(
+                              os.path.join(outdir, "CANDIDATE-OUTPUT.json"))
+                          else cand_out_work)
+    task_name = os.path.basename(os.path.normpath(taskdir))
+    chk = subprocess.run([sys.executable, checker, task_name,
+                          cand_out_committed],
+                         capture_output=True, text=True)
+    checker_rc = chk.returncode
+    validation_verdict = "ship" if checker_rc == 0 else "fail"
+    if os.path.exists(cand_out_committed):
+        candidate_output_sha = h(cand_out_committed)
+    else:
+        candidate_output_sha = None
+    # 6. validated predicate (all five) + nine-key non-null gate.
+    validated = (adapter_rc == 0 and candidate_rc == 0
+                 and checker_rc == 0 and validation_verdict == "ship"
+                 and executed_sha == candidate_sha256)
+    if candidate_output_sha is None:
+        raise RuntimeError(
+            "CANDIDATE-VALIDATION-FAIL: the frozen T0 candidate wrote no "
+            f"CANDIDATE-OUTPUT.json (candidate rc={candidate_rc}); the T1 "
+            "adapter cannot claim validation it did not produce")
+    if not validated:
+        raise RuntimeError(
+            "CANDIDATE-VALIDATION-FAIL: candidate output failed the host "
+            f"T1 checker (adapter rc={adapter_rc}, candidate "
+            f"rc={candidate_rc}, checker rc={checker_rc}, "
+            f"validation_verdict={validation_verdict!r}); the T1 SHIP is "
+            "evidence for the fresh T1 solver, not evidence that K works "
+            "on T1")
+    # 7. nine-key evidence (the caller wires exactly one chain event).
+    return {"candidate_sha256": candidate_sha256,
+            "executed_sha256": executed_sha,
+            "adapter_sha256": adapter_sha,
+            "candidate_output_sha256": candidate_output_sha,
+            "checker_sha256": checker_sha256,
+            "truth_sha256": truth_sha256,
+            "checker_returncode": checker_rc,
+            "validation_verdict": validation_verdict,
+            "validated": True}
+
+
 def call(lane, prompt, outdir, tag):
     cfg = LANES[lane]
     key = open(cfg["keyfile"]).read().strip()
@@ -813,15 +997,18 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
             "reuse_rejection_reason": ledger.get("reuse_rejection_reason"),
             "materially_contributed": contributed,
             "evidence": evidence})
-    # A12b.2: exactly one candidate-validation event on a T1 acquisition
-    # run — the frozen candidate sha, the sha of the bytes the adapter
-    # actually ran, the sha of the adapter itself, and the validation
-    # verdict. The promotion controller re-derives this committed event; a
-    # T1 chain without it can never promote. Shape is enforced here (fail
-    # closed); the candidate binding is enforced at promotion time.
+    # A12c D2/D4: exactly one candidate-validation event on a T1
+    # acquisition run — the nine-field host-checker evidence. The promotion
+    # controller re-derives this committed event from the chain (never the
+    # receipt); a T1 chain without it can never promote. Shape AND passing
+    # values are enforced here (fail closed); the candidate binding is
+    # enforced at promotion time. adapter_sha256 is the sha256 of the exact
+    # adapter bytes the runner executed (D4: executed, not merely hashed).
     if candidate_validation is not None:
         cv = candidate_validation
-        for f in ("candidate_sha256", "executed_sha256", "adapter_sha256"):
+        for f in ("candidate_sha256", "executed_sha256", "adapter_sha256",
+                  "candidate_output_sha256", "checker_sha256",
+                  "truth_sha256"):
             if not (isinstance(cv.get(f), str) and len(cv[f]) == 64):
                 raise RuntimeError(f"CHAIN-CANDIDATE-DENY: {f} must be "
                                    f"64-hex, got {cv.get(f)!r}")
@@ -830,6 +1017,20 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
             except ValueError:
                 raise RuntimeError(f"CHAIN-CANDIDATE-DENY: {f} must be "
                                    f"64-hex, got {cv[f]!r}") from None
+        if not isinstance(cv.get("checker_returncode"), int):
+            raise RuntimeError(
+                "CHAIN-CANDIDATE-DENY: checker_returncode must be an int "
+                f"(got {cv.get('checker_returncode')!r})")
+        if cv.get("checker_returncode") != 0:
+            raise RuntimeError(
+                "CHAIN-CANDIDATE-DENY: checker_returncode "
+                f"{cv.get('checker_returncode')!r} != 0 (the host T1 "
+                "checker must pass over CANDIDATE-OUTPUT.json)")
+        if cv.get("validation_verdict") != "ship":
+            raise RuntimeError(
+                "CHAIN-CANDIDATE-DENY: validation_verdict "
+                f"{cv.get('validation_verdict')!r} != 'ship' (the host T1 "
+                "checker must pass over CANDIDATE-OUTPUT.json)")
         if cv.get("validated") is not True:
             raise RuntimeError("CHAIN-CANDIDATE-DENY: an unvalidated "
                                "candidate cannot be wired as validation")
@@ -837,6 +1038,11 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
             "candidate_sha256": cv["candidate_sha256"],
             "executed_sha256": cv["executed_sha256"],
             "adapter_sha256": cv["adapter_sha256"],
+            "candidate_output_sha256": cv["candidate_output_sha256"],
+            "checker_sha256": cv["checker_sha256"],
+            "truth_sha256": cv["truth_sha256"],
+            "checker_returncode": cv["checker_returncode"],
+            "validation_verdict": cv["validation_verdict"],
             "validated": True})
     # evaluator link: sealed truth + checker hashes + host-side outcome.
     ev_link = c.append("evaluator", {
@@ -1193,6 +1399,10 @@ def prepare_arm(lane, family, task, arm, capdir, wire, run_id,
             # sees the exact candidate). The block sits strictly after
             # the shared envelope, exactly once; removing both block
             # types must recover the capability-free base bytes.
+            # A12c D1: the T1 producer instruction additionally requires
+            # `adapter_py` (frozen ABI python3 adapter.py <task_dir>
+            # <out_input_dir>, exit non-zero on failure, omission is
+            # unpromotable). T0's instruction (_OUT) is unchanged.
             if candidate is None:
                 raise ValueError(
                     "CANDIDATE-VALIDATION-DENY: a T1 acquisition prompt "
@@ -1201,20 +1411,21 @@ def prepare_arm(lane, family, task, arm, capdir, wire, run_id,
                     "never promote")
             block = build_candidate_validation_block(
                 candidate["sha256"], candidate["source"])
-            prompt = _PRE + envelope + block + _OUT
+            base_t1 = _PRE + envelope + _OUT_T1
+            prompt = _PRE + envelope + block + _OUT_T1
             sym = []
             if prompt.count(_CAND_BEGIN) != 1 \
                     or prompt.count(_CAND_END) != 1:
                 sym.append("SYMMETRY-FAIL: candidate-validation "
                            "delimiters != 1 each in the T1 prompt")
-            elif strip_capability_block(prompt) != base:
+            elif strip_capability_block(prompt) != base_t1:
                 sym.append("SYMMETRY-FAIL: T1 prompt minus the "
                            "candidate-validation block != the "
                            "capability-free base - shared-region "
                            "divergence at "
                            + _first_diff(strip_capability_block(prompt),
-                                         base))
-            if not prompt.startswith(_PRE) or not prompt.endswith(_OUT):
+                                         base_t1))
+            if not prompt.startswith(_PRE) or not prompt.endswith(_OUT_T1):
                 sym.append("SYMMETRY-FAIL: T1 prompt does not carry the "
                            "shared preamble and output contract")
         else:
@@ -1435,50 +1646,34 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     verdict = execr["verdict"]
     output_sha = execr["output_sha256"]
 
-    # ---- A12b.2: execute the SAME frozen candidate ----------------------
-    # The adapter (this run's own solver) was prompted with the immutable
-    # candidate source; the runner now executes those exact frozen bytes
-    # through the same argv ABI in this run's jail and commits what ran:
-    # executed_sha256 is the sha of the bytes actually executed (hash-
-    # verified against the locked candidate before execution, engine-
-    # style — fail closed on mismatch). A validation failure refuses the
-    # run BEFORE any chain is wired: no chain, no COMPLETE cell, no
-    # promotion — while the T1 cell itself may still SHIP on its own
-    # solver verdict elsewhere. (The cell verdict above still comes from
-    # the adapter's own execution; validation is the promotion gate.)
+    # ---- A12c D2: candidate validation path (replace the former one) ----
+    # Required flow: T1 model -> candidate adapter description ->
+    # materialize T1 -> candidate input -> EXACT T0 candidate bytes ->
+    # candidate output -> HOST-SIDE T1 CHECKER -> SHIP. In this exact
+    # order, in-jail: (1) write adapter_py to <work>/adapter.py;
+    # adapter_sha256 = sha256 of exactly those bytes; (2) run
+    # python3 /work/adapter.py /task /work/cand_in (jail, non-zero rc is a
+    # validation failure); (3) write the frozen T0 candidate source to
+    # <work>/candidate.py and verify sha256 == frozen T0 candidate sha;
+    # (4) run python3 /work/candidate.py /work/cand_in
+    # /work/CANDIDATE-OUTPUT.json (jail); (5) HOST-SIDE: run the FROZEN T1
+    # evaluator — the same checker + truth the T1 cell verdict uses — over
+    # CANDIDATE-OUTPUT.json; (6) validated = five-way conjunction; (7)
+    # commit EXACTLY ONE candidate-validation chain event with all nine
+    # keys. On any failure: CANDIDATE-VALIDATION-FAIL BEFORE any chain is
+    # wired (no chain, no COMPLETE cell, no promotion) — the T1 cell's own
+    # SHIP verdict (computed above) is unaffected.
     candidate_validation = None
     if acq_event == "T1":
-        cand_path = os.path.join(work, "candidate.py")
-        with open(cand_path, "w") as f:
-            f.write(candidate["source"])
-        executed_sha = h(cand_path)
-        if executed_sha != candidate["sha256"]:
-            raise RuntimeError(
-                "CANDIDATE-VALIDATION-FAIL: materialized candidate bytes "
-                f"{executed_sha[:12]} != frozen candidate "
-                f"{candidate['sha256'][:12]}")
-        shutil.copy2(cand_path, os.path.join(outdir, "candidate.py"))
-        cand_out = os.path.join(work, "CANDIDATE-OUTPUT.json")
-        cand_p = sb.run(["python3", "/work/candidate.py", "/task",
-                         "/work/CANDIDATE-OUTPUT.json"], timeout=120)
-        if os.path.exists(cand_out):
-            shutil.copy2(cand_out,
-                         os.path.join(outdir, "CANDIDATE-OUTPUT.json"))
-        adapter_sha = hashlib.sha256(
-            arrival["execution_payload"]["solver_py"].encode()).hexdigest()
-        validated = (cand_p.returncode == 0
-                     and executed_sha == candidate["sha256"]
-                     and os.path.exists(cand_out))
-        if not validated:
-            raise RuntimeError(
-                "CANDIDATE-VALIDATION-FAIL: the frozen T0 candidate did "
-                f"not execute on this T1 surface (rc="
-                f"{cand_p.returncode}, output={os.path.exists(cand_out)}); "
-                f"the T1 adapter cannot claim validation it did not run")
-        candidate_validation = {
-            "candidate_sha256": candidate["sha256"],
-            "executed_sha256": executed_sha,
-            "adapter_sha256": adapter_sha, "validated": True}
+        candidate_validation = validate_t1_candidate(
+            adapter_py=(arrival.get("execution_payload") or {}).get(
+                "adapter_py"),
+            candidate_source=candidate["source"],
+            candidate_sha256=candidate["sha256"],
+            work=work, taskdir=taskdir, sb=sb,
+            checker_sha256=execr["checker_sha256"],
+            truth_sha256=execr["truth_sha256"],
+            outdir=outdir)
 
     # ---- H2/H3 wiring (skipped only under the unwired dev escape) ----
     # Reuse ledger: P0-2 — every lifecycle field is DERIVED from the actual

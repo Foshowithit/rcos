@@ -225,7 +225,8 @@ def t0_candidate_sha256(t0_run_dir):
 def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                     decision="fresh", solver_py=None, capability=None,
                     reuse_overrides=None, manifest_overrides=None,
-                    validates_candidate=None):
+                    validates_candidate=None, adapter_py=None,
+                    candidate_validation=None):
     """Build ONE hermetic, production-eligible model-run cell. Returns the
     derived run directory. `cell` is an expansion cell (or any dict with the
     same keys). Raises on any evidence defect (fail closed).
@@ -237,7 +238,18 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
     candidate-validation event (executed == candidate: the stand-in
     models an adapter that ran the exact candidate bytes). When absent,
     the T1 is a standalone fresh solve: it still SHIPs, but promotion
-    refuses it (A12b.2 fail closed)."""
+    refuses it (A12b.2 fail closed).
+
+    A12c: the chain event carries all nine host-checker keys
+    (candidate_sha256, executed_sha256, adapter_sha256,
+    candidate_output_sha256, checker_sha256, truth_sha256,
+    checker_returncode, validation_verdict, validated). `adapter_py`
+    supplies the T1 adapter bytes whose sha256 is committed as
+    adapter_sha256 (D4: executed, not merely hashed); when omitted the
+    stand-in falls back to this run's own solver bytes so pre-A12c
+    callers stay green. `candidate_validation` optionally overrides any
+    of the nine values with real host-checker evidence (the A12c N7
+    positive control threads real checker shas/rc/verdict here)."""
     d = order.ensure_namespace(root, cell["block"], cell["universe"],
                                cell["family"], tail=("runs", cell["cell_id"]))
     _clean_run_dir(d)
@@ -266,8 +278,16 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
         # A12b.2: a validating T1 declares the frozen candidate it saw
         # (the production T1 arrival carries the candidate-validation
         # declaration alongside its own fresh solver).
+        # A12c D1: the production T1 arrival additionally carries
+        # `adapter_py` (frozen ABI python3 adapter.py <task_dir>
+        # <out_input_dir>); the stand-in declares it too when given.
         if validates_candidate is not None:
             payload["candidate_sha256"] = validates_candidate
+            if adapter_py is not None:
+                if not (isinstance(adapter_py, str) and adapter_py.strip()):
+                    raise ValueError("fixture misuse: adapter_py must be a "
+                                     "nonempty python source string")
+                payload["adapter_py"] = adapter_py
         # A12b.1/AC6b: the producer stand-in declares its capability
         # contract in its OWN arrival payload (verbatim frozen text, so the
         # governance cross-check passes). The promotion controller sources
@@ -354,17 +374,35 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
         os.unlink(chain_path)
     ch = CH.Chain(chain_path, freeze_commit, manifest)
     ch.append("model-call", model_call)
-    # A12b.2: a validating T1 commits exactly one candidate-validation
-    # event — the frozen candidate sha, the sha of the bytes the adapter
-    # actually ran (the stand-in models exact-byte execution, so equal),
-    # and the sha of the adapter (this run's own solver) itself.
+    # A12c: a validating T1 commits exactly one candidate-validation
+    # event with all nine host-checker keys — the frozen candidate sha,
+    # the sha of the bytes the adapter actually ran (the stand-in models
+    # exact-byte execution, so equal), the sha of the adapter itself (D4:
+    # the exact adapter bytes, adapter_py when given else this run's own
+    # solver for pre-A12c callers), the candidate-output sha, the frozen
+    # checker/truth shas, the host checker rc, the validation verdict, and
+    # the validated flag. Overrides in `candidate_validation` thread real
+    # host-checker evidence (A12c N7); defaults are hermetic passing
+    # placeholders so pre-A12c callers stay green.
     if validates_candidate is not None:
-        ch.append("candidate-validation", {
-            "candidate_sha256": validates_candidate,
-            "executed_sha256": validates_candidate,
-            "adapter_sha256": hashlib.sha256(
-                payload["solver_py"].encode()).hexdigest(),
-            "validated": True})
+        _cv_over = dict(candidate_validation or {})
+        _adapter_src = (adapter_py if isinstance(adapter_py, str)
+                        else payload["solver_py"])
+        _cv = {"candidate_sha256": validates_candidate,
+               "executed_sha256": validates_candidate,
+               "adapter_sha256": hashlib.sha256(
+                   _adapter_src.encode()).hexdigest(),
+               "candidate_output_sha256": _fixture_evidence_sha(
+                   "candidate-output", cell["cell_id"]),
+               "checker_sha256": _fixture_evidence_sha("checker",
+                                                       cell["cell_id"]),
+               "truth_sha256": _fixture_evidence_sha("truth",
+                                                     cell["cell_id"]),
+               "checker_returncode": 0,
+               "validation_verdict": "ship",
+               "validated": True}
+        _cv.update(_cv_over)
+        ch.append("candidate-validation", _cv)
     ev = ch.append("evaluator", {"evaluator": "fixture_modelrun",
                                  "cell_id": cell["cell_id"],
                                  "verdict": verdict,

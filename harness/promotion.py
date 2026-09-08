@@ -472,12 +472,17 @@ def _producer_identity(t0_ev, t1_ev):
 
 def _t1_candidate_validation(t1_run_dir, t0_sha):
     """Re-derive the T1 candidate-validation evidence from the committed
-    T1 chain (fail closed). The chain must carry EXACTLY ONE
-    candidate-validation event binding the SAME frozen T0 candidate:
-    candidate_sha256 == the T0 root, executed_sha256 == the T0 root (the
-    adapter ran the exact candidate bytes), adapter_sha256 present (which
-    adapter ran), validated True. A T1 with no such event — a standalone
-    fresh solve that never saw the candidate — can NEVER promote."""
+    T1 chain (fail closed). A12c D3: promotion requires exactly one
+    candidate-validation event with all nine fields present/non-null,
+    `validated is True`, `validation_verdict == "ship"`,
+    `candidate_sha256 == executed_sha256 == T0 arrival candidate sha`,
+    and a 64-hex `adapter_sha256` (plus 64-hex candidate-output / checker
+    / truth shas and checker_returncode == 0 — the host-side T1 checker
+    over CANDIDATE-OUTPUT.json). Any deviation -> PROMOTION-DENY naming
+    the exact missing/mismatched field. The chain must carry EXACTLY ONE
+    such event binding the SAME frozen T0 candidate: a T1 with no such
+    event — a standalone fresh solve that never saw the candidate — can
+    NEVER promote."""
     links = _read_chain_links(t1_run_dir)
     evs = [l for l in links if l.get("kind") == "candidate-validation"]
     if len(evs) != 1:
@@ -487,7 +492,16 @@ def _t1_candidate_validation(t1_run_dir, t0_sha):
             f"no candidate-validation event never validated the frozen "
             f"candidate and can never promote)")
     pay = evs[-1].get("payload") or {}
-    for f in ("candidate_sha256", "executed_sha256", "adapter_sha256"):
+    for f in ("candidate_sha256", "executed_sha256", "adapter_sha256",
+              "candidate_output_sha256", "checker_sha256", "truth_sha256",
+              "checker_returncode", "validation_verdict", "validated"):
+        if pay.get(f) is None:
+            raise PermissionError(
+                f"PROMOTION-DENY T1 candidate-validation event carries "
+                f"no {f} (got {pay.get(f)!r}; all nine keys must be "
+                f"present and non-null)")
+    for f in ("candidate_sha256", "executed_sha256", "adapter_sha256",
+              "candidate_output_sha256", "checker_sha256", "truth_sha256"):
         v = pay.get(f)
         if not (isinstance(v, str) and len(v) == 64):
             raise PermissionError(
@@ -511,13 +525,29 @@ def _t1_candidate_validation(t1_run_dir, t0_sha):
             f"{pay['executed_sha256'][:12]} != the frozen T0 candidate "
             f"{t0_sha[:12]} (validation means executing the SAME "
             f"candidate bytes)")
+    if pay.get("checker_returncode") != 0:
+        raise PermissionError(
+            f"PROMOTION-DENY T1 candidate-validation checker_returncode "
+            f"{pay.get('checker_returncode')!r} != 0 (the host-side T1 "
+            f"checker must pass over CANDIDATE-OUTPUT.json)")
+    if pay.get("validation_verdict") != "ship":
+        raise PermissionError(
+            f"PROMOTION-DENY T1 candidate-validation validation_verdict "
+            f"{pay.get('validation_verdict')!r} != 'ship' (the host-side "
+            f"T1 checker must pass over CANDIDATE-OUTPUT.json)")
     if pay.get("validated") is not True:
         raise PermissionError(
             f"PROMOTION-DENY T1 candidate-validation event is not "
             f"validated (validated={pay.get('validated')!r})")
     return {"candidate_sha256": pay["candidate_sha256"],
             "executed_sha256": pay["executed_sha256"],
-            "adapter_sha256": pay["adapter_sha256"], "validated": True}
+            "adapter_sha256": pay["adapter_sha256"],
+            "candidate_output_sha256": pay["candidate_output_sha256"],
+            "checker_sha256": pay["checker_sha256"],
+            "truth_sha256": pay["truth_sha256"],
+            "checker_returncode": pay["checker_returncode"],
+            "validation_verdict": pay["validation_verdict"],
+            "validated": True}
 
 
 def derive_candidate(t0_ev, t1_ev, t0_run_dir):

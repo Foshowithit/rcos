@@ -406,8 +406,14 @@ def _cv_chain(payloads):
     return td
 
 
+# A12c: the validation event carries all nine host-checker keys (D2/D3).
+# Pre-A12c four-key payloads are now fail-closed (missing keys deny).
 _CV_OK = {"candidate_sha256": "aa" * 32, "executed_sha256": "aa" * 32,
-          "adapter_sha256": "cc" * 32, "validated": True}
+          "adapter_sha256": "cc" * 32,
+          "candidate_output_sha256": "dd" * 32,
+          "checker_sha256": "ee" * 32, "truth_sha256": "ff" * 32,
+          "checker_returncode": 0, "validation_verdict": "ship",
+          "validated": True}
 _td0 = _cv_chain([])
 try:
     promotion._t1_candidate_validation(_td0, "aa" * 32)
