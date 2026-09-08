@@ -380,6 +380,28 @@ hidden capability definition the benchmark authors wrote. This rule
 prevents punishing a capability for being better than expected.
 
 ---
+
+## Conformance semantic IDs (frozen)
+
+Promotion contracts and CAPABILITY_LOCKs MUST reference these exact
+stability IDs for the corresponding limitations (in addition to any
+prose). Conformance checking is set membership on IDs, never semantic
+judgment over prose:
+
+```text
+fam02.pages_disjoint
+fam03.repeats_are_duplicates
+fam04.promised_acyclic
+fam05.local_v1_sha256
+fam06.common_unit_basis
+```
+
+A new ID may be added only by amending this list before the runs it
+governs; IDs are never edited in place. If a locked capability lacks
+the ID its family's T4 relies on, that T4 is non-discriminating
+(report with cause; the specificity gate counts remaining families).
+
+---
 # 11. Manifest lifecycle
 
 Do not mutate one manifest through multiple lifecycle stages.
@@ -680,6 +702,18 @@ Requires all narrow PASS requirements plus:
 * observed capability execution is proven;
 * Model Q had no access to Model P's cognition/history;
 * the T4 specificity gate above.
+
+
+## Reciprocal-block verdict mapping (frozen)
+
+Block PQ and Block QP are judged INDEPENDENTLY, each against the full
+gate set below. Define Δsame_QP = A′−B′, Δcross_QP = C′−D′, with the
+same primary metric (§16.1), genuine-reuse predicate and 11/12 coverage
+rule, correctness gate, 6/6 T4 gate, and 4-of-6 family rule applied
+verbatim to primed lanes. No pooling may rescue a failed direction:
+a headline PASS at a given claim level requires that level's gates to
+hold in BOTH blocks independently. Report PQ and QP tables separately
+before any pooled summary.
 
 ## PASS — compounding claim
 

@@ -1,2 +1,14 @@
-{"manifest_version": 2, "note": "v2 manifests use BLAKE3 hashes and remote s3:// objects; verify with the v2 verifier, not this tool.",
- "entries": [{"path": "s3://bucket/alpha.txt", "blake3": "deadbeef"}, {"path": "s3://bucket/beta.txt", "blake3": "cafef00d"}]}
+{
+ "manifest_version": 2,
+ "note": "v2 manifests use BLAKE3 hashes and remote s3:// objects.",
+ "entries": [
+  {
+   "path": "s3://bucket/alpha.txt",
+   "blake3": "deadbeef"
+  },
+  {
+   "path": "s3://bucket/beta.txt",
+   "blake3": "cafef00d"
+  }
+ ]
+}

@@ -2,7 +2,7 @@
 
 VISIBLE TO AGENT:
 - prompt.md
-- task fixtures: events.log 
+- task fixtures: batch.json 
 - task-provided fetch harness, if required
 
 NOT VISIBLE (seal violation voids the run):

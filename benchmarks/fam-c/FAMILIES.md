@@ -39,3 +39,12 @@ instances as of this commit.
   Do NOT treat 4-of-6 as four independent confirmations. Mitigations:
   leave-one-family-out rule, fam04 as independence anchor, and this
   limitation rides in every reported headline.
+
+## Scale characterization (honest boundary)
+
+T2/T3 instances are larger than slice-scale (8–12 records, 6–8 node
+graphs, multi-file manifests) but remain small-capability transfer
+tasks, not large-workflow reuse: row counts alone do not constitute
+§6-scale nontrivial subsystems. This freeze is valid for specificity,
+reuse-mechanics, and pilot efficiency signal; any compounding claim
+beyond pilot grade requires harder task regimes in later series.
