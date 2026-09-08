@@ -7,6 +7,7 @@ FREEZE-HASHES.sha256; no forbidden basenames inside task dirs."""
 import hashlib
 import json
 import os
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -54,18 +55,40 @@ for p, h in sorted(freeze.items()):
     if actual != h:
         fail(f"hash mismatch vs freeze manifest: {p}")
 fj = os.path.join(HERE, "FREEZE.json")
-if os.path.exists(fj):
-    import subprocess
-    pin = json.load(open(fj))
-    try:
-        base = subprocess.run(
-            ["git", "-C", os.path.dirname(HERE), "merge-base",
-             "--is-ancestor", pin.get("freeze_commit", ""), "HEAD"],
-            capture_output=True, text=True)
-        if base.returncode != 0:
-            fail("freeze commit " + pin.get("freeze_commit", "")[:12]
-                 + " is not an ancestor of HEAD (history rewritten?)")
-    except FileNotFoundError:
-        fail("git unavailable for ancestry check")
+if not os.path.exists(fj):
+    fail("FREEZE.json missing")
+    print(f"preflight: {len(fails)} findings")
+    sys.exit(1)
+pin = json.load(open(fj))
+fc = pin.get("freeze_commit", "")
+if not fc:
+    fail("FREEZE.json has no freeze_commit")
+    print(f"preflight: {len(fails)} findings")
+    sys.exit(1)
+# Only runs/** may differ post-freeze (future evidence). EVERYTHING else
+# — including this script, the manifests, and FREEZE.json — is frozen.
+# runs/** holds future evidence; FREEZE.json + FREEZE-HASHES.sha256 are
+# pure metadata pointers (their own integrity rides on git history +
+# the content manifest respectively). Everything else is frozen.
+bind = ["diff", "--exit-code", fc, "HEAD", "--", "benchmarks/fam-c",
+        ":(exclude)benchmarks/fam-c/runs/**",
+        ":(exclude)benchmarks/fam-c/FREEZE.json",
+        ":(exclude)benchmarks/fam-c/FREEZE-HASHES.sha256"]
+repo = os.path.dirname(HERE)
+try:
+    d = subprocess.run(["git", "-C", repo] + bind,
+                       capture_output=True, text=True)
+    if d.returncode != 0:
+        fail("frozen→HEAD experimental diff NONEMPTY (content drift since "
+             f"{fc[:12]}):\n" + d.stdout[:2000])
+    st = subprocess.run(["git", "-C", repo, "status", "--porcelain", "--",
+                         "benchmarks/fam-c"], capture_output=True, text=True)
+    for line in st.stdout.splitlines():
+        path = line[3:]
+        if "/runs/" in path or path.endswith("/runs"):
+            continue  # future evidence dirs are expected post-freeze
+        fail("working tree not clean vs freeze: " + line)
+except FileNotFoundError:
+    fail("git unavailable for binding checks")
 print(f"preflight: {len(fails)} findings")
 sys.exit(1 if fails else 0)
