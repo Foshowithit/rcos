@@ -211,8 +211,9 @@ class PairLedger:
                     f"evidence chain genesis mismatch on {_k}: chain "
                     f"does not belong to this pair/arm/authorization")
         import hashlib as _hlg
-        _gen_hash = _hlg.sha256(
-            json.dumps(_rec0, sort_keys=True).encode()).hexdigest()
+        # Binding is over exact persisted bytes (including line ending):
+        # any byte change to link 0 breaks equality.
+        _gen_hash = _hlg.sha256(_raw0).hexdigest()
         if m.get("evidence_genesis_hash") != _gen_hash:
             raise ValueError("evidence genesis hash != actual chain link 0")
         done = runs.setdefault("replacement_runs", {})
