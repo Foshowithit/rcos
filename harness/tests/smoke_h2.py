@@ -48,8 +48,13 @@ class StubProvider(BaseHTTPRequestHandler):
             payload = {"id": "stub-1", "model": body.get("model", "m"),
                        "created": 123,
                        "choices": [{"message": {"content": "STUB-OK"}}],
-                       "usage": {"input_tokens": 10, "output_tokens": 5,
-                                 "cached_tokens": 2}}
+                       # REAL OpenAI Chat Completions usage shape: prompt_tokens
+                       # is total prompt (cache included), cached subset lives
+                       # at prompt_tokens_details.cached_tokens. (10 prompt, 2
+                       # cached -> 8 uncached; 5 output.)
+                       "usage": {"prompt_tokens": 10, "completion_tokens": 5,
+                                 "total_tokens": 15,
+                                 "prompt_tokens_details": {"cached_tokens": 2}}}
         data = json.dumps(payload).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -87,6 +92,27 @@ check("derived metrics exact",
       s == {"model_calls": 2, "input_tokens_uncached": 16,
             "output_tokens": 10, "cached_tokens": 4,
             "cached_detail_per_call": [2, 2]}, str(s))
+# NEW: the REAL P provider receipt (committed evidence, OpenAI chat schema)
+# must normalize exactly to the auditor-computed numbers; stripped usage
+# must invalidate (estimation forbidden).
+import os as _os
+_REAL_P = _os.path.normpath(_os.path.join(
+    ROOT, "..", "benchmarks", "fam-c", "runs", "H1-P-fam05-T0",
+    "call-d7e697251423173c.json"))
+_real = json.load(open(_REAL_P))
+_nu = __import__("usage").normalize_usage(_real, "openai-chat-total-input-v1")
+check("real P receipt normalizes to primary work 2315 (350 uncached + 1965 out)",
+      _nu["input_tokens_uncached"] == 350 and _nu["output_tokens"] == 1965
+      and _nu["primary_work"] == 2315 and _nu["cached_tokens"] == 128,
+      str({k: _nu[k] for k in ("input_tokens_uncached", "output_tokens",
+                               "cached_tokens", "primary_work")}))
+_stripped = dict(_real)
+_stripped.pop("usage_raw", None)
+try:
+    __import__("usage").normalize_usage(_stripped, "openai-chat-total-input-v1")
+    check("stripped-usage receipt invalidated", False)
+except ValueError:
+    check("stripped-usage receipt invalidated", True)
 _, p3 = call("c", mode="no-usage")
 try:
     summarize([p3], {"stub-m": "openai-chat-total-input-v1"})
@@ -255,9 +281,11 @@ try:
     check("tampered usage_raw rejected", False)
 except ValueError:
     check("tampered usage_raw rejected", True)
-# NEW: cached > total must FAIL
+# NEW: cached > total must FAIL (real schema path: prompt_tokens_details)
 r2 = json.load(open(p1))
-r2["usage_raw"] = dict(r2["usage_raw"], cached_tokens=500)
+r2["usage_raw"] = dict(r2["usage_raw"])
+r2["usage_raw"]["prompt_tokens_details"] = dict(
+    r2["usage_raw"].get("prompt_tokens_details") or {}, cached_tokens=500)
 r2["usage_raw_sha256"] = __import__("hashlib").sha256(
     json.dumps(r2["usage_raw"], sort_keys=True).encode()).hexdigest()
 try:

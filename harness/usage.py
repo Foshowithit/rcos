@@ -11,8 +11,6 @@ import os
 import time
 import urllib.request
 
-REQUIRED_USAGE_FIELDS = ("input_tokens", "output_tokens")
-
 # Frozen normalizer: provider-reported usage -> normalized primary work.
 # Versioned + hashed so derivations are reproducible and auditable.
 # Wording discipline: primary work is CALCULATED FROM provider-reported
@@ -24,15 +22,33 @@ NORMALIZER_RULE = ("primary_work = input_tokens_uncached + output_tokens; "
                    "cached tokens retained separately, never zeroed, "
                    "never mixed into uncached")
 
-# Provider semantics are frozen by the Fam-C P/Q preregistration, not
-# guessed from fields at runtime. New providers require a new adapter ID.
-# `input_includes_cache=True`: input_tokens is total prompt input and
-# cached_tokens is a subset, so uncached=input-cached.
+# Adapters are FROZEN provider-schema contracts keyed by preregistered
+# adapter id — never inferred from field presence at runtime. The real
+# P/Q providers (router9/MiniMax, kenari/Agnes) answer OpenAI Chat
+# Completions shape: usage.prompt_tokens is the TOTAL prompt input
+# (cache included), completion_tokens the output, and the cached subset
+# lives at prompt_tokens_details.cached_tokens (absent when none).
+# A provider with a different raw schema requires a NEW RAW_SCHEMAS
+# entry plus a preregistered adapter id — never field-guessing here.
+RAW_SCHEMAS = {
+    # Canonical OpenAI Chat Completions usage block.
+    "openai-chat-completions": {
+        "input_total": ("prompt_tokens",),            # prompt incl. cache
+        "output": ("completion_tokens",),
+        "cached": ("prompt_tokens_details", "cached_tokens"),  # absent -> 0
+        "total": ("total_tokens",),                   # optional consistency
+    },
+}
+
 PROVIDER_NORMALIZERS = {
-    "openai-chat-total-input-v1": {"input_includes_cache": True,
-                                    "require_total_consistency": False},
-    "openai-chat-uncached-input-v1": {"input_includes_cache": False,
-                                       "require_total_consistency": False},
+    # prompt_tokens reported as TOTAL prompt input (cache included):
+    # uncached = prompt_tokens - prompt_tokens_details.cached_tokens.
+    "openai-chat-total-input-v1": {"raw_schema": "openai-chat-completions",
+                                   "input_includes_cache": True},
+    # prompt_tokens reported already uncached (provider-side caching off):
+    # uncached = prompt_tokens as reported; any cached detail kept separate.
+    "openai-chat-uncached-input-v1": {"raw_schema": "openai-chat-completions",
+                                      "input_includes_cache": False},
 }
 
 
@@ -87,12 +103,36 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
     return reply, path
 
 
+def _opt_int(u, path):
+    """Optional declared raw-schema field by dotted path.
+    Absent -> None; present-but-invalid -> raise (fail closed)."""
+    node = u
+    for part in path:
+        if not isinstance(node, dict) or part not in node:
+            return None
+        node = node[part]
+    if not isinstance(node, int) or isinstance(node, bool) or node < 0:
+        raise ValueError(f"USAGE-INCOMPLETE: {'.'.join(path)!r} invalid")
+    return node
+
+
+def _req_int(u, path):
+    v = _opt_int(u, path)
+    if v is None:
+        raise ValueError(
+            f"USAGE-INCOMPLETE: {'.'.join(path)!r} missing "
+            "(estimation forbidden)")
+    return v
+
+
 def normalize_usage(receipt, normalizer_id):
     """Frozen provider-schema adapter -> primary work.
-    Unknown/undeclared provider schema FAILS (no runtime field guessing).
-    Verifies raw usage hash before trusting usage_raw."""
+    The adapter id declares BOTH the raw schema it consumes and its cache
+    semantics. Unknown/undeclared adapter FAILS (no runtime field
+    guessing). Verifies raw usage hash before trusting usage_raw."""
     if normalizer_id not in PROVIDER_NORMALIZERS:
         raise ValueError(f"USAGE-NORMALIZER-UNKNOWN: {normalizer_id}")
+    cfg = PROVIDER_NORMALIZERS[normalizer_id]
     u = receipt.get("usage_raw")
     if not isinstance(u, dict):
         raise ValueError("USAGE-INCOMPLETE: usage_raw absent/non-object")
@@ -100,29 +140,28 @@ def normalize_usage(receipt, normalizer_id):
     raw_hash = _hl.sha256(json.dumps(u, sort_keys=True).encode()).hexdigest()
     if receipt.get("usage_raw_sha256") != raw_hash:
         raise ValueError("USAGE-TAMPER: usage_raw_sha256 mismatch")
-    for f in REQUIRED_USAGE_FIELDS:
-        v = u.get(f)
-        if not isinstance(v, int) or isinstance(v, bool) or v < 0:
-            raise ValueError(f"USAGE-INCOMPLETE: {f!r} missing/invalid")
-    cached = u.get("cached_tokens", 0) or 0
-    if not isinstance(cached, int) or isinstance(cached, bool) or cached < 0:
-        raise ValueError("USAGE-INCOMPLETE: cached_tokens invalid")
-    cfg = PROVIDER_NORMALIZERS[normalizer_id]
-    if cfg["input_includes_cache"]:
-        if cached > u["input_tokens"]:
-            raise ValueError("USAGE-INCONSISTENT: cached > total input")
-        uncached = u["input_tokens"] - cached
-    else:
-        uncached = u["input_tokens"]
-    notes = []
-    if "total_tokens" in u and u["total_tokens"] is not None:
-        expected = u["input_tokens"] + u["output_tokens"]
-        if u["total_tokens"] != expected:
+    sch = RAW_SCHEMAS[cfg["raw_schema"]]
+    total_in = _req_int(u, sch["input_total"])
+    output = _req_int(u, sch["output"])
+    cached = _opt_int(u, sch["cached"]) or 0
+    if "total" in sch:
+        tot = _opt_int(u, sch["total"])
+        if tot is not None and tot != total_in + output:
             raise ValueError("USAGE-INCONSISTENT: total != input + output")
+    if cfg["input_includes_cache"]:
+        if cached > total_in:
+            raise ValueError("USAGE-INCONSISTENT: cached > total input")
+        uncached = total_in - cached
+    else:
+        uncached = total_in
+    notes = []
+    if cfg["input_includes_cache"] is False and cached:
+        notes.append("cached detail present under uncached-input adapter; "
+                     "retained separately, never subtracted")
     return {"input_tokens_uncached": uncached,
-            "output_tokens": u["output_tokens"],
+            "output_tokens": output,
             "cached_tokens": cached,
-            "primary_work": uncached + u["output_tokens"],
+            "primary_work": uncached + output,
             "normalizer_id": normalizer_id,
             "normalizer_version": NORMALIZER_VERSION,
             "normalizer_notes": notes}
@@ -134,10 +173,9 @@ def summarize(receipt_paths, normalizer_map):
     Each receipt's stored normalizer_id must equal the mapped value: no
     analyst override at analysis time, so one raw receipt cannot yield two
     primary-work numbers. Raises otherwise (fail closed)."""
-    """Derive metrics SOLELY from persisted raw usage blocks.
-    Raises on any missing/merged token fields (fail closed)."""
     tot_in = tot_out = tot_cached = 0
     n = 0
+    cached_detail = []
     for p in receipt_paths:
         r = json.load(open(p))
         want = normalizer_map.get(r.get("model_requested"))
@@ -154,9 +192,8 @@ def summarize(receipt_paths, normalizer_map):
         tot_in += nu["input_tokens_uncached"]
         tot_out += nu["output_tokens"]
         tot_cached += nu["cached_tokens"]
+        cached_detail.append(nu["cached_tokens"])
         n += 1
-    cached_detail = [json.load(open(p))["usage_raw"].get("cached_tokens")
-                     for p in receipt_paths]
     return {"model_calls": n, "input_tokens_uncached": tot_in,
             "output_tokens": tot_out, "cached_tokens": tot_cached,
             "cached_detail_per_call": cached_detail}
