@@ -1,0 +1,561 @@
+I audited the public branch, and one important state change happened while you were writing Round 1: rcos-harness-readiness is already at 4c834b1, not cd99173; the H2/H3 wiring has landed, and H1-P-fam05-T0 has already been executed. The status doc now calls that “estimand lock proven on lane P.”
+I would stop experimental execution right now. I would not count that fam05 run as estimand-grade yet. The Docker boundary itself looks substantially better than the old ad-hoc runner, but I found multiple protocol-level blockers around it.
+Round 1 verdict
+The H1 single-task runner is a valid execution atom, and host-side-only evaluation is the right boundary. But the current runner does not yet instantiate the Fam-C estimand.
+Fam-C's frozen causal comparisons are A−B and C−D, with separate A/B/C/D universes and reciprocal PQ/QP blocks. Raw “P vs Q” is explicitly not the estimand.
+Also, an important correction to your status wording:
+
+Retirement is not a Fam-C estimand in the current PREREG.
+
+Fam-C preregisters acquisition, two-task promotion, locked downstream reuse, cross-cognition efficiency, T4 specificity, and compounding behavior. I do not find a retirement experiment in the frozen protocol. The general RCOS architecture discusses retirement, but that's a different claim.
+So the Fam-C wording should be “promotion + locked reuse under workflow control”, not “promotion/retirement.”
+P0 — must fix before the first countable Fam-C run
+1. Reclassify the existing H1-P-fam05-T0 as harness-validation evidence, not estimand data
+What: Change FAMC-EXECUTION-STATUS.md so H1-P-fam05-T0 is explicitly NOT ESTIMAND-GRADE.
+Why: The run has an intact chain and sandboxed execution, but several mandatory H2/H3 conditions below were not actually satisfied. Its manifest says wired=true, but that is not equivalent to satisfying the prereg evidence gate.
+Acceptance test: An aggregation/admissibility command run today returns:
+H1-P-fam05-T0 → EXCLUDED: harness-validation
+estimand-grade runs → 0
+Keep it. Do not delete or rewrite it.
+
+2. Fix H2 against the actual provider usage schema
+This is currently a hard blocker.
+Where: harness/usage.py, run_arm_h1.py.
+Your live P receipt contains:
+prompt_tokens
+completion_tokens
+prompt_tokens_details.cached_tokens
+But normalize_usage() requires top-level:
+input_tokens
+output_tokens
+cached_tokens
+So the unit tests passed against a schema the real P provider isn't returning. Worse, run_arm_h1.py records the receipt but never calls normalize_usage()/summarize() before grading.
+For that actual P receipt, under your frozen metric, the normalized values should be:
+uncached input = 478 - 128 = 350
+output         = 1965
+primary_work   = 2315
+Fix: Add explicit prereg-bound P and Q provider adapters. Do not “guess fields if present.” Then force normalization before a run can become gradeable.
+Acceptance test:
+real saved P receipt → 350 uncached + 1965 output = 2315
+real saved Q receipt → deterministic normalized result
+strip usage field    → run inadmissible
+change adapter id    → run inadmissible
+Every run should emit a hash-bound normalized metrics record.
+
+3. H-ID-006 is not wired into real runs
+Where: usage.recorded_call(), identity.py, run_arm_h1.py.
+identity.py correctly requires provider-echoed model identity, response ID, etc.
+But your real receipt stores only:
+endpoint
+model_requested
+usage
+It does not preserve the provider-echoed model, response ID, or generation parameters.
+That violates both LANES.md and H-ID-006.
+Fix: Make the API wrapper preserve the necessary response metadata before discarding the raw response object, run check_against_prereg, and chain the identity receipt.
+Acceptance test: A real P and real Q call both produce:
+endpoint
+requested_model
+echoed_model
+provider_response_id
+timestamp
+full generation params
+identity receipt SHA
+A mismatched echo or missing echo makes the run inadmissible.
+This alone means the current fam05 T0 cannot count.
+
+4. Your chain is anchored to the wrong meaning of “frozen commit”
+This is subtle but serious.
+FREEZE.json says the frozen instance pin is:
+d1292434...
+But run_arm_h1.py:frozen_commit() literally executes:
+git rev-parse HEAD
+and the existing fam05 H1 run consequently says:
+frozen_commit = cd991739...
+That's an execution commit, not the experiment freeze.
+I would not overwrite the old concept. Introduce two explicit anchors:
+instance_freeze_commit
+instance_freeze_manifest_sha
+
+execution_harness_commit
+execution_harness_manifest_sha
+The second one is necessary because the prereg requires harness versions hashed before experimental execution, while FREEZE-HASHES.sha256 deliberately covers the experimental package, not the evolving H1/H2/H3 implementation.
+Acceptance test: Modify one byte in the frozen task package or one byte in the pinned execution harness and the runner refuses to start.
+No more HEAD masquerading as “frozen commit.”
+
+5. Freeze the execution harness before any estimand-grade run
+Create something like:
+benchmarks/fam-c/EXECUTION-LOCK.json
+containing hashes of at least:
+run_arm_h1.py
+context builder
+order/orchestration controller
+usage.py + provider adapters
+identity.py
+chain.py
+lock.py
+reuse_log.py
+invalid.py
+dockersandbox.py
+seal.py
+Docker image digest
+P/Q model configuration
+generation parameters
+normalizer IDs/rules
+Do this after this audit is closed, not now while we're still finding defects.
+Acceptance test: Every estimand run chain references the exact same execution-lock hash. Any implementation change creates a new experimental epoch; results from two epochs are never silently pooled.
+
+6. Current treatment/control contexts violate your own H-CTX-002
+This is a major causal-design problem.
+H-CTX-002 says treatment and control contexts must be byte-identical except the capability-access block.
+But run_arm_h1.py currently has totally different CORRECT and DISABLED prompts, including different instructions and different response schemas:
+correct → records + field_map
+disabled → solver_py
+That means the intervention isn't just “capability available/not available.” It's also different task framing.
+Fix: One canonical prompt template. One canonical response envelope. The sole byte-level conditional should be the capability-access block.
+For example:
+{
+  execution_kind: capability | fresh_solver,
+  ...
+}
+The same instructions can say “use an available capability when appropriate; otherwise solve from scratch.” In controls, the capability block is structurally absent.
+Acceptance test: Pair symmetry tool reports:
+context(A) vs context(B):
+ONLY DIFFERENCE = capability_access block
+
+context(C) vs context(D):
+ONLY DIFFERENCE = capability_access block
+Inject one extra hint into treatment and it must fail closed.
+
+7. Build the model prompt from the same sealed snapshot the sandbox executes
+Current flow does this:
+read original taskdir → construct model prompt
+...
+later
+build_visible_root(taskdir)
+→ snapshot
+→ Docker /task
+So your model-visible bytes and execution-visible bytes are produced in two separate reads. Docker closes the second-read TOCTOU problem internally, but it does not prove the model saw the same bytes the solver later executed against.
+Fix: Stage the frozen visible snapshot first, hash it, then build both:
+
+
+model context
+
+
+Docker /task
+
+
+from that exact staged snapshot.
+Acceptance test: context_task_snapshot_hash == sandbox_task_snapshot_hash for every run, and any mismatch prevents the model call.
+
+8. You need a real Fam-C orchestration/order gate; the runner currently accepts arbitrary execution
+This is probably the largest methodology gap outside H2.
+ORDER.md freezes:
+family order = fam05, fam03, fam01, fam04, fam06, fam02
+block PQ completely
+then block QP completely
+But run_arm_h1.py accepts arbitrary:
+lane family task arm outdir capdir
+and never validates ORDER.md.
+It also only knows P/Q, not experimental universes A/B/C/D.
+That means operator discretion can currently choose:
+
+
+next task
+
+
+arm
+
+
+capability path
+
+
+output path
+
+
+whether promotion occurs
+
+
+after seeing previous outcomes.
+That's exactly the channel the prereg was designed to remove.
+Fix: Put a mechanical scheduler above run_arm_h1.py. The runner should require a pre-issued RUN_AUTHORIZATION containing:
+block
+family
+task
+experimental_lane A/B/C/D
+producer lane
+consumer lane
+pair_id
+arm
+order_index
+registry namespace
+capability namespace
+expected context hash
+No freehand experiment arguments.
+Acceptance tests:
+try fam01 before fam05 → REFUSE
+try QP before PQ complete → REFUSE
+try duplicate run cell → REFUSE
+try wrong arm order       → REFUSE
+try foreign cap namespace → REFUSE
+
+9. Sequencing answer: fam05 P/T0 is first, not fam01
+ORDER.md is unambiguous: fam05 is first.
+But I have an additional sequencing concern.
+Your current status says after H1-P-fam05-T0, you attempted:
+H1-Q-fam05-T0
+and hit quota.
+As written, QP does not begin until the entire PQ block finishes. Q is the producer in QP, so Q's acquisition T0/T1 appears to belong to QP and should not be started now.
+My reading of the frozen order is therefore:
+PQ block
+fam05:
+  P-based acquisition for A universe
+  P-based acquisition for C universe
+  downstream A/B/C/D
+...
+finish all 6 PQ families
+
+THEN
+
+QP block
+fam05:
+  Q-based acquisition...
+If your intended design is different, I need the exact frozen text that authorizes Q T0 during PQ, because ORDER.md currently says the opposite.
+Acceptance test: Scheduler says the next allowed experiment after the first valid PQ fam05 P acquisition step; no operator judgment.
+
+10. A/B/C/D independence is not represented in the implementation yet
+The prereg is unusually explicit:
+
+A/B/C/D are separate experimental universes.
+
+and:
+
+There is no “run A then copy its capability into C.” C creates and promotes its own capability using its own Model-P producer runs.
+
+The current implementation has global paths like:
+benchmarks/fam-c/capabilities/manifest-verify-v1/
+and the runner receives an arbitrary capdir.
+That is insufficient.
+You need lane-universe-scoped stores such as:
+state/PQ/A/fam05/
+state/PQ/B/fam05/
+state/PQ/C/fam05/
+state/PQ/D/fam05/
+A and C must get separately acquired P capabilities and separate IDs/hashes/registries.
+Acceptance test: A cap cannot be opened from C's namespace even if the ID is guessed. C's lock hash must originate from C-universe T0/T1 producer receipts, never A's.
+
+11. Current promotion implementation does not implement the preregistered promotion rule
+This is another hard blocker.
+Fam-C requires:
+T0 SHIP
++
+T1 SHIP
++
+same semantic capability
++
+different task
++
+different surface/adapter
+→ promotion
+and the promotion record must carry both source runs and evaluator evidence.
+But lock.promote() just writes whatever artifacts/manifest/receipts the caller gives it. It does not prove T0+T1.
+Worse, current run_arm_h1.py --promote only fires when cap_info already exists — and cap_info requires an existing CAPABILITY_LOCK. That's circular for acquiring a new capability.
+So do not wire “promote exactly on ship.” That is not the prereg.
+Build a separate promotion controller.
+Acceptance tests:
+T0 only                               → DENY
+T0 ship + T1 fix                      → DENY
+T0/T1 from different lane universes   → DENY
+same adapter twice                    → DENY
+missing evaluator-chain tip           → DENY
+valid independent T0 + T1             → one immutable lock
+second promotion attempt              → DENY
+
+12. Old ad-hoc CAPABILITY_LOCKs must be technically impossible to use
+There are already capability locks in the global Fam-C capability directory from pre-H1 runs. For example, the committed manifest verifier lock names only a T0 receipt from an old run.
+That obviously cannot be an estimand-grade T0+T1 promotion.
+Keep it as historical evidence, but the estimand runner must refuse any lock lacking:
+
+
+current experimental epoch
+
+
+A/C universe
+
+
+both valid acquisition chain tips
+
+
+correct execution-lock hash
+
+
+required frozen contract metadata.
+
+
+Acceptance test: Point the new runner at any existing legacy capability under benchmarks/fam-c/capabilities/ and receive LOCK-INADMISSIBLE.
+
+13. T4 is impossible to pass correctly with the current runner
+This one is fundamental.
+The prereg says T4's correct treatment behavior is:
+
+reject/abstain from K and solve without it.
+
+But run_arm_h1.py's correct arm always:
+loads capability
+selects it
+invokes it
+marks output consumed
+There is no treatment path that can inspect K, reject it, and then fresh-solve.
+So current H1 integration cannot implement the T4 specificity gate.
+Fix: Treatment must be reuse-enabled, not forced-reuse.
+The model/router gets the candidate capability interface and returns an explicit decision:
+USE capability
+or
+REJECT capability + reason
+T2/T3 may use it. T4 should reject when inappropriate.
+Acceptance test: Synthetic near-neighbor:
+
+
+candidate visible
+
+
+model rejects
+
+
+capability_loaded=false
+
+
+capability_invoked=false
+
+
+reuse_rejected=true
+
+
+fresh solve executes in same sealed boundary
+
+
+hidden evaluator SHIPs.
+
+
+
+14. CAPABILITY_LOCK does not yet encode the frozen T4 conformance rule
+The prereg requires the actual locked contract to carry at least:
+semantic_core
+preconditions
+limitations
+plus auditor-side semantic IDs for the T4 limitation.
+Current lock.py does not implement those fields.
+Fix: Add auditor-only contract metadata to the lock. Do not expose semantic IDs in the consumer prompt.
+Acceptance tests:
+
+
+expected T4 semantic ID exists in auditor metadata → discriminating
+
+
+missing ID → T4 marked non-discriminating, never reinterpreted
+
+
+semantic ID appears in consumer-visible context → run INVALID.
+
+
+
+15. Genuine reuse is currently impossible by construction
+Fam-C requires:
+loaded
+AND invoked
+AND output_consumed
+AND materially_contributed
+for genuine reuse.
+But run_arm_h1.py explicitly writes:
+capability_materially_contributed = false
+for every correct run.
+Therefore if you ran all 12 T2/T3 cells today:
+genuine_reuse coverage = 0/12
+and Fam-C cannot PASS regardless of outcomes.
+Do not weaken the predicate.
+Implement one of the already frozen proof mechanisms in reuse_log.py: hash linkage or derived ablation.
+Acceptance test: At least one fixture demonstrates a genuinely reused capability with machine-derived contribution evidence; remove/tamper the linkage and genuine_reuse() fails.
+
+16. H-INV-009 is implemented as a module but not integrated into the runner
+invalid.py has the pair replacement machinery.
+run_arm_h1.py never imports or calls it.
+So the Q 429 is currently being classified/documented manually rather than by the frozen state machine.
+Fix: Every attempted paired downstream run enters PairLedger. Provider/harness failures go through the classifier. Agent failures remain experimental outcomes. Whole-pair replacement is mechanically authorized exactly once.
+Acceptance test: The four core adversarial cases from H-INV-009 pass through the production runner, not merely unit tests.
+One fact I need from you in Round 2: what frozen rule governs infrastructure-invalid T0/T1 acquisition runs? The prereg text I read explicitly defines whole-pair replacement for paired comparisons; T0/T1 aren't paired A/B or C/D comparisons. If another frozen artifact defines acquisition retry behavior, point me to it. I won't invent that rule post hoc.
+
+17. The chain still isn't estimand-grade even though it is hash-linked
+The existing chain does a useful job linking:
+genesis → model call → evaluator → grade
+But the production invocation does not yet bind:
+
+
+block
+
+
+A/B/C/D universe
+
+
+pair_id
+
+
+frozen order authorization
+
+
+run ID
+
+
+context symmetry hash
+
+
+identity receipt
+
+
+normalized usage
+
+
+exact execution-harness lock
+
+
+registry namespace/hash.
+
+
+Chain already has optional fields for pair_id, authorization, and task snapshot, but _wire_chain() isn't passing them.
+Also, Chain.audit() is called without expected_grading_rule, so it checks that a grading-rule hash exists but not that it equals the frozen expected checker hash.
+And I would make it recompute the genesis link hash too, not just downstream links.
+Acceptance test: One production graph smoke substitutes each of those fields, one at a time, and every substitution makes the run inadmissible.
+
+18. Generate the §24 minimum evidence row automatically
+The prereg specifies a one-row-per-run table with fields including block, models, session ID, workdir/registry/cap hashes, full reuse lifecycle, token metrics, calls, retries, manifest/evidence hashes.
+The current H1 manifest does not contain enough to satisfy this row.
+Don't plan to reconstruct it during paper analysis.
+Have the runner emit something like:
+ESTIMAND-ROW.json
+only after all validators pass.
+Acceptance test: Closed-schema validator checks every §24 field. Any missing field means no estimand row, therefore no tally.
+
+19. Remove --no-wire from the estimand execution surface
+Default-on is better than default-off, but a flag that can silently create unlinked runs is still dangerous.
+Fix: Production Fam-C scheduler must have no route to --no-wire. If you need it for smoke/dev, require an explicit non-estimand test mode whose output path cannot enter the estimand index.
+Acceptance test:
+Fam-C authorization + --no-wire → REFUSED
+P1 — evidence discipline / contamination
+20. Keep quarantined fragments; do not delete them
+Your quarantine instinct is right.
+Deleting malformed/partial runs after seeing them makes the scientific record worse.
+But right now old runs and new H1 runs coexist under the same runs/ tree.
+I would add two machine-readable indices rather than physically rewrite history:
+QUARANTINE-INDEX.json
+ESTIMAND-INDEX.json
+Only the validator can add to ESTIMAND-INDEX.
+A run sitting under runs/ means nothing by itself.
+Partial evidence worth keeping is anything with unique provenance value:
+
+
+raw provider response/receipt
+
+
+original prompt/context
+
+
+output/arrival
+
+
+model or harness failure
+
+
+evaluator result
+
+
+capability artifact/lock
+
+
+timestamp/hash that explains an experimental decision.
+
+
+Noise is reproducible local cache/temp data with no unique provenance:
+
+
+__pycache__
+
+
+duplicate derived copies
+
+
+temporary container filesystem
+
+
+intermediate files whose exact bytes are neither cited nor needed to reconstruct a run.
+
+
+Never delete a real attempted experimental outcome merely because it was bad.
+
+21. Record the frozen-task contamination explicitly
+This entire current Fam-C instance set has already been touched by ad-hoc harness-development runs. Your own status preserves those earlier fam01/03/04/05/06 fragments.
+The tasks themselves remained frozen, which is good, but the operator has observed outcomes while the harness was still evolving.
+That means this freeze should stay exactly what the prereg already calls it:
+
+PILOT-GRADE only.
+
+Add a clear contamination/provenance note for the eventual paper:
+
+Frozen instances were used during harness development; all such runs are excluded from the estimand, but exposure limits claims about operator independence. Claim-grade replication uses a fresh unseen family freeze after harness finalization.
+
+For the later claim-grade series, do not debug the harness on its actual benchmark instances.
+
+22. Host-side evaluator is good; sandbox escape is not your highest risk
+On your leak-risk ranking:
+
+
+operator/orchestration/capability namespace — highest
+
+
+treatment/control context asymmetry
+
+
+provider/model identity
+
+
+freeze/evaluator/harness provenance
+
+
+prompt snapshot vs execution snapshot
+
+
+Docker escape — lower than the above
+
+
+The Docker policy itself is reasonably strong for this experiment: no network, read-only root, two declared mounts, dropped capabilities, pinned image digest, UID mapping, memory/PID limits.
+I would still add later:
+
+
+no-new-privileges
+
+
+per-run cleanup receipt
+
+
+Docker/runtime version in run manifest.
+
+
+But I would not spend the next work unit hardening kernel isolation while the causal design above is still open.
+P2 — docs / paper / architecture
+23. ARCHITECTURE.md is stale relative to the architecture we've converged on
+Current doc says:
+DSH Workflow Manager = procedural compiler
+Archon = durable orchestration
+I would update this after the experimental gate is safe:
+DSH General
+= cognitive interface/control
+
+DSH Workflow Manager
+= capability planner / workflow synthesizer
+
+RCOS IR
+= portable execution-plan contract
+
+Archon
+= procedural intelligence/runtime, first backend
+
+Pi
+= isolated programmable agent runtime, first agent backend
+Reserve compiler for actual `RCOS IR → bac
