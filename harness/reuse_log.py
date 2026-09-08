@@ -33,6 +33,7 @@ def _sha(path):
 # the ablation comparison).
 EXEC_MANIFEST_SCHEMA_VERSION = "exec-manifest-v1"
 EXEC_MANIFEST_FIELDS = frozenset({
+    "schema_version",
     "input_snapshot_hash", "context_hash", "model_identity",
     "generation_params", "tool_policy_hash", "initial_workdir_hash",
     "capability_access", "capability_step_hash",
@@ -70,11 +71,16 @@ def check_ablation(treatment_manifest_path, ablation_manifest_path):
     t = json.load(open(treatment_manifest_path))
     a = json.load(open(ablation_manifest_path))
     for name, m in (("treatment", t), ("ablation", a)):
-        unknown = set(m) - set(EXEC_MANIFEST_FIELDS)
-        if unknown:
+        keys = set(m)
+        if keys != EXEC_MANIFEST_FIELDS:
             return False, {"mechanism": "ablation-derived",
-                           "reason": f"unknown execution fields in {name}: "
-                                     f"{sorted(unknown)} (schema closed)"}
+                           "reason": f"{name} manifest keys != closed schema: "
+                                     f"missing={sorted(EXEC_MANIFEST_FIELDS - keys)}, "
+                                     f"unknown={sorted(keys - EXEC_MANIFEST_FIELDS)}"}
+        if m.get("schema_version") != EXEC_MANIFEST_SCHEMA_VERSION:
+            return False, {"mechanism": "ablation-derived",
+                           "reason": f"{name} schema_version != "
+                                     f"{EXEC_MANIFEST_SCHEMA_VERSION}"}
     diffs = {k for k in set(t) | set(a) if t.get(k) != a.get(k)}
     if not diffs <= ALLOWED_ABLATION_DIFFS:
         return False, {"mechanism": "ablation-derived",

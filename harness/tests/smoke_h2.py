@@ -76,7 +76,7 @@ def call(tag="t", mode="ok"):
 reply, p1 = call("a")
 check("stub call captured", reply == "STUB-OK" and p1.endswith(".json"))
 _, p2 = call("b")
-s = summarize([p1, p2])
+s = summarize([p1, p2], {"stub-m": "openai-chat-total-input-v1"})
 r0 = json.load(open(p1))
 check("provenance fields present",
       r0.get("usage_raw_sha256") and r0.get("normalizer_version") == NORMALIZER_VERSION,
@@ -89,13 +89,13 @@ check("derived metrics exact",
             "cached_detail_per_call": [2, 2]}, str(s))
 _, p3 = call("c", mode="no-usage")
 try:
-    summarize([p3])
+    summarize([p3], {"stub-m": "openai-chat-total-input-v1"})
     check("missing usage invalidates", False)
 except ValueError:
     check("missing usage invalidates", True)
 _, p4 = call("d", mode="cached-only")
 try:
-    summarize([p4])
+    summarize([p4], {"stub-m": "openai-chat-total-input-v1"})
     check("cached-relabeled-uncached invalidates", False)
 except ValueError:
     check("cached-relabeled-uncached invalidates", True)
@@ -198,7 +198,8 @@ except ValueError:
     check("missing field rejected", True)
 
 def _man(path, cap, verdict):
-    m = {"input_snapshot_hash": "in1", "context_hash": "cx",
+    m = {"schema_version": "exec-manifest-v1",
+         "input_snapshot_hash": "in1", "context_hash": "cx",
          "model_identity": "m", "generation_params": {"t": 0},
          "tool_policy_hash": "tp", "initial_workdir_hash": "wd",
          "capability_step_hash": cap,
@@ -207,14 +208,10 @@ def _man(path, cap, verdict):
     return path
 _mt = os.path.join(BASE, "man-t.json")
 _ma = os.path.join(BASE, "man-a.json")
-_t = {"input_snapshot_hash": "in1", "context_hash": "cx", "model_identity": "m",
-      "generation_params": {"t": 0}, "tool_policy_hash": "tp",
-      "initial_workdir_hash": "wd", "capability_step_hash": "capA",
-      "capability_access": "present",
-      "evaluator_verdict": "ship", "evaluator_evidence_hash": "ev-ship"}
+_t = json.load(open(_man(_mt + ".tmp", "capA", "ship")))
 _a = dict(_t, capability_step_hash="ABSENT", capability_access="absent",
           evaluator_verdict="fix", evaluator_evidence_hash="ev-fix")
-json.dump(_t, open(_mt, "w"))
+open(_mt, "w").write(json.dumps({**_t, "capability_access": "present"}))
 json.dump(_a, open(_ma, "w"))
 ok, der = check_ablation(_mt, _ma)
 check("derived ablation passes (differing verdicts)",
@@ -228,6 +225,20 @@ _t3 = dict(_t, context_hash="DIFFERENT")
 json.dump(_t3, open(_mt, "w"))
 ok3, der3 = check_ablation(_mt, _ma)
 check("differing-context ablation fails", not ok3)
+# NEW: deleted-from-both field must FAIL (exact key equality)
+_md = dict(json.load(open(_mt)))
+del _md["context_hash"]
+json.dump(_md, open(_mt, "w"))
+okd, _ = check_ablation(_mt, _ma)
+check("deleted-field-from-both fails exact keys", not okd)
+json.dump({"schema_version": "exec-manifest-v1",
+           "input_snapshot_hash": "in1", "context_hash": "cx",
+           "model_identity": "m", "generation_params": {"t": 0},
+           "tool_policy_hash": "tp", "initial_workdir_hash": "wd",
+           "capability_access": "present",
+           "capability_step_hash": "capA",
+           "evaluator_verdict": "ship",
+           "evaluator_evidence_hash": "ev-ship"}, open(_mt, "w"))
 # NEW: ignored extra execution field must FAIL (closed schema)
 _t4 = dict(_t, capability_step_hash="ABSENT", capability_access="absent",
            evaluator_verdict="fix", evaluator_evidence_hash="ev-fix",
@@ -260,6 +271,30 @@ try:
     check("unknown normalizer rejected", False)
 except ValueError:
     check("unknown normalizer rejected", True)
+# adapter substitution: same raw receipt reinterpreted under the other adapter must FAIL
+r_alt = json.load(open(p1))
+try:
+    summarize([p1], {"stub-m": "openai-chat-uncached-input-v1"})
+    check("adapter substitution rejected", False)
+except ValueError:
+    check("adapter substitution rejected", True)
+# unmapped model must FAIL
+try:
+    summarize([p1], {"other-m": "openai-chat-total-input-v1"})
+    check("unmapped model rejected", False)
+except ValueError:
+    check("unmapped model rejected", True)
+# manifest fixtures gain schema_version
+def _mkm(path, cap, verdict, ev):
+    m = {"schema_version": "exec-manifest-v1",
+         "input_snapshot_hash": "in1", "context_hash": "cx",
+         "model_identity": "m", "generation_params": {"t": 0},
+         "tool_policy_hash": "tp", "initial_workdir_hash": "wd",
+         "capability_access": "present" if cap != "ABSENT" else "absent",
+         "capability_step_hash": cap,
+         "evaluator_verdict": verdict, "evaluator_evidence_hash": ev}
+    open(path, "w").write(json.dumps(m))
+    return path
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH2 smoke: {len(results) - len(bad)}/{len(results)} closed")
 srv.shutdown()

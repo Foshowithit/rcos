@@ -128,15 +128,27 @@ def normalize_usage(receipt, normalizer_id):
             "normalizer_notes": notes}
 
 
-def summarize(receipt_paths):
+def summarize(receipt_paths, normalizer_map):
+    """Derive metrics SOLELY from persisted raw usage blocks. normalizer_map
+    (required, from preregistration) maps model_requested -> normalizer_id.
+    Each receipt's stored normalizer_id must equal the mapped value: no
+    analyst override at analysis time, so one raw receipt cannot yield two
+    primary-work numbers. Raises otherwise (fail closed)."""
     """Derive metrics SOLELY from persisted raw usage blocks.
     Raises on any missing/merged token fields (fail closed)."""
     tot_in = tot_out = tot_cached = 0
     n = 0
     for p in receipt_paths:
         r = json.load(open(p))
+        want = normalizer_map.get(r.get("model_requested"))
+        if want is None:
+            raise ValueError(f"USAGE-NOMAP {p}: model {r.get('model_requested')!r} "
+                             f"has no preregistered normalizer")
+        if r.get("normalizer_id") != want:
+            raise ValueError(f"USAGE-ADAPTER-MISMATCH {p}: receipt declares "
+                             f"{r.get('normalizer_id')!r}, prereg requires {want!r}")
         try:
-            nu = normalize_usage(r, r.get("normalizer_id", ""))
+            nu = normalize_usage(r, want)
         except ValueError as e:
             raise ValueError(f"USAGE-INCOMPLETE {p}: {e} (estimation forbidden)")
         tot_in += nu["input_tokens_uncached"]
