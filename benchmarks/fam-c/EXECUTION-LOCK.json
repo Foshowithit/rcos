@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "6a7cf4ebae5700b2ed11531005560226e55d6a23122bb98b5f1f9f50ee5630b5",
+ "harness_manifest_sha256": "42e1cae744a3c69b8f41340e15fc95249dae579db1ccc4c818bffb91c01c73ad",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -21,7 +21,8 @@
   "harness/promotion.py": "749ed50e356fcd203393262ccbdb24d1e585dff127e09863a88e622828ea0091",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
-  "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c"
+  "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
+  "harness/specificity.py": "c33f9de007cc7de1da4afc03f50e62fd37297663287db5d826a907f0fa017f9e"
  },
  "amendments": [
   {
@@ -333,6 +334,19 @@
    },
    "reason": "A12b.6 actual-contract conformance: lock.py lock conformance fields (limitation_present/non_discriminating/conformance_cause) + specificity_gate; promotion.py mechanical derivation into receipt provenance; order.py receipt validation + lock emission/binding; run_arm_h1 selfcheck fixture fields",
    "slice": "a12b.6",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "6a7cf4ebae5700b2ed11531005560226e55d6a23122bb98b5f1f9f50ee5630b5",
+   "to_manifest": "42e1cae744a3c69b8f41340e15fc95249dae579db1ccc4c818bffb91c01c73ad",
+   "files": {
+    "harness/specificity.py": {
+     "from_sha": null,
+     "to_sha": "c33f9de007cc7de1da4afc03f50e62fd37297663287db5d826a907f0fa017f9e"
+    }
+   },
+   "reason": "A12b slice 3 specificity production caller: new harness/specificity.py (discover_locks/report/CLI over lock.specificity_gate for the A15 readiness consumer); new hermetic H18 suite (tests stay outside the execution authority)",
+   "slice": "a12b-slice3",
    "status_after": "open-round2"
   }
  ],
