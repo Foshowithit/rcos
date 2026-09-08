@@ -36,6 +36,7 @@ if _HERE not in sys.path:
 import order  # noqa: E402
 import lock as _lock  # noqa: E402
 import identity as _identity  # noqa: E402
+import t4_ids as _t4_ids  # noqa: E402
 
 GRADES = ("estimand", "harness-validation")
 CANDIDATE_FIELD = "execution_payload.solver_py"
@@ -194,27 +195,16 @@ def _producer_contract(t0_run_dir):
     return core, list(pre), list(lim)
 
 
-def t4_semantic_id(fam_c_dir, capability_id, semantic_core_sha256,
+def t4_semantic_id(fam_c_dir, family, semantic_core_sha256,
                    evidence_grade):
-    """Auditor-side T4 conformance id. Estimand locks REQUIRE a ratified id
-    from the frozen registry benchmarks/fam-c/T4-SEMANTIC-IDS.json; harness
-    -validation locks get an explicitly UNRATIFIED id so a fixture can never
-    masquerade as an audited capability."""
-    reg = os.path.join(fam_c_dir, "T4-SEMANTIC-IDS.json")
-    if os.path.isfile(reg):
-        try:
-            d = _read_json(reg)
-        except ValueError:
-            d = {}
-        entry = (d.get("capabilities") or {}).get(capability_id)
-        if isinstance(entry, dict) and entry.get("t4_semantic_id"):
-            return entry["t4_semantic_id"], True
-    if evidence_grade == "estimand":
-        raise PermissionError(
-            f"PROMOTION-DENY no ratified auditor T4 semantic id for "
-            f"{capability_id} (register it in T4-SEMANTIC-IDS.json before "
-            f"estimand promotion)")
-    return "T4-UNRATIFIED-" + semantic_core_sha256[:12], False
+    """Auditor-side T4 conformance id, resolved through the SINGLE frozen
+    governed registry (harness/t4_ids.py) — never a private registry read,
+    never a hash-derived fallback. A registered family resolves to its
+    frozen id (ratified True, any grade); an unregistered family gets an
+    explicitly UNRATIFIED id on harness-validation and refuses on
+    estimand; a registry id outside the PREREG frozen set refuses."""
+    return _t4_ids.resolve(fam_c_dir, family, semantic_core_sha256,
+                           evidence_grade)
 
 
 # ---------------------------------------------------------------------------
@@ -656,7 +646,7 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     # which hidden contract was operative (auditor metadata only).
     contract = _producer_contract(t0_ev["run_dir"])
     core_sha = _sha_bytes(contract[0].encode())
-    t4_id, t4_ratified = t4_semantic_id(fam_c_dir, cell["capability_id"],
+    t4_id, t4_ratified = t4_semantic_id(fam_c_dir, cell["family"],
                                         core_sha, evidence_grade)
     shas = _lock_shas(fam_c_dir)
     capdir = order.ensure_namespace(fam_c_dir, block, universe, family,

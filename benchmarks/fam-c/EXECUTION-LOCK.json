@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "07036ff90b0bebcc2833f0007e4926dc7c22be384c35fc36aea8c808420e58ea",
+ "harness_manifest_sha256": "7fb59d3bc213bb44e6edd8aedde2dfca97a75bb483a9f1f05f6e1ec2120ad694",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -14,13 +14,14 @@
   "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
   "benchmarks/fam-c/harness-run/run_arm_h1.py": "c11ac91cb96f39aee788f1749e90ed09b13765b37e6d6da99d83d00925c2f0fc",
-  "harness/order.py": "c9405e9de8ffb27233f4979de1889b24f55fdd68fcccf0cf5a6fceed55155848",
+  "harness/order.py": "f9973c02e73122d18143b56065fcf28359da2e331ce473d49eacf1c5691e6c0d",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "37a14525ed70a9239140522f7ff90a2418dd0904b8f834b6583f39f44195ef6c",
+  "harness/promotion.py": "52fb6c68631c03ab2b659a7ec2ff231e2d5083dbe540e42298ba0854d1a3d932",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
-  "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4"
+  "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
+  "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c"
  },
  "amendments": [
   {
@@ -261,6 +262,27 @@
    },
    "reason": "A12b.1 addendum: deleted promotion.capability_contract K.md parser (producer declaration is the sole contract source; no K.md code-reads remain in the controller); fixture-local stand-in reader; receipt drops contract_sha256",
    "slice": "a12b-slice1-addendum",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "07036ff90b0bebcc2833f0007e4926dc7c22be384c35fc36aea8c808420e58ea",
+   "to_manifest": "7fb59d3bc213bb44e6edd8aedde2dfca97a75bb483a9f1f05f6e1ec2120ad694",
+   "files": {
+    "harness/t4_ids.py": {
+     "from_sha": null,
+     "to_sha": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c"
+    },
+    "harness/order.py": {
+     "from_sha": "c9405e9de8ffb27233f4979de1889b24f55fdd68fcccf0cf5a6fceed55155848",
+     "to_sha": "f9973c02e73122d18143b56065fcf28359da2e331ce473d49eacf1c5691e6c0d"
+    },
+    "harness/promotion.py": {
+     "from_sha": "37a14525ed70a9239140522f7ff90a2418dd0904b8f834b6583f39f44195ef6c",
+     "to_sha": "52fb6c68631c03ab2b659a7ec2ff231e2d5083dbe540e42298ba0854d1a3d932"
+    }
+   },
+   "reason": "A12b.5 frozen governed T4 semantic-ID registry: new harness/t4_ids.py single resolver; promotion.py and order.py rewired to it (private registry reads deleted)",
+   "slice": "a12b.5",
    "status_after": "open-round2"
   }
  ],

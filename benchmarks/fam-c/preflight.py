@@ -44,7 +44,8 @@ FREEZE_COMMIT = "d1292434a261f44ad910c556e18624cef1676f37"
 # Protocol docs with a life after the freeze: frozen bytes OR a listed
 # forward amendment, never unlisted drift.
 PROTOCOL_GOVERNED = ["PREREG.md", "ORDER.md", "LANES.md",
-                     "HARNESS-READINESS.md", "preflight.py"]
+                     "HARNESS-READINESS.md", "preflight.py",
+                     "T4-SEMANTIC-IDS.json"]
 # Meta pointers: integrity rides on git history + lock records.
 META = {"FREEZE.json", "FREEZE-HASHES.sha256", "PROTOCOL-LOCK.json",
         "EXECUTION-LOCK.json", "FAMC-EXECUTION-STATUS.md",
@@ -157,10 +158,9 @@ def validate_protocol(fam_c_dir, freeze_commit):
             if frozen_bytes.returncode != 0:
                 raise RuntimeError("unresolvable at freeze")
             frozen_sha = hashlib.sha256(frozen_bytes.stdout).hexdigest()
-        except RuntimeError as e:
-            out.append(f"V2 PROTOCOL-LOCK: {fn} frozen bytes {e}")
-            continue
-        if frozen_sha != want_frozen:
+        except RuntimeError:
+            frozen_sha = None
+        if frozen_sha is not None and frozen_sha != want_frozen:
             out.append(f"V2 PROTOCOL-LOCK: {fn} lock frozen-sha != git "
                        f"truth (lock edited?)")
             continue
@@ -169,10 +169,38 @@ def validate_protocol(fam_c_dir, freeze_commit):
             out.append(f"V2 PROTOCOL-LOCK: {fn} missing on disk")
             continue
         disk = _sha(fp)
-        acceptable = {frozen_sha}
-        for a in by_file.get(fn, []):
-            if a.get("from_sha") in acceptable:
-                acceptable.add(a.get("to_sha"))
+        if frozen_sha is not None:
+            acceptable = {frozen_sha}
+            for a in by_file.get(fn, []):
+                if a.get("from_sha") in acceptable:
+                    acceptable.add(a.get("to_sha"))
+        else:
+            # A12b.5: a governed file added AFTER the instance freeze
+            # has no frozen bytes at the freeze commit. Its authority
+            # starts at an explicit genesis amendment (from_sha null +
+            # added_after_freeze), chained exactly like a frozen file
+            # from there; the lock's governed entry must itself sit on
+            # that chain (a lock that invents bytes outside the chain
+            # is edited). Without a genesis amendment the file is
+            # ungoverned.
+            acceptable = set()
+            for a in by_file.get(fn, []):
+                if a.get("from_sha") is None and \
+                        a.get("added_after_freeze") is True:
+                    acceptable.add(a.get("to_sha"))
+            if not acceptable:
+                out.append(f"V2 PROTOCOL-LOCK: {fn} frozen bytes "
+                           f"unresolvable at freeze and no post-freeze "
+                           f"genesis amendment governs it")
+                continue
+            for a in by_file.get(fn, []):
+                if a.get("from_sha") in acceptable:
+                    acceptable.add(a.get("to_sha"))
+            if want_frozen not in acceptable:
+                out.append(f"V2 PROTOCOL-LOCK: {fn} lock governed-sha "
+                           f"is outside its post-freeze amendment chain "
+                           f"(lock edited?)")
+                continue
         if disk not in acceptable:
             out.append(f"V2 PROTOCOL-LOCK: {fn} drifted with no listed "
                        f"forward amendment (disk {disk[:12]} not in "

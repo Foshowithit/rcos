@@ -1,0 +1,12 @@
+{
+ "version": "t4-semantic-ids-v1",
+ "prereg_source": "PREREG.md ## Conformance semantic IDs (frozen) + forward amendment AMEND-2026-09-08-fam01",
+ "families": {
+  "fam01": "fam01.rows_are_records",
+  "fam02": "fam02.pages_disjoint",
+  "fam03": "fam03.repeats_are_duplicates",
+  "fam04": "fam04.promised_acyclic",
+  "fam05": "fam05.local_v1_sha256",
+  "fam06": "fam06.common_unit_basis"
+ }
+}

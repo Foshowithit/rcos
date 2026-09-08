@@ -7,7 +7,8 @@
   "ORDER.md": "ad33bb75eb365baa6044f14bc49ed94d1b4fb697236a3af87deab72a0ac66fe0",
   "LANES.md": "cac7ca4600769a22b695c00da97f62fbedfe04cee0d9873bc067ce06e5f24be9",
   "HARNESS-READINESS.md": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
-  "preflight.py": "dd07af5de705ac3ad943f37152f0e3d45439c345f8266dd1a17fd8a494617af0"
+  "preflight.py": "dd07af5de705ac3ad943f37152f0e3d45439c345f8266dd1a17fd8a494617af0",
+  "T4-SEMANTIC-IDS.json": "f9feaedcef50f2940328692f9d9c5aa3865f0e7dc2f8870ffa4c3529af096d57"
  },
  "amendments": [
   {
@@ -105,6 +106,31 @@
    "reason": "A12 item-7 closure: V3 must cover the whole harness package root (harness/promotion.py mints locks and was unlisted)",
    "base": "a12",
    "slice": "a12"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "cdf77e7c747f3e9745473b28a4fbe84b322a08fdc85e02f54e7359ab1994e07b",
+   "to_sha": "29cde20953a1c92275766499aa9d6ce53ee51173a846e338f3e113f807baad4e",
+   "reason": "A12b.5 forward amendment AMEND-2026-09-08-fam01: added the fam01 conformance semantic ID as the first entry of the frozen list; the other five IDs are byte-identical",
+   "base": "d129243",
+   "slice": "a12b.5"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "17860f35215d3b255cbb5a5ac12a5396d21a176a5f47ecee5e902b6930b2dac5",
+   "to_sha": "2ebf24336c56b5165f95ae0a4b87930779d8505315d52e2f9888192c972a8df5",
+   "reason": "A12b.5: govern T4-SEMANTIC-IDS.json under V2 plus the post-freeze genesis-amendment rule for governed files added after the instance freeze",
+   "base": "d129243",
+   "slice": "a12b.5"
+  },
+  {
+   "file": "T4-SEMANTIC-IDS.json",
+   "from_sha": null,
+   "to_sha": "f9feaedcef50f2940328692f9d9c5aa3865f0e7dc2f8870ffa4c3529af096d57",
+   "added_after_freeze": true,
+   "reason": "A12b.5 genesis: frozen governed six-family T4 semantic-ID registry (PREREG ## Conformance semantic IDs (frozen) + AMEND-2026-09-08-fam01)",
+   "base": "d129243",
+   "slice": "a12b.5"
   }
  ]
 }

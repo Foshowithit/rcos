@@ -434,6 +434,7 @@ prose). Conformance checking is set membership on IDs, never semantic
 judgment over prose:
 
 ```text
+fam01.rows_are_records
 fam02.pages_disjoint
 fam03.repeats_are_duplicates
 fam04.promised_acyclic
@@ -443,6 +444,12 @@ fam06.common_unit_basis
 
 A new ID may be added only by amending this list before the runs it
 governs; IDs are never edited in place.
+
+Forward amendment AMEND-2026-09-08-fam01 (2026-09-08): added the fam01
+conformance semantic ID as the first entry of the frozen list above; the
+other five IDs are byte-identical and unchanged. The governed T4 registry
+(benchmarks/fam-c/T4-SEMANTIC-IDS.json) resolves fam01 to that ID from the
+runs this amendment governs onward.
 Producer-visible capability contracts MUST NOT contain these IDs, and
 no ID may enter the consuming model's context, tool descriptions,
 registry descriptions shown to routers, router metadata, or capability

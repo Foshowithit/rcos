@@ -73,7 +73,8 @@ def refuses(name, fn, token, *a, **kw):
 def setup():
     root = tempfile.mkdtemp(prefix="h13-promo-")
     for name in ("ORDER-EXPANSION.json", "PROTOCOL-LOCK.json",
-                 "EXECUTION-LOCK.json", "FREEZE.json", "FREEZE-HASHES.sha256"):
+                 "EXECUTION-LOCK.json", "FREEZE.json", "FREEZE-HASHES.sha256",
+                 "T4-SEMANTIC-IDS.json", "PREREG.md"):
         src = os.path.join(FAMC, name)
         if os.path.exists(src):
             shutil.copy2(src, os.path.join(root, name))
@@ -155,9 +156,18 @@ def main():
        == cell_for("PQ", "fam05", "PROMOTION", "A")["index"])
     ok("receipt carries the frozen semantic contract",
        bool(rec["semantic_core"]) and bool(rec["preconditions"]))
-    ok("harness-validation promotion is explicitly UNRATIFIED",
-       rec["t4_ratified"] is False and rec["t4_semantic_id"].startswith(
-           "T4-UNRATIFIED-"))
+    # A12b.5: the T4 id is set membership over the frozen governed
+    # registry (never a hash-derived fallback). fam05 is registered, so
+    # the receipt carries the frozen id ratified — on ANY grade. An
+    # unregistered family gets an explicitly UNRATIFIED id on
+    # harness-validation (a fixture can never masquerade as audited).
+    ok("registered fam05 promotion carries the frozen T4 id, ratified",
+       rec["t4_ratified"] is True and rec["t4_semantic_id"] ==
+       "fam05.local_v1_sha256", rec["t4_semantic_id"])
+    _unk_id, _unk_rat = promotion.t4_semantic_id(
+        ROOT, "fam99", "0" * 64, "harness-validation")
+    ok("unregistered family on harness-validation is explicitly UNRATIFIED",
+       _unk_rat is False and _unk_id.startswith("T4-UNRATIFIED-"), _unk_id)
     st = order.cell_state(ROOT, cell_for("PQ", "fam05", "PROMOTION", "A"),
                           FREEZE)
     ok("PROMOTION cell COMPLETE", st["status"] == "COMPLETE",
@@ -211,8 +221,8 @@ def main():
                             os.path.join(capdir, "adapter_notes.md"),
                             os.path.join(capdir, "CAPABILITY_LOCK.json")],
             receipt=rec, receipt_path=res["receipt"])
-    refuses("estimand grade without a ratified T4 id refuses",
-            promotion.t4_semantic_id, "PROMOTION-DENY", ROOT, "fam05-PQ-C-K",
+    refuses("estimand grade for an unregistered family refuses",
+            promotion.t4_semantic_id, "PROMOTION-DENY", ROOT, "fam99",
             "0" * 64, "estimand")
 
     # ---- attacks: provenance, order, legacy locks ----------------------
@@ -266,7 +276,7 @@ def main():
             ("candidate.sha256", {"sha256": "f" * 64},
              "causally rooted"),
             ("authorization", {"authorization": None}, "authorization"),
-            ("t4_ratified", {"t4_ratified": True}, "RATIFIED"),
+            ("t4_ratified", {"t4_ratified": False}, "RATIFIED"),
             ("semantic_core", {"semantic_core": "rewritten contract"},
              "frozen"),
             ("tips", {"acquisition_chain_tips": {"T0": "a" * 64,

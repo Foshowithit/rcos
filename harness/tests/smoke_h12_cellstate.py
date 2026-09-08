@@ -85,6 +85,11 @@ for f in ("fam05", "fam03"):
 # throwaway instance carries the real locks.
 for f in ("PROTOCOL-LOCK.json", "EXECUTION-LOCK.json"):
     shutil.copy2(os.path.join(FAMC, f), os.path.join(state_root, f))
+# A12b.5: the T4 semantic id resolves through the frozen governed registry
+# inside the instance root (registry + the PREREG frozen block it must
+# equal), never through a hash-derived fallback.
+for f in ("T4-SEMANTIC-IDS.json", "PREREG.md"):
+    shutil.copy2(os.path.join(FAMC, f), os.path.join(state_root, f))
 EXPANSION = json.load(open(os.path.join(FAMC, "ORDER-EXPANSION.json")))
 json.dump(EXPANSION, open(os.path.join(state_root,
                                        "ORDER-EXPANSION.json"), "w"))

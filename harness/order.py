@@ -924,20 +924,23 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     if not (isinstance(r.get("t4_semantic_id"), str)
             and r["t4_semantic_id"].strip()):
         out.append("promotion provenance: t4_semantic_id missing")
-    # t4_ratified is DERIVED from the frozen auditor registry, never asserted:
-    # flipping the flag on an unratified id must not upgrade the receipt.
-    reg_id = None
-    reg_p = os.path.join(fam_c_dir, "T4-SEMANTIC-IDS.json")
-    if os.path.isfile(reg_p):
-        try:
-            entry = ((_read_json(reg_p).get("capabilities") or {})
-                     .get(cell["capability_id"]) or {})
-            if isinstance(entry, dict):
-                reg_id = entry.get("t4_semantic_id")
-        except (ValueError, AttributeError, TypeError):
-            reg_id = None
+    # t4_ratified is DERIVED from the frozen governed registry, never
+    # asserted: flipping the flag on an unratified id must not upgrade the
+    # receipt. Both surfaces resolve through the SINGLE shared resolver
+    # (harness/t4_ids.py); there is no private registry read here.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from t4_ids import resolve as _t4_resolve
+    try:
+        reg_id, _reg_ratified = _t4_resolve(
+            fam_c_dir, cell["family"], r.get("semantic_core_sha256") or "",
+            r.get("evidence_grade"))
+        reg_err = None
+    except PermissionError as e:
+        reg_id, reg_err = None, str(e)
     if r.get("t4_ratified") not in (True, False):
         out.append("promotion provenance: t4_ratified must be a boolean")
+    elif reg_err is not None:
+        out.append("promotion provenance: " + reg_err)
     elif r["t4_ratified"]:
         if not reg_id or r.get("t4_semantic_id") != reg_id:
             out.append("promotion provenance: t4_ratified claims a RATIFIED "
