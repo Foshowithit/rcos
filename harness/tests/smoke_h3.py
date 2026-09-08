@@ -44,6 +44,9 @@ _EST = dict(
     semantic_core="fixture semantic core",
     preconditions=["fixture precondition"],
     limitations=["synthetic fixture, never an estimand artifact"],
+    limitation_present=True, non_discriminating=False,
+    conformance_cause=("h3 fixture: synthetic limitation present, T4 "
+                       "treated as discriminating"),
     t4_semantic_id="T4-UNRATIFIED-fixture",
     evidence_grade="harness-validation",
     candidate_sha256="4" * 64, candidate_provenance_sha256="5" * 64)

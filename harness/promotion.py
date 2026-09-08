@@ -707,6 +707,32 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     core_sha = _sha_bytes(contract[0].encode())
     t4_id, t4_ratified = t4_semantic_id(fam_c_dir, cell["family"],
                                         core_sha, evidence_grade)
+    # A12b.6 actual-contract conformance: the lock records the
+    # producer's ACTUAL limitations plus the derived verdict — derived
+    # HERE mechanically from the producer-declared contract (never by
+    # copying hidden K.md text: this controller has no hidden-contract
+    # reader by design, and the conformance check reads the lock only).
+    # Empty limitations must NOT silently lock as discriminating: with
+    # no limitation in the actual locked contract, the family's T4 —
+    # which relies on a limitation — is non-discriminating, with the
+    # reason committed. (E.g. fam05 declares limitations: [], so its
+    # T4 is non-discriminating for the locked capability.)
+    limitation_present = bool(contract[2])
+    if limitation_present:
+        non_discriminating = False
+        conformance_cause = (
+            f"locked contract carries {len(contract[2])} limitation(s); "
+            f"family T4 {t4_id} treated as discriminating for this "
+            f"capability (PREREG actual-contract conformance rule)")
+    else:
+        non_discriminating = True
+        conformance_cause = (
+            f"family T4 {t4_id} relies on a limitation the locked "
+            f"contract does not carry (locked limitations: none) — the "
+            f"T4 cannot be claimed as an inapplicability null for this "
+            f"capability, so it is non-discriminating; excluded from "
+            f"the specificity gate with this committed cause (PREREG "
+            f"actual-contract conformance rule)")
     shas = _lock_shas(fam_c_dir)
     capdir = order.ensure_namespace(fam_c_dir, block, universe, family,
                                     tail=("capability",))
@@ -734,6 +760,9 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
         "semantic_core": contract[0],
         "semantic_core_sha256": core_sha,
         "preconditions": contract[1], "limitations": contract[2],
+        "limitation_present": limitation_present,
+        "non_discriminating": non_discriminating,
+        "conformance_cause": conformance_cause,
         "t4_semantic_id": t4_id, "t4_ratified": t4_ratified,
         "evidence_grade": evidence_grade,
         "producer_identity": producer_identity,

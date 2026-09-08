@@ -35,6 +35,14 @@ LOCK_REQUIRED_FIELDS = (
     "semantic_core",             # nonempty str
     "preconditions",             # list[str] (may be empty)
     "limitations",               # list[str] (may be empty)
+    # A12b.6 actual-contract conformance (auditor rule: the lock records
+    # the contract the producer ACTUALLY shipped, and conformance is
+    # checked against that contract):
+    "limitation_present",        # bool: the locked contract carries a
+                                 # limitation (== bool(limitations))
+    "non_discriminating",        # bool: the family's T4 cannot
+                                 # discriminate on this contract
+    "conformance_cause",         # nonempty str: the committed reason
     "t4_semantic_id",            # auditor-side conformance id (nonempty str)
     "evidence_grade",            # "estimand" | "harness-validation"
     "candidate_sha256",          # 64hex: causal root of the capability
@@ -129,6 +137,42 @@ def verify_lock(lock, expect=None):
                               or not all(isinstance(x, str) for x in v)):
             out.append(f"LOCK-INADMISSIBLE: {f} must be a list of strings, "
                        f"got {v!r}")
+    # A12b.6 actual-contract conformance. The lock records the producer's
+    # ACTUAL limitations plus the derived conformance verdict — never a
+    # claim smuggled from hidden auditor text (the controller derives
+    # these mechanically from the producer-declared contract; the
+    # conformance check reads the lock only):
+    #   * limitation_present must be a bool and must equal
+    #     bool(limitations) — lying about presence voids the lock;
+    #   * non_discriminating must be a bool;
+    #   * conformance_cause must be a nonempty committed reason;
+    #   * a lock that CLAIMS discrimination (non_discriminating False)
+    #     while the limitation is absent (empty limitations) is
+    #     LOCK-INADMISSIBLE — an empty contract must never silently lock
+    #     as discriminating.
+    lim = lock.get("limitations")
+    lim_present = lock.get("limitation_present")
+    non_disc = lock.get("non_discriminating")
+    cause = lock.get("conformance_cause")
+    if lim_present is not None and not isinstance(lim_present, bool):
+        out.append("LOCK-INADMISSIBLE: limitation_present must be a "
+                   f"boolean, got {lim_present!r}")
+    elif isinstance(lim, list) and isinstance(lim_present, bool) \
+            and lim_present != bool(lim):
+        out.append("LOCK-INADMISSIBLE: limitation_present "
+                   f"{lim_present!r} != the locked limitations "
+                   f"({'present' if lim else 'absent'})")
+    if non_disc is not None and not isinstance(non_disc, bool):
+        out.append("LOCK-INADMISSIBLE: non_discriminating must be a "
+                   f"boolean, got {non_disc!r}")
+    if cause is not None and not (isinstance(cause, str) and cause.strip()):
+        out.append("LOCK-INADMISSIBLE: conformance_cause must be a "
+                   f"nonempty committed reason, got {cause!r}")
+    if isinstance(lim, list) and not lim and non_disc is False:
+        out.append("LOCK-INADMISSIBLE: lock claims a discriminating T4 "
+                   "(non_discriminating is False) while the locked "
+                   "contract carries no limitations — an absent "
+                   "limitation cannot discriminate")
     tid = lock.get("t4_semantic_id")
     if tid is not None and not (isinstance(tid, str) and tid.strip()):
         out.append("LOCK-INADMISSIBLE: t4_semantic_id must be a nonempty "
@@ -156,7 +200,9 @@ def promote(out_dir, capability_id, version, artifact_paths,
             family=None, acquisition_chain_tips=None, source_cells=None,
             producer_identity=None, protocol_lock_sha256=None,
             execution_lock_sha256=None, semantic_core=None, preconditions=None,
-            limitations=None, t4_semantic_id=None, evidence_grade=None,
+            limitations=None, limitation_present=None,
+            non_discriminating=None, conformance_cause=None,
+            t4_semantic_id=None, evidence_grade=None,
             candidate_sha256=None, candidate_provenance_sha256=None):
     """Write an immutable, estimand-aware CAPABILITY_LOCK. Returns path.
 
@@ -175,7 +221,11 @@ def promote(out_dir, capability_id, version, artifact_paths,
         ("protocol_lock_sha256", protocol_lock_sha256),
         ("execution_lock_sha256", execution_lock_sha256),
         ("semantic_core", semantic_core), ("preconditions", preconditions),
-        ("limitations", limitations), ("t4_semantic_id", t4_semantic_id),
+        ("limitations", limitations),
+        ("limitation_present", limitation_present),
+        ("non_discriminating", non_discriminating),
+        ("conformance_cause", conformance_cause),
+        ("t4_semantic_id", t4_semantic_id),
         ("evidence_grade", evidence_grade), ("candidate_sha256", candidate_sha256),
         ("candidate_provenance_sha256", candidate_provenance_sha256),
         ("promotion_receipt_sha256", promotion_receipt_sha256)) if v is None]
@@ -201,6 +251,9 @@ def promote(out_dir, capability_id, version, artifact_paths,
             "semantic_core": semantic_core,
             "preconditions": list(preconditions),
             "limitations": list(limitations),
+            "limitation_present": limitation_present,
+            "non_discriminating": non_discriminating,
+            "conformance_cause": conformance_cause,
             "t4_semantic_id": t4_semantic_id,
             "evidence_grade": evidence_grade,
             "candidate_sha256": candidate_sha256,
@@ -219,6 +272,42 @@ def promote(out_dir, capability_id, version, artifact_paths,
     with open(path, "w") as f:
         json.dump(lock, f, indent=1)
     return path
+
+
+def specificity_gate(locks_by_family):
+    """A12b.6 specificity gate over committed CAPABILITY_LOCKs.
+
+    `locks_by_family` maps family -> lock dict (each lock read from its
+    capability dir, never hand-built). Returns a report dict:
+
+        {"discriminating": [families whose locked T4 discriminates],
+         "non_discriminating": {family: committed conformance_cause},
+         "inadmissible": {family: [lock refusal reasons]},
+         "verdict": "specificity-pass" | "specificity-failure"}
+
+    The gate counts ONLY discriminating families: a T4 that the locked
+    capability cannot discriminate (no limitation in the actual locked
+    contract) is excluded WITH its committed cause, and fewer families
+    do not lower the bar — any exclusion or inadmissible lock is a
+    specificity failure with cause, never a silent pass. Stdlib only.
+    """
+    discriminating, excluded, inadmissible = [], {}, {}
+    for family in sorted(locks_by_family):
+        lock = locks_by_family[family]
+        reasons = verify_lock(lock)
+        if reasons:
+            inadmissible[family] = list(reasons)
+            continue
+        if lock.get("non_discriminating") is True:
+            excluded[family] = lock.get("conformance_cause")
+        else:
+            discriminating.append(family)
+    verdict = ("specificity-pass"
+               if not excluded and not inadmissible
+               else "specificity-failure")
+    return {"discriminating": discriminating,
+            "non_discriminating": excluded,
+            "inadmissible": inadmissible, "verdict": verdict}
 
 
 def load_artifact(lock_path, artifact_name, dest_dir):

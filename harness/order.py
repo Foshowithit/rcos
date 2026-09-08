@@ -961,6 +961,29 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
         if not isinstance(r.get(f), list) or not all(
                 isinstance(x, str) for x in r[f]):
             out.append(f"promotion provenance: {f} must be a list of strings")
+    # A12b.6 actual-contract conformance: the receipt carries the
+    # producer's ACTUAL limitations plus the derived verdict (the lock
+    # records exactly these; the conformance check reads the lock only,
+    # never hidden K.md). limitation_present must equal
+    # bool(limitations); a receipt that claims discrimination
+    # (non_discriminating False) while the limitation is absent is
+    # refused — empty limitations never silently lock as discriminating.
+    _lim = r.get("limitations")
+    _lp = r.get("limitation_present")
+    _nd = r.get("non_discriminating")
+    _cause = r.get("conformance_cause")
+    if not isinstance(_lp, bool) or _lp != bool(_lim):
+        out.append("promotion provenance: limitation_present must be "
+                   "bool(limitations)")
+    if not isinstance(_nd, bool):
+        out.append("promotion provenance: non_discriminating must be a "
+                   "boolean")
+    if not (isinstance(_cause, str) and _cause.strip()):
+        out.append("promotion provenance: conformance_cause must be a "
+                   "nonempty committed reason")
+    if isinstance(_lim, list) and not _lim and _nd is False:
+        out.append("promotion provenance: receipt claims a discriminating "
+                   "T4 while the locked contract carries no limitations")
     if r.get("evidence_grade") not in ("estimand", "harness-validation"):
         out.append("promotion provenance: evidence_grade "
                    f"{r.get('evidence_grade')!r} invalid")
@@ -1114,7 +1137,9 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
                                f"{lock.get('candidate_provenance_sha256')!r} "
                                f"!= the promotion receipt sha {want_sha!r}")
         for key in ("protocol_lock_sha256", "execution_lock_sha256",
-                    "evidence_grade", "semantic_core", "t4_semantic_id"):
+                    "evidence_grade", "semantic_core", "t4_semantic_id",
+                    "limitation_present", "non_discriminating",
+                    "conformance_cause"):
             if key in rec:
                 expect[key] = rec[key]
         for key in ("acquisition_chain_tips", "source_cells"):
@@ -1282,10 +1307,13 @@ def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),
     # an empty provenance map can never pass as "present".
     need = ("acquisition_chain_tips", "source_cells", "candidate",
             "artifacts", "semantic_core", "preconditions", "limitations",
+            "limitation_present", "non_discriminating", "conformance_cause",
             "t4_semantic_id", "evidence_grade", "producer_identity",
             "protocol_lock_sha256", "execution_lock_sha256")
     missing = [k for k in need if k not in receipt or receipt[k] is None]
-    empty = [k for k in need if k not in ("preconditions", "limitations")
+    empty = [k for k in need if k not in ("preconditions", "limitations",
+                                         "limitation_present",
+                                         "non_discriminating")
              and not receipt.get(k)]
     if missing or empty:
         raise PermissionError("LOCK-INADMISSIBLE: promotion receipt lacks "
@@ -1337,6 +1365,9 @@ def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),
         semantic_core=receipt["semantic_core"],
         preconditions=receipt["preconditions"],
         limitations=receipt["limitations"],
+        limitation_present=receipt["limitation_present"],
+        non_discriminating=receipt["non_discriminating"],
+        conformance_cause=receipt["conformance_cause"],
         t4_semantic_id=receipt["t4_semantic_id"],
         evidence_grade=receipt["evidence_grade"],
         candidate_sha256=receipt["candidate"]["sha256"],

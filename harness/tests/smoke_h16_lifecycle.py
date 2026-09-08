@@ -98,6 +98,10 @@ def write_lock(c, grade="harness-validation", engine="print('K')\n"):
                  execution_lock_sha256="4" * 64,
                  semantic_core="K core", preconditions=["p"],
                  limitations=["l"], t4_semantic_id="T4-UNRATIFIED-x",
+                 limitation_present=True, non_discriminating=False,
+                 conformance_cause=("h16 lifecycle fixture: synthetic "
+                                    "limitation present, T4 treated as "
+                                    "discriminating"),
                  evidence_grade=grade, candidate_sha256="5" * 64,
                  candidate_provenance_sha256="6" * 64)
     return os.path.join(d, "CAPABILITY_LOCK.json")

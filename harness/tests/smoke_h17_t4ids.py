@@ -437,6 +437,87 @@ except PermissionError:
     _v = False
 check("matching validation evidence derives cleanly", _v)
 
+# --- 7. A12b.6 actual-contract conformance -------------------------------
+import lock as LOCK_MOD  # noqa: E402
+
+res_lock = promotion.advance(root_ok, "PQ", "fam05", "A", FREEZE,
+                             evidence_grade="harness-validation")
+check("second advance mints CAPABILITY_LOCK",
+      res_lock["event"] == "CAPABILITY_LOCK")
+lk = json.load(open(res_lock["lock"]))
+check("fam05 lock carries limitation_present=false, "
+      "non_discriminating=true and a committed cause",
+      lk.get("limitations") == []
+      and lk.get("limitation_present") is False
+      and lk.get("non_discriminating") is True
+      and isinstance(lk.get("conformance_cause"), str)
+      and "fam05.local_v1_sha256" in lk["conformance_cause"]
+      and "non-discriminating" in lk["conformance_cause"],
+      str({k: lk.get(k) for k in ("limitation_present",
+                                  "non_discriminating")}))
+check("minted fam05 lock passes the full lock contract",
+      LOCK_MOD.verify_lock(lk) == [],
+      str(LOCK_MOD.verify_lock(lk)[:1]))
+_claim = dict(lk, non_discriminating=False)
+check("a lock claiming discrimination while the limitation is absent "
+      "is LOCK-INADMISSIBLE",
+      any("LOCK-INADMISSIBLE" in r and "no limitations" in r
+          for r in LOCK_MOD.verify_lock(_claim)))
+_lie = dict(lk, limitation_present=True)
+check("a lock lying about limitation presence is LOCK-INADMISSIBLE",
+      any("LOCK-INADMISSIBLE" in r and "limitation_present" in r
+          for r in LOCK_MOD.verify_lock(_lie)))
+_nocause = dict(lk, conformance_cause="  ")
+check("a lock with no committed cause is LOCK-INADMISSIBLE",
+      any("LOCK-INADMISSIBLE" in r and "conformance_cause" in r
+          for r in LOCK_MOD.verify_lock(_nocause)))
+
+# the specificity gate counts only discriminating families and reports
+# the cause (fewer families never lower the bar: any exclusion is a
+# specificity failure with cause).
+gate = LOCK_MOD.specificity_gate({"fam05": lk})
+check("specificity gate excludes the non-discriminating fam05 with cause",
+      gate["discriminating"] == []
+      and gate["non_discriminating"].get("fam05") == lk["conformance_cause"]
+      and gate["verdict"] == "specificity-failure", str(gate))
+_disc = dict(lk, limitations=["synthetic limitation"],
+             limitation_present=True, non_discriminating=False,
+             conformance_cause="synthetic: limitation present")
+check("synthetic discriminating lock passes its own contract",
+      LOCK_MOD.verify_lock(_disc) == [])
+gate2 = LOCK_MOD.specificity_gate({"fam05": lk, "famXX": _disc})
+check("specificity gate counts only discriminating families",
+      gate2["discriminating"] == ["famXX"]
+      and set(gate2["non_discriminating"]) == {"fam05"}
+      and gate2["verdict"] == "specificity-failure", str(gate2))
+gate3 = LOCK_MOD.specificity_gate({"famXX": _disc})
+check("all-discriminating gate passes", gate3["verdict"] == "specificity-pass"
+      and gate3["discriminating"] == ["famXX"])
+gate4 = LOCK_MOD.specificity_gate({"fam05": lk, "bad": {"no": "fields"}})
+check("inadmissible locks are reported, never silently counted",
+      set(gate4["inadmissible"]) == {"bad"}
+      and gate4["discriminating"] == []
+      and gate4["verdict"] == "specificity-failure")
+
+# NEVER auto-copy hidden K.md into the producer contract: the promoted
+# contract is byte-identical to the T0 arrival's own declaration, and the
+# controller carries no hidden-contract reader (mechanical source guard —
+# no open() of K.md anywhere in the controller module).
+_src = open(os.path.join(HARNESS, "promotion.py")).read()
+import re as _re
+check("the controller has no hidden-contract reader (no K.md open)",
+      _re.search(r"open\([^)]*K\.md", _src) is None,
+      "promotion.py opens K.md")
+_t0arr = json.load(open(os.path.join(
+    order.run_dir(root_ok, order.expected_event(
+        order.load_expansion(root_ok), "PQ", "fam05", "T0", "A")),
+    "arrival.json")))
+_declared = _t0arr["execution_payload"]["capability_contract"]
+check("the locked contract IS the producer declaration (verbatim)",
+      lk["semantic_core"] == _declared["semantic_core"]
+      and lk["preconditions"] == _declared["preconditions"]
+      and lk["limitations"] == _declared["limitations"])
+
 bad = [n for n, ok_ in RESULTS if not ok_]
 print(f"\nH17 t4-registry smoke: {len(RESULTS) - len(bad)}/{len(RESULTS)} closed")
 sys.exit(1 if bad else 0)

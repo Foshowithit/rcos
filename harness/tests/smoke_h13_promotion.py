@@ -208,6 +208,29 @@ def main():
     ok("lock carries T0/T1 tips + source cells",
        lk["acquisition_chain_tips"] == rec["acquisition_chain_tips"]
        and lk["source_cells"] == rec["source_cells"])
+    # ---- A12b.6 actual-contract conformance ---------------------------
+    # fam05's producer-declared contract carries limitations: [], so the
+    # lock must record limitation_present=false, non_discriminating=true
+    # with a committed cause — never silently lock as discriminating.
+    ok("fam05 lock records the actual contract as non-discriminating",
+       lk.get("limitations") == rec.get("limitations") == []
+       and lk.get("limitation_present") is False
+       and lk.get("non_discriminating") is True
+       and isinstance(lk.get("conformance_cause"), str)
+       and "fam05.local_v1_sha256" in lk["conformance_cause"]
+       and "non-discriminating" in lk["conformance_cause"],
+       str({k: lk.get(k) for k in ("limitation_present",
+                                   "non_discriminating")}))
+    ok("receipt and lock agree on the conformance verdict",
+       rec.get("limitation_present") is False
+       and rec.get("non_discriminating") is True
+       and rec.get("conformance_cause") == lk.get("conformance_cause"))
+    _claim = dict(lk, non_discriminating=False)
+    ok("a lock claiming discrimination without the limitation is "
+       "LOCK-INADMISSIBLE",
+       any("discriminat" in r and "no limitations" in r
+           for r in LOCK.verify_lock(_claim)),
+       str(LOCK.verify_lock(_claim)[:1]))
     st = order.cell_state(ROOT, cell_for("PQ", "fam05", "CAPABILITY_LOCK", "A"),
                           FREEZE)
     ok("CAPABILITY_LOCK cell COMPLETE", st["status"] == "COMPLETE",

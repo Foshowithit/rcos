@@ -941,6 +941,9 @@ def selfcheck_wire():
             protocol_lock_sha256="3" * 64, execution_lock_sha256="4" * 64,
             semantic_core="selfcheck fixture: no semantic claim",
             preconditions=["fixture"], limitations=["fixture"],
+            limitation_present=True, non_discriminating=False,
+            conformance_cause=("selfcheck fixture: synthetic limitation "
+                               "present, T4 treated as discriminating"),
             t4_semantic_id="famXX-fixture-selfcheck",
             evidence_grade="harness-validation",
             candidate_sha256="5" * 64,
