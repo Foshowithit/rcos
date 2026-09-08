@@ -1,0 +1,242 @@
+{
+ "s1-csv": {
+  "shipment_id": "S-201",
+  "origin": "OSLO",
+  "destination": "SINGAPORE",
+  "weight_kg": 783.3,
+  "items": [
+   {
+    "sku": "SKU-101",
+    "qty": 7
+   },
+   {
+    "sku": "SKU-410",
+    "qty": 6
+   },
+   {
+    "sku": "SKU-555",
+    "qty": 7
+   }
+  ]
+ },
+ "s2-json": {
+  "shipment_id": "S-202",
+  "origin": "HAIFA",
+  "destination": "SINGAPORE",
+  "weight_kg": 172.2,
+  "items": [
+   {
+    "sku": "SKU-330",
+    "qty": 2
+   },
+   {
+    "sku": "SKU-410",
+    "qty": 7
+   },
+   {
+    "sku": "SKU-101",
+    "qty": 9
+   }
+  ]
+ },
+ "h01": {
+  "shipment_id": "S-211",
+  "origin": "GDANSK",
+  "destination": "SANTOS",
+  "weight_kg": 76.2,
+  "items": [
+   {
+    "sku": "SKU-207",
+    "qty": 8
+   },
+   {
+    "sku": "SKU-410",
+    "qty": 9
+   },
+   {
+    "sku": "SKU-555",
+    "qty": 5
+   }
+  ]
+ },
+ "h02": {
+  "shipment_id": "S-212",
+  "origin": "GDANSK",
+  "destination": "SINGAPORE",
+  "weight_kg": 173.1,
+  "items": [
+   {
+    "sku": "SKU-207",
+    "qty": 5
+   },
+   {
+    "sku": "SKU-101",
+    "qty": 7
+   },
+   {
+    "sku": "SKU-555",
+    "qty": 9
+   }
+  ]
+ },
+ "h03": {
+  "shipment_id": "S-213",
+  "origin": "HAIFA",
+  "destination": "SANTOS",
+  "weight_kg": 635.0,
+  "items": [
+   {
+    "sku": "SKU-207",
+    "qty": 1
+   },
+   {
+    "sku": "SKU-101",
+    "qty": 7
+   },
+   {
+    "sku": "SKU-555",
+    "qty": 4
+   }
+  ]
+ },
+ "h04": {
+  "shipment_id": "S-214",
+  "origin": "OSLO",
+  "destination": "SINGAPORE",
+  "weight_kg": 265.9,
+  "items": [
+   {
+    "sku": "SKU-410",
+    "qty": 3
+   },
+   {
+    "sku": "SKU-555",
+    "qty": 8
+   },
+   {
+    "sku": "SKU-330",
+    "qty": 9
+   }
+  ]
+ },
+ "h05": {
+  "shipment_id": "S-215",
+  "origin": "OSLO",
+  "destination": "SANTOS",
+  "weight_kg": 795.6,
+  "items": [
+   {
+    "sku": "SKU-410",
+    "qty": 7
+   },
+   {
+    "sku": "SKU-555",
+    "qty": 5
+   },
+   {
+    "sku": "SKU-207",
+    "qty": 8
+   }
+  ]
+ },
+ "h06": {
+  "shipment_id": "S-216",
+  "origin": "GDANSK",
+  "destination": "BUSAN",
+  "weight_kg": 513.8,
+  "items": [
+   {
+    "sku": "SKU-555",
+    "qty": 2
+   },
+   {
+    "sku": "SKU-207",
+    "qty": 6
+   },
+   {
+    "sku": "SKU-330",
+    "qty": 8
+   }
+  ]
+ },
+ "h07": {
+  "shipment_id": "S-217",
+  "origin": "HAIFA",
+  "destination": "BUSAN",
+  "weight_kg": 212.2,
+  "items": [
+   {
+    "sku": "SKU-101",
+    "qty": 2
+   },
+   {
+    "sku": "SKU-330",
+    "qty": 5
+   },
+   {
+    "sku": "SKU-207",
+    "qty": 5
+   }
+  ]
+ },
+ "h08": {
+  "shipment_id": "S-218",
+  "origin": "HAIFA",
+  "destination": "BUSAN",
+  "weight_kg": 652.7,
+  "items": [
+   {
+    "sku": "SKU-207",
+    "qty": 3
+   },
+   {
+    "sku": "SKU-330",
+    "qty": 9
+   },
+   {
+    "sku": "SKU-101",
+    "qty": 7
+   }
+  ]
+ },
+ "h09": {
+  "shipment_id": "S-219",
+  "origin": "OSLO",
+  "destination": "SANTOS",
+  "weight_kg": 232.1,
+  "items": [
+   {
+    "sku": "SKU-207",
+    "qty": 9
+   },
+   {
+    "sku": "SKU-410",
+    "qty": 4
+   },
+   {
+    "sku": "SKU-330",
+    "qty": 5
+   }
+  ]
+ },
+ "h10": {
+  "shipment_id": "S-220",
+  "origin": "OSLO",
+  "destination": "ROTTERDAM",
+  "weight_kg": 442.8,
+  "items": [
+   {
+    "sku": "SKU-410",
+    "qty": 3
+   },
+   {
+    "sku": "SKU-207",
+    "qty": 5
+   },
+   {
+    "sku": "SKU-555",
+    "qty": 6
+   }
+  ]
+ }
+}

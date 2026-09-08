@@ -1,0 +1,23 @@
+{
+ "id": "S-202",
+ "route": {
+  "src": "HAIFA",
+  "dst": "SINGAPORE"
+ },
+ "mass_kg": 172.2,
+ "contents": [
+  {
+   "code": "SKU-330",
+   "n": 2
+  },
+  {
+   "code": "SKU-410",
+   "n": 7
+  },
+  {
+   "code": "SKU-101",
+   "n": 9
+  }
+ ],
+ "notes": "handle with care"
+}

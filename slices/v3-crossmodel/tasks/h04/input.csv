@@ -1,0 +1,7 @@
+to,from,weight_kg,ship_id
+SINGAPORE,OSLO,265.9,S-214
+
+qty,sku
+3,SKU-410
+8,SKU-555
+9,SKU-330
