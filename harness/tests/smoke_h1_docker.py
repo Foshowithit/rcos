@@ -183,9 +183,20 @@ check("visible content matches host bytes",
 # --- mount audit: exactly work+task ---
 mounts = sb2.inspect_mounts()
 srcs = sorted(s for s, _ in mounts)
+dsts = sorted(d for _, d in mounts)
 check("mount audit shows exactly work+task",
-      len(mounts) == 2 and any("seal" in s for s in srcs)
-      and any("seal-T0" in s for s in srcs), str(srcs))
+      len(mounts) == 2 and dsts == ["/task", "/work"]
+      and all(s.startswith(("/tmp/rcos-runs/", "/tmp/rcos-visible/"))
+              for s in srcs), str(srcs))
+
+# --- TOCTOU: mutate caller source after construction ---
+import hashlib as _hl2
+open(os.path.join(VBASE, "seal-T0", "input.csv"), "a").write("EVIL,INJECTED\n")
+p = sb2.run(PY + ["import hashlib;print(hashlib.sha256(open('/task/input.csv','rb').read()).hexdigest()[:12])"])
+check("post-construction source mutation invisible in jail",
+      (p.stdout or "").strip() == host_h, (p.stdout or "").strip()[:20])
+p = sb2.run(PY + ["import os;print('EVIL' in open('/task/input.csv').read())"])
+check("injected content absent in jail", "False" in (p.stdout or ""))
 
 # --- image digest recorded in manifest ---
 m = sb2.manifest()
