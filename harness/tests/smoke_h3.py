@@ -80,24 +80,57 @@ ok, why = led.request_replacement("p2", "provider-outage", "settings-v2")
 check("first replacement allowed (p2)", ok, why)
 ok, why = led.request_replacement("p2", "provider-outage", "settings-v3")
 check("changed-settings replacement refused", not ok, why)
-# replacement completion: both arms required before grading
-led.record_run("p3", "A", "blocked", failure_kind="provider-outage")
-led.record_run("p3", "B", "blocked", failure_kind="provider-outage")
+# replacement completion: manifests bound, both arms required
+import hashlib as _hlm
+def _rman(path, pair, arm, epoch, repl_of, authz, settings, snap, run):
+    m = {"run_id": run, "pair_id": pair, "arm": arm,
+         "replacement_epoch": epoch, "replaces_original_run_id": repl_of,
+         "authorization_hash": authz, "frozen_settings_hash": settings,
+         "task_snapshot_hash": snap, "evidence_genesis": "g"}
+    open(path, "w").write(json.dumps(m, sort_keys=True))
+    return path
+led.record_run("p3", "A", "blocked", failure_kind="provider-outage",
+               task_snapshot={"t": 1})
+led.record_run("p3", "B", "blocked", failure_kind="provider-outage",
+               task_snapshot={"t": 1})
 ok, _ = led.request_replacement("p3", "provider-outage", "settings-v1")
 check("p3 replacement authorized", ok)
+_authz = led.state["pairs"]["p3"]["authorization_hash"]
+_settings = led.state["pairs"]["p3"]["settings_hash"]
+_snap = led.state["pairs"]["p3"]["task_snapshot_hash"]
+_mA = _rman(os.path.join(BASE, "repl-A.json"), "p3", "A", 1, "run-old-A",
+            _authz, _settings, _snap, "run-new-A")
+_mB = _rman(os.path.join(BASE, "repl-B.json"), "p3", "B", 1, "run-old-B",
+            _authz, _settings, _snap, "run-new-B")
 check("grading gate closed before completion",
       not led.replacement_complete("p3"))
-led.complete_replacement("p3", "A", "run-new-A", "settings-v1")
+led.complete_replacement("p3", _mA)
 check("grading gate still closed on partial pair",
       not led.replacement_complete("p3"))
-led.complete_replacement("p3", "B", "run-new-B", "settings-v1")
+led.complete_replacement("p3", _mB)
 check("grading gate opens on complete pair",
       led.replacement_complete("p3"))
 try:
-    led.complete_replacement("p3", "A", "run-dup-A", "settings-v1")
+    led.complete_replacement("p3", _mA)
     check("duplicate arm recording refused", False)
 except ValueError:
     check("duplicate arm recording refused", True)
+# substitution attacks: foreign pair / wrong epoch / wrong settings / wrong task
+_mX = _rman(os.path.join(BASE, "repl-X.json"), "pX", "A", 1, "run-old-A",
+            _authz, _settings, _snap, "run-evil-A")
+for label, mp in [("foreign-pair manifest refused", _mX)]:
+    try:
+        led.complete_replacement("p3", mp)
+        check(label, False)
+    except ValueError:
+        check(label, True)
+_mW = _rman(os.path.join(BASE, "repl-W.json"), "p3", "B", 99, "run-old-B",
+            _authz, _settings, _snap, "run-evil-B")
+try:
+    led.complete_replacement("p3", _mW)
+    check("wrong-epoch manifest refused", False)
+except ValueError:
+    check("wrong-epoch manifest refused", True)
 
 # --- chain: intact, deletion, reorder, substitution, tamper ---
 ch = Chain(os.path.join(BASE, "chain.jsonl"), "FREEZE-abc",
@@ -111,6 +144,14 @@ ch.append("grade", {"grade": "PASS", "evaluator_link_hash": _evh,
                      "grading_rule_version": "v1"})
 check("intact chain audits clean",
       ch.audit("FREEZE-abc", {"run": "r1", "lane": "A"}) == [])
+check("grade rule match passes",
+      ch.audit("FREEZE-abc", {"run": "r1", "lane": "A"},
+               expected_grading_rule={"hash": "gr1",
+                                      "version": "v1"}) == [])
+check("grade rule mismatch fails",
+      ch.audit("FREEZE-abc", {"run": "r1", "lane": "A"},
+               expected_grading_rule={"hash": "other",
+                                      "version": "v1"}) != [])
 # deletion
 lines = open(os.path.join(BASE, "chain.jsonl")).read().splitlines()
 open(os.path.join(BASE, "chain-del.jsonl"), "w").write(

@@ -47,11 +47,17 @@ class PairLedger:
         with open(self.path, "w") as f:
             json.dump(self.state, f, indent=1)
 
-    def record_run(self, pair_id, arm, verdict, failure_kind=None):
+    def record_run(self, pair_id, arm, verdict, failure_kind=None,
+                   task_snapshot=None):
         runs = self.state["pairs"].setdefault(
             pair_id, {"runs": [], "replacements": 0, "status": "open"})
         runs["runs"].append({"arm": arm, "verdict": verdict,
-                             "failure_kind": failure_kind})
+                             "failure_kind": failure_kind,
+                             "task_snapshot": task_snapshot})
+        if task_snapshot is not None and runs.get("task_snapshot_hash") is None:
+            import hashlib as _hl3
+            runs["task_snapshot_hash"] = _hl3.sha256(
+                json.dumps(task_snapshot, sort_keys=True).encode()).hexdigest()
         self._save()
         return runs
 
@@ -73,8 +79,21 @@ class PairLedger:
         if runs.get("settings_id") and \
                 runs["settings_id"] != frozen_settings_id:
             return False, "settings differ from frozen original"
+        import hashlib as _hl2
         runs["replacements"] += 1
         runs["settings_id"] = frozen_settings_id
+        runs["settings_hash"] = _hl2.sha256(
+            json.dumps(frozen_settings_id, sort_keys=True).encode()
+            if not isinstance(frozen_settings_id, str)
+            else frozen_settings_id.encode()).hexdigest()
+        runs["authorization_hash"] = _hl2.sha256(json.dumps(
+            {"pair": pair_id, "generation": runs["replacements"],
+             "settings": frozen_settings_id}, sort_keys=True).encode()
+        ).hexdigest()
+        runs["replacement_epoch"] = runs["replacements"]
+        runs["task_snapshot_hash"] = _hl2.sha256(json.dumps(
+            runs.get("task_snapshot", {}), sort_keys=True).encode()
+        ).hexdigest()
         runs["expected_arms"] = sorted(
             {r["arm"] for r in runs["runs"]})
         runs["status"] = "replaced-once"
@@ -84,26 +103,48 @@ class PairLedger:
     def pair_status(self, pair_id):
         return self.state["pairs"].get(pair_id, {}).get("status", "unknown")
 
-    def complete_replacement(self, pair_id, arm, run_id, settings_id):
-        """Record one replacement arm execution. The pair becomes
-        `replacement-complete` ONLY when BOTH arms have recorded runs
-        under the SAME frozen settings as the authorization. Grading
-        may consume replacement results only in that state."""
+    def complete_replacement(self, pair_id, run_manifest_path):
+        """Record one replacement arm execution BY MANIFEST, not by
+        caller assertion. The manifest must carry: run_id, pair_id, arm,
+        replacement_epoch, replaces_original_run_id, authorization_hash,
+        frozen_settings_hash, task/input_snapshot_hash, evidence genesis
+        hash. The ledger derives every property from the manifest and
+        verifies: same pair, same authorization as granted, same frozen
+        settings, arm in the authorized pair set, epoch matches the open
+        replacement generation, and the task snapshot equals the
+        original pair's. Stores the manifest HASH, never bare run ids.
+        Grading may consume replacement results only when both arms are
+        so bound (status replacement-complete)."""
         runs = self.state["pairs"].get(pair_id)
         if runs is None:
             raise ValueError(f"unknown pair {pair_id}")
         if runs.get("status") != "replaced-once":
             raise ValueError(f"pair {pair_id} has no open replacement "
                              f"(status={runs.get('status')})")
-        if settings_id != runs.get("settings_id"):
-            raise ValueError("replacement settings differ from authorized")
+        m = json.load(open(run_manifest_path))
+        with open(run_manifest_path, "rb") as f:
+            import hashlib as _hl
+            mhash = _hl.sha256(f.read()).hexdigest()
+        if m.get("pair_id") != pair_id:
+            raise ValueError("manifest pair mismatch "
+                             f"({m.get('pair_id')!r} != {pair_id!r})")
+        arm = m.get("arm")
         if arm not in runs.get("expected_arms", []):
-            raise ValueError(f"arm {arm} not in authorized pair arms "
+            raise ValueError(f"arm {arm!r} not in authorized pair arms "
                              f"{runs.get('expected_arms')}")
+        if m.get("frozen_settings_hash") != runs.get("settings_hash"):
+            raise ValueError("manifest frozen-settings mismatch")
+        if m.get("authorization_hash") != runs.get("authorization_hash"):
+            raise ValueError("manifest authorization mismatch")
+        if m.get("replacement_epoch") != runs.get("replacement_epoch"):
+            raise ValueError("manifest epoch mismatch")
+        if m.get("task_snapshot_hash") != runs.get("task_snapshot_hash"):
+            raise ValueError("manifest task snapshot mismatch")
         done = runs.setdefault("replacement_runs", {})
         if arm in done:
             raise ValueError(f"arm {arm} already recorded for replacement")
-        done[arm] = run_id
+        done[arm] = {"run_id": m.get("run_id"),
+                     "manifest_hash": mhash}
         if set(done) >= set(runs["expected_arms"]):
             runs["status"] = "replacement-complete"
         self._save()

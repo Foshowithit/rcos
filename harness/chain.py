@@ -54,7 +54,10 @@ class Chain:
         self.tip = rec["link_hash"]
         return rec["link_hash"]
 
-    def audit(self, frozen_commit, run_manifest):
+    def audit(self, frozen_commit, run_manifest, expected_grading_rule=None):
+        """expected_grading_rule: frozen {"hash":..., "version":...}.
+        When provided, the terminal grade's rule hash/version must EQUAL
+        it (mere presence is insufficient)."""
         """Re-verify the whole chain. Returns list of findings
         (empty = intact). Checks: genesis binding, hash linkage order,
         no gaps, no duplicate link hashes (reorder/substitution),
@@ -88,6 +91,13 @@ class Chain:
             findings.append("grade is not the final link")
         else:
             g = self.links[-1]["payload"]
+            if expected_grading_rule is not None:
+                if (g.get("grading_rule_hash")
+                        != expected_grading_rule.get("hash")
+                        or g.get("grading_rule_version")
+                        != expected_grading_rule.get("version")):
+                    findings.append(
+                        "grade rule hash/version != frozen expected rule")
             ev_links = [i for i, r in enumerate(self.links)
                         if r.get("kind") == "evaluator"]
             if not ev_links:
