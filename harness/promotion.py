@@ -344,7 +344,16 @@ def derive_candidate(t0_ev, t1_ev, t0_run_dir):
 
 def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
                     version, evidence_grade, t4_id, t4_ratified):
-    core, pre, lim, contract_sha = contract
+    # A12b.1: the consumer-visible contract is authored/acquired by the
+    # PRODUCER (the arrival payload), never synthesized from hidden K.md.
+    # The K.md-derived contract (semantic core, preconditions, limitations,
+    # contract sha) and the auditor T4 semantic id / ratification state go
+    # ONLY into the promotion receipt and CAPABILITY_LOCK auditor metadata
+    # — never into manifest.json, adapter_notes.md, engine.py, or any model
+    # prompt. `contract`, `t4_id` and `t4_ratified` are therefore accepted
+    # here for signature stability but are NOT written to these artifacts.
+    _core, _pre, _lim, _contract_sha = contract
+    _auditor = (t4_id, t4_ratified)
     engine = (ENGINE_TEMPLATE
               .replace("__CANDIDATE_SHA256__", cand["sha256"])
               .replace("__T0_CELL__", cell["source_cells"]["T0"])
@@ -356,29 +365,29 @@ def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
         f"{cell['source_cells']['T0']} arrival.{CANDIDATE_FIELD})\n"
         f"- validated by: {cell['source_cells']['T1']} (distinct task/surface)\n"
         f"- evidence grade: {evidence_grade}\n"
-        f"- T4 semantic id: {t4_id}"
-        f"{'' if t4_ratified else ' (UNRATIFIED harness-validation)'}\n"
-        f"- semantic core: {core}\n"
-        f"- preconditions: {'; '.join(pre) if pre else '(none)'}\n"
-        f"- limitations: {'; '.join(lim) if lim else '(none)'}\n"
         f"- interface: engine.py <field_map.json> <records.json> <OUTPUT.json>\n"
         f"- engine template sha256: {_sha_bytes(ENGINE_TEMPLATE.encode())}\n")
     manifest = {
         "capability_id": cell["capability_id"], "version": version,
         "block": cell["block"], "universe": cell["universe"],
         "family": cell["family"],
-        "semantic_core": core, "preconditions": pre, "limitations": lim,
-        "contract_sha256": contract_sha,
         "candidate_sha256": cand["sha256"],
+        # The producer-authored contract: rooted in THIS universe's own
+        # acquisition arrival payload (candidate bytes + interface), never
+        # in hidden auditor K.md text.
+        "producer_contract": {
+            "candidate_sha256": cand["sha256"],
+            "candidate_field": cand["field"],
+            "arrival_sha256": cand["arrival_sha256"],
+            "interface": "argv: candidate.py <materialized_input_dir> "
+                         "<output_path>"},
         "source_cells": dict(cell["source_cells"]),
         "acquisition_chain_tips": dict(cell["acquisition_chain_tips"]),
         "protocol_lock_sha256": protocol_sha,
         "execution_lock_sha256": exec_sha,
-        "evidence_grade": evidence_grade, "t4_semantic_id": t4_id,
-        "t4_ratified": t4_ratified,
+        "evidence_grade": evidence_grade,
         "engine_interface": "engine.py <field_map.json> <records.json> "
                             "<OUTPUT.json>",
-        "producer": "harness/promotion.py (A12.1 controller)",
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     for name, text in (("engine.py", engine), ("adapter_notes.md", notes)):
         p = os.path.join(capdir, name)
