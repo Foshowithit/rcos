@@ -1,3 +1,3 @@
-# fam03-T2 — dedup space-separated log
-Count non-empty lines in `events.log`. Identity = the full line.
-Emit `OUTPUT.json`: `{total, unique, removed}`.
+# fam03-T2 — dedup JSON envelope by kind+target
+Count events in `batch.json` (array under `events`). Identity =
+(kind,target) pair. Emit `OUTPUT.json`: `{total, unique, removed}`.

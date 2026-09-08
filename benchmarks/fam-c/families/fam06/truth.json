@@ -17,13 +17,17 @@
   "matched": [
    "A"
   ],
-  "missing_in_b": [
-   "B"
-  ],
+  "missing_in_b": [],
   "missing_in_a": [
    "C"
   ],
-  "conflicts": [],
+  "conflicts": [
+   {
+    "id": "B",
+    "a": 20,
+    "b": 25
+   }
+  ],
   "unreconcilable": []
  },
  "T2": {

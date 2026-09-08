@@ -9,11 +9,14 @@
  },
  "T1": {
   "ok": [
-   "a.txt",
    "b.txt"
   ],
-  "bad": [],
-  "unverified": []
+  "bad": [
+   {
+    "path": "a.txt",
+    "reason_includes": "sha"
+   }
+  ]
  },
  "T2": {
   "ok": [

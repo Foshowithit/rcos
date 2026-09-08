@@ -354,6 +354,32 @@ It is not repaired and rerun.
 
 ---
 
+# 10.1 Contract-conformance rule (frozen)
+
+T4 inapplicability is judged against the ACTUAL locked capability
+contract, never against auditor K.md alone. Promotion MUST therefore
+emit a machine-readable contract carrying, at minimum,
+`semantic_core`, `preconditions`, and `limitations`, frozen in
+CAPABILITY_LOCK alongside the artifact hash.
+
+Before downstream execution, the auditor checks the actual locked
+contract against the frozen target contract under this rule: every
+precondition the T4 design relies on as violated must be present as a
+limitation in the locked contract. If a violated T4 precondition is
+NOT actually a limitation of the locked capability (e.g. the producer
+built a strictly more general artifact than the benchmark expected),
+that T4 cannot be claimed as an inapplicability null for that family:
+the family reports the T4 as non-discriminating and excludes it from
+the specificity gate, with the reason committed. The gate then
+requires the remaining T4s (fewer families do not lower the 6/6 bar —
+report as specificity failure with cause).
+
+Rationale: specificity must mean the system correctly decided whether
+the capability it actually acquired applies, not whether it obeyed a
+hidden capability definition the benchmark authors wrote. This rule
+prevents punishing a capability for being better than expected.
+
+---
 # 11. Manifest lifecycle
 
 Do not mutate one manifest through multiple lifecycle stages.
