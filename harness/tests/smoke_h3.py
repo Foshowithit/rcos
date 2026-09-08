@@ -504,8 +504,12 @@ open(os.path.join(bad_anchor, "identity.json"), "w").write("{}")
 open(os.path.join(bad_anchor, "EVIDENCE-CHAIN.jsonl"), "w").write("")
 check("admissibility: wrong instance anchor EXCLUDED",
       ADM.classify_run_dir(bad_anchor, FREEZE_C)[0] == ADM.EXCLUDED)
-# verify_instance_frozen hermetic: clean passes, drift/extras refuse
+# verify_instance_frozen hermetic (item-5: git-resolved manifest + tree
+# check): fixture lives in a THROWAWAY git repo; the manifest is committed
+# and the freeze commit is its HEAD.
+import subprocess as _sp
 drift = os.path.join(BASE, "a3-drift")
+os.system("rm -rf " + drift)
 os.makedirs(os.path.join(drift, "families", "fam99", "T0"))
 for rel, body in (("families/fam99/T0/prompt.md", "frozen\n"),
                   ("families/fam99/check.py", "print(1)\n"),
@@ -519,12 +523,39 @@ lines = [f"{ADM._sha(os.path.join(drift, rel))}  {rel}"
                      "families/fam99/truth.json")]
 open(os.path.join(drift, "FREEZE-HASHES.sha256"), "w").write(
     "\n".join(lines) + "\n")
-check("frozen-instance gate: clean fixture passes",
-      ADM.verify_instance_frozen(drift, "fam99", "T0")["verified_files"] == 3)
+open(os.path.join(drift, "FREEZE.json"), "w").write(json.dumps(
+    {"freeze_commit": "HEAD", "freeze_tree": "tbd"}))
+_env = dict(os.environ, GIT_CONFIG_NOSYSTEM="1", HOME="/tmp",
+            GIT_AUTHOR_NAME="s", GIT_AUTHOR_EMAIL="s@s",
+            GIT_COMMITTER_NAME="s", GIT_COMMITTER_EMAIL="s@s")
+for _args in (["init", "-q"], ["add", "-A"],
+              ["commit", "-qm", "freeze-fixture"]):
+    _r = _sp.run(["git"] + _args, cwd=drift, capture_output=True,
+                 env=_env)
+    assert _r.returncode == 0, _args
+_fc = _sp.run(["git", "rev-parse", "HEAD"], cwd=drift, capture_output=True,
+              env=_env, text=True).stdout.strip()
+_tree = _sp.run(["git", "rev-parse", "HEAD^{tree}"], cwd=drift,
+                capture_output=True, env=_env, text=True).stdout.strip()
+json.dump({"freeze_commit": _fc, "freeze_tree": _tree},
+          open(os.path.join(drift, "FREEZE.json"), "w"))
+check("frozen-instance gate: clean fixture passes git-resolved manifest",
+      ADM.verify_instance_frozen(drift, "fam99", "T0",
+                                 freeze_commit=_fc)["verified_files"] == 3)
+# item-5 acceptance: editing the LOCAL working-tree manifest cannot
+# redefine truth — the gate still passes against the committed bytes.
+open(os.path.join(drift, "FREEZE-HASHES.sha256"), "w").write(
+    "0" * 64 + "  families/fam99/T0/prompt.md\n")
+check("frozen-instance gate: local manifest edit cannot redefine truth",
+      ADM.verify_instance_frozen(drift, "fam99", "T0",
+                                 freeze_commit=_fc)["verified_files"] == 3
+      and open(os.path.join(drift, "FREEZE-HASHES.sha256")).read()[0] == "0")
+_sp.run(["git", "checkout", "-q", "--", "FREEZE-HASHES.sha256"], cwd=drift,
+        env=_env)
 open(os.path.join(drift, "families", "fam99", "T0", "prompt.md"), "w").write(
     "TAMPERED\n")
 try:
-    ADM.verify_instance_frozen(drift, "fam99", "T0")
+    ADM.verify_instance_frozen(drift, "fam99", "T0", freeze_commit=_fc)
     check("frozen-instance gate: drift refused", False)
 except RuntimeError:
     check("frozen-instance gate: drift refused", True)
@@ -533,10 +564,54 @@ open(os.path.join(drift, "families", "fam99", "T0", "prompt.md"), "w").write(
 open(os.path.join(drift, "families", "fam99", "T0", "extra.txt"), "w").write(
     "x\n")
 try:
-    ADM.verify_instance_frozen(drift, "fam99", "T0")
+    ADM.verify_instance_frozen(drift, "fam99", "T0", freeze_commit=_fc)
     check("frozen-instance gate: extra file refused", False)
 except RuntimeError:
     check("frozen-instance gate: extra file refused", True)
+try:
+    ADM.verify_instance_frozen(drift, "fam99", "T0")
+    check("frozen-instance gate: missing commit refused", False)
+except RuntimeError as e:
+    check("frozen-instance gate: missing commit refused",
+          "FROZEN-INSTANCE-NO-COMMIT" in str(e), str(e)[:80])
+try:
+    ADM.verify_instance_frozen(drift, "fam99", "T0",
+                               freeze_commit="0" * 40)
+    check("frozen-instance gate: unresolvable commit refused", False)
+except RuntimeError as e:
+    check("frozen-instance gate: unresolvable commit refused",
+          "FROZEN-MANIFEST-UNRESOLVABLE" in str(e), str(e)[:80])
+# item-5 acceptance: recorded freeze_tree must equal the commit's tree;
+# altering the record refuses the start.
+check("freeze-tree gate: true record passes",
+      ADM.verify_freeze_tree(drift, _fc) == _tree)
+_bak = json.load(open(os.path.join(drift, "FREEZE.json")))
+json.dump({"freeze_commit": _fc, "freeze_tree": "0" * 40},
+          open(os.path.join(drift, "FREEZE.json"), "w"))
+try:
+    ADM.verify_freeze_tree(drift, _fc)
+    check("freeze-tree gate: altered record refused", False)
+except RuntimeError as e:
+    check("freeze-tree gate: altered record refused",
+          "FROZEN-TREE-MISMATCH" in str(e), str(e)[:120])
+json.dump(_bak, open(os.path.join(drift, "FREEZE.json"), "w"))
+# round-2 #14 (pulled into item 5): harness_manifest_sha FAILS on a
+# missing required module instead of silently skipping it.
+sys.path.insert(0, os.path.join(FAMC, "harness-run"))
+import run_arm_h1 as _RUN
+_real_harness = _RUN.HARNESS
+try:
+    _RUN.HARNESS = os.path.join(BASE, "a3-empty-harness")
+    os.makedirs(_RUN.HARNESS, exist_ok=True)
+    _RUN.harness_manifest_sha()
+    check("harness manifest: missing module refused", False)
+except RuntimeError as e:
+    check("harness manifest: missing module refused",
+          "HARNESS-MANIFEST-MISSING" in str(e), str(e)[:120])
+finally:
+    _RUN.HARNESS = _real_harness
+    check("harness manifest: true modules hash",
+          len(_RUN.harness_manifest_sha()) == 64)
 
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH3 smoke: {len(results) - len(bad)}/{len(results)} closed")

@@ -26,13 +26,19 @@ Anything else is EXCLUDED with a one-line reason.
 verify_instance_frozen() is the runner's refuse-START gate: the executed
 instance subtree (families/<family>/<task>/** plus the family check.py and
 truth.json that grade it) must be byte-identical to FREEZE-HASHES.sha256 —
-no drift, no extras — before any model token is spent.
+no drift, no extras — before any model token is spent. Item-5 hardening
+(audit round 2): the manifest is resolved from the FREEZE COMMIT via git,
+never from the working-tree copy (a local edit cannot redefine truth);
+and verify_freeze_tree() proves FREEZE.json's recorded freeze_tree equals
+the freeze commit's tree of the frozen root (base) — altering the record
+refuses the start. Stdlib only.
 
 Stdlib only. Importable (classify_run_dir / verify_instance_frozen) and a CLI.
 """
 import hashlib
 import json
 import os
+import subprocess
 import sys
 
 from usage import verify_normalized_usage
@@ -145,21 +151,90 @@ def classify_runs(runs_dir, freeze_commit):
     return out, count
 
 
-def verify_instance_frozen(base, family, task):
-    """Refuse-START gate (audit P0 #4 dual anchors, content half).
+def _git(args, cwd):
+    """Run git fail-closed: raises RuntimeError on missing binary or
+    non-zero exit (never a silent empty result)."""
+    try:
+        p = subprocess.run(["git"] + args, cwd=cwd, capture_output=True,
+                           text=True)
+    except FileNotFoundError:
+        raise RuntimeError("FROZEN-GIT-UNAVAILABLE: git binary not found")
+    if p.returncode != 0:
+        raise RuntimeError(f"FROZEN-GIT-FAILED git {' '.join(args)}: "
+                           + (p.stderr or p.stdout).strip()[:200])
+    return p.stdout.strip()
+
+
+def frozen_manifest_bytes(base, freeze_commit):
+    """Return the FREEZE-HASHES.sha256 BYTES recorded at freeze_commit.
+
+    Resolved via `git show <freeze>:<path>` — the working-tree copy is
+    NEVER consulted, so editing the local file cannot redefine truth
+    (fail closed when the object is unresolvable). `base` is the frozen
+    root (the dir containing FREEZE-HASHES.sha256)."""
+    if not freeze_commit:
+        raise RuntimeError("FROZEN-INSTANCE-NO-COMMIT: freeze commit "
+                           "required (never default, never HEAD)")
+    root = _git(["rev-parse", "--show-toplevel"], cwd=base)
+    rel = os.path.relpath(os.path.join(base, "FREEZE-HASHES.sha256"), root)
+    try:
+        p = subprocess.run(["git", "show", f"{freeze_commit}:{rel}"],
+                           cwd=root, capture_output=True)
+    except FileNotFoundError:
+        raise RuntimeError("FROZEN-GIT-UNAVAILABLE: git binary not found")
+    if p.returncode != 0:
+        raise RuntimeError(f"FROZEN-MANIFEST-UNRESOLVABLE {rel} at "
+                           f"{freeze_commit[:12]}: "
+                           + (p.stderr or b"").decode()[:200])
+    return p.stdout
+
+
+def verify_freeze_tree(base, freeze_commit):
+    """Prove FREEZE.json's recorded freeze_tree equals the freeze commit's
+    tree of the frozen root `base` (original freeze semantics: the
+    benchmarks/fam-c subtree tree at the freeze commit). Raises
+    RuntimeError(FROZEN-TREE-...) when unrecorded, unresolvable, or
+    altered — the runner refuses to start. Returns the verified tree."""
+    fj_path = os.path.join(base, "FREEZE.json")
+    if not os.path.exists(fj_path):
+        raise RuntimeError("FROZEN-TREE-UNRECORDED " + fj_path)
+    recorded = json.load(open(fj_path)).get("freeze_tree")
+    if not recorded:
+        raise RuntimeError("FROZEN-TREE-UNRECORDED: no freeze_tree in "
+                           + fj_path)
+    root = _git(["rev-parse", "--show-toplevel"], cwd=base)
+    rel = os.path.relpath(base, root)
+    spec = f"{freeze_commit}^{{tree}}" if rel == "." else f"{freeze_commit}:{rel}"
+    expected = _git(["rev-parse", spec], cwd=root)
+    if recorded != expected:
+        raise RuntimeError(f"FROZEN-TREE-MISMATCH recorded {recorded[:12]} "
+                           f"!= freeze commit {freeze_commit[:12]} tree of "
+                           f"{rel} ({expected[:12]}): FREEZE.json altered "
+                           "or stale — refuse start")
+    return expected
+
+
+def verify_instance_frozen(base, family, task, freeze_commit=None):
+    """Refuse-START gate (audit P0 #4 dual anchors, content half; item-5
+    hardened).
 
     The executed instance — families/<family>/<task>/** plus the family
-    check.py/truth.json that grade it — must be byte-identical to
-    FREEZE-HASHES.sha256 (no drift, no extra files inside the task dir).
-    Raises RuntimeError(FROZEN-INSTANCE-...) on any mismatch; otherwise
-    returns {"family", "task", "verified_files", "verified_bytes"}.
+    check.py/truth.json that grade it — must be byte-identical to the
+    FREEZE-HASHES manifest RESOLVED FROM freeze_commit VIA GIT (never the
+    working-tree copy). Raises RuntimeError(FROZEN-INSTANCE-...) on any
+    mismatch; otherwise returns {"family", "task", "verified_files",
+    "verified_bytes"}. freeze_commit is REQUIRED (no default, never HEAD).
     """
+    if not freeze_commit:
+        raise RuntimeError("FROZEN-INSTANCE-NO-COMMIT: freeze commit "
+                           "required (never default, never HEAD)")
     man = {}
-    mp = os.path.join(base, "FREEZE-HASHES.sha256")
-    if not os.path.exists(mp):
-        raise RuntimeError("FROZEN-INSTANCE-MANIFEST-MISSING " + mp)
-    for line in open(mp):
-        h, p = line.strip().split("  ", 1)
+    raw = frozen_manifest_bytes(base, freeze_commit).decode()
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        h, p = line.split("  ", 1)
         man[p] = h
     prefix = f"families/{family}/"
     task_prefix = f"families/{family}/{task}/"
@@ -170,7 +245,8 @@ def verify_instance_frozen(base, family, task):
             expected[p] = h
     if not expected:
         raise RuntimeError(f"FROZEN-INSTANCE-UNKNOWN family={family} task={task} "
-                           f"has no frozen entries in {mp}")
+                           f"has no frozen entries in FREEZE-HASHES.sha256 "
+                           f"at {freeze_commit[:12]}")
     # every expected file exists and hashes equal
     for p, h in sorted(expected.items()):
         fp = os.path.join(base, p)

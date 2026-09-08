@@ -68,7 +68,7 @@ from identity import (record_identity, check_against_prereg,
 from chain import Chain
 from lock import promote as lock_promote, load_artifact
 from reuse_log import write_record as reuse_write_record
-from admissibility import verify_instance_frozen
+from admissibility import verify_instance_frozen, verify_freeze_tree
 
 CHAIN_FILE = "EVIDENCE-CHAIN.jsonl"
 GRADING_RULE_VERSION = "checker-contract-v1"
@@ -193,7 +193,10 @@ def freeze_anchors():
     """INSTANCE-freeze anchor (audit P0 #4 dual anchors): the frozen commit
     is FREEZE.json's freeze_commit — never an execution HEAD masquerading as
     the freeze. Verifies the git object still resolves so the chain genesis
-    can bind it. Returns (freeze_commit, freeze_tree)."""
+    can bind it. Item-5: also proves FREEZE.json's recorded freeze_tree
+    equals the freeze commit's tree of the frozen root (BASE) — an
+    altered or stale record refuses the start here, before any model
+    token is spent. Returns (freeze_commit, freeze_tree)."""
     fp = os.path.join(BASE, "FREEZE.json")
     if not os.path.exists(fp):
         raise RuntimeError("FREEZE-ANCHOR-MISSING " + fp)
@@ -206,22 +209,28 @@ def freeze_anchors():
     if p.returncode != 0:
         raise RuntimeError(f"FREEZE-ANCHOR-UNRESOLVABLE {fc[:12]} is not a "
                            "resolvable git object at execution time")
-    return fc, fj.get("freeze_tree")
+    tree = verify_freeze_tree(BASE, fc)  # raises FROZEN-TREE-* on mismatch
+    return fc, tree
 
 
 def harness_manifest_sha():
     """sha256 over the executing harness code (paths + per-file sha256 of the
     modules a run imports plus this runner). Pins the exact harness bytes
-    even when HEAD moves after the run."""
+    even when HEAD moves after the run. Item-5/round-2 #14: a listed
+    REQUIRED module that is missing FAILS (never silently skipped — a
+    skipped module would let a tampered harness pose as the pinned one)."""
     names = ["usage.py", "identity.py", "chain.py", "lock.py",
              "reuse_log.py", "seal.py", "dockersandbox.py",
              "admissibility.py"]
     files = [os.path.join(HARNESS, n) for n in names]
     files.append(os.path.abspath(__file__))
-    lines = sorted(
-        f"{os.path.relpath(f, ROOT)}:{h(f)}" for f in files
-        if os.path.exists(f))
-    return hashlib.sha256("\n".join(lines).encode()).hexdigest()
+    lines = []
+    for f in files:
+        if not os.path.exists(f):
+            raise RuntimeError(f"HARNESS-MANIFEST-MISSING {f}: required "
+                               "harness module absent — refuse start")
+        lines.append(f"{os.path.relpath(f, ROOT)}:{h(f)}")
+    return hashlib.sha256("\n".join(sorted(lines)).encode()).hexdigest()
 
 
 def _verify_capability(capdir):
@@ -524,8 +533,12 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     execution_harness_commit = exec_commit()
     execution_harness_manifest_sha = harness_manifest_sha()
     # Refuse-START: the executed instance subtree must be byte-identical to
-    # the frozen package BEFORE any model token is spent.
-    verify_instance_frozen(BASE, family, task)
+    # the frozen package BEFORE any model token is spent. Item-5: the
+    # manifest is resolved from the freeze commit via git (the working-tree
+    # copy is never trusted), and freeze_anchors() above already proved the
+    # recorded freeze_tree equals that commit's tree of the frozen root.
+    verify_instance_frozen(BASE, family, task,
+                           freeze_commit=instance_freeze_commit)
     frozen = instance_freeze_commit
     os.makedirs(outdir, exist_ok=True)
     taskdir = os.path.join(BASE, "families", family, task)
