@@ -26,54 +26,44 @@ if os.path.exists(man_path):
         h, p = line.strip().split("  ", 1)
         manifest[p] = h
 
-for fam in sorted(os.listdir(FAMS)):
-    fdir = os.path.join(FAMS, fam)
-    if not os.path.isdir(fdir):
+freeze = {}
+for line in open(os.path.join(HERE, "FREEZE-HASHES.sha256")):
+    h, p = line.strip().split("  ", 1)
+    freeze[p] = h
+on_disk = set()
+for root, dirs, files in os.walk(HERE):
+    # PREREG.md visibility seal: runs/ evidence dirs are not freeze inputs
+    if os.path.basename(root) == "runs":
+        dirs[:] = []
         continue
-    for task in sorted(os.listdir(fdir)):
-        tdir = os.path.join(fdir, task)
-        if not os.path.isdir(tdir) or task not in (
-                "T0", "T1", "T2", "T3", "T4"):
-            continue
-        rel = os.path.relpath(tdir, HERE)
-        vis = os.path.join(tdir, "VISIBLE.md")
-        if not os.path.exists(vis):
-            fail(f"{rel}: missing VISIBLE.md")
-            continue
-        declared = None
-        for line in open(vis):
-            if "task fixtures:" in line:
-                declared = line.split("task fixtures:", 1)[1].split()
-        if declared is None:
-            fail(f"{rel}: VISIBLE.md has no fixture line")
-            continue
-        actual = sorted(f for f in os.listdir(tdir)
-                        if f not in ("prompt.md", "VISIBLE.md"))
-        for d in declared:
-            dp = os.path.join(tdir, d)
-            if d not in actual:
-                fail(f"{rel}: declared fixture missing: {d}")
-            elif os.path.isdir(dp) and not os.listdir(dp):
-                fail(f"{rel}: declared fixture dir empty: {d}")
-        for a in actual:
-            if a not in declared:
-                fail(f"{rel}: undeclared fixture present: {a}")
-        forbidden = [a for a in actual if a in FORBIDDEN]
-        if forbidden:
-            fail(f"{rel}: forbidden files in task dir: {forbidden}")
-        for fn in ("prompt.md",):
-            p = os.path.join(rel, fn)
-            fp = os.path.join(HERE, p)
-            if os.path.exists(fp):
-                h = hashlib.sha256(open(fp, "rb").read()).hexdigest()
-                if p in manifest and manifest[p] != h:
-                    fail(f"{rel}: {fn} hash mismatch vs freeze manifest")
-for fam in sorted(os.listdir(FAMS)):
-    for base in ("truth.json", "check.py"):
-        p = os.path.join("families", fam, base)
-        fp = os.path.join(HERE, p)
-        h = hashlib.sha256(open(fp, "rb").read()).hexdigest()
-        if p in manifest and manifest[p] != h:
-            fail(f"{fam}/{base} hash mismatch vs freeze manifest")
+    for fn in files:
+        rel = os.path.relpath(os.path.join(root, fn), HERE)
+        if rel in ("FREEZE-HASHES.sha256", "FREEZE.json"):
+            continue  # meta: pinned by git, not by content manifest
+        on_disk.add(rel)
+for p in sorted(on_disk - set(freeze)):
+    fail(f"extra file not in freeze manifest: {p}")
+for p in sorted(set(freeze) - on_disk):
+    fail(f"freeze-manifest file missing on disk: {p}")
+for p, h in sorted(freeze.items()):
+    fp = os.path.join(HERE, p)
+    if not os.path.exists(fp):
+        continue
+    actual = hashlib.sha256(open(fp, "rb").read()).hexdigest()
+    if actual != h:
+        fail(f"hash mismatch vs freeze manifest: {p}")
+fj = os.path.join(HERE, "FREEZE.json")
+if os.path.exists(fj):
+    import subprocess
+    pin = json.load(open(fj))
+    try:
+        out = subprocess.run(
+            ["git", "-C", os.path.dirname(HERE), "rev-parse",
+             "HEAD:benchmarks/fam-c"], capture_output=True, text=True)
+        if out.returncode == 0 and out.stdout.strip() != pin.get("tree", ""):
+            fail("working tree benchmarks/fam-c != frozen tree "
+                 f"{pin.get('tree', '')[:12]}")
+    except FileNotFoundError:
+        fail("git unavailable for tree-pin check")
 print(f"preflight: {len(fails)} findings")
 sys.exit(1 if fails else 0)

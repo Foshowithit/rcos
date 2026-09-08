@@ -397,7 +397,14 @@ fam06.common_unit_basis
 ```
 
 A new ID may be added only by amending this list before the runs it
-governs; IDs are never edited in place. If a locked capability lacks
+governs; IDs are never edited in place.
+Producer-visible capability contracts MUST NOT contain these IDs, and
+no ID may enter the consuming model's context, tool descriptions,
+registry descriptions shown to routers, router metadata, or capability
+output. IDs live ONLY in auditor-side CAPABILITY_LOCK metadata and
+grade manifests. Conformance checking reads the lock, never the
+consumer context. Violation (an ID observed in any consumer-visible
+artifact) invalidates the affected runs. If a locked capability lacks
 the ID its family's T4 relies on, that T4 is non-discriminating
 (report with cause; the specificity gate counts remaining families).
 
@@ -623,8 +630,41 @@ at every downstream reuse index.
 
 The strongest result is a widening negative cumulative delta as valid reuse accumulates.
 
+## Marginal vs net compounding (frozen)
+
+Two quantities, never conflated:
+
+```text
+marginal_reuse_delta(k)
+    = downstream treatment work − downstream control work
+      at reuse index k (acquisition costs excluded)
+
+net_capability_delta(k)
+    = acquisition (T0/T1 solves + validation + promotion +
+      generalization work + registry/lock overhead)
+    + downstream treatment work through index k
+    − corresponding control work through index k
+```
+
+Report `break_even_reuse_index`: the smallest k at which the
+cumulative net delta turns negative, or `not-reached` if it never
+does within the series. The §19 compounding PASS below is a
+DOWNSTREAM-reuse-compounding verdict only; "net compounding" (full
+amortization including acquisition) is a separate, stronger claim
+requiring break-even to be reached and reported.
+
 ---
 
+# 18.1 Claim-grade boundary (frozen)
+
+This freeze is PILOT-GRADE only. It cannot receive claim-grade Fam-C
+PASS or compounding PASS as defined below: §6 normative scale was not
+met (see FAMILIES.md scale characterization). A successful run under
+this freeze earns at most PILOT reuse/compounding verdicts, which
+license building the claim-grade series — never the headline claims.
+Weakening §6 to fit these instances is explicitly rejected.
+
+---
 # 19. Decision rules (audit-hardened: no post-run redefinition)
 
 ## Primary cross-cognition efficiency gate
@@ -675,14 +715,17 @@ INCONCLUSIVE is reserved strictly for insufficient evaluable evidence
 (missing metrics, invalid runs) or insufficient genuine reuse exposure.
 A clean gate failure is never relabeled INCONCLUSIVE after the fact.
 
-## Compounding verdict (frozen, numeric)
+## Compounding verdict (frozen, numeric; downstream-only per §18)
 
 PASS — compounding requires, in addition to cross-cognition PASS:
 
-* cumulative C−D (and A−B) delta < 0 at every reuse index k ≥ 1;
-* final cumulative delta negative in ≥4 of 6 families;
+* cumulative C−D (and A−B) MARGINAL delta < 0 at every reuse index k ≥ 1;
+* final cumulative marginal delta negative in ≥4 of 6 families;
 * leave-one-family-out: both conditions above still hold with any
-  single family removed (no single-family/outlier dependence).
+  single family removed (no single-family/outlier dependence);
+* break_even_reuse_index reported (value or not-reached); net
+  amortization is NOT required for this verdict and MUST NOT be
+  claimed from it (see marginal vs net, §18).
 
 ## PASS — narrow reuse claim
 
