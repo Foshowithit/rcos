@@ -70,19 +70,23 @@ if not fc:
 # runs/** holds future evidence; FREEZE.json + FREEZE-HASHES.sha256 are
 # pure metadata pointers (their own integrity rides on git history +
 # the content manifest respectively). Everything else is frozen.
-bind = ["diff", "--exit-code", fc, "HEAD", "--", "benchmarks/fam-c",
-        ":(exclude)benchmarks/fam-c/runs/**",
-        ":(exclude)benchmarks/fam-c/FREEZE.json",
-        ":(exclude)benchmarks/fam-c/FREEZE-HASHES.sha256"]
-repo = os.path.dirname(HERE)
+bind = ["diff", "--exit-code", fc, "HEAD", "--",
+        ":(top)benchmarks/fam-c",
+        ":(top,exclude)benchmarks/fam-c/runs/**",
+        ":(top,exclude)benchmarks/fam-c/FREEZE.json",
+        ":(top,exclude)benchmarks/fam-c/FREEZE-HASHES.sha256"]
 try:
+    rt = subprocess.run(["git", "-C", HERE, "rev-parse", "--show-toplevel"],
+                        capture_output=True, text=True, check=True)
+    repo = rt.stdout.strip()
     d = subprocess.run(["git", "-C", repo] + bind,
                        capture_output=True, text=True)
     if d.returncode != 0:
         fail("frozen→HEAD experimental diff NONEMPTY (content drift since "
              f"{fc[:12]}):\n" + d.stdout[:2000])
     st = subprocess.run(["git", "-C", repo, "status", "--porcelain", "--",
-                         "benchmarks/fam-c"], capture_output=True, text=True)
+                         ":(top)benchmarks/fam-c"], capture_output=True,
+                        text=True)
     for line in st.stdout.splitlines():
         path = line[3:]
         if "/runs/" in path or path.endswith("/runs"):
