@@ -55,11 +55,15 @@ PROVIDER_NORMALIZERS = {
 
 def recorded_call(endpoint, api_key_name, api_key, model, messages,
                   out_dir, extra_body=None, timeout=300, tag="",
-                  normalizer_id="openai-chat-total-input-v1"):
+                  normalizer_id="openai-chat-total-input-v1",
+                  return_response=False):
     """POST a chat-completions call, persist raw usage + metadata.
-    Returns (reply_text, receipt_path). Raises on transport/HTTP error
-    (infrastructure outcome, recorded by caller — never silently retried
-    for judgment reasons here)."""
+    Returns (reply_text, receipt_path); with return_response=True also
+    returns the parsed provider response object as a third element, so
+    caller-side identity capture (echoed model, response id) can run on
+    the REAL provider object — never on reply-text self-report. Raises
+    on transport/HTTP error (infrastructure outcome, recorded by caller
+    — never silently retried for judgment reasons here)."""
     body = dict(extra_body or {})
     body.update({"model": model, "messages": messages})
     blob = json.dumps(body).encode()
@@ -100,6 +104,8 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
     path = os.path.join(out_dir, f"call-{call_id}.json")
     with open(path, "w") as f:
         json.dump(receipt, f, indent=1)
+    if return_response:
+        return reply, path, data
     return reply, path
 
 

@@ -113,6 +113,22 @@ try:
     check("stripped-usage receipt invalidated", False)
 except ValueError:
     check("stripped-usage receipt invalidated", True)
+# NEW: recorded_call(return_response=True) surfaces the REAL provider
+# response object so identity capture runs provider-side (echoed model +
+# response id), never from reply-text self-report.
+_r3, _p3b, _resp = __import__("usage").recorded_call(
+    EP, "K", "dummy", "stub-m", [{"role": "user", "content": "hi"}],
+    os.path.join(BASE, "usage"), tag="idtest", return_response=True)
+check("recorded_call surfaces response for identity capture",
+      isinstance(_resp, dict) and _resp.get("model") == "stub-m"
+      and _resp.get("id") == "stub-1",
+      str({k: _resp.get(k) for k in ("model", "id")}))
+_idp = record_identity(os.path.join(BASE, "idrec"), EP, "stub-m", _resp,
+                       extra_params={"max_tokens": 9000}, tag="idtest")
+check("identity prereg conforms on echoed provider id",
+      check_against_prereg(_idp, {"endpoint": EP, "requested_id": "stub-m",
+                                  "acceptable_echoed_ids": ["stub-m"],
+                                  "family": "Stub"}) == "Stub")
 _, p3 = call("c", mode="no-usage")
 try:
     summarize([p3], {"stub-m": "openai-chat-total-input-v1"})

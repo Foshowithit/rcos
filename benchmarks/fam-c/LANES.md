@@ -15,4 +15,20 @@
   Record lane outage, and only a preregistered fallback (procedural
   single-lane with amended claim) may proceed, as a separate commit.
 
+## Identity prereg (per lane; frozen — see identity.py check_against_prereg)
+
+Model identity is established PROVIDER-SIDE per call: the runner persists
+`identity.json` from the REAL provider response (echoed model id, provider
+response id, created, params actually sent) before any execution, and
+refuses the run when the echo is missing or violates the frozen entry
+below. Echoed ids are the gateway-facing requested ids (router9/kenari
+answer OpenAI-compatible chat; kenari's free tier may strip the `:free`
+plan suffix). A first observed live echo OUTSIDE these patterns is a
+prereg-amendment commit (tighten loop) — never a silent substitution.
+
+| lane | endpoint (base) | requested_id | family | acceptable_echoed_ids |
+|------|-----------------|--------------|--------|------------------------|
+| P    | https://api.router9.com/v1 | minimax-m3 | MiniMax | minimax-m3 |
+| Q    | https://kenari.id/v1 | agnes-2-0-flash:free | Kenari-Agnes | agnes-2-0-flash:free, agnes-2-0-flash |
+
 Auditor lane: session lane (muse-spark), read-only verification.

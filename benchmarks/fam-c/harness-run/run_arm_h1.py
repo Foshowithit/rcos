@@ -54,6 +54,7 @@ sys.path.insert(0, HARNESS)
 from dockersandbox import DockerSandbox, ensure_roots
 from seal import build_visible_root
 from usage import recorded_call
+from identity import record_identity, check_against_prereg
 from chain import Chain
 from lock import promote as lock_promote, load_artifact
 from reuse_log import write_record as reuse_write_record
@@ -64,13 +65,23 @@ GRADING_RULE_NOTE = ("mechanical grade = frozen checker returncode mapping "
                      "(rc0=ship, rc1=fix, else blocked); rule hash = sha256 "
                      "of the executed checker bytes")
 
+# Frozen per-lane identity prereg (mirrors LANES.md § identity prereg).
+# acceptable_echoed_ids: the provider-echoed model ids this lane may show.
+# Patterns are exact ids or trailing-* prefixes; no bare wildcards. Echo
+# patterns are frozen from the gateway-facing requested id (router9/kenari
+# answer OpenAI-compatible chat; both echo the requested id verbatim, and
+# kenari's free tier may strip the ':free' plan suffix). A FIRST observed
+# live echo outside these patterns triggers a prereg-amendment commit
+# (tighten loop), never a silent substitution.
 LANES = {
     "P": {"keyfile": "/home/chow/.agent-vault/keys/router9.key",
           "base": "https://api.router9.com/v1", "model": "minimax-m3",
-          "family": "MiniMax", "normalizer": "openai-chat-total-input-v1"},
+          "family": "MiniMax", "normalizer": "openai-chat-total-input-v1",
+          "echo_acceptable": ["minimax-m3"]},
     "Q": {"keyfile": "/home/chow/.agent-vault/keys/kenari.key",
           "base": "https://kenari.id/v1", "model": "agnes-2-0-flash:free",
-          "family": "Kenari-Agnes", "normalizer": "openai-chat-total-input-v1"},
+          "family": "Kenari-Agnes", "normalizer": "openai-chat-total-input-v1",
+          "echo_acceptable": ["agnes-2-0-flash:free", "agnes-2-0-flash"]},
 }
 
 CORRECT = """You are solving the task below using a PROVIDED capability interface. You have never seen its acquisition, no transcripts, no prior tasks. Output ONLY one JSON object, no other text.
@@ -120,13 +131,24 @@ def extract(raw, arm):
 def call(lane, prompt, outdir, tag):
     cfg = LANES[lane]
     key = open(cfg["keyfile"]).read().strip()
-    reply, receipt = recorded_call(
+    reply, receipt, resp = recorded_call(
         cfg["base"], cfg["keyfile"], key, cfg["model"],
         [{"role": "user", "content": prompt}], outdir,
         extra_body={"max_tokens": 9000}, timeout=300, tag=tag,
-        normalizer_id=cfg["normalizer"])
+        normalizer_id=cfg["normalizer"], return_response=True)
+    # H2 identity (LANES.md): provider-side evidence — echoed model id +
+    # provider response id recorded from the REAL response object, never
+    # from reply-text self-report. record_identity raises when the
+    # provider echoes no model id (fail closed); check_against_prereg
+    # raises when the echo violates the frozen lane prereg.
+    id_path = record_identity(outdir, cfg["base"], cfg["model"], resp,
+                              extra_params={"max_tokens": 9000}, tag=tag)
+    identity_family = check_against_prereg(id_path, {
+        "endpoint": cfg["base"], "requested_id": cfg["model"],
+        "acceptable_echoed_ids": cfg["echo_acceptable"],
+        "family": cfg["family"]})
     open(os.path.join(outdir, "raw.txt"), "w").write(reply)
-    return reply, receipt
+    return reply, receipt, id_path, identity_family
 
 
 def frozen_commit():
@@ -164,25 +186,34 @@ def _verify_capability(capdir):
             "engine_sha256": lock["artifacts"]["engine.py"]}
 
 
-def _wire_chain(outdir, frozen, manifest, receipt, cap_info, reuse_path,
-                checker_sha, truth_sha, verdict, output_sha, promote_info):
+def _wire_chain(outdir, frozen, manifest, receipt, identity_path,
+                identity_family, cap_info, reuse_path, checker_sha, truth_sha,
+                verdict, output_sha, promote_info):
     """Emit the H3 evidence chain for one completed run (fail closed).
     Genesis binds `manifest`; the on-disk H1-RUN-MANIFEST.json must never be
     rewritten after this call (rewriting would break genesis hash equality)."""
     chain_path = os.path.join(outdir, CHAIN_FILE)
     c = Chain(chain_path, frozen, manifest, arm=manifest.get("arm"))
-    # model-call link(s): every persisted H2 usage receipt binds here.
+    # model-call link(s): every persisted H2 usage receipt binds here,
+    # alongside the provider-identity receipt (echoed model + response id).
     try:
         rc = json.load(open(receipt))
     except (OSError, ValueError) as e:
         raise RuntimeError(f"CHAIN-RECEIPT-UNREADABLE {receipt}: {e}")
-    c.append("model-call", {
+    mc = {
         "call_id": rc.get("call_id"), "tag": rc.get("tag"),
         "model_requested": rc.get("model_requested"),
         "endpoint": rc.get("endpoint"),
         "receipt_file": os.path.basename(receipt),
         "receipt_sha256": h(receipt),
-        "usage_raw_sha256": rc.get("usage_raw_sha256")})
+        "usage_raw_sha256": rc.get("usage_raw_sha256")}
+    if identity_path is not None:
+        if not os.path.exists(identity_path):
+            raise RuntimeError(f"CHAIN-IDENTITY-MISSING {identity_path}")
+        mc["identity_file"] = os.path.basename(identity_path)
+        mc["identity_sha256"] = h(identity_path)
+        mc["identity_prereg_family"] = identity_family
+    c.append("model-call", mc)
     # capability events (correct arm only).
     if cap_info:
         c.append("capability-event", {
@@ -267,9 +298,24 @@ def selfcheck_wire():
                                    "reason": "selfcheck fixture"},
             reuse_rejected=False, reuse_rejection_reason=None)
         assert os.path.exists(reuse), "reuse record not written"
+        # H2 identity composes: provider-side echo record + prereg pass.
+        idp = record_identity(tmp, "https://fx/v1", "fx",
+                              {"model": "fx", "id": "fx-1", "created": 1},
+                              extra_params=None, tag="selfcheck")
+        assert check_against_prereg(
+            idp, {"endpoint": "https://fx/v1", "requested_id": "fx",
+                  "acceptable_echoed_ids": ["fx"],
+                  "family": "famXX-fixture"}) == "famXX-fixture"
+        try:
+            record_identity(tmp, "https://fx/v1", "fx", {"id": "fx-1"},
+                            extra_params=None, tag="selfcheck")
+            raise SystemExit("selfcheck FAIL: no-echo identity not refused")
+        except ValueError:
+            pass  # IDENTITY-INCOMPLETE: echoed model id missing -> fail closed
         tip = _wire_chain(tmp, manifest["frozen_commit"], manifest, receipt,
-                          cap, reuse, h(os.path.join(capdir, "engine.py")),
-                          None, "ship", "fx", None)
+                          idp, "famXX-fixture", cap, reuse,
+                          h(os.path.join(capdir, "engine.py")), None, "ship",
+                          "fx", None)
         assert isinstance(tip, str) and len(tip) == 64, "bad chain tip"
         # repromotion refused (H-LOCK-008 writes-once).
         try:
@@ -325,7 +371,8 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
         prompt = DISABLED.replace("__TASKDEF__", taskdef).replace(
             "__LISTING__", listing).replace("__BLOBS__", block)
     open(os.path.join(outdir, "prompt.txt"), "w").write(prompt)
-    raw, receipt = call(lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
+    raw, receipt, id_path, identity_family = call(
+        lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
     arrival, parse_mode = extract(raw, arm)
     open(os.path.join(outdir, "arrival.json"), "w").write(json.dumps(arrival, indent=1))
     # Stage under trusted roots (DockerSandbox rejects outside paths).
@@ -394,6 +441,10 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                 "wired": bool(wire),
                 "frozen_commit": frozen,
                 "usage_receipts": [os.path.basename(receipt)] if wire else [],
+                "identity_file": (os.path.basename(id_path) if wire
+                                  else None),
+                "identity_prereg_family": (identity_family if wire
+                                           else None),
                 "chain": CHAIN_FILE if wire else None,
                 "reuse_record": os.path.basename(reuse_path) if reuse_path else None,
                 "capability": {k: cap_info[k] for k in
@@ -430,8 +481,9 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
         checker_sha = h(checker) if os.path.exists(checker) else None
         truth = os.path.join(taskdir, "..", "truth.json")
         truth_sha = h(truth) if os.path.exists(truth) else None
-        _wire_chain(outdir, frozen, manifest, receipt, cap_info, reuse_path,
-                    checker_sha, truth_sha, verdict, output_sha, promote_info)
+        _wire_chain(outdir, frozen, manifest, receipt, id_path,
+                    identity_family, cap_info, reuse_path, checker_sha,
+                    truth_sha, verdict, output_sha, promote_info)
         # H1-RUN-MANIFEST.json must NOT be rewritten after _wire_chain:
         # genesis binds its hash and any rewrite would break the chain.
     print(f"{lane}/{family}/{task}/{arm}: {verdict} ({parse_mode}, container rc {p.returncode})")
