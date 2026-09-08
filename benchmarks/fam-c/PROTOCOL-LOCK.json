@@ -57,6 +57,22 @@
    "reason": "round-3 A11 audit: register AUDIT-ROUND3-A11-REPLY.txt as a meta pointer",
    "base": "a11b",
    "slice": "a11b.0-preserve"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "a0419cedc9a4c2534b7ec6e60303a1869d4ad0e6cf1f99ba3cf5d75bc6e086eb",
+   "to_sha": "0bcd6ea024cdcb69632cd0cdac4dff5da0605d35d888f67bc9285efdafa88935",
+   "reason": "A11b P0-1..P0-6 close + P1 accounting wording (primary_work = uncached_input + output_tokens; input tokens are not inherently uncached); consolidated A11b section with per-item evidence",
+   "base": "a11b",
+   "slice": "a11b.1-6"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "0bcd6ea024cdcb69632cd0cdac4dff5da0605d35d888f67bc9285efdafa88935",
+   "to_sha": "382a75fc356ef571b6f27caecafb1c2cb210202f0c556568e6ecf54e67953533",
+   "reason": "A11b integration verification block (448/448, V1/V2/V3 0/0/0) + H12 count",
+   "base": "a11b",
+   "slice": "a11b.integration"
   }
  ]
 }

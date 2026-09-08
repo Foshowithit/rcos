@@ -3,18 +3,18 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "cc3020f13d8d776f8be9389f3fb0ffb5e86e4d51c5dca2ccea1d037c87310132",
+ "harness_manifest_sha256": "6bd6a903f36e46f3169d0962bbdad02884dfae7ca6bf9d8f2f3176ecf45237f6",
  "harness_files": {
-  "harness/usage.py": "1a1e699e566e4aba2a267de8c00dab806876c772e084c01c53dae28b53c8f52b",
+  "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
-  "harness/chain.py": "47c2e758ea8014d752185085a52b3979d4a0a17e3fb970dd89d055b50f070a5a",
-  "harness/lock.py": "028668d3f5caecbf4b3bb72b52d9ed3bc73f7b4528554a0c3840d486efc30952",
+  "harness/chain.py": "6d7f0a7efd70d21d04b7b6fc4207de6cc0d679089ab6339e2218045be609bc64",
+  "harness/lock.py": "d819f4e1f9fc0915a7a50df44f88781ddca299fdf612607af422e4422076ea4b",
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
   "harness/admissibility.py": "0b648e3044d3fef5279566e9427c93e966d082a32c757d621ceb51458a7f7b41",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "c11fdf05591a7f8d1a3bc52ef6e24293bc84ed6e1d9d3f8642ba6aa6eb68c9ad",
-  "harness/order.py": "95b9585fade5e6346ab3006c0aedc09a8c4b1779b62ea069b37f6289a1125846"
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "df77ece0f5911da51fdd390853ea4f228017d2c6f59f7b3a4b833492fc2e62ed",
+  "harness/order.py": "5d7a6b1114ad4ef15120581a9ff4e147f25c637996c372643f5e3a1872bcaf8b"
  },
  "amendments": [
   {
@@ -131,6 +131,35 @@
    "reason": "round-3 A11: A11.1 calibration live branch returns+persists the provider response; A11.2 exact request bytes + adapter/request binding enforcement; A11.3 H6 byte-identical except capability block (legacy weaker fixture deleted); A11.4 ORDER expansion covers T0/T1/PROMOTION/CAPABILITY_LOCK for A and C plus downstream T2/T3/T4; A11.5 per-universe derived registries/outdirs (A/C isolation); A11.6 order progress consumes validated cell_state()",
    "slice": "a11.1-6",
    "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "cc3020f13d8d776f8be9389f3fb0ffb5e86e4d51c5dca2ccea1d037c87310132",
+   "to_manifest": "6bd6a903f36e46f3169d0962bbdad02884dfae7ca6bf9d8f2f3176ecf45237f6",
+   "files": {
+    "harness/usage.py": {
+     "from_sha": "1a1e699e566e4aba2a267de8c00dab806876c772e084c01c53dae28b53c8f52b",
+     "to_sha": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b"
+    },
+    "harness/chain.py": {
+     "from_sha": "47c2e758ea8014d752185085a52b3979d4a0a17e3fb970dd89d055b50f070a5a",
+     "to_sha": "6d7f0a7efd70d21d04b7b6fc4207de6cc0d679089ab6339e2218045be609bc64"
+    },
+    "harness/lock.py": {
+     "from_sha": "028668d3f5caecbf4b3bb72b52d9ed3bc73f7b4528554a0c3840d486efc30952",
+     "to_sha": "d819f4e1f9fc0915a7a50df44f88781ddca299fdf612607af422e4422076ea4b"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "c11fdf05591a7f8d1a3bc52ef6e24293bc84ed6e1d9d3f8642ba6aa6eb68c9ad",
+     "to_sha": "df77ece0f5911da51fdd390853ea4f228017d2c6f59f7b3a4b833492fc2e62ed"
+    },
+    "harness/order.py": {
+     "from_sha": "95b9585fade5e6346ab3006c0aedc09a8c4b1779b62ea069b37f6289a1125846",
+     "to_sha": "5d7a6b1114ad4ef15120581a9ff4e147f25c637996c372643f5e3a1872bcaf8b"
+    }
+   },
+   "reason": "A11b.1-P0-1 request-byte persistence, A11b.2-P0-2 unified output contract, A11b.3-P0-3 13-field manifest equality + real chain verify, A11b.4-P0-4 kind-dispatched cell_state + H12, A11b.6-P0-6 namespace ancestry on read+write with ensure_namespace; no estimand code path changed",
+   "slice": "A11b",
+   "status_after": "A11b-closed-offline"
   }
  ],
  "minted": {

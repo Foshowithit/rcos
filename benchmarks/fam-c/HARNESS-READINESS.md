@@ -408,7 +408,7 @@ P0-4 governance cells       cell_state() dispatches by cell kind: model-run
                            PROMOTION cells need the receipt + both
                            acquisition chain tips re-derived, CAPABILITY_LOCK
                            cells need the lock bound to the promotion receipt
-                           hash; no fabricated model-run manifest   → smoke_h12
+                           hash; no fabricated model-run manifest → smoke_h12 44/44
 P0-5 A→C order as protocol  the A→C acquisition ordering is protocol, not
                            merely executable behaviour: the exact
                            ORDER-EXPANSION.json SHA256 is pinned in
@@ -431,6 +431,15 @@ has been executed (`estimand-grade wired manifests: 0`; the only wired
 manifest in the tree is the H1-P-fam05-T0 harness-validation fixture, which
 is harness validation and never estimand data). The `--offline` calibration
 transport seam proves the code path without spending a provider call.
+
+Integration verification for A11b (offline: no network, no model, no docker,
+no provider call): three-authority preflight V1 0 / V2 0 / V3 0; harness
+smokes 448/448 closed (graph 12, H1 12, H1-docker 33, H2 33, H3 59, H4 30,
+H5 15, H6 33, H7 67, H8 48, H9 18, H10 20, H11 24, H12 44); both runner
+selfchecks green; `calibrate.py --offline` 2/2 lanes green; the general-seat
+independent falsification probe 23/23. The EXECUTION-LOCK was re-minted as a
+listed amendment over the five changed modules and the PROTOCOL-LOCK carries
+a listed forward amendment for these bytes — no unlisted drift anywhere.
 
 ## Status
 

@@ -174,14 +174,14 @@ defect (P0-1…P0-6, P1). All are closed in production code, verified offline
   input tokens are NOT inherently uncached; only the cached fraction is,
   and it is recorded separately and never merged or relabeled.
 
-Verification for this slice: preflight V1/V2 = 0/0 findings; harness smokes
-394/404 closed with the only 10 failures being EXECUTION-LOCK staleness from
-this slice's module edits (re-minted at integration), i.e. graph 12, H1 12,
-H1-docker 33, H2 33, H3 59, H4 30, H5 13/15, H6 33, H7 59/67, H8 48, H9 18,
-H10 20, H11 24; both runner selfchecks green; `calibrate --offline` 2/2 lanes
-green; general-seat independent falsification probe 23/23. `estimand-grade = 0`
-is UNCHANGED — the only wired manifest in the tree is the H1-P-fam05-T0
-harness-validation fixture (harness validation, never estimand data). The real
-P/Q calibration pair remains time-gated (Q free-tier quota resets 00:00 UTC).
-Execution stays STOPPED for estimand-grade runs pending the auditor's next
-review.
+Verification for this slice: three-authority preflight V1 0 / V2 0 / V3 0
+(EXECUTION-LOCK re-minted as a listed amendment over the five changed
+modules; PROTOCOL-LOCK amended for these doc bytes); harness smokes
+448/448 closed (graph 12, H1 12, H1-docker 33, H2 33, H3 59, H4 30, H5 15,
+H6 33, H7 67, H8 48, H9 18, H10 20, H11 24, H12 44); both runner selfchecks
+green; `calibrate --offline` 2/2 lanes green; general-seat independent
+falsification probe 23/23. `estimand-grade = 0` is UNCHANGED — the only wired
+manifest in the tree is the H1-P-fam05-T0 harness-validation fixture (harness
+validation, never estimand data). The real P/Q calibration pair remains
+time-gated (Q free-tier quota resets 00:00 UTC). Execution stays STOPPED for
+estimand-grade runs pending the auditor's next review.
