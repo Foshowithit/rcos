@@ -124,7 +124,9 @@ check("recorded_call surfaces response for identity capture",
       and _resp.get("id") == "stub-1",
       str({k: _resp.get(k) for k in ("model", "id")}))
 _idp = record_identity(os.path.join(BASE, "idrec"), EP, "stub-m", _resp,
-                       extra_params={"max_tokens": 9000}, tag="idtest")
+                       extra_params={"max_tokens": 9000}, tag="idtest",
+                       request_body_sha256=json.load(
+                           open(_p3b)).get("request_body_sha256"))
 check("identity prereg conforms on echoed provider id",
       check_against_prereg(_idp, {"endpoint": EP, "requested_id": "stub-m",
                                   "acceptable_echoed_ids": ["stub-m"],
@@ -144,11 +146,12 @@ except ValueError:
 
 # --- identity ---
 resp = {"id": "r9", "model": "stub-m", "created": 1}
-ip = record_identity(os.path.join(BASE, "idA"), EP, "stub-m", resp)
+ip = record_identity(os.path.join(BASE, "idA"), EP, "stub-m", resp,
+                     request_body_sha256="test-body-sha")
 check("identity record complete", ip.endswith("identity.json"))
 try:
     record_identity(os.path.join(BASE, "idB"), EP, "stub-m",
-                    {"choices": []})
+                    {"choices": []}, request_body_sha256="test-body-sha")
     check("identity without echo fails", False)
 except ValueError:
     check("identity without echo fails", True)

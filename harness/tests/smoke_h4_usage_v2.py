@@ -252,6 +252,61 @@ check("fresh stub receipt normalizes (10-2+5=13)",
       snu["primary_work"] == 13 and snu["input_tokens_uncached"] == 8,
       str(snu["primary_work"]))
 
+# --- item 3: identity hardening (required provider id + body-hash binding) ---
+from identity import (record_identity as _ri,
+                      verify_identity_binding as _vib)
+_iddir = os.path.join(BASE, "id3")
+try:
+    _ri(_iddir, EP, "stub-m", {"choices": [{"message": {"content": "x"}}]},
+        request_body_sha256="b")
+    check("stripped echoed model fails", False)
+except ValueError as e:
+    check("stripped echoed model fails", "IDENTITY-INCOMPLETE" in str(e),
+          str(e)[:120])
+try:
+    _ri(_iddir, EP, "stub-m", {"model": "stub-m"},
+        request_body_sha256="b")
+    check("stripped provider id fails", False)
+except ValueError as e:
+    check("stripped provider id fails", "IDENTITY-INCOMPLETE" in str(e),
+          str(e)[:120])
+try:
+    _ri(_iddir, EP, "stub-m", {"model": "stub-m", "id": ""},
+        request_body_sha256="b")
+    check("empty provider id fails", False)
+except ValueError:
+    check("empty provider id fails", True)
+try:
+    _ri(_iddir, EP, "stub-m", {"model": "stub-m", "id": "r1"})
+    check("missing body hash fails", False)
+except ValueError as e:
+    check("missing body hash fails", "IDENTITY-INCOMPLETE" in str(e),
+          str(e)[:120])
+_okp = _ri(_iddir, EP, "stub-m", {"model": "stub-m", "id": "stub-1"},
+           extra_params={"max_tokens": 9000}, tag="bindtest",
+           request_body_sha256=sr.get("request_body_sha256"))
+_okr = json.load(open(_okp))
+check("identity preserves body hash + full param set",
+      _okr.get("request_body_sha256") == sr.get("request_body_sha256")
+      and _okr.get("generation_params") == {"max_tokens": 9000}
+      and _okr.get("provider_response_id") == "stub-1",
+      str({k: _okr.get(k) for k in ("provider_response_id",
+                                    "request_body_sha256")}))
+try:
+    _vib(_okp, sp)
+    check("identity/receipt binding verifies", True)
+except ValueError as e:
+    check("identity/receipt binding verifies", False, str(e)[:160])
+_altsp = os.path.join(BASE, "usage", "call-bindalt.json")
+_altrc = dict(sr, model_requested="stub-m-tampered")
+json.dump(_altrc, open(_altsp, "w"), indent=1)
+try:
+    _vib(_okp, _altsp)
+    check("altered model after receipt breaks binding", False)
+except ValueError as e:
+    check("altered model after receipt breaks binding",
+          "IDENTITY-BINDING-MISMATCH" in str(e), str(e)[:160])
+
 # --- admissibility: ELIGIBLE iff artifacts present AND verifying ---
 FREEZE = "f" * 40
 rundir = os.path.join(BASE, "P-famXX-T0self")
@@ -259,10 +314,14 @@ os.makedirs(rundir, exist_ok=True)
 rd = os.path.join(rundir, "call-a1.json")
 shutil.copy(os.path.join(BASE, "call-qshape.json"), rd)
 rnu = write_normalized_usage(rd)
+json.dump({"endpoint": "https://kenari.id/v1", "model_requested": "q-m",
+           "model_echoed_model": "q-m", "provider_response_id": "qresp-1",
+           "request_body_sha256": "q-req", "generation_params": {}},
+          open(os.path.join(rundir, "identity.json"), "w"))
 json.dump({"wired": True, "instance_freeze_commit": FREEZE,
-           "usage_receipts": ["call-a1.json"], "dev_mode": False},
+           "usage_receipts": ["call-a1.json"], "dev_mode": False,
+           "identity_file": "identity.json"},
           open(os.path.join(rundir, "H1-RUN-MANIFEST.json"), "w"))
-open(os.path.join(rundir, "identity.json"), "w").write("{}")
 open(os.path.join(rundir, "EVIDENCE-CHAIN.jsonl"), "w").write("")
 s, r = ADM.classify_run_dir(rundir, FREEZE)
 check("full-gate run with verifying artifacts is ESTIMAND-ELIGIBLE",
@@ -288,6 +347,17 @@ json.dump(rr, open(rd, "w"), indent=1)
 s4, r4 = ADM.classify_run_dir(rundir, FREEZE)
 check("tampered raw receipt excludes",
       s4 == ADM.EXCLUDED and "normalized usage invalid" in r4, r4[:160])
+# rebuild cleanly, then tamper the IDENTITY side: binding must fail too
+os.remove(rnu)
+shutil.copy(os.path.join(BASE, "call-qshape.json"), rd)
+rnu = write_normalized_usage(rd)
+_idf = os.path.join(rundir, "identity.json")
+_idj = json.load(open(_idf))
+_idj["model_requested"] = "q-m-tampered"
+json.dump(_idj, open(_idf, "w"))
+s5, r5 = ADM.classify_run_dir(rundir, FREEZE)
+check("tampered identity excludes via binding",
+      s5 == ADM.EXCLUDED and "identity binding invalid" in r5, r5[:160])
 
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH4 smoke: {len(results) - len(bad)}/{len(results)} closed")

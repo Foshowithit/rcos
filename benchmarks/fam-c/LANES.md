@@ -26,6 +26,14 @@ answer OpenAI-compatible chat; kenari's free tier may strip the `:free`
 plan suffix). A first observed live echo OUTSIDE these patterns is a
 prereg-amendment commit (tighten loop) — never a silent substitution.
 
+Item-3 hardening (audit round 2): the provider response/request id is
+REQUIRED (nonempty — our OpenAI-chat lanes always supply one) and the
+identity record binds the exact `request_body_sha256` from the usage
+receipt plus the complete explicit generation-param set
+(`generation_params`). The identity↔receipt binding is cross-verified in
+the model-call chain link and the admissibility gate: altering the model
+or any request param on either side after the call fails both.
+
 | lane | endpoint (base) | requested_id | family | acceptable_echoed_ids |
 |------|-----------------|--------------|--------|------------------------|
 | P    | https://api.router9.com/v1 | minimax-m3 | MiniMax | minimax-m3 |

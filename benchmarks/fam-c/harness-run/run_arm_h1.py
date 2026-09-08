@@ -63,7 +63,8 @@ from dockersandbox import DockerSandbox, ensure_roots
 from seal import build_visible_root
 from usage import (recorded_call, write_normalized_usage,
                    verify_normalized_usage)
-from identity import record_identity, check_against_prereg
+from identity import (record_identity, check_against_prereg,
+                      verify_identity_binding)
 from chain import Chain
 from lock import promote as lock_promote, load_artifact
 from reuse_log import write_record as reuse_write_record
@@ -144,10 +145,13 @@ def extract(raw, arm):
 def call(lane, prompt, outdir, tag):
     cfg = LANES[lane]
     key = open(cfg["keyfile"]).read().strip()
+    # Item-3 hardening: ONE explicit generation-param set, defined once and
+    # sent AND recorded identically — never two literals that can drift.
+    extra_body = {"max_tokens": 9000}
     reply, receipt, resp = recorded_call(
         cfg["base"], cfg["keyfile"], key, cfg["model"],
         [{"role": "user", "content": prompt}], outdir,
-        extra_body={"max_tokens": 9000}, timeout=300, tag=tag,
+        extra_body=extra_body, timeout=300, tag=tag,
         normalizer_id=cfg["normalizer"], return_response=True)
     # A1 (audit round 2 item 1): normalization is part of CALL CAPTURE — the
     # immutable normalized-usage artifact is written IMMEDIATELY after every
@@ -156,12 +160,17 @@ def call(lane, prompt, outdir, tag):
     nu_path = write_normalized_usage(receipt,
                                      expect_normalizer_id=cfg["normalizer"])
     # H2 identity (LANES.md): provider-side evidence — echoed model id +
-    # provider response id recorded from the REAL response object, never
-    # from reply-text self-report. record_identity raises when the
-    # provider echoes no model id (fail closed); check_against_prereg
-    # raises when the echo violates the frozen lane prereg.
+    # REQUIRED nonempty provider response id, recorded from the REAL
+    # response object, never from reply-text self-report; the exact
+    # request-body hash is read back from the just-written receipt (never
+    # reconstructed) and bound into the identity record. record_identity
+    # raises on missing echo / missing id / missing body hash (fail
+    # closed); check_against_prereg raises when the echo violates the
+    # frozen lane prereg.
+    body_sha = json.load(open(receipt)).get("request_body_sha256")
     id_path = record_identity(outdir, cfg["base"], cfg["model"], resp,
-                              extra_params={"max_tokens": 9000}, tag=tag)
+                              extra_params=dict(extra_body), tag=tag,
+                              request_body_sha256=body_sha)
     identity_family = check_against_prereg(id_path, {
         "endpoint": cfg["base"], "requested_id": cfg["model"],
         "acceptable_echoed_ids": cfg["echo_acceptable"],
@@ -262,6 +271,11 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
     # Fail closed on tampering of the RAW receipt OR the NORMALIZED artifact:
     # verify recomputes self-sha, raw-file binding, and metric re-derivation.
     nu = verify_normalized_usage(nu_path)
+    # Item-3 hardening: the identity record must cross-verify against its
+    # usage receipt (endpoint + model_requested + request-body hash equal,
+    # echo + provider id nonempty) — altering the model or any request
+    # param on either side after the call fails the chain here.
+    id_rec = verify_identity_binding(identity_path, receipt)
     mc = {
         "call_id": rc.get("call_id"), "tag": rc.get("tag"),
         "model_requested": rc.get("model_requested"),
@@ -269,6 +283,9 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
         "receipt_file": os.path.basename(receipt),
         "receipt_sha256": h(receipt),
         "usage_raw_sha256": rc.get("usage_raw_sha256"),
+        "request_body_sha256": rc.get("request_body_sha256"),
+        "provider_response_id": id_rec.get("provider_response_id"),
+        "generation_params": id_rec.get("generation_params"),
         "normalized_file": os.path.basename(nu_path),
         "normalized_sha256": h(nu_path),
         "primary_work": nu["primary_work"],
@@ -358,6 +375,7 @@ def selfcheck_wire():
                     "wired": True, "frozen_commit": "deadbeef" * 5,
                     "usage_receipts": [os.path.basename(receipt)],
                     "usage_normalized": [os.path.basename(nu_path)],
+                    "identity_file": "identity.json",
                     "checker_returncode": 0, "output_sha256": "fx",
                     "verdict": "ship"}
         # promote composes (writes once) and load_artifact verifies by hash.
@@ -388,19 +406,51 @@ def selfcheck_wire():
             reuse_rejected=False, reuse_rejection_reason=None)
         assert os.path.exists(reuse), "reuse record not written"
         # H2 identity composes: provider-side echo record + prereg pass.
+        # Item-3: nonempty provider id + exact request-body hash required.
         idp = record_identity(tmp, "https://fx/v1", "fx",
                               {"model": "fx", "id": "fx-1", "created": 1},
-                              extra_params=None, tag="selfcheck")
+                              extra_params={"max_tokens": 9000},
+                              tag="selfcheck",
+                              request_body_sha256="fx-req-body")
         assert check_against_prereg(
             idp, {"endpoint": "https://fx/v1", "requested_id": "fx",
                   "acceptable_echoed_ids": ["fx"],
                   "family": "famXX-fixture"}) == "famXX-fixture"
         try:
             record_identity(tmp, "https://fx/v1", "fx", {"id": "fx-1"},
-                            extra_params=None, tag="selfcheck")
+                            extra_params=None, tag="selfcheck",
+                            request_body_sha256="fx-req-body")
             raise SystemExit("selfcheck FAIL: no-echo identity not refused")
         except ValueError:
             pass  # IDENTITY-INCOMPLETE: echoed model id missing -> fail closed
+        for bad_resp, why in (({"model": "fx"}, "no provider id"),
+                              ({"model": "fx", "id": "  "}, "empty provider id")):
+            try:
+                record_identity(tmp, "https://fx/v1", "fx", bad_resp,
+                                extra_params=None, tag="selfcheck",
+                                request_body_sha256="fx-req-body")
+                raise SystemExit(f"selfcheck FAIL: {why} not refused")
+            except ValueError:
+                pass  # IDENTITY-INCOMPLETE: provider id required -> fail closed
+        try:
+            record_identity(tmp, "https://fx/v1", "fx",
+                            {"model": "fx", "id": "fx-1"},
+                            extra_params=None, tag="selfcheck")
+            raise SystemExit("selfcheck FAIL: missing body hash not refused")
+        except ValueError:
+            pass  # IDENTITY-INCOMPLETE: request-body hash required
+        # Item-3: identity/receipt binding verifies; altering the model on
+        # either side breaks _wire_chain (chain fail closed).
+        verify_identity_binding(idp, receipt)
+        _alt = os.path.join(tmp, "call-fixture-alt.json")
+        _alt_rc = json.load(open(receipt))
+        _alt_rc["model_requested"] = "fx-tampered"
+        json.dump(_alt_rc, open(_alt, "w"))
+        try:
+            verify_identity_binding(idp, _alt)
+            raise SystemExit("selfcheck FAIL: model alteration not refused")
+        except ValueError:
+            pass  # IDENTITY-BINDING-MISMATCH -> fail closed
         tip = _wire_chain(tmp, manifest["frozen_commit"], manifest, receipt,
                           nu_path, idp, "famXX-fixture", cap, reuse,
                           h(os.path.join(capdir, "engine.py")), None, "ship",
@@ -421,6 +471,11 @@ def selfcheck_wire():
         assert mc_payload.get("output_tokens") == 5
         assert mc_payload.get("cached_tokens") == 2
         assert mc_payload.get("call_count") == 1
+        # Item-3: the model-call link carries the provider response id, the
+        # exact request-body hash, and the complete generation-param set.
+        assert mc_payload.get("provider_response_id") == "fx-1"
+        assert mc_payload.get("request_body_sha256") == "fx-req-body"
+        assert mc_payload.get("generation_params") == {"max_tokens": 9000}
         # repromotion refused (H-LOCK-008 writes-once).
         try:
             lock_promote(capdir, "famXX-fixture", "v2",

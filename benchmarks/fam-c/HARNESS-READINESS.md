@@ -111,6 +111,16 @@ toward any gate.
 Test: fixture with mismatched requested-vs-echoed model id → FAIL;
 fixture with identity fields absent → FAIL.
 
+Item-3 implementation (audit round 2 item 3): nonempty provider
+response/request id REQUIRED (IDENTITY-INCOMPLETE otherwise); the exact
+`request_body_sha256` from the usage receipt plus the complete explicit
+generation-param set are preserved in every identity record; the runner
+sends AND records ONE param set (no drifting literals); the model-call
+chain link cross-verifies identity↔receipt binding and carries the
+provider id + body hash + params; admissibility re-verifies the binding
+per receipt — stripping the echo, stripping the provider id, or altering
+model/params on either side fails the chain and excludes the run.
+
 ### H-REUSE-007 — full reuse lifecycle + material-contribution evidence
 
 Requirement: replace every flat reused[] with the PREREG §12 field

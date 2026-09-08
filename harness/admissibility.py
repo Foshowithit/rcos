@@ -16,6 +16,10 @@ Round-2 audit). A run dir is ESTIMAND-ELIGIBLE only when ALL hold:
   - every usage receipt has its immutable normalized-usage artifact present
     AND verifying (A1: artifact self-sha + raw-receipt file binding + metric
     re-derivation; tampering raw OR normalized excludes the run)
+  - the identity record cross-verifies against every usage receipt
+    (item 3: endpoint + model_requested + request-body hash equal; echoed
+    model + provider response id nonempty; altering model/params on
+    either side excludes the run)
   - EVIDENCE-CHAIN.jsonl present
 Anything else is EXCLUDED with a one-line reason.
 
@@ -32,6 +36,7 @@ import os
 import sys
 
 from usage import verify_normalized_usage
+from identity import verify_identity_binding
 
 EXCLUDED = "EXCLUDED"
 ELIGIBLE = "ESTIMAND-ELIGIBLE"
@@ -99,6 +104,26 @@ def classify_run_dir(run_dir, freeze_commit):
                 except ValueError as e:
                     reason = f"normalized usage invalid for {r}: {e}"
                     break
+            # Item-3 (audit round 2): the identity record must cross-verify
+            # against EVERY usage receipt (endpoint + model_requested +
+            # request-body hash equal; echo + provider id nonempty) —
+            # altering the model or any request param on either side after
+            # the call excludes the run. Runs with no receipts (hermetic
+            # fixtures) skip this gate.
+            if not reason and (m.get("usage_receipts") or []):
+                idf = m.get("identity_file")
+                idp = os.path.join(run_dir, idf) if idf else None
+                if not idf or not os.path.exists(idp):
+                    reason = "no bound identity file for usage receipts " \
+                        f"({idf!r} missing)"
+                else:
+                    for r in (m.get("usage_receipts") or []):
+                        try:
+                            verify_identity_binding(
+                                idp, os.path.join(run_dir, r))
+                        except ValueError as e:
+                            reason = f"identity binding invalid for {r}: {e}"
+                            break
     if reason:
         return EXCLUDED, reason
     return ELIGIBLE, "full evidence gate satisfied"
