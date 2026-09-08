@@ -1,0 +1,23 @@
+{
+ "id": "reconcile-v1",
+ "version": 1,
+ "applicability": {
+  "description": "Reconcile two pre-parsed record sets (sources A and B) under a schema-agnostic field map: matches keys, classifies as equal/missing/conflicts/unreconcilable. Operates on in-memory JSON dicts, not raw CSV/JSONL.",
+  "requires_markers": [
+   "field_map.match_keys (non-empty list)",
+   "field_map.field_mappings (object)",
+   "records.a and/or records.b as list of dicts"
+  ],
+  "claims": [
+   "T0: deterministic classification given fixed inputs and field_map",
+   "T1: deterministic reconciliation across multiple key fields and arbitrary field paths via dot notation"
+  ]
+ },
+ "limitations": [
+  "No nested array reconciliation (object-of-arrays not supported)",
+  "No type coercion beyond numeric vs string normalization",
+  "No fuzzy/approximate key matching (exact equality only)",
+  "Match keys must be non-null in both sources to be reconcilable",
+  "Date/time fields normalized as strings (no timezone normalization)"
+ ]
+}

@@ -1,0 +1,1 @@
+{"task": "fam06/CAP", "lane": "P", "arm": "promotion", "verdict": "fix", "detail": "P-authored reconcile-v1 output shape (object records with stats) does not satisfy frozen checker contract (lists of ids/missing/conflicts); capability not promoted or locked"}
