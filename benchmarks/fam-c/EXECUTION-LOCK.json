@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "6e42be9171a2409746b6c7717515e04437e36f218d74a5ad9b885625659f957e",
+ "harness_manifest_sha256": "03f3aea647a5808f8e17dbbd7c429e1de9d3eba901e2e7728e8e714f98775bfe",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -13,12 +13,12 @@
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "4c3eb31a71fd943ef97aea0711abc4012155f9ef1481f6237cf634118392448e",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "c11ac91cb96f39aee788f1749e90ed09b13765b37e6d6da99d83d00925c2f0fc",
   "harness/order.py": "c9405e9de8ffb27233f4979de1889b24f55fdd68fcccf0cf5a6fceed55155848",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "f6396004b170de6d15e8f1b41417d87150045298d48a85d6783e7dee2956d161",
+  "harness/promotion.py": "e188e39a0e69cf9b6835a082049aec7fd147e1d220f8df2a5dad58fcc4864821",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4"
  },
@@ -218,6 +218,23 @@
    },
    "reason": "A12: promotion controller + estimand lock + decision-driven reuse + acquisition executor + admissibility ZERO-WORK; V3 now covers the whole harness package root",
    "slice": "a12",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "6e42be9171a2409746b6c7717515e04437e36f218d74a5ad9b885625659f957e",
+   "to_manifest": "03f3aea647a5808f8e17dbbd7c429e1de9d3eba901e2e7728e8e714f98775bfe",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "4c3eb31a71fd943ef97aea0711abc4012155f9ef1481f6237cf634118392448e",
+     "to_sha": "c11ac91cb96f39aee788f1749e90ed09b13765b37e6d6da99d83d00925c2f0fc"
+    },
+    "harness/promotion.py": {
+     "from_sha": "f6396004b170de6d15e8f1b41417d87150045298d48a85d6783e7dee2956d161",
+     "to_sha": "e188e39a0e69cf9b6835a082049aec7fd147e1d220f8df2a5dad58fcc4864821"
+    }
+   },
+   "reason": "A12b.1 de-leak consumer artifacts from hidden K.md/T4 (promotion.py _mint_artifacts); A12b.3 argv-ABI engine (ENGINE_TEMPLATE subprocess candidate.py, no exec); A12b.4 ledger-driven chain lifecycle + model_echoed capture binding (run_arm_h1.py _wire_chain)",
+   "slice": "a12b-slice1",
    "status_after": "open-round2"
   }
  ],
