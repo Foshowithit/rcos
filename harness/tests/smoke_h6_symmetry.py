@@ -87,7 +87,7 @@ check("disabled tail content past envelope fails closed",
       RA.check_arm_symmetry(cor, dis + "\nPS: prefer b.txt", env) != [])
 check("output contract drift fails closed",
       RA.check_arm_symmetry(
-          cor.replace('"result"', '"payload"', 1), dis, env) != [])
+          cor.replace('"decision"', '"decisionn"', 1), dis, env) != [])
 check("capability block placed before the envelope fails closed",
       RA.check_arm_symmetry(
           RA._PRE
@@ -102,9 +102,12 @@ check("single shared neutral preamble: no arm-specific wording",
       cor.startswith(RA._PRE) and dis.startswith(RA._PRE)
       and "PROVIDED capability" not in cor and "from scratch" not in dis
       and "no prior tasks" not in cor and "No registry/capability" not in dis)
-check("single shared output contract: treatment-only schema forbidden",
+check("single shared output contract: identical schema tail for both arms",
       cor.endswith(RA._OUT) and dis.endswith(RA._OUT)
-      and '"solver_py"' not in cor and '"records"' not in cor)
+      and cor.count('"solver_py"') == dis.count('"solver_py"')
+      and cor.count('"records"') == dis.count('"records"')
+      and cor.count('"field_map"') == dis.count('"field_map"')
+      and '"result"' not in RA._OUT)
 check("one-byte divergence ANYWHERE in the shared region is detected",
       RA.strip_capability_block(cor.replace("TASKDEF", "TASKDEE", 1)) != dis)
 check("output-contract drift only in treatment is detected",
