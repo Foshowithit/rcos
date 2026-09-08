@@ -1,0 +1,481 @@
+A11 is not closed yet. I verified f16d86e → c33509a; the branch is two commits ahead, and the changes you described are present. The important part is that I found three concrete production-path bugs plus one isolation gap that the current 342/342 suite does not catch.
+
+A11 audit verdict
+Item	Verdict	Audit
+A11.1 live calibration branch	PASS implementation	It now makes one return_response=True call and preserves the actual provider object. Do not run it yet.
+A11.2 request/adapter binding	PARTIAL / BLOCKED production path	Core primitives are good, but the real runner does not pass messages into identity and therefore cannot satisfy its own request verifier.
+A11.3 prompt symmetry	PASS at prompt-byte level	strip_capability_block(treatment) == control is the right invariant. But the execution/parser still expects the old arm-specific output formats.
+A11.4 full ordering	PASS methodology, conditional	A→C acquisition sequencing is a defensible pre-data operationalization of §2 and is now recorded in the governed readiness protocol.
+A11.5 namespaces	PARTIAL	Free CLI cross-universe paths are closed, but parent-symlink aliasing and artifact provenance remain open.
+A11.6 validated cell state	FAIL	Production manifest schema and validator disagree, and cell_state() imports a verify_chain() function that does not exist.
+
+So: no calibration yet, no real Fam-C cell yet.
+
+P0-1 — production request binding currently makes real runs inadmissible
+
+This is the sharpest A11.2 bug.
+
+verify_request_binding() requires:
+
+identity.messages_sha256
+==
+hash(request.messages)
+
+And record_identity() only writes messages_sha256 when messages= is supplied.
+
+The calibration path correctly supplies it.
+
+But the production runner does not:
+
+Python
+Run
+id_path = record_identity(
+    ...,
+    extra_params=dict(extra_body),
+    request_body_sha256=body_sha
+)
+
+No messages=.
+
+Therefore the current sequence is effectively:
+
+real model call
+→ identity.json has no messages_sha256
+→ admissibility calls verify_request_binding()
+→ messages hash mismatch
+→ EXCLUDED
+
+This is good fail-closed behavior, but it means A11.2 isn't production-complete.
+
+Fix
+
+Construct the messages object exactly once:
+
+Python
+Run
+messages = [{"role": "user", "content": prompt}]
+
+Pass that same object to both:
+
+recorded_call(...)
+record_identity(..., messages=messages)
+
+Also invoke verify_request_binding() and verify_adapter_binding() inside _wire_chain(), not only later in admissibility.
+
+Acceptance
+
+A stubbed production call(), not calibration code, must produce an artifact set that passes actual classify_run_dir().
+
+Then mutate independently:
+
+prompt/message          → fail
+max_tokens              → fail
+model                   → fail
+endpoint                → fail
+adapter id              → fail
+request file byte       → fail
+identity message hash   → fail
+P0-2 — H6 prompt symmetry is fixed, but the runner cannot execute its new common output contract
+
+At the prompt level, I clear A11.3.
+
+The neutral preamble + identical output contract + exactly one inserted capability block is the right construction. The framing newline isn't a residual confound because the machine invariant tests the final strings after removal, not a semantic approximation. The counterfactual sentinel is also fine because it never enters the actual control prompt.
+
+But there is a new production mismatch.
+
+The model is now told to return:
+
+JSON
+{
+  "result": "...",
+  "notes": "..."
+}
+
+Yet extract() still searches for:
+
+correct  → {"records"
+disabled → {"solver_py"
+
+and the execution stage still expects:
+
+Python
+Run
+arrival["records"]
+arrival["field_map"]
+
+or:
+
+Python
+Run
+arrival["solver_py"]
+
+So H6 now proves the prompts are symmetric but does not prove that either arm can satisfy the new shared contract.
+
+Worse, the common contract doesn't tell a fresh-solving control that result must somehow contain a solver_py, nor tell treatment exactly how result maps onto records/field_map.
+
+Fix
+
+Do this as part of items 8–10, because the correct schema should incorporate USE/REJECT anyway.
+
+I suggest one literal response schema for both arms, perhaps conceptually:
+
+decision: use_capability | fresh
+execution_payload: ...
+notes: ...
+
+Same fields, same instructions, same parser.
+
+Treatment can choose use_capability or fresh.
+Control can only legally resolve to fresh because no K is available.
+
+There should be one parser, not:
+
+if correct: parse shape X
+if disabled: parse shape Y
+Acceptance
+
+A single synthetic model response schema must drive:
+
+treatment USE
+treatment REJECT → fresh
+control fresh
+
+through the complete sandbox+checker path.
+
+No substring searching for hidden arm-specific nested structures.
+
+P0-3 — A11.6 is currently broken against the actual production manifest
+
+There are two independent bugs here.
+
+Bug 3a: verify_chain() does not exist
+
+cell_state() does:
+
+Python
+Run
+from chain import verify_chain
+verify_chain(chain)
+
+But harness/chain.py defines Chain and Chain.audit(); there is no module-level verify_chain() in the public file.
+
+Your H7 test does not expose this because it injects:
+
+Python
+Run
+stub_chain.verify_chain = lambda p: None
+
+So the suite proves the orchestration consumes a hypothetical verifier—not that production verification exists.
+
+Bug 3b: validator and runner disagree on manifest field names
+
+cell_state() requires:
+
+kind
+universe
+
+and its synthetic H7 manifest uses those names.
+
+The actual runner writes:
+
+cell_kind
+cell_universe
+
+not kind / universe.
+
+So a real downstream run will fail:
+
+manifest kind None != "model-call"
+
+while the missing universe bizarrely passes because the validator currently accepts:
+
+Python
+Run
+m.get("universe") in (None, expected_universe)
+
+That means the field it claims to verify is actually optional.
+
+Fix
+
+Use the production manifest schema everywhere. Validate exact equality for at least:
+
+cell_id
+cell_index
+block
+family
+task/event
+cell_kind
+cell_universe
+cell_letter
+lane
+arm
+capability_id
+order_sha256
+
+Nothing critical should accept None.
+
+Then either:
+
+implement a real module-level verify_chain(path, ...), or
+
+have cell_state() reconstruct Chain and run the same full audit authority used elsewhere.
+
+Do not leave two unrelated chain-verification implementations.
+
+Acceptance
+
+Remove the H7 stubs for one end-to-end fixture.
+
+Have the real production machinery emit a synthetic downstream run, then:
+
+real cell_state() → COMPLETE
+
+Mutate one manifest field → INADMISSIBLE.
+
+Mutate one chain link → INADMISSIBLE.
+
+That test is more important than 50 additional mocked assertions.
+
+P0-4 — PROMOTION/CAPABILITY_LOCK cannot use the same cell validator as model-call cells
+
+This is the architectural issue hidden underneath A11.4/A11.6.
+
+Your event universe now correctly contains:
+
+T0
+T1
+PROMOTION
+CAPABILITY_LOCK
+T2...
+
+But cell_state() currently assumes completion means:
+
+H1-RUN-MANIFEST.json
+identity
+usage
+model-call evidence chain
+admissibility
+
+That makes sense for T0/T1/T2/T3/T4.
+
+It is wrong for:
+
+PROMOTION
+CAPABILITY_LOCK
+
+Those are deterministic governance events and should not fabricate provider identity or token receipts merely to satisfy a model-run validator.
+
+Fix
+
+Split event-state validation by kind:
+
+acquisition-solve
+    → model-run validator
+
+model-call
+    → model-run validator
+
+harness-event / PROMOTION
+    → promotion-event validator
+
+harness-event / CAPABILITY_LOCK
+    → lock-event validator
+
+Promotion completion should require the two valid T0/T1 chain tips plus rule compliance.
+
+CAPABILITY_LOCK completion should require the immutable lock hash plus promotion-event hash.
+
+Acceptance
+
+Synthetic family progression:
+
+T0 valid             → event 0 complete
+T1 valid             → event 1 complete
+promotion receipt    → event 2 complete
+lock receipt         → event 3 complete
+T2 now authorized
+
+No fake model call for events 2/3.
+
+This flows directly into items 8/9.
+
+P0-5 — A→C acquisition order is acceptable, but pin it as protocol, not merely executable behavior
+
+On your first audit question: yes, the structural design is faithful to §2:
+
+A gets its own P acquisition
+C gets its own P acquisition
+A K ≠ C K
+no copying A K → C
+B/D get no K
+
+The prereg explicitly requires C to create/promote its own capability instead of receiving A's.
+
+A-complete-then-C-complete is not uniquely demanded by the original ORDER.md, but you introduced it before any estimand run, and the governed HARNESS-READINESS forward amendment now states that operational choice explicitly.
+
+I accept it.
+
+One final requirement: when PROTOCOL-LOCK becomes FINAL, pin the exact ORDER-EXPANSION.json SHA as a protocol artifact, not merely ORDER.md plus whatever order.py happens to derive.
+
+Experimental ordering is methodology, not just implementation.
+
+P0-6 — derived namespaces close CLI selection, but not all cross-universe aliasing
+
+A11.5 successfully closes the earlier obvious attack:
+
+C cell
++ operator passes A capdir
+→ DENIED
+
+The scheduler derives separate state paths.
+
+I do not see an environment-variable override in this path; BASE and derived state locations are code-defined. Free outdir/capdir selection is also closed for wired downstream execution.
+
+Two holes remain.
+
+Parent symlink alias
+
+You only test:
+
+Python
+Run
+os.path.islink(run_dir)
+
+and check_namespace() compares realpath() values.
+
+If:
+
+state/PQ/C → state/PQ/A
+
+is a symlink, then C's derived pathname can resolve into A's actual filesystem.
+
+realpath() then normalizes the attack rather than detecting it.
+
+Fix
+
+For every component from state/ downward:
+
+lstat
+must be directory
+must not be symlink
+must be harness-owned
+must not be group/world writable
+
+Do this for state root, block, universe, family, capability, runs, run cell.
+
+Ideally create the tree yourself with trusted directory handles / no-follow semantics.
+
+Acceptance:
+
+state/PQ/C symlink → A              DENY
+state/PQ/C/fam05 symlink → A/fam05 DENY
+capability symlink                  DENY
+runs parent symlink                 DENY
+run cell symlink                    DENY
+Artifact copying
+
+Namespace derivation alone cannot stop:
+
+operator copies A engine.py
+into C's correctly derived directory
+
+That is not solvable by pathname isolation.
+
+Items 8/9 must solve it through provenance:
+
+C's candidate artifact hash must originate from C's own T0/T1 acquisition chain; promotion may consume only that recorded candidate, never arbitrary bytes currently present in C's directory.
+
+Then copying A into C after the fact doesn't make it promotable.
+
+P1 — request evidence is tamper-evident under the harness TCB, not “unfalsifiable”
+
+On your third question: persisting request bytes is the right move, but don't make the stronger claim that it is impossible for the same process to falsify what it sent.
+
+The harness constructs blob, sends it, then after the response writes that blob to disk.
+
+Your trust model therefore is:
+
+frozen harness code = trusted
+artifacts = tamper-evident against later mutation
+
+not:
+
+artifacts cryptographically prove what an actively malicious harness sent
+
+No provider currently echoes the full request body hash back to you, so the latter is impossible from these receipts alone.
+
+I'd tighten the implementation anyway:
+
+construct blob
+→ persist exact request bytes
+→ hash persisted bytes
+→ read/send those exact persisted bytes
+→ receive response
+
+Then the audited frozen program has a visibly single source of truth even for the send operation.
+
+Still describe it as:
+
+request bytes are mutation-evident and execution-bound under the frozen harness trust boundary.
+
+That's scientifically defensible.
+
+Exact next work unit
+
+Do A11b, still offline, before moving to the promotion controller:
+
+A11b.1
+production call() passes exact messages
++ chain verifies request/adapter binding
+
+A11b.2
+unified output schema/parser/runtime
+(no old records-vs-solver hidden parser)
+
+A11b.3
+real Chain verification in cell_state
+remove stub-only proof gap
+
+A11b.4
+manifest schema exact equality
+cell_* fields, no optional universe
+
+A11b.5
+event-kind-specific cell_state
+model call vs promotion vs lock
+
+A11b.6
+no-symlink namespace ancestry
++ ownership/mode checks
+
+Then proceed immediately to the combined next major unit:
+
+A12
+#8 promotion controller
+#9 estimand-aware CAPABILITY_LOCK
+#10 USE / REJECT / fresh path
+
+with one additional invariant:
+
+C promotion candidate
+must be causally rooted in
+C/T0 + C/T1 evidence
+
+never:
+"whatever artifact happens to be
+in C's directory"
+
+After A12:
+
+A13  material-contribution lineage
+A14  infrastructure/replacement state machine
+A15  final chain + §24 ESTIMAND-GRADE gate
+full synthetic family attack
+real P/Q calibration
+PROTOCOL-LOCK FINAL
+EXECUTION-LOCK FINAL
+first real cell
+
+The strongest positive result from this audit is that A11.3's causal prompt symmetry is now actually the right rule, and A11.4's A/C independent acquisition structure is conceptually right. The remaining problems are implementation/provenance problems, not a need to redesign Fam-C again.
+
+But I cannot issue the stop phrase yet.

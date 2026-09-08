@@ -49,6 +49,14 @@
    "reason": "round-3 A11: A11.1 live-branch identity; A11.2 persisted request bytes + adapter/request binding; A11.3 byte-identity symmetry proof (legacy weaker fixture deleted); A11.4 full event-universe expansion; A11.5 derived per-universe namespaces; A11.6 validated cell state",
    "base": "a11-round3-close",
    "slice": "a11.1-6"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "b11e00259a571a687c0de59f7f96f73745a7e9240fddb01c3af166fe3211d2cc",
+   "to_sha": "b86a25e40616db4bb85ef11b0b58d8e3199b59fd1405ddfcddc6b39bee0179d9",
+   "reason": "round-3 A11 audit: register AUDIT-ROUND3-A11-REPLY.txt as a meta pointer",
+   "base": "a11b",
+   "slice": "a11b.0-preserve"
   }
  ]
 }
