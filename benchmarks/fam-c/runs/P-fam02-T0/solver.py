@@ -1,0 +1,1 @@
+<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>

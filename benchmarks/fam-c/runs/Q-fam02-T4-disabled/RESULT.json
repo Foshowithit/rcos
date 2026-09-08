@@ -1,0 +1,1 @@
+{"task": "fam02/T4", "lane": "Q", "arm": "disabled", "verdict": "fix", "detail": "solver hardcodes TASK_DIR and produced no output"}

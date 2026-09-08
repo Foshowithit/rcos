@@ -1,0 +1,3 @@
+duplicate_policy: latest-wins
+# When one id appears on multiple pages with different values, the
+# LATEST page (higher page order) carries the authoritative value.
