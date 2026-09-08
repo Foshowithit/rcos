@@ -505,6 +505,20 @@ Cross-model comparisons should emphasize **within-model paired effects**:
 
 Raw dollar cost between P and Q is secondary because provider pricing itself is a confound.
 
+## 16.1 Primary efficiency metric (frozen — audit patch)
+
+The single primary resource metric for all PASS judgments is:
+
+```text
+uncached model-equivalent work
+  = uncached input tokens + output tokens
+```
+
+All other §16 metrics are SECONDARY: they are collected, reported, and
+may support interpretation, but no combination of secondary metrics may
+upgrade a non-PASS primary result to PASS. This closes post-run metric
+shopping: the verdict follows the primary estimand or it does not follow.
+
 ---
 
 # 17. Primary estimand
@@ -563,25 +577,48 @@ The strongest result is a widening negative cumulative delta as valid reuse accu
 
 ---
 
-# 19. Decision rules
+# 19. Decision rules (audit-hardened: no post-run redefinition)
+
+## Primary cross-cognition efficiency gate
+
+Computed on the primary metric (§16.1) as the median paired C−D delta
+across ALL eligible T2/T3 instances (§17). PASS requires ALL of:
+
+* median paired delta < 0;
+* at least 4 of 6 capability families show median family delta < 0;
+* the delta is not attributable to correctness failures or omitted work
+  (a treatment arm that fails fast is cheaper but not better — see the
+  correctness gate).
+
+## Correctness gate
+
+* Treatment may not record fewer SHIP outcomes than control on eligible
+  T2/T3 pairs. Any treatment-only correctness loss ⇒ no PASS at any level.
+
+## T4 specificity gate
+
+* Cross-cognition PASS requires correct rejection / non-material
+  invocation on ALL preregistered T4 instances (6/6). Anything below is
+  reported as specificity failure and blocks an unqualified PASS.
 
 ## PASS — narrow reuse claim
 
 PASS only if:
 
-* reuse-enabled lanes retain correctness comparable to controls;
+* the correctness gate holds vs controls;
 * actual observed reuse occurs on eligible T2/T3 tasks;
-* A beats B on preregistered efficiency metrics across the family set;
+* A beats B on the PRIMARY metric (§16.1) across the family set
+  (median paired A−B delta < 0, same 4-of-6 family rule);
 * no evidence suggests the effect is produced solely by failed/omitted work.
 
 ## PASS — cross-cognition claim
 
 Requires all narrow PASS requirements plus:
 
-* C beats D;
+* the primary cross-cognition efficiency gate above;
 * observed capability execution is proven;
 * Model Q had no access to Model P's cognition/history;
-* T4 specificity remains acceptable.
+* the T4 specificity gate above.
 
 ## PASS — compounding claim
 
