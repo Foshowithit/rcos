@@ -69,6 +69,12 @@ from chain import Chain
 from lock import promote as lock_promote, load_artifact
 from reuse_log import write_record as reuse_write_record
 from admissibility import verify_instance_frozen, verify_freeze_tree
+# Item-4: three-authority preflight is importable (validate_all runs the
+# V1/V2/V3 validators without exiting); BASE on the path only exposes the
+# fam-c operational root (preflight import; no stdlib shadowing — no
+# stdlib-named modules live there).
+sys.path.insert(0, BASE)
+from preflight import validate_all as preflight_validate_all
 
 CHAIN_FILE = "EVIDENCE-CHAIN.jsonl"
 GRADING_RULE_VERSION = "checker-contract-v1"
@@ -532,6 +538,14 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     instance_freeze_commit, instance_freeze_tree = freeze_anchors()
     execution_harness_commit = exec_commit()
     execution_harness_manifest_sha = harness_manifest_sha()
+    # Item-4 refuse-START: all three lock authorities
+    # (INSTANCE-FREEZE / PROTOCOL-LOCK / EXECUTION-LOCK) must be green
+    # before any model token is spent. A governed file modified without a
+    # listed forward amendment fails its lock here.
+    lock_findings = preflight_validate_all(BASE)
+    if lock_findings:
+        raise RuntimeError("PREFLIGHT-LOCK-FAIL refuse start: "
+                           + " | ".join(lock_findings)[:800])
     # Refuse-START: the executed instance subtree must be byte-identical to
     # the frozen package BEFORE any model token is spent. Item-5: the
     # manifest is resolved from the freeze commit via git (the working-tree

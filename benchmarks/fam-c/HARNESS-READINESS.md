@@ -144,6 +144,19 @@ fixture with hash-linked artifact chain → PASS.
 
 ## Slice H3 — GOVERNANCE (lock enforcement, invalid-run machine, manifests)
 
+### Authority locks (round-2 item 4 — no re-freeze)
+
+Three independent authorities, validated by `preflight.py` (all green
+required; the runner refuses to start otherwise):
+
+- V1 INSTANCE-FREEZE — frozen instance bytes vs the git-resolved
+  FREEZE-HASHES manifest at `d1292434` (+ ancestry proof).
+- V2 PROTOCOL-LOCK — this document, PREREG/ORDER/LANES, and preflight.py
+  itself vs `PROTOCOL-LOCK.json`: frozen bytes or a listed forward
+  amendment, never unlisted drift.
+- V3 EXECUTION-LOCK — executing harness bytes vs `EXECUTION-LOCK.json`
+  (`open-round2` placeholder until the #14 final lock).
+
 ### H-LOCK-008 — CAPABILITY_LOCK enforcement
 
 Requirement: T2–T4 consume EXACTLY the locked artifact hash recorded in

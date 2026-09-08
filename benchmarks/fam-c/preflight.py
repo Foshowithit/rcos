@@ -1,9 +1,31 @@
 #!/usr/bin/env python3
-"""Fam-C freeze preflight: asserts the frozen package is instantiable
-exactly per the visibility seals. Exit 0 = all green, 1 = findings.
-Checks per task dir: every VISIBLE-declared fixture exists; every
-fixture file present is declared; prompt/checker/truth hashes match
-FREEZE-HASHES.sha256; no forbidden basenames inside task dirs."""
+"""Fam-C three-authority preflight (round-2 item 4, option b — no re-freeze).
+
+Three INDEPENDENT validators, each green on its own authority. Exit 0 =
+all green, 1 = findings (each finding names its authority). Importable:
+`validate_all(fam_c_dir)` returns findings without exiting, so the runner
+refuses to start on any lock failure before any model token is spent.
+
+  V1 INSTANCE-FREEZE — the frozen instance bytes (families/** task inputs,
+      checkers, truth + frozen meta STAGED.md/FAMILIES.md) are byte-identical
+      to FREEZE-HASHES.sha256 RESOLVED FROM the freeze commit via git (the
+      working-tree copy is never trusted). Freeze-commit ancestry of HEAD
+      is also proved (history-rewrite detection).
+  V2 PROTOCOL-LOCK — the living protocol docs (PREREG/ORDER/LANES/
+      HARNESS-READINESS + this validator) match EITHER their frozen bytes
+      OR an explicit forward amendment recorded in PROTOCOL-LOCK.json.
+      Unlisted drift fails this lock (never a silent substitution).
+  V3 EXECUTION-LOCK — the executing harness bytes (8 modules + runner)
+      match EXECUTION-LOCK.json. Status rides along: `open-round2`
+      (placeholder, re-minted on every harness change) until round-2 #14
+      mints the FINAL lock after items 1-13 + synthetic attack.
+
+Meta files (FREEZE.json, FREEZE-HASHES.sha256, *-LOCK.json, AUDIT-*,
+FAMC-EXECUTION-STATUS.md, ORDER-EXPANSION.json) are pinned by git history
++ the lock records, not by the content manifest. Operational dirs (runs/,
+capabilities/, harness-run/) hold evidence/artifacts/tooling, never
+freeze inputs.
+"""
 import hashlib
 import json
 import os
@@ -11,91 +33,200 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FAMS = os.path.join(HERE, "families")
-FORBIDDEN = {"truth.json", "check.py", "K.md", "DESIGN-T4.md", "T4NOTE.md"}
-fails = []
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), os.pardir, "harness"))
+from admissibility import (frozen_manifest_bytes, verify_freeze_tree,
+                           load_freeze)
+
+FREEZE_COMMIT = "d1292434a261f44ad910c556e18624cef1676f37"
+
+# Protocol docs with a life after the freeze: frozen bytes OR a listed
+# forward amendment, never unlisted drift.
+PROTOCOL_GOVERNED = ["PREREG.md", "ORDER.md", "LANES.md",
+                     "HARNESS-READINESS.md", "preflight.py"]
+# Meta pointers: integrity rides on git history + lock records.
+META = {"FREEZE.json", "FREEZE-HASHES.sha256", "PROTOCOL-LOCK.json",
+        "EXECUTION-LOCK.json", "FAMC-EXECUTION-STATUS.md",
+        "AUDIT-ROUND1.md", "AUDIT-ROUND1-REPLY.txt",
+        "AUDIT-ROUND2.md", "AUDIT-ROUND2-REPLY.txt",
+        "ORDER-EXPANSION.json"}
+OPERATIONAL_DIRS = {"runs", "capabilities", "harness-run"}
 
 
-def fail(msg):
-    fails.append(msg)
-    print("FAIL:", msg)
+def _sha(fp):
+    with open(fp, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
 
 
-manifest = {}
-man_path = os.path.join(HERE, "FREEZE-HASHES.sha256")
-if os.path.exists(man_path):
-    for line in open(man_path):
-        h, p = line.strip().split("  ", 1)
-        manifest[p] = h
+def _git(args, cwd):
+    try:
+        p = subprocess.run(["git"] + args, cwd=cwd, capture_output=True,
+                           text=True)
+    except FileNotFoundError:
+        raise RuntimeError("git binary not found")
+    if p.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args)}: "
+                           + (p.stderr or p.stdout).strip()[:200])
+    return p.stdout.strip()
 
-freeze = {}
-for line in open(os.path.join(HERE, "FREEZE-HASHES.sha256")):
-    h, p = line.strip().split("  ", 1)
-    freeze[p] = h
-on_disk = set()
-for root, dirs, files in os.walk(HERE):
-    # Operational dirs are not freeze inputs: runs/ (evidence),
-    # capabilities/ (produced artifacts), harness-run/ (tooling).
-    # The freeze covers experimental inputs only (tasks, truth,
-    # checkers, prompts, seals, protocol docs).
-    if os.path.basename(root) in ("runs", "capabilities", "harness-run"):
-        dirs[:] = []
-        continue
-    for fn in files:
-        rel = os.path.relpath(os.path.join(root, fn), HERE)
-        if rel in ("FREEZE-HASHES.sha256", "FREEZE.json"):
-            continue  # meta: pinned by git, not by content manifest
-        on_disk.add(rel)
-for p in sorted(on_disk - set(freeze)):
-    fail(f"extra file not in freeze manifest: {p}")
-for p in sorted(set(freeze) - on_disk):
-    fail(f"freeze-manifest file missing on disk: {p}")
-for p, h in sorted(freeze.items()):
-    fp = os.path.join(HERE, p)
-    if not os.path.exists(fp):
-        continue
-    actual = hashlib.sha256(open(fp, "rb").read()).hexdigest()
-    if actual != h:
-        fail(f"hash mismatch vs freeze manifest: {p}")
-fj = os.path.join(HERE, "FREEZE.json")
-if not os.path.exists(fj):
-    fail("FREEZE.json missing")
-    print(f"preflight: {len(fails)} findings")
-    sys.exit(1)
-pin = json.load(open(fj))
-fc = pin.get("freeze_commit", "")
-if not fc:
-    fail("FREEZE.json has no freeze_commit")
-    print(f"preflight: {len(fails)} findings")
-    sys.exit(1)
-# Only runs/** may differ post-freeze (future evidence). EVERYTHING else
-# — including this script, the manifests, and FREEZE.json — is frozen.
-# runs/** holds future evidence; FREEZE.json + FREEZE-HASHES.sha256 are
-# pure metadata pointers (their own integrity rides on git history +
-# the content manifest respectively). Everything else is frozen.
-bind = ["diff", "--exit-code", fc, "HEAD", "--",
-        ":(top)benchmarks/fam-c",
-        ":(top,exclude)benchmarks/fam-c/runs/**",
-        ":(top,exclude)benchmarks/fam-c/FREEZE.json",
-        ":(top,exclude)benchmarks/fam-c/FREEZE-HASHES.sha256"]
-try:
-    rt = subprocess.run(["git", "-C", HERE, "rev-parse", "--show-toplevel"],
-                        capture_output=True, text=True, check=True)
-    repo = rt.stdout.strip()
-    d = subprocess.run(["git", "-C", repo] + bind,
-                       capture_output=True, text=True)
-    if d.returncode != 0:
-        fail("frozen→HEAD experimental diff NONEMPTY (content drift since "
-             f"{fc[:12]}):\n" + d.stdout[:2000])
-    st = subprocess.run(["git", "-C", repo, "status", "--porcelain", "--",
-                         ":(top)benchmarks/fam-c"], capture_output=True,
-                        text=True)
-    for line in st.stdout.splitlines():
-        path = line[3:]
-        if "/runs/" in path or path.endswith("/runs"):
-            continue  # future evidence dirs are expected post-freeze
-        fail("working tree not clean vs freeze: " + line)
-except FileNotFoundError:
-    fail("git unavailable for binding checks")
-print(f"preflight: {len(fails)} findings")
-sys.exit(1 if fails else 0)
+
+def validate_instance(fam_c_dir, freeze_commit):
+    """V1 INSTANCE-FREEZE. Returns findings list (empty = green)."""
+    out = []
+    try:
+        root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
+        _git(["merge-base", "--is-ancestor", freeze_commit, "HEAD"],
+             cwd=root)
+    except RuntimeError as e:
+        return [f"V1 INSTANCE-FREEZE: ancestry unprovable: {e}"]
+    try:
+        raw = frozen_manifest_bytes(fam_c_dir, freeze_commit).decode()
+    except RuntimeError as e:
+        return [f"V1 INSTANCE-FREEZE: {e}"]
+    manifest = {}
+    for line in raw.splitlines():
+        line = line.strip()
+        if line:
+            h, p = line.split("  ", 1)
+            manifest[p] = h
+    governed = set(PROTOCOL_GOVERNED)
+    for p, h in sorted(manifest.items()):
+        if p in governed:
+            continue  # living protocol doc: V2 authority owns this path
+        fp = os.path.join(fam_c_dir, p)
+        if not os.path.exists(fp):
+            out.append(f"V1 INSTANCE-FREEZE: frozen file missing: {p}")
+        elif _sha(fp) != h:
+            out.append(f"V1 INSTANCE-FREEZE: hash mismatch vs frozen "
+                       f"manifest: {p}")
+    on_disk = set()
+    for root, dirs, files in os.walk(fam_c_dir):
+        if os.path.basename(root) in OPERATIONAL_DIRS:
+            dirs[:] = []
+            continue
+        dirs[:] = [d for d in dirs if d != "__pycache__"]
+        for fn in files:
+            if fn.endswith(".pyc"):
+                continue  # interpreter bytecode cache, never freeze input
+            rel = os.path.relpath(os.path.join(root, fn), fam_c_dir)
+            if rel in META or rel in governed:
+                continue
+            on_disk.add(rel)
+    for p in sorted(on_disk - set(manifest)):
+        out.append(f"V1 INSTANCE-FREEZE: extra file not in freeze "
+                   f"manifest: {p}")
+    for p in sorted(set(manifest) - on_disk - governed):
+        out.append(f"V1 INSTANCE-FREEZE: freeze-manifest file missing on "
+                   f"disk: {p}")
+    return out
+
+
+def validate_protocol(fam_c_dir, freeze_commit):
+    """V2 PROTOCOL-LOCK. Returns findings list (empty = green)."""
+    out = []
+    lp = os.path.join(fam_c_dir, "PROTOCOL-LOCK.json")
+    if not os.path.exists(lp):
+        return ["V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json missing"]
+    try:
+        lock = json.load(open(lp))
+    except ValueError as e:
+        return [f"V2 PROTOCOL-LOCK: lock unparsable: {e}"]
+    if lock.get("freeze_commit") != freeze_commit:
+        out.append("V2 PROTOCOL-LOCK: lock freeze_commit != instance "
+                   "freeze (locks disagree on the freeze)")
+    governed = lock.get("governed", {})
+    amendments = lock.get("amendments", [])
+    by_file = {}
+    for a in amendments:
+        by_file.setdefault(a.get("file"), []).append(a)
+    try:
+        root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
+    except RuntimeError as e:
+        return out + [f"V2 PROTOCOL-LOCK: git unavailable: {e}"]
+    for fn in PROTOCOL_GOVERNED:
+        want_frozen = governed.get(fn)
+        if not want_frozen:
+            out.append(f"V2 PROTOCOL-LOCK: {fn} not governed by lock")
+            continue
+        try:
+            frozen_bytes = subprocess.run(
+                ["git", "show", f"{freeze_commit}:benchmarks/fam-c/{fn}"],
+                cwd=root, capture_output=True)
+            if frozen_bytes.returncode != 0:
+                raise RuntimeError("unresolvable at freeze")
+            frozen_sha = hashlib.sha256(frozen_bytes.stdout).hexdigest()
+        except RuntimeError as e:
+            out.append(f"V2 PROTOCOL-LOCK: {fn} frozen bytes {e}")
+            continue
+        if frozen_sha != want_frozen:
+            out.append(f"V2 PROTOCOL-LOCK: {fn} lock frozen-sha != git "
+                       f"truth (lock edited?)")
+            continue
+        fp = os.path.join(fam_c_dir, fn)
+        if not os.path.exists(fp):
+            out.append(f"V2 PROTOCOL-LOCK: {fn} missing on disk")
+            continue
+        disk = _sha(fp)
+        acceptable = {frozen_sha}
+        for a in by_file.get(fn, []):
+            if a.get("from_sha") in acceptable:
+                acceptable.add(a.get("to_sha"))
+        if disk not in acceptable:
+            out.append(f"V2 PROTOCOL-LOCK: {fn} drifted with no listed "
+                       f"forward amendment (disk {disk[:12]} not in "
+                       f"{{frozen,{len(acceptable) - 1} amendment(s)}})")
+    return out
+
+
+def validate_execution(fam_c_dir):
+    """V3 EXECUTION-LOCK. Returns findings list (empty = green)."""
+    out = []
+    lp = os.path.join(fam_c_dir, "EXECUTION-LOCK.json")
+    if not os.path.exists(lp):
+        return ["V3 EXECUTION-LOCK: EXECUTION-LOCK.json missing"]
+    try:
+        lock = json.load(open(lp))
+    except ValueError as e:
+        return [f"V3 EXECUTION-LOCK: lock unparsable: {e}"]
+    try:
+        root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
+    except RuntimeError as e:
+        return [f"V3 EXECUTION-LOCK: git unavailable: {e}"]
+    for rel, want in sorted(lock.get("harness_files", {}).items()):
+        fp = os.path.join(root, rel)
+        if not os.path.exists(fp):
+            out.append(f"V3 EXECUTION-LOCK: harness file missing: {rel} "
+                       "(re-mint via explicit amendment, never skip)")
+        elif _sha(fp) != want:
+            out.append(f"V3 EXECUTION-LOCK: harness bytes changed: {rel} "
+                       "(re-mint via explicit amendment commit)")
+    if not lock.get("harness_files"):
+        out.append("V3 EXECUTION-LOCK: lock lists no harness files")
+    return out
+
+
+def validate_all(fam_c_dir=None):
+    """Run all three validators. Returns findings list (empty = green)."""
+    fam_c_dir = fam_c_dir or HERE
+    freeze = load_freeze(fam_c_dir)["freeze_commit"]
+    findings = []
+    findings += validate_instance(fam_c_dir, freeze)
+    findings += validate_protocol(fam_c_dir, freeze)
+    findings += validate_execution(fam_c_dir)
+    return findings
+
+
+def main():
+    findings = validate_all()
+    for f in findings:
+        print("FAIL:", f)
+    v1 = [f for f in findings if f.startswith("V1")]
+    v2 = [f for f in findings if f.startswith("V2")]
+    v3 = [f for f in findings if f.startswith("V3")]
+    print(f"preflight: V1-instance {len(v1)} finding(s), "
+          f"V2-protocol {len(v2)} finding(s), "
+          f"V3-execution {len(v3)} finding(s)")
+    return 1 if findings else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

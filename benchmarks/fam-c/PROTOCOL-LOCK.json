@@ -1,0 +1,38 @@
+{
+ "lock": "PROTOCOL-LOCK",
+ "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
+ "note": "living protocol docs: frozen bytes OR a listed forward amendment, never unlisted drift (round-2 item 4, option b \u2014 no re-freeze). STAGED.md/FAMILIES.md stay under the V1 instance manifest (unchanged since freeze).",
+ "governed": {
+  "PREREG.md": "b732647f61f35808e0e07cb4221998e75c2851180fd44070e4b25ee5851437c6",
+  "ORDER.md": "ad33bb75eb365baa6044f14bc49ed94d1b4fb697236a3af87deab72a0ac66fe0",
+  "LANES.md": "cac7ca4600769a22b695c00da97f62fbedfe04cee0d9873bc067ce06e5f24be9",
+  "HARNESS-READINESS.md": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
+  "preflight.py": "dd07af5de705ac3ad943f37152f0e3d45439c345f8266dd1a17fd8a494617af0"
+ },
+ "amendments": [
+  {
+   "file": "LANES.md",
+   "from_sha": "cac7ca4600769a22b695c00da97f62fbedfe04cee0d9873bc067ce06e5f24be9",
+   "to_sha": "31c682e8b0c702aa8a78efbb74018ed1cc0e669aec541138cf0b49d7aa9c5f27",
+   "reason": "A2 identity prereg table (audit round 1); A1 v2 adapter prereg table + item-3 body-hash binding note (audit round 2)",
+   "base": "fca3df0",
+   "slice": "a4/a5/a7-item-1+3+5"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
+   "to_sha": "a23db0c07f124f7237ec7e237f1fd9bb43abd8ec8e9c466739e71aa040d573a5",
+   "reason": "A1 H-USE-005 implementation note; item-3 H-ID-006 note (audit round 2); authority-locks section (item 4)",
+   "base": "fca3df0",
+   "slice": "a4/a5/a7-item-1+3+5"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "dd07af5de705ac3ad943f37152f0e3d45439c345f8266dd1a17fd8a494617af0",
+   "to_sha": "c9676065d149dd06bd8149d96ff652e1b6e497131dd05bc11119039bd48601e0",
+   "reason": "item-4 three-authority re-scope (audit round 2): V1 instance / V2 protocol / V3 execution validators replace whole-tree diff",
+   "base": "fca3df0",
+   "slice": "a7-item-4"
+  }
+ ]
+}

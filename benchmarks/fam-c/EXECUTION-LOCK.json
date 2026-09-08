@@ -1,0 +1,20 @@
+{
+ "lock": "EXECUTION-LOCK",
+ "status": "open-round2",
+ "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
+ "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
+ "harness_manifest_sha256": "1641a6641a95653c5b36e36f90e9e72aa2b464ec055ef074c2ee1424e3b9b69e",
+ "harness_files": {
+  "harness/usage.py": "03fbafcc9e0a3769bbcc253234b77ffc8d898a7e648cf7ba9ae0962ba7a329ce",
+  "harness/identity.py": "9bb80248c40d6d12f2b0100ba0fa02f01ce9f6e50362bb5ce2bcfb8c0c22f65c",
+  "harness/chain.py": "47c2e758ea8014d752185085a52b3979d4a0a17e3fb970dd89d055b50f070a5a",
+  "harness/lock.py": "028668d3f5caecbf4b3bb72b52d9ed3bc73f7b4528554a0c3840d486efc30952",
+  "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
+  "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
+  "harness/dockersandbox.py": "511f58ac77c5316ff4ae0908c93123dcf39696b031d89f1d4bded9a4ba62525e",
+  "harness/admissibility.py": "93166ddc146eaa6132fdd9863cfd165da7df841c13d7df851aae307db405b4ee",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "750cd86279bdb803542b35c05e87262c091ec0829af36eb34029046e2128e595"
+ },
+ "amendments": [],
+ "minted": {"base": "fca3df0", "slice": "a7-item-4"}
+}
