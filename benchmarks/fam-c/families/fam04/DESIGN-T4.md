@@ -1,5 +1,6 @@
-# fam04 T4 near-neighbor null
-Surface: same DAG-validation shape. Flipped invariant: the graph has a
-CYCLE (a→b→c→a), so it is not a valid DAG. Blind topological-sort-only
-validation passes it; correct behavior reports invalid with the cycle.
-Checker asserts `{"valid": false, "cycle": ["a", "b", "c", "a"]}` exactly.
+# fam04 T4 design (auditor-facing; agents never see this file)
+
+Null mechanism: the graph is cyclic, so DAG-topological K does not
+apply; correct behavior reports the cycle. A solver that assumes
+acyclicity (bare topo sort) claims valid and fails. Rejection of K is
+recorded in the run trace, never in the output shape.

@@ -1,6 +1,7 @@
-# fam02 T4 near-neighbor null
+# fam02 T4 design (auditor-facing; agents never see this file)
 
-Surface: same paged shape as T0–T3. Flipped invariant: page t2 repeats
-id `b` with an updated value (22, not 2). Blind dedup-by-first-seen (or
-any cache that never refreshes) yields b=2 and fails; correct behavior
-takes latest-wins. Checker asserts b=22.
+Null mechanism: t2 repeats id `b` with a new value. Blind first-wins
+caching (the K behavior under disjoint-pages assumption) yields b=2
+and fails. The task ships a declared `POLICY` file (latest-wins) that
+a correct solver follows to b=22. Rejection of K is recorded in the
+run trace, never in the output shape.

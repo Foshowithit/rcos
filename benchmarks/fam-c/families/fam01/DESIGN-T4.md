@@ -1,8 +1,8 @@
-# fam01 T4 near-neighbor null
+# fam01 T4 design (auditor-facing; agents never see this file)
 
-Surface: same CSV shape as T0 (id/name/amount_usd/tags).
-Flipped invariant: the trailing SUMMARY row is an aggregate, NOT a
-record. A router that fires the family capability blindly emits 3
-records (including a bogus SUMMARY record or a wrong total); correct
-behavior emits exactly the 2 real records. Checker asserts exact
-canonical output, so blind reuse fails and abstain-and-solve passes.
+Null mechanism: the trailing SUMMARY row is an aggregate, not a record.
+A solver applying record-normalization blindly emits 3 records and fails;
+correct output is the 2 real records. K-inapplicability is proven by the
+blind failure, not by any abstention flag: rejection is recorded in the
+run trace (reuse_rejected=true, capability_invoked=false), never in the
+output shape (see VISIBLE.md — this file is not agent-visible).

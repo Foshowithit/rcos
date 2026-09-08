@@ -20,11 +20,8 @@
   "removed": 4
  },
  "T4": {
-  "abstained": true,
-  "answer": {
-   "total": 5,
-   "unique": 5,
-   "removed": 0
-  }
+  "total": 5,
+  "unique": 5,
+  "removed": 0
  }
 }

@@ -10,7 +10,8 @@
   "missing_in_a": [
    "D"
   ],
-  "conflicts": []
+  "conflicts": [],
+  "unreconcilable": []
  },
  "T1": {
   "matched": [
@@ -22,13 +23,13 @@
   "missing_in_a": [
    "C"
   ],
-  "conflicts": []
+  "conflicts": [],
+  "unreconcilable": []
  },
  "T2": {
   "matched": [
    "A",
    "B",
-   "C",
    "D"
   ],
   "missing_in_b": [
@@ -37,7 +38,14 @@
   "missing_in_a": [
    "F"
   ],
-  "conflicts": []
+  "conflicts": [
+   {
+    "id": "C",
+    "a": 300,
+    "b": 350
+   }
+  ],
+  "unreconcilable": []
  },
  "T3": {
   "matched": [
@@ -51,18 +59,17 @@
   "missing_in_a": [
    "G"
   ],
-  "conflicts": []
+  "conflicts": [],
+  "unreconcilable": []
  },
  "T4": {
-  "abstained": true,
-  "answer": {
-   "matched": [],
-   "missing_in_b": [],
-   "missing_in_a": [],
-   "unreconcilable": [
-    "X",
-    "Y"
-   ]
-  }
+  "matched": [],
+  "missing_in_b": [],
+  "missing_in_a": [],
+  "conflicts": [],
+  "unreconcilable": [
+   "X",
+   "Y"
+  ]
  }
 }

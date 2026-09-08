@@ -4,14 +4,16 @@
    "alpha.txt",
    "beta.txt"
   ],
-  "bad": []
+  "bad": [],
+  "unverified": []
  },
  "T1": {
   "ok": [
    "a.txt",
    "b.txt"
   ],
-  "bad": []
+  "bad": [],
+  "unverified": []
  },
  "T2": {
   "ok": [
@@ -20,25 +22,28 @@
    "e.txt",
    "f.txt"
   ],
-  "bad": []
+  "bad": [],
+  "unverified": []
  },
  "T3": {
   "ok": [
    "sub/n1.txt",
-   "sub/n2.txt",
    "top.txt"
   ],
-  "bad": []
+  "bad": [
+   {
+    "path": "sub/n2.txt",
+    "reason_includes": "size"
+   }
+  ],
+  "unverified": []
  },
  "T4": {
-  "abstained": true,
-  "answer": {
-   "ok": [],
-   "bad": [],
-   "unverified": [
-    "s3://bucket/alpha.txt",
-    "s3://bucket/beta.txt"
-   ]
-  }
+  "ok": [],
+  "bad": [],
+  "unverified": [
+   "s3://bucket/alpha.txt",
+   "s3://bucket/beta.txt"
+  ]
  }
 }

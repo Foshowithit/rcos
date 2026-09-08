@@ -1,6 +1,4 @@
-# fam02-T4 — paginated acquisition
+# fam02-T4 — paginated acquisition with declared policy
 Same protocol over `pages/t1.json…`: follow `next`, retry via
 `fetch.py`, log in `retry.log`, merge into `OUTPUT.json`.
-If the pages cannot be acquired as a disjoint series, emit
-`{"abstained": true, "reason": "...", "answer": ...}` with your best
-independent answer instead.
+A `POLICY` file in the task dir declares duplicate handling; follow it.

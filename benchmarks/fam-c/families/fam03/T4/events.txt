@@ -1,5 +1,5 @@
 order-7 CREATED
+order-7 CREATED
 order-7 PAID
-order-7 SHIPPED
 order-8 CREATED
 order-8 PAID

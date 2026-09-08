@@ -125,15 +125,12 @@
   ]
  },
  "T4": {
-  "abstained": true,
-  "answer": {
-   "valid": false,
-   "cycle": [
-    "a",
-    "b",
-    "c",
-    "a"
-   ]
-  }
+  "valid": false,
+  "cycle": [
+   "a",
+   "b",
+   "c",
+   "a"
+  ]
  }
 }
