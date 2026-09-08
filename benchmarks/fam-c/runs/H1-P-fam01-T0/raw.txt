@@ -1,0 +1,70 @@
+<think>The task is to normalize a CSV file to JSON format. Let me analyze the requirements:
+
+1. Read `input.csv` with columns: id, name, amount_usd, tags
+2. Convert amount_usd to amount_cents (multiply by 100, ensure integer)
+3. Parse tags (pipe-separated) into a list (empty if no tags)
+4. Output to `OUTPUT.json` as a list of objects
+
+Let me write the Python script:
+
+```python
+import csv
+import json
+import os
+
+def solve(src_dir, dst_path):
+    csv_path = os.path.join(src_dir, 'input.csv')
+    result = []
+    
+    with open(csv_path, 'r', newline='') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            tags_str = row['tags']
+            if tags_str:
+                tags = tags_str.split('|')
+            else:
+                tags = []
+            
+            amount_usd = float(row['amount_usd'])
+            amount_cents = int(round(amount_usd * 100))
+            
+            result.append({
+                'id': row['id'],
+                'name': row['name'],
+                'amount_cents': amount_cents,
+                'tags': tags
+            })
+    
+    with open(dst_path, 'w') as f:
+        json.dump(result, f)
+
+if __name__ == '__main__':
+    import sys
+    solve(sys.argv[1], sys.argv[2])
+```
+
+Wait, I should think about edge cases:
+- For 12.50 * 100 = 1250.0, int() gives 1250. Good.
+- For 7.99 * 100 = 799.0000000000001 (floating point issue), int() would give 799, but round() would give 799 as well... actually round(799.0000000000001) = 799. Let me check: 7.99 * 100 in Python is 798.9999999999999, so int() gives 798 which is wrong. Need round().
+
+Actually let me verify: 
+- 7.99 * 100 = 798.9999999999999 in floating point
+- int(798.9999999999999) = 798 (wrong, should be 799)
+- round(7.99 * 100) = 799
+
+So I should use round() or int(round(...)).
+
+Actually, a safer approach is to use Decimal:
+```python
+from decimal import Decimal
+amount_usd = Decimal(row['amount_usd'])
+amount_cents = int(amount_usd * 100)
+```
+
+But round() should work for these specific values. Let me use round() for simplicity, or Decimal for correctness.
+
+The task says "USD amounts convert at 100 cents" and "amount_cents (integer)". Using Decimal would be most robust.
+
+Let me write the final solution.</think>
+
+{"solver_py": "import csv\nimport json\nimport os\nfrom decimal import Decimal\n\ndef solve(src_dir, dst_path):\n    csv_path = os.path.join(src_dir, 'input.csv')\n    result = []\n    with open(csv_path, 'r', newline='', encoding='utf-8') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            tags_str = (row.get('tags') or '').strip()\n            tags = [t for t in tags_str.split('|') if t] if tags_str else []\n            amount_cents = int((Decimal(row['amount_usd']) * 100).to_integral_value())\n            result.append({\n                'id': row['id'],\n                'name': row['name'],\n                'amount_cents': amount_cents,\n                'tags': tags,\n            })\n    with open(dst_path, 'w', encoding='utf-8') as f:\n        json.dump(result, f, indent=2)\n\nif __name__ == '__main__':\n    import sys\n    solve(sys.argv[1], sys.argv[2])\n", "notes": "Reads input.csv, converts amount_usd to integer amount_cents via Decimal to avoid float rounding, splits pipe-delimited tags into list (empty list if missing/blank)."}

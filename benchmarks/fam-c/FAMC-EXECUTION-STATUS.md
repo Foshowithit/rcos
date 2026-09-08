@@ -38,19 +38,20 @@ frozen invalid-run taxonomy. No relabeling by behavior is allowed.
 
 ## Required next implementation before resuming
 
-1. Integrate `DockerSandbox` into the P/Q runner; the runner must construct
-   exactly `/work:rw` + `/task:ro`, verify the staged snapshot, and execute
-   arrivals inside `--network none` containers.
-2. Add the H2 `recorded_call`/identity/reuse records to each run and bind
-   normalizer IDs to the frozen lane identity.
-3. Add the H3 Chain + CAPABILITY_LOCK + replacement ledger records, with a
-   terminal grade only after the graph checks pass.
-4. Run the full H1/H2/H3 smoke suite from the runner; only then resume from
-   the next frozen family/order position. Existing partial evidence remains
-   quarantined and is not silently upgraded.
+- DONE: H1-integrated runner `harness-run/run_arm_h1.py` now stages work under
+  the trusted root (`/tmp/rcos-runs/famc-<id>`), mounts `/work:rw`+`/task:ro`,
+  executes arrivals inside `--network none` digest-pinned containers, and
+  copies OUTPUT back for host-side evaluation. Model calls stay harness-side.
+  First validation run `H1-P-fam01-T0` = ship (json-envelope, container rc0).
+- P/Q lane identity re-probed live and confirmed distinct: P=`MiniMax-M3`
+  (router9/v1), Q=`agnes-2-0-flash:free` (kenari.id/v1). Both reachable.
+- REMAINING (to lock the estimand): attach H2 usage records + H3 Chain/
+  CAPABILITY_LOCK/ledger per run, then the frozen sequence re-runs from the
+  next family (new runs only via run_arm_h1.py; prior ad-hoc runs stay
+  quarantined).
 
 ## Verdict
 
-`BLOCKED` for Fam-C grading until the runner is H1-integrated and the lane
-failover boundary is resolved per the frozen protocol. The frozen instance
-package is unaffected; this is an execution-harness integration block.
+`BLOCKED` until every new run emits an H2+H3-linked manifest through
+`run_arm_h1.py`; the isolation boundary itself is now in place and validated
+on one run. The frozen instance package is unaffected.

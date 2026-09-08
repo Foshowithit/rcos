@@ -121,27 +121,34 @@ def main(lane, family, task, arm, outdir, capdir=None):
     raw, receipt = call(lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
     arrival, parse_mode = extract(raw, arm)
     open(os.path.join(outdir, "arrival.json"), "w").write(json.dumps(arrival, indent=1))
-    work = os.path.join(outdir, "work")
-    visible = os.path.join("/tmp/rcos-visible", "famc", lane, family, task, arm)
+    # Stage under trusted roots (DockerSandbox rejects outside paths).
+    run_id = hashlib.sha256(f"{lane}|{family}|{task}|{arm}|{time.time()}".encode()).hexdigest()[:12]
+    work = os.path.join("/tmp/rcos-runs", "famc-" + run_id)
+    visible = os.path.join("/tmp/rcos-visible", "famc-" + run_id)
     os.makedirs(work, exist_ok=True)
     build_visible_root(taskdir, visible)
     sb = DockerSandbox(work, visible)
     # Execute arrival inside H1 jail. No evaluator/truth/checker is mounted.
+    command = None
     if arm == "correct":
-        engine = os.path.join(work, "engine.py")
-        shutil.copy2(os.path.join(capdir, "engine.py"), engine)
+        shutil.copy2(os.path.join(capdir, "engine.py"), os.path.join(work, "engine.py"))
         json.dump(arrival["records"], open(os.path.join(work, "records.json"), "w"))
         json.dump(arrival["field_map"], open(os.path.join(work, "field_map.json"), "w"))
         command = ["python3", "/work/engine.py", "/work/field_map.json",
                    "/work/records.json", "/work/OUTPUT.json"]
-    else:
+    elif arm == "disabled":
         open(os.path.join(work, "solver.py"), "w").write(arrival["solver_py"])
         command = ["python3", "/work/solver.py", "/task", "/work/OUTPUT.json"]
+    else:
+        raise ValueError("unknown arm")
     p = sb.run(command, timeout=120)
     out = os.path.join(work, "OUTPUT.json")
+    # Copy artifacts back to the committed outdir for auditability.
+    shutil.copy2(out, os.path.join(outdir, "OUTPUT.json")) if os.path.exists(out) else None
     # Host-side evaluator only after container; truth/checker never entered jail.
     checker = os.path.join(taskdir, "..", "check.py")
-    chk = subprocess.run([sys.executable, checker, task, out],
+    chk = subprocess.run([sys.executable, checker, task,
+                          os.path.join(outdir, "OUTPUT.json")],
                          capture_output=True, text=True) if os.path.exists(out) else None
     verdict = ("ship" if chk and chk.returncode == 0 else
                "fix" if chk and chk.returncode == 1 else "blocked")
