@@ -208,15 +208,51 @@ def _fixture_evidence_sha(role, cell_id):
         sort_keys=True).encode()).hexdigest()
 
 
+def t0_candidate_sha256(t0_run_dir):
+    """Read the frozen T0 candidate sha from a built T0 run's arrival
+    (the sha of its execution_payload.solver_py bytes). Positive-path
+    builders thread this into the T1 build so the pair models the
+    production lifecycle (T1 sees the exact candidate); a T1 built
+    without it models a standalone fresh solve, which SHIPs but can
+    never promote (A12b.2 fail closed)."""
+    arrival = json.load(open(os.path.join(t0_run_dir, "arrival.json")))
+    src = (arrival.get("execution_payload") or {}).get("solver_py")
+    if not isinstance(src, str) or not src.strip():
+        raise PermissionError("fixture: T0 arrival carries no candidate")
+    return hashlib.sha256(src.encode()).hexdigest()
+
+
 def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                     decision="fresh", solver_py=None, capability=None,
-                    reuse_overrides=None, manifest_overrides=None):
+                    reuse_overrides=None, manifest_overrides=None,
+                    validates_candidate=None):
     """Build ONE hermetic, production-eligible model-run cell. Returns the
     derived run directory. `cell` is an expansion cell (or any dict with the
-    same keys). Raises on any evidence defect (fail closed)."""
+    same keys). Raises on any evidence defect (fail closed).
+
+    `validates_candidate`: the sha256 of the frozen T0 candidate this T1
+    saw and executed (the production T1 prompt's candidate-validation
+    block + chain event, modeled here). T1-only; when given, the T1
+    arrival declares the candidate and the T1 chain records exactly one
+    candidate-validation event (executed == candidate: the stand-in
+    models an adapter that ran the exact candidate bytes). When absent,
+    the T1 is a standalone fresh solve: it still SHIPs, but promotion
+    refuses it (A12b.2 fail closed)."""
     d = order.ensure_namespace(root, cell["block"], cell["universe"],
                                cell["family"], tail=("runs", cell["cell_id"]))
     _clean_run_dir(d)
+    if validates_candidate is not None and cell.get("event") != "T1":
+        raise ValueError("fixture misuse: validates_candidate is T1-only "
+                         f"(got event {cell.get('event')!r})")
+    if validates_candidate is not None and (
+            not isinstance(validates_candidate, str)
+            or len(validates_candidate) != 64):
+        raise ValueError("fixture misuse: validates_candidate must be the "
+                         "64-hex frozen T0 candidate sha256")
+    if validates_candidate is not None and decision != "fresh":
+        raise ValueError("fixture misuse: validates_candidate models a "
+                         "fresh validating T1 (use_capability carries no "
+                         "solver adapter)")
     lane = cell["lane"]
     receipt_name, primary_work, model_call = _write_usage_evidence(d, lane)
 
@@ -227,6 +263,11 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                    "records": {}}
     else:
         payload = {"solver_py": solver_py or DEFAULT_SOLVER}
+        # A12b.2: a validating T1 declares the frozen candidate it saw
+        # (the production T1 arrival carries the candidate-validation
+        # declaration alongside its own fresh solver).
+        if validates_candidate is not None:
+            payload["candidate_sha256"] = validates_candidate
         # A12b.1/AC6b: the producer stand-in declares its capability
         # contract in its OWN arrival payload (verbatim frozen text, so the
         # governance cross-check passes). The promotion controller sources
@@ -313,6 +354,17 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
         os.unlink(chain_path)
     ch = CH.Chain(chain_path, freeze_commit, manifest)
     ch.append("model-call", model_call)
+    # A12b.2: a validating T1 commits exactly one candidate-validation
+    # event — the frozen candidate sha, the sha of the bytes the adapter
+    # actually ran (the stand-in models exact-byte execution, so equal),
+    # and the sha of the adapter (this run's own solver) itself.
+    if validates_candidate is not None:
+        ch.append("candidate-validation", {
+            "candidate_sha256": validates_candidate,
+            "executed_sha256": validates_candidate,
+            "adapter_sha256": hashlib.sha256(
+                payload["solver_py"].encode()).hexdigest(),
+            "validated": True})
     ev = ch.append("evaluator", {"evaluator": "fixture_modelrun",
                                  "cell_id": cell["cell_id"],
                                  "verdict": verdict,

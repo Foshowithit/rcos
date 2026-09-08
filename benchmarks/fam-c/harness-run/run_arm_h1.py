@@ -104,6 +104,8 @@ from order import (verify_expansion as order_verify_expansion,
                    completed_cells as order_completed_cells,
                    authorize as order_authorize,
                    authorize_event as order_authorize_event,
+                   expected_event as order_expected_event,
+                   run_dir as order_run_dir,
                    derive_paths as order_derive_paths,
                    check_namespace as order_check_namespace,
                    ensure_namespace as order_ensure_namespace,
@@ -190,6 +192,45 @@ COUNTERFACTUAL_CAP = ("COUNTERFACTUAL-ONLY never sent to any model: "
                       "placeholder capability content so the disabled arm "
                       "can prove pair symmetry without touching K.")
 
+# A12b.2 candidate-validation block (T1 acquisition ONLY): the frozen T0
+# candidate travels to T1 inside these delimiters — the sha256 of the exact
+# candidate bytes, the immutable source text, and the frozen argv ABI the
+# adapter must use to execute it:
+#     python3 candidate.py <input_dir> <output_path>
+# The block belongs ONLY to the T1 acquisition surface: it never appears
+# in an arm prompt (T1/T2/T4 symmetry), and strip_capability_block /
+# check_arm_symmetry cover it alongside the capability-access block, so a
+# candidate block leaking into any arm prompt fails closed.
+_CAND_BEGIN = "<<<CANDIDATE-VALIDATION-BEGIN>>>"
+_CAND_END = "<<<CANDIDATE-VALIDATION-END>>>"
+_CAND_FMT = ("\n" + _CAND_BEGIN + "\n"
+             "candidate_sha256: __CAND_SHA__\n"
+             "immutable_source:\n__CAND_SOURCE__\n"
+             "abi: python3 candidate.py <input_dir> <output_path>\n"
+             + _CAND_END + "\n")
+
+
+def build_candidate_validation_block(candidate_sha256, candidate_source):
+    """Render the T1-only candidate-validation block (fail closed)."""
+    if not (isinstance(candidate_sha256, str)
+            and len(candidate_sha256) == 64):
+        raise ValueError("CANDIDATE-VALIDATION-DENY: candidate sha256 must "
+                         f"be 64-hex, got {candidate_sha256!r}")
+    try:
+        int(candidate_sha256, 16)
+    except ValueError:
+        raise ValueError("CANDIDATE-VALIDATION-DENY: candidate sha256 must "
+                         f"be 64-hex, got {candidate_sha256!r}") from None
+    if not (isinstance(candidate_source, str) and candidate_source.strip()):
+        raise ValueError("CANDIDATE-VALIDATION-DENY: candidate source is "
+                         "empty (T1 must see the exact candidate bytes)")
+    for marker in (_CAND_BEGIN, _CAND_END, _CAP_BEGIN, _CAP_END):
+        if marker in candidate_source:
+            raise ValueError("CANDIDATE-VALIDATION-DENY: candidate source "
+                             f"contains a block delimiter {marker!r}")
+    return (_CAND_FMT.replace("__CAND_SHA__", candidate_sha256)
+            .replace("__CAND_SOURCE__", candidate_source))
+
 
 def build_envelope(taskdef, listing, block):
     """One canonical envelope: the shared task bytes both arms embed."""
@@ -209,26 +250,52 @@ def build_arm_prompt(arm, envelope, cap_manifest="", cap_notes="",
     raise ValueError("unknown arm")
 
 
-def strip_capability_block(prompt):
-    """Remove the delimited capability-access block (inclusive, plus the ONE
-    separator newline that frames it on each side). Returns the prompt
-    unchanged when no block is present.
-
-    The block is emitted as "\n" + BEGIN + ... + END + "\n", so the
-    treatment prompt minus the block still carries the framing newline that
-    precedes it; consuming that single adjacent newline is what makes the
-    stripped treatment bytes EQUAL the control bytes rather than control + a
-    stray blank line.
-    """
-    if _CAP_BEGIN not in prompt:
+def _strip_one(prompt, begin, end):
+    """Remove one delimited block (inclusive, plus the ONE separator newline
+    that frames it on each side). Returns the prompt unchanged when no
+    block is present."""
+    if begin not in prompt:
         return prompt
-    i = prompt.index(_CAP_BEGIN)
-    j = prompt.index(_CAP_END, i) + len(_CAP_END)
+    i = prompt.index(begin)
+    j = prompt.index(end, i) + len(end)
     head, tail = prompt[:i], prompt[j:]
     if head.endswith("\n") and tail.startswith("\n"):
         head = head[:-1]
         tail = tail[1:]
     return head + tail
+
+
+def _strip_capability_only(prompt):
+    """Remove ONLY the capability-access block. The acquisition-surface
+    manifest fields use this (not the full stripper): a T1 acquisition
+    prompt legitimately carries the candidate-validation block, which is
+    not capability content and must not flip those fields."""
+    return _strip_one(prompt, _CAP_BEGIN, _CAP_END)
+
+
+def strip_capability_block(prompt):
+    """Remove every model-context augmentation block: the delimited
+    capability-access block AND the T1-only candidate-validation block
+    (each inclusive, plus the ONE separator newline that frames it on
+    each side). Returns the prompt unchanged when no block is present.
+
+    The capability block is emitted as "\n" + BEGIN + ... + END + "\n"
+    (and the candidate block the same way), so the treatment prompt minus
+    the block still carries the framing newline that precedes it;
+    consuming that single adjacent newline is what makes the stripped
+    treatment bytes EQUAL the control bytes rather than control + a
+    stray blank line. Leak-stripping stays true when a candidate block
+    leaks into an arm prompt: removing both blocks still recovers the
+    control bytes.
+    """
+    out = prompt
+    for _ in range(4):
+        new = _strip_one(_strip_one(out, _CAP_BEGIN, _CAP_END),
+                         _CAND_BEGIN, _CAND_END)
+        if new == out:
+            return out
+        out = new
+    return out
 
 
 def _first_diff(a, b):
@@ -270,6 +337,15 @@ def check_arm_symmetry(correct_prompt, disabled_prompt, envelope):
     if _CAP_BEGIN in disabled_prompt or _CAP_END in disabled_prompt:
         out.append("SYMMETRY-FAIL: capability-access block present in "
                    "control prompt")
+    # A12b.2: the candidate-validation block belongs ONLY to the T1
+    # acquisition surface. In either arm prompt it is a leak channel (the
+    # frozen candidate bytes), so it fails closed here; the full stripper
+    # above still recovers control bytes for diagnostics.
+    if _CAND_BEGIN in correct_prompt or _CAND_END in correct_prompt or \
+            _CAND_BEGIN in disabled_prompt or _CAND_END in disabled_prompt:
+        out.append("SYMMETRY-FAIL: candidate-validation block present in "
+                   "an arm prompt (it belongs only to the T1 acquisition "
+                   "surface, never to T1/T2/T4 arm prompts)")
     for name, prompt in (("treatment", correct_prompt),
                          ("control", disabled_prompt)):
         if prompt.count(envelope) != 1:
@@ -628,7 +704,7 @@ def _verify_capability(capdir, cell=None):
 
 def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
                 identity_family, cap_info, reuse_path, checker_sha, truth_sha,
-                verdict, output_sha, promote_info):
+                verdict, output_sha, promote_info, candidate_validation=None):
     """Emit the H3 evidence chain for one completed run (fail closed).
     Genesis binds `manifest`; the on-disk H1-RUN-MANIFEST.json must never be
     rewritten after this call (rewriting would break genesis hash equality)."""
@@ -737,6 +813,31 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
             "reuse_rejection_reason": ledger.get("reuse_rejection_reason"),
             "materially_contributed": contributed,
             "evidence": evidence})
+    # A12b.2: exactly one candidate-validation event on a T1 acquisition
+    # run — the frozen candidate sha, the sha of the bytes the adapter
+    # actually ran, the sha of the adapter itself, and the validation
+    # verdict. The promotion controller re-derives this committed event; a
+    # T1 chain without it can never promote. Shape is enforced here (fail
+    # closed); the candidate binding is enforced at promotion time.
+    if candidate_validation is not None:
+        cv = candidate_validation
+        for f in ("candidate_sha256", "executed_sha256", "adapter_sha256"):
+            if not (isinstance(cv.get(f), str) and len(cv[f]) == 64):
+                raise RuntimeError(f"CHAIN-CANDIDATE-DENY: {f} must be "
+                                   f"64-hex, got {cv.get(f)!r}")
+            try:
+                int(cv[f], 16)
+            except ValueError:
+                raise RuntimeError(f"CHAIN-CANDIDATE-DENY: {f} must be "
+                                   f"64-hex, got {cv[f]!r}") from None
+        if cv.get("validated") is not True:
+            raise RuntimeError("CHAIN-CANDIDATE-DENY: an unvalidated "
+                               "candidate cannot be wired as validation")
+        c.append("candidate-validation", {
+            "candidate_sha256": cv["candidate_sha256"],
+            "executed_sha256": cv["executed_sha256"],
+            "adapter_sha256": cv["adapter_sha256"],
+            "validated": True})
     # evaluator link: sealed truth + checker hashes + host-side outcome.
     ev_link = c.append("evaluator", {
         "checker_sha256": checker_sha, "truth_sha256": truth_sha,
@@ -1017,7 +1118,7 @@ def selfcheck_prompt():
 
 
 def prepare_arm(lane, family, task, arm, capdir, wire, run_id,
-                cell=None):
+                cell=None, candidate=None):
     """Item-6 ONE SOURCE SNAPSHOT (audit round 2 item 6).
 
     Stage the agent-visible root ONCE (sealed copy: prompt.md + declared
@@ -1080,10 +1181,44 @@ def prepare_arm(lane, family, task, arm, capdir, wire, run_id,
         twin = build_arm_prompt("disabled", envelope)
         sym = check_arm_symmetry(prompt, twin, envelope)
     else:
-        prompt = build_arm_prompt("disabled", envelope)
-        twin = build_arm_prompt("correct", envelope, COUNTERFACTUAL_CAP,
-                                COUNTERFACTUAL_CAP, COUNTERFACTUAL_CAP)
-        sym = check_arm_symmetry(twin, prompt, envelope)
+        base = build_arm_prompt("disabled", envelope)
+        acq_t1 = (arm == "acquisition" and cell is not None
+                  and cell.get("event") == "T1")
+        if acq_t1:
+            # A12b.2: a T1 acquisition prompt carries the frozen T0
+            # candidate in the delimited candidate-validation block (T1
+            # sees the exact candidate). The block sits strictly after
+            # the shared envelope, exactly once; removing both block
+            # types must recover the capability-free base bytes.
+            if candidate is None:
+                raise ValueError(
+                    "CANDIDATE-VALIDATION-DENY: a T1 acquisition prompt "
+                    "requires the frozen T0 candidate (sha256 + immutable "
+                    "source); a T1 that never sees the candidate can "
+                    "never promote")
+            block = build_candidate_validation_block(
+                candidate["sha256"], candidate["source"])
+            prompt = _PRE + envelope + block + _OUT
+            sym = []
+            if prompt.count(_CAND_BEGIN) != 1 \
+                    or prompt.count(_CAND_END) != 1:
+                sym.append("SYMMETRY-FAIL: candidate-validation "
+                           "delimiters != 1 each in the T1 prompt")
+            elif strip_capability_block(prompt) != base:
+                sym.append("SYMMETRY-FAIL: T1 prompt minus the "
+                           "candidate-validation block != the "
+                           "capability-free base - shared-region "
+                           "divergence at "
+                           + _first_diff(strip_capability_block(prompt),
+                                         base))
+            if not prompt.startswith(_PRE) or not prompt.endswith(_OUT):
+                sym.append("SYMMETRY-FAIL: T1 prompt does not carry the "
+                           "shared preamble and output contract")
+        else:
+            prompt = base
+            twin = build_arm_prompt("correct", envelope, COUNTERFACTUAL_CAP,
+                                    COUNTERFACTUAL_CAP, COUNTERFACTUAL_CAP)
+            sym = check_arm_symmetry(twin, prompt, envelope)
     # H-CTX-002 mechanical pair symmetry: any one-byte hint asymmetry in
     # the shared region, any stray capability block, or a missing/duplicate
     # delimiter FAILS CLOSED before any model call.
@@ -1226,11 +1361,39 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     else:
         os.makedirs(outdir, exist_ok=True)
     taskdir = os.path.join(BASE, "families", family, task)
+    # ---- A12b.2: the T1 candidate-validation surface --------------------
+    # T1 sees the EXACT frozen candidate: loaded here from the validated
+    # T0 arrival in THIS universe (never supplied, never re-derived from
+    # prose). A T1 without a frozen T0 candidate cannot be prompted, let
+    # alone promoted.
+    candidate = None
+    if acq_event == "T1":
+        t0cell = order_expected_event(expansion, block, family, "T0",
+                                      acq_universe)
+        if t0cell is None:
+            raise SystemExit(
+                "ACQUISITION-CANDIDATE-DENY: order has no T0 cell for "
+                f"{block}/{family}/{acq_universe}; a T1 without a frozen "
+                f"T0 candidate cannot run")
+        t0arr_p = os.path.join(order_run_dir(BASE, t0cell), "arrival.json")
+        try:
+            t0arr = json.load(open(t0arr_p))
+            t0src = (t0arr.get("execution_payload") or {}).get("solver_py")
+        except (ValueError, OSError) as e:
+            raise SystemExit(
+                "ACQUISITION-CANDIDATE-DENY: T0 arrival unreadable at "
+                f"{t0arr_p}: {e}")
+        if not (isinstance(t0src, str) and t0src.strip()):
+            raise SystemExit(
+                "ACQUISITION-CANDIDATE-DENY: T0 arrival carries no "
+                "execution_payload.solver_py candidate")
+        candidate = {"sha256": hashlib.sha256(t0src.encode()).hexdigest(),
+                     "source": t0src}
     # ---- Item-6 ONE SOURCE SNAPSHOT (audit round 2 item 6) -------------
     run_id = hashlib.sha256(
         f"{lane}|{family}|{task}|{arm}|{time.time()}".encode()).hexdigest()[:12]
     prep = prepare_arm(lane, family, task, arm, capdir, wire, run_id,
-                       cell=cell)
+                       cell=cell, candidate=candidate)
     prompt = prep["prompt"]
     envelope = prep["envelope"]
     work, visible = prep["work"], prep["visible"]
@@ -1268,6 +1431,51 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                             cap_engine, sb)
     verdict = execr["verdict"]
     output_sha = execr["output_sha256"]
+
+    # ---- A12b.2: execute the SAME frozen candidate ----------------------
+    # The adapter (this run's own solver) was prompted with the immutable
+    # candidate source; the runner now executes those exact frozen bytes
+    # through the same argv ABI in this run's jail and commits what ran:
+    # executed_sha256 is the sha of the bytes actually executed (hash-
+    # verified against the locked candidate before execution, engine-
+    # style — fail closed on mismatch). A validation failure refuses the
+    # run BEFORE any chain is wired: no chain, no COMPLETE cell, no
+    # promotion — while the T1 cell itself may still SHIP on its own
+    # solver verdict elsewhere. (The cell verdict above still comes from
+    # the adapter's own execution; validation is the promotion gate.)
+    candidate_validation = None
+    if acq_event == "T1":
+        cand_path = os.path.join(work, "candidate.py")
+        with open(cand_path, "w") as f:
+            f.write(candidate["source"])
+        executed_sha = h(cand_path)
+        if executed_sha != candidate["sha256"]:
+            raise RuntimeError(
+                "CANDIDATE-VALIDATION-FAIL: materialized candidate bytes "
+                f"{executed_sha[:12]} != frozen candidate "
+                f"{candidate['sha256'][:12]}")
+        shutil.copy2(cand_path, os.path.join(outdir, "candidate.py"))
+        cand_out = os.path.join(work, "CANDIDATE-OUTPUT.json")
+        cand_p = sb.run(["python3", "/work/candidate.py", "/task",
+                         "/work/CANDIDATE-OUTPUT.json"], timeout=120)
+        if os.path.exists(cand_out):
+            shutil.copy2(cand_out,
+                         os.path.join(outdir, "CANDIDATE-OUTPUT.json"))
+        adapter_sha = hashlib.sha256(
+            arrival["execution_payload"]["solver_py"].encode()).hexdigest()
+        validated = (cand_p.returncode == 0
+                     and executed_sha == candidate["sha256"]
+                     and os.path.exists(cand_out))
+        if not validated:
+            raise RuntimeError(
+                "CANDIDATE-VALIDATION-FAIL: the frozen T0 candidate did "
+                f"not execute on this T1 surface (rc="
+                f"{cand_p.returncode}, output={os.path.exists(cand_out)}); "
+                f"the T1 adapter cannot claim validation it did not run")
+        candidate_validation = {
+            "candidate_sha256": candidate["sha256"],
+            "executed_sha256": executed_sha,
+            "adapter_sha256": adapter_sha, "validated": True}
 
     # ---- H2/H3 wiring (skipped only under the unwired dev escape) ----
     # Reuse ledger: P0-2 — every lifecycle field is DERIVED from the actual
@@ -1366,11 +1574,15 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                 # guess: a capability-access block is present iff removing it
                 # changes the bytes. An acquisition cell must record False
                 # (no capability exists before PROMOTION); non-acquisition
-                # cells record None for the acquisition-specific field.
+                # cells record None for the acquisition-specific field. The
+                # capability-only stripper is used (not the full
+                # leak-stripper): a T1 acquisition prompt legitimately
+                # carries the candidate-validation block, which is not
+                # capability content.
                 "prompt_has_capability_block": bool(
-                    strip_capability_block(prompt) != prompt),
+                    _strip_capability_only(prompt) != prompt),
                 "acquisition_prompt_has_capability_block": (
-                    bool(strip_capability_block(prompt) != prompt)
+                    bool(_strip_capability_only(prompt) != prompt)
                     if acq_event else None),
                 "order_sha256": expansion["order_sha256"],
                 "instance_freeze_commit": instance_freeze_commit,
@@ -1416,7 +1628,8 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
         truth_sha = execr["truth_sha256"]
         _wire_chain(outdir, frozen, manifest, receipt, nu_path, id_path,
                     identity_family, cap_info, reuse_path, checker_sha,
-                    truth_sha, verdict, output_sha, None)
+                    truth_sha, verdict, output_sha, None,
+                    candidate_validation)
         # H1-RUN-MANIFEST.json must NOT be rewritten after _wire_chain:
         # genesis binds its hash and any rewrite would break the chain.
     print(f"{lane}/{family}/{task}/{arm}: {verdict} ({parse_mode}, "

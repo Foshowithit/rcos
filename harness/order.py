@@ -898,6 +898,52 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
                    "causally rooted in this universe's own acquisition)")
     if want_sha is None and not out:
         out.append("promotion provenance: candidate sha256 not derivable")
+    # A12b.2: the T1 chain must commit exactly one candidate-validation
+    # event for this SAME frozen candidate — re-derived HERE from the
+    # committed chain, never trusted from the receipt. A T1 that never
+    # validated can never promote, even with a well-formed candidate
+    # root (the controller enforces the same rule; this validator
+    # re-checks it so a forged receipt cannot pass cell state).
+    if "T1" not in runs:
+        out.append("promotion provenance: T1 acquisition run not "
+                   "validated (candidate validation not re-derivable)")
+    elif want_sha is not None:
+        try:
+            _t1_links = [json.loads(line)
+                         for line in open(os.path.join(
+                             runs["T1"], "EVIDENCE-CHAIN.jsonl"))
+                         if line.strip()]
+        except (ValueError, OSError) as e:
+            out.append("promotion provenance: T1 evidence chain "
+                       f"unreadable: {e}")
+            _t1_links = None
+        if _t1_links is not None:
+            _cvs = [l for l in _t1_links
+                    if l.get("kind") == "candidate-validation"]
+            _cv = _cvs[0].get("payload") or {} if len(_cvs) == 1 else {}
+            try:
+                _adapter_ok = (isinstance(_cv.get("adapter_sha256"), str)
+                               and len(_cv["adapter_sha256"]) == 64
+                               and int(_cv["adapter_sha256"], 16) >= 0)
+            except (ValueError, TypeError):
+                _adapter_ok = False
+            if len(_cvs) != 1 or \
+                    _cv.get("candidate_sha256") != want_sha or \
+                    _cv.get("executed_sha256") != want_sha or \
+                    _cv.get("validated") is not True or not _adapter_ok:
+                out.append("promotion provenance: T1 chain carries no "
+                           "valid candidate-validation event for the "
+                           "frozen candidate (a T1 with no "
+                           "candidate-validation event can never promote)")
+            else:
+                _rec_cv = cand.get("t1_validation") or {}
+                if _rec_cv.get("validated") is not True or any(
+                        _rec_cv.get(k) != _cv.get(k)
+                        for k in ("candidate_sha256", "executed_sha256",
+                                  "adapter_sha256")):
+                    out.append("promotion provenance: receipt candidate "
+                               "t1_validation != the committed T1 chain "
+                               "event")
     # semantic core must be the FROZEN family contract, not a receipt claim
     kp = os.path.join(fam_c_dir, "families", cell["family"], "K.md")
     sc = r.get("semantic_core")

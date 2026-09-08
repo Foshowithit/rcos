@@ -164,15 +164,18 @@ def tip_of(c):
     return tip
 
 
-def complete_model_cell(c, capability=None, decision="fresh"):
+def complete_model_cell(c, capability=None, decision="fresh",
+                        validates_candidate=None):
     """A hermetic, genuinely ELIGIBLE model-run cell built by the shared
     fixture: production manifest + real usage receipt/normalized artifact +
     identity binding + real evidence chain + arrival + reuse record. A
     fixture the production classifier rejects would prove nothing about the
     production classifier (audit round 2: ZERO-WORK and unwired ledgers are
-    INADMISSIBLE)."""
+    INADMISSIBLE). `validates_candidate` threads the frozen T0 candidate
+    into a validating T1 (A12b.2)."""
     d = build_model_run(state_root, cell=c, freeze_commit=FREEZE_COMMIT,
-                        capability=capability, decision=decision)
+                        capability=capability, decision=decision,
+                        validates_candidate=validates_candidate)
     return d, json.load(open(os.path.join(d, "H1-RUN-MANIFEST.json")))
 
 
@@ -183,8 +186,12 @@ def st(c):
 # ---------------------------------------------------------------------------
 # A. acquisition cells: model-run contract, REAL verifier + REAL classifier
 # ---------------------------------------------------------------------------
-for c in (T0, T1):
-    complete_model_cell(c)
+# A12b.2: the pair models the production lifecycle — T1 sees the exact
+# frozen T0 candidate, so the T1 chain commits the candidate-validation
+# event promotion requires.
+from fixture_modelrun import t0_candidate_sha256 as _t0sha
+_d0, _m0 = complete_model_cell(T0)
+complete_model_cell(T1, validates_candidate=_t0sha(_d0))
 
 a0, a1 = st(T0), st(T1)
 check("T0 acquisition cell validated COMPLETE (manifest+chain+admissibility)",
@@ -447,8 +454,9 @@ shutil.move(os.path.join(capdir, "adapter_notes.md.bak"),
 # ---------------------------------------------------------------------------
 # The order is GLOBAL: the C universe's four fam05 cells (indices 4..7) run
 # before A's T2 (index 8), so they must be genuinely complete first.
-for ev in ("T0", "T1"):
-    complete_model_cell(cell(ev, "C"))
+# A12b.2: the C pair is lifecycle-valid too (validating T1).
+_c0, _cm0 = complete_model_cell(cell("T0", "C"))
+complete_model_cell(cell("T1", "C"), validates_candidate=_t0sha(_c0))
 promotion.promote_universe(state_root, "PQ", "fam05", "C", FREEZE_COMMIT,
                            "harness-validation")
 promotion.lock_universe(state_root, "PQ", "fam05", "C", FREEZE_COMMIT,

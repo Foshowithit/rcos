@@ -3,22 +3,22 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "7fb59d3bc213bb44e6edd8aedde2dfca97a75bb483a9f1f05f6e1ec2120ad694",
+ "harness_manifest_sha256": "c9bc78931e54ad7eacbcad6764005b778fdaacf9ba4c16e8f7d35fd85a20dbbc",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
-  "harness/chain.py": "20c06a0769c692704788dfa80cc4bfddf2777f9ea90112469d0a186ee87202d7",
+  "harness/chain.py": "cd5ba7b92c889e239d2513276a53483fd6007d3f147809cab583d039850a3df5",
   "harness/lock.py": "7e679c0b0f7bd1ce5305d3c2032ffe5b41bcf498c92b141aac02886a828079e9",
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "c11ac91cb96f39aee788f1749e90ed09b13765b37e6d6da99d83d00925c2f0fc",
-  "harness/order.py": "f9973c02e73122d18143b56065fcf28359da2e331ce473d49eacf1c5691e6c0d",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "57d35119d57ca0d6c8cdfc96c4ae63454b9e5fa5bbc5b810ea3fc7e7e0bd32e3",
+  "harness/order.py": "77c92fc21c2db40a0b107234cdecd3e43cee5eeefe2268ce77a193839e3d4a51",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "52fb6c68631c03ab2b659a7ec2ff231e2d5083dbe540e42298ba0854d1a3d932",
+  "harness/promotion.py": "4de54fdcf06ffd39e973f9f62fa2afcf29814c867a95b4fe24ca176abb64ffbd",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
   "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c"
@@ -283,6 +283,31 @@
    },
    "reason": "A12b.5 frozen governed T4 semantic-ID registry: new harness/t4_ids.py single resolver; promotion.py and order.py rewired to it (private registry reads deleted)",
    "slice": "a12b.5",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "7fb59d3bc213bb44e6edd8aedde2dfca97a75bb483a9f1f05f6e1ec2120ad694",
+   "to_manifest": "c9bc78931e54ad7eacbcad6764005b778fdaacf9ba4c16e8f7d35fd85a20dbbc",
+   "files": {
+    "harness/chain.py": {
+     "from_sha": "20c06a0769c692704788dfa80cc4bfddf2777f9ea90112469d0a186ee87202d7",
+     "to_sha": "cd5ba7b92c889e239d2513276a53483fd6007d3f147809cab583d039850a3df5"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "c11ac91cb96f39aee788f1749e90ed09b13765b37e6d6da99d83d00925c2f0fc",
+     "to_sha": "57d35119d57ca0d6c8cdfc96c4ae63454b9e5fa5bbc5b810ea3fc7e7e0bd32e3"
+    },
+    "harness/order.py": {
+     "from_sha": "f9973c02e73122d18143b56065fcf28359da2e331ce473d49eacf1c5691e6c0d",
+     "to_sha": "77c92fc21c2db40a0b107234cdecd3e43cee5eeefe2268ce77a193839e3d4a51"
+    },
+    "harness/promotion.py": {
+     "from_sha": "52fb6c68631c03ab2b659a7ec2ff231e2d5083dbe540e42298ba0854d1a3d932",
+     "to_sha": "4de54fdcf06ffd39e973f9f62fa2afcf29814c867a95b4fe24ca176abb64ffbd"
+    }
+   },
+   "reason": "A12b.2 T1 candidate-validation surface: run_arm_h1 prompt block + chain event + T1 execution wiring; chain.py admits the candidate-validation link kind; promotion.py fail-closed derive_candidate; order.py re-derives T1 validation",
+   "slice": "a12b.2",
    "status_after": "open-round2"
   }
  ],

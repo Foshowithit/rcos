@@ -147,7 +147,8 @@ class Chain:
             if recomputed != rec.get("link_hash"):
                 findings.append(f"link {i}: content altered post-write")
             if rec.get("kind") not in ("model-call", "capability-event",
-                                       "evaluator", "grade", "note"):
+                                       "candidate-validation",
+                                        "evaluator", "grade", "note"):
                 findings.append(f"link {i}: unknown kind {rec.get('kind')!r}")
             expect_prev = rec.get("link_hash")
         grades = [i for i, r in enumerate(self.links)

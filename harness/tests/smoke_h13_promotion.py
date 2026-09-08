@@ -33,7 +33,7 @@ sys.path.insert(0, HERE)
 import order  # noqa: E402
 import lock as LOCK  # noqa: E402
 import promotion  # noqa: E402
-from fixture_modelrun import build_model_run  # noqa: E402
+from fixture_modelrun import build_model_run, t0_candidate_sha256  # noqa: E402
 
 CHECKS = []
 ROOT = None
@@ -98,11 +98,19 @@ def cell_for(block, family, event, universe):
     return c
 
 
-def build_pair(universe="A", solver0=SOLVER_T0, solver1=SOLVER_T1):
+def build_pair(universe="A", solver0=SOLVER_T0, solver1=SOLVER_T1,
+               validate=True):
+    """Build a genuinely eligible T0/T1 pair. `validate=True` (default)
+    models the production lifecycle: T1 sees the exact frozen T0
+    candidate, so the T1 chain commits the candidate-validation event
+    promotion requires (A12b.2). `validate=False` models two independent
+    fresh solves — which SHIP but can never promote."""
     t0 = cell_for("PQ", "fam05", "T0", universe)
     t1 = cell_for("PQ", "fam05", "T1", universe)
-    build_model_run(ROOT, cell=t0, freeze_commit=FREEZE, solver_py=solver0)
-    build_model_run(ROOT, cell=t1, freeze_commit=FREEZE, solver_py=solver1)
+    d0 = build_model_run(ROOT, cell=t0, freeze_commit=FREEZE, solver_py=solver0)
+    build_model_run(ROOT, cell=t1, freeze_commit=FREEZE, solver_py=solver1,
+                    validates_candidate=(t0_candidate_sha256(d0)
+                                         if validate else None))
     return t0, t1
 
 
@@ -224,6 +232,19 @@ def main():
     refuses("estimand grade for an unregistered family refuses",
             promotion.t4_semantic_id, "PROMOTION-DENY", ROOT, "fam99",
             "0" * 64, "estimand")
+
+    # ---- A12b.2: a T1 with no candidate-validation event can NEVER ----
+    # promote (fail closed), while the SHIP verdict stands. Two
+    # independent fresh solves in a fresh universe stay COMPLETE cells
+    # but promotion refuses with PROMOTION-DENY.
+    build_pair(universe="C", validate=False)
+    ok("independent fresh T1 still SHIPs its cell",
+       order.cell_state(
+           ROOT, cell_for("PQ", "fam05", "T1", "C"), FREEZE)["status"]
+       == "COMPLETE")
+    refuses("independent fresh T1 pair never promotes (fail closed)",
+            promotion.promote_universe, "PROMOTION-DENY", ROOT, "PQ",
+            "fam05", "C", FREEZE, "harness-validation")
 
     # ---- attacks: provenance, order, legacy locks ----------------------
     exp = order.load_expansion(ROOT)

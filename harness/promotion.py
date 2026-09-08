@@ -470,10 +470,63 @@ def _producer_identity(t0_ev, t1_ev):
     return out
 
 
+def _t1_candidate_validation(t1_run_dir, t0_sha):
+    """Re-derive the T1 candidate-validation evidence from the committed
+    T1 chain (fail closed). The chain must carry EXACTLY ONE
+    candidate-validation event binding the SAME frozen T0 candidate:
+    candidate_sha256 == the T0 root, executed_sha256 == the T0 root (the
+    adapter ran the exact candidate bytes), adapter_sha256 present (which
+    adapter ran), validated True. A T1 with no such event — a standalone
+    fresh solve that never saw the candidate — can NEVER promote."""
+    links = _read_chain_links(t1_run_dir)
+    evs = [l for l in links if l.get("kind") == "candidate-validation"]
+    if len(evs) != 1:
+        raise PermissionError(
+            f"PROMOTION-DENY T1 chain carries {len(evs)} "
+            f"candidate-validation events, need exactly one (a T1 with "
+            f"no candidate-validation event never validated the frozen "
+            f"candidate and can never promote)")
+    pay = evs[-1].get("payload") or {}
+    for f in ("candidate_sha256", "executed_sha256", "adapter_sha256"):
+        v = pay.get(f)
+        if not (isinstance(v, str) and len(v) == 64):
+            raise PermissionError(
+                f"PROMOTION-DENY T1 candidate-validation event carries "
+                f"no 64-hex {f} (got {v!r})")
+        try:
+            int(v, 16)
+        except ValueError:
+            raise PermissionError(
+                f"PROMOTION-DENY T1 candidate-validation event carries "
+                f"no 64-hex {f} (got {v!r})") from None
+    if pay.get("candidate_sha256") != t0_sha:
+        raise PermissionError(
+            f"PROMOTION-DENY T1 validated candidate "
+            f"{pay['candidate_sha256'][:12]} != the frozen T0 candidate "
+            f"{t0_sha[:12]} (independent validation must test the SAME "
+            f"frozen candidate)")
+    if pay.get("executed_sha256") != t0_sha:
+        raise PermissionError(
+            f"PROMOTION-DENY T1 adapter executed "
+            f"{pay['executed_sha256'][:12]} != the frozen T0 candidate "
+            f"{t0_sha[:12]} (validation means executing the SAME "
+            f"candidate bytes)")
+    if pay.get("validated") is not True:
+        raise PermissionError(
+            f"PROMOTION-DENY T1 candidate-validation event is not "
+            f"validated (validated={pay.get('validated')!r})")
+    return {"candidate_sha256": pay["candidate_sha256"],
+            "executed_sha256": pay["executed_sha256"],
+            "adapter_sha256": pay["adapter_sha256"], "validated": True}
+
+
 def derive_candidate(t0_ev, t1_ev, t0_run_dir):
     """The candidate is the T0 arrival's `solver_py` payload, content-
-    addressed. T1 must not alter it (frozen rule); if T1 declares a
-    candidate hash it must match exactly."""
+    addressed. T1 must have VALIDATED it: the T1 chain carries exactly one
+    candidate-validation event for this same candidate (fail closed — the
+    no-declaration path is DELETED; a standalone fresh T1 may still SHIP
+    its own cell, but it can never promote). If T1 declares a candidate
+    hash in its arrival it must match exactly."""
     ap = os.path.join(t0_run_dir, "arrival.json")
     arrival = _read_json(ap)
     payload = _arrival_payload(arrival)
@@ -486,8 +539,13 @@ def derive_candidate(t0_ev, t1_ev, t0_run_dir):
                               f"{arrival.get('decision')!r} != 'fresh' "
                               "(acquisition must solve fresh)")
     sha = _sha_bytes(src.encode())
-    declared = None
+    # A12b.2: the fail-closed validation gate — the T1 chain must prove
+    # the adapter saw and executed THIS frozen candidate. No event, no
+    # promotion (a standalone fresh T1 still SHIPs its cell; SHIP is not
+    # promotion).
     t1_dir = t1_ev["run_dir"]
+    t1_validation = _t1_candidate_validation(t1_dir, sha)
+    declared = None
     t1_arr = _read_json(os.path.join(t1_dir, "arrival.json"))
     t1_payload = _arrival_payload(t1_arr)
     if isinstance(t1_payload.get("candidate_sha256"), str):
@@ -516,7 +574,8 @@ def derive_candidate(t0_ev, t1_ev, t0_run_dir):
             "arrival_sha256": t0_ev["arrival_sha256"],
             "payload_sha256": _sha_bytes(_canon(payload).encode()),
             "t1_used_candidate": t1_arr.get("decision") == "use_capability",
-            "t1_decision": t1_arr.get("decision")}
+            "t1_decision": t1_arr.get("decision"),
+            "t1_validation": t1_validation}
 
 
 # ---------------------------------------------------------------------------
@@ -669,7 +728,8 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
         "source_cells": dict(cell["source_cells"]),
         "candidate": {k: cand[k] for k in ("sha256", "field",
                                            "arrival_sha256", "payload_sha256",
-                                           "t1_used_candidate", "t1_decision")},
+                                           "t1_used_candidate", "t1_decision",
+                                           "t1_validation")},
         "artifacts": arts,
         "semantic_core": contract[0],
         "semantic_core_sha256": core_sha,

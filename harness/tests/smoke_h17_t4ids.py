@@ -133,7 +133,8 @@ check("a registry id outside PREREG refuses (PROMOTION-DENY)", refused)
 # --- 4. end-to-end: rogue registry denies through the controller --------
 import order  # noqa: E402
 import promotion  # noqa: E402
-from fixture_modelrun import build_model_run  # noqa: E402
+from fixture_modelrun import (build_model_run,  # noqa: E402
+                              t0_candidate_sha256)
 
 FREEZE = json.load(open(os.path.join(FAMC, "FREEZE.json")))["freeze_commit"]
 SOLVER = ("def solve(input_dir, output_path):\n"
@@ -165,8 +166,9 @@ def build_pair(root):
     exp = order.load_expansion(root)
     t0 = order.expected_event(exp, "PQ", "fam05", "T0", "A")
     t1 = order.expected_event(exp, "PQ", "fam05", "T1", "A")
-    build_model_run(root, cell=t0, freeze_commit=FREEZE, solver_py=SOLVER)
-    build_model_run(root, cell=t1, freeze_commit=FREEZE, solver_py=SOLVER)
+    d0 = build_model_run(root, cell=t0, freeze_commit=FREEZE, solver_py=SOLVER)
+    build_model_run(root, cell=t1, freeze_commit=FREEZE, solver_py=SOLVER,
+                    validates_candidate=t0_candidate_sha256(d0))
 
 
 root_ok = hermetic()
@@ -247,6 +249,193 @@ f_mut = [f for f in PF.validate_protocol(v2, FC)
          if "T4-SEMANTIC-IDS.json" in f]
 check("registry drift with no listed amendment is a V2 finding",
       any("no listed forward amendment" in f for f in f_mut), str(f_mut))
+
+# --- 6. A12b.2 T1 candidate-validation surface -----------------------------
+import run_arm_h1 as RA  # noqa: E402
+
+_CAND_SHA = "ab" * 32
+_CAND_SRC = "import sys\nprint('candidate')\n"
+block = RA.build_candidate_validation_block(_CAND_SHA, _CAND_SRC)
+check("candidate block carries the delimited sha + source + argv ABI",
+      block.count(RA._CAND_BEGIN) == 1 and block.count(RA._CAND_END) == 1
+      and f"candidate_sha256: {_CAND_SHA}" in block
+      and "abi: python3 candidate.py <input_dir> <output_path>" in block
+      and _CAND_SRC in block)
+for bad_sha, bad_src, why in ((None, _CAND_SRC, "non-sha"),
+                              ("zz" * 32, _CAND_SRC, "non-hex"),
+                              (_CAND_SHA, "  ", "empty source"),
+                              (_CAND_SHA, "x\n" + RA._CAND_END + "\n",
+                               "delimiter smuggling")):
+    try:
+        RA.build_candidate_validation_block(bad_sha, bad_src)
+        refused = False
+    except ValueError:
+        refused = True
+    check(f"candidate block builder refuses {why}", refused)
+
+_env = RA.build_envelope("TASKDEF", "a.txt", "--- a.txt ---\nAA")
+_t1prompt = RA._PRE + _env + block + RA._OUT
+check("full stripper removes the candidate block (leak-stripping)",
+      RA.strip_capability_block(_t1prompt) == RA._PRE + _env + RA._OUT)
+_cap = RA._CAP_FMT.replace("__MANIFEST__", "M").replace("__NOTES__", "N") \
+    .replace("__ENGINE__", "E")
+_both = RA._PRE + _env + _cap + block + RA._OUT
+check("full stripper removes BOTH blocks together",
+      RA.strip_capability_block(_both) == RA._PRE + _env + RA._OUT)
+_cor = RA.build_arm_prompt("correct", _env, "M", "N", "E")
+_dis = RA.build_arm_prompt("disabled", _env)
+check("arm symmetry refuses a candidate block leaked into treatment",
+      RA.check_arm_symmetry(_cor + "\n" + RA._CAND_BEGIN + "\nX\n"
+                            + RA._CAND_END, _dis, _env) != [])
+check("arm symmetry refuses a candidate block leaked into control",
+      RA.check_arm_symmetry(_cor, _dis + block, _env) != [])
+check("canonical pair still symmetric (no candidate markers)",
+      RA.check_arm_symmetry(_cor, _dis, _env) == [])
+
+
+def _chain_kinds(run_dir):
+    return [json.loads(x)["kind"]
+            for x in open(os.path.join(run_dir, "EVIDENCE-CHAIN.jsonl"))
+            if x.strip()]
+
+
+_bare = hermetic()
+exp_b = order.load_expansion(_bare)
+_b0 = order.expected_event(exp_b, "PQ", "fam05", "T0", "A")
+_b1 = order.expected_event(exp_b, "PQ", "fam05", "T1", "A")
+_d0 = build_model_run(_bare, cell=_b0, freeze_commit=FREEZE, solver_py=SOLVER)
+_d1 = build_model_run(_bare, cell=_b1, freeze_commit=FREEZE, solver_py=SOLVER)
+check("bare T1 chain carries no candidate-validation event",
+      "candidate-validation" not in _chain_kinds(_d1))
+try:
+    promotion.advance(_bare, "PQ", "fam05", "A", FREEZE,
+                      evidence_grade="harness-validation")
+    _bare_denied = False
+    _bare_msg = "promotion SUCCEEDED without candidate-validation evidence"
+except PermissionError as e:
+    _bare_denied = "PROMOTION-DENY" in str(e)
+    _bare_msg = str(e)[:160]
+check("bare T1 pair never promotes (fail closed)", _bare_denied, _bare_msg)
+# the SHIP verdict stands: both bare cells are still COMPLETE, so the
+# refusal names promotion (not acquisition).
+check("bare T0/T1 cells still SHIP (COMPLETE) while promotion denies",
+      order.cell_state(_bare, _b0, FREEZE)["status"] == "COMPLETE"
+      and order.cell_state(_bare, _b1, FREEZE)["status"] == "COMPLETE")
+# a T1 that validated the WRONG candidate (chain fully valid, but bound
+# to another root) denies with the candidate binding — end-to-end proof
+# the gate compares against THIS universe's frozen candidate.
+_v1 = build_model_run(_bare, cell=_b1, freeze_commit=FREEZE, solver_py=SOLVER,
+                      validates_candidate="ff" * 32)
+try:
+    promotion.advance(_bare, "PQ", "fam05", "A", FREEZE,
+                      evidence_grade="harness-validation")
+    _wrong_denied = False
+except PermissionError as e:
+    _wrong_denied = ("PROMOTION-DENY" in str(e)
+                     and "validated candidate" in str(e))
+check("T1 validating another candidate denies (candidate binding)",
+      _wrong_denied)
+_v1 = build_model_run(_bare, cell=_b1, freeze_commit=FREEZE, solver_py=SOLVER,
+                      validates_candidate=t0_candidate_sha256(_d0))
+
+_cve = [json.loads(x) for x in
+        open(os.path.join(_v1, "EVIDENCE-CHAIN.jsonl")) if x.strip()
+        and json.loads(x)["kind"] == "candidate-validation"]
+check("validating T1 chain carries exactly one candidate-validation event",
+      len(_cve) == 1
+      and _cve[0]["payload"]["candidate_sha256"]
+      == _cve[0]["payload"]["executed_sha256"]
+      == t0_candidate_sha256(_d0)
+      and _cve[0]["payload"]["validated"] is True)
+
+# tamper: a T1 arrival declaring a different candidate still denies, and
+# a chain event whose executed bytes differ from the frozen candidate
+# denies (the binding is byte-exact, not asserted).
+_tam = hermetic()
+exp_t = order.load_expansion(_tam)
+_q0 = order.expected_event(exp_t, "PQ", "fam05", "T0", "A")
+_q1 = order.expected_event(exp_t, "PQ", "fam05", "T1", "A")
+_qd0 = build_model_run(_tam, cell=_q0, freeze_commit=FREEZE, solver_py=SOLVER)
+_qd1 = build_model_run(_tam, cell=_q1, freeze_commit=FREEZE, solver_py=SOLVER,
+                       validates_candidate=t0_candidate_sha256(_qd0))
+_arr = json.load(open(os.path.join(_qd1, "arrival.json")))
+_arr["execution_payload"]["candidate_sha256"] = "ff" * 32
+json.dump(_arr, open(os.path.join(_qd1, "arrival.json"), "w"))
+try:
+    promotion.advance(_tam, "PQ", "fam05", "A", FREEZE,
+                      evidence_grade="harness-validation")
+    _tam_denied = False
+except PermissionError as e:
+    _tam_denied = "PROMOTION-DENY" in str(e)
+check("T1 declaring a different candidate denies", _tam_denied)
+_arr["execution_payload"]["candidate_sha256"] = t0_candidate_sha256(_qd0)
+json.dump(_arr, open(os.path.join(_qd1, "arrival.json"), "w"))
+# rewriting the committed validation event voids the T1 cell itself
+# (chain tamper -> not COMPLETE), so the promotion path refuses. The
+# precise executed-binding is proven by the valid-chain unit cases below.
+_chain_p = os.path.join(_qd1, "EVIDENCE-CHAIN.jsonl")
+_lines = [json.loads(x) for x in open(_chain_p) if x.strip()]
+for _l in _lines:
+    if _l.get("kind") == "candidate-validation":
+        _l["payload"]["executed_sha256"] = "ee" * 32
+with open(_chain_p, "w") as f:
+    for _l in _lines:
+        f.write(json.dumps(_l) + "\n")
+check("rewriting the validation event voids the T1 cell",
+      order.cell_state(_tam, _q1, FREEZE)["status"] != "COMPLETE")
+try:
+    promotion.advance(_tam, "PQ", "fam05", "A", FREEZE,
+                      evidence_grade="harness-validation")
+    _exe_denied = False
+except PermissionError:
+    _exe_denied = True
+check("voided validation evidence denies the promotion path", _exe_denied)
+
+# precise gate proof: hand-built VALID chains through the real reader —
+# zero events, two events, and executed != candidate each refuse with
+# the fail-closed PROMOTION-DENY (not with a chain-tamper message).
+import chain as CHAIN_MOD  # noqa: E402
+
+
+def _cv_chain(payloads):
+    td = tempfile.mkdtemp(prefix="h17-cv-")
+    cp = os.path.join(td, "EVIDENCE-CHAIN.jsonl")
+    ch = CHAIN_MOD.Chain(cp, FREEZE, {"fixture": "h17-cv"})
+    for p in payloads:
+        ch.append("candidate-validation", p)
+    return td
+
+
+_CV_OK = {"candidate_sha256": "aa" * 32, "executed_sha256": "aa" * 32,
+          "adapter_sha256": "cc" * 32, "validated": True}
+_td0 = _cv_chain([])
+try:
+    promotion._t1_candidate_validation(_td0, "aa" * 32)
+    _z = False
+except PermissionError as e:
+    _z = "PROMOTION-DENY" in str(e) and "exactly one" in str(e)
+check("zero candidate-validation events denies", _z)
+_td2 = _cv_chain([dict(_CV_OK), dict(_CV_OK)])
+try:
+    promotion._t1_candidate_validation(_td2, "aa" * 32)
+    _t = False
+except PermissionError as e:
+    _t = "PROMOTION-DENY" in str(e) and "exactly one" in str(e)
+check("two candidate-validation events deny", _t)
+_td3 = _cv_chain([dict(_CV_OK, executed_sha256="bb" * 32)])
+try:
+    promotion._t1_candidate_validation(_td3, "aa" * 32)
+    _x = False
+except PermissionError as e:
+    _x = "PROMOTION-DENY" in str(e) and "executed" in str(e)
+check("executed != candidate denies with the execution binding", _x)
+_td4 = _cv_chain([dict(_CV_OK)])
+try:
+    _got = promotion._t1_candidate_validation(_td4, "aa" * 32)
+    _v = _got == dict(_CV_OK)
+except PermissionError:
+    _v = False
+check("matching validation evidence derives cleanly", _v)
 
 bad = [n for n, ok_ in RESULTS if not ok_]
 print(f"\nH17 t4-registry smoke: {len(RESULTS) - len(bad)}/{len(RESULTS)} closed")
