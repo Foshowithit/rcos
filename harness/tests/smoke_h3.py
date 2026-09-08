@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""H3 adversarial smoke — governance integration. EVERY probe must FAIL
+CLOSED (or prove exactness). Exit 0 only if all green. Stdlib only."""
+import json
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, ROOT)
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+
+from lock import promote, load_artifact
+from invalid import classify, PairLedger
+from chain import Chain
+
+BASE = "/tmp/h3-smoke"
+results = []
+
+
+def check(name, fail_closed, extra=""):
+    results.append((name, fail_closed))
+    print(("PASS " if fail_closed else "FAIL-OPEN ") + name +
+          (f" [{extra}]" if extra and not fail_closed else ""))
+
+
+os.system("rm -rf " + BASE)
+
+# --- lock: promote once, resolve exact, refuse tamper/repromote ---
+os.makedirs(os.path.join(BASE, "store"), exist_ok=True)
+open(os.path.join(BASE, "store", "cap.py"), "w").write("print('v1')\n")
+lp = promote(os.path.join(BASE, "lock"), "k1", 1,
+             [os.path.join(BASE, "store", "cap.py")],
+             {"contract": "c"}, ["ev1"],
+             {"builder": "b", "lane": "L"})
+check("promotion writes lock", lp.endswith("CAPABILITY_LOCK.json"))
+got = load_artifact(lp, "cap.py", os.path.join(BASE, "store"))
+check("exact-hash resolution succeeds", got.endswith("cap.py"))
+open(os.path.join(BASE, "store", "cap.py"), "w").write("print('v2-TAMPERED')\n")
+try:
+    load_artifact(lp, os.path.join(BASE, "store", "capXXX.py"), os.path.join(BASE, "store"))
+    check("unknown artifact refused", False)
+except PermissionError:
+    check("unknown artifact refused", True)
+try:
+    load_artifact(lp, "cap.py", os.path.join(BASE, "store"))
+    check("tampered bytes refused", False)
+except PermissionError:
+    check("tampered bytes refused", True)
+open(os.path.join(BASE, "store", "cap.py"), "w").write("print('v1')\n")
+try:
+    promote(os.path.join(BASE, "lock"), "k1", 2,
+            [os.path.join(BASE, "store", "cap.py")], {}, [], {})
+    check("repromotion refused", False)
+except PermissionError:
+    check("repromotion refused", True)
+
+# --- invalid state machine ---
+for kind in ("reasoning-failure", "tool-misuse", "agent-timeout",
+             "bad-generated-code", "capability-invocation-failure",
+             "malformed-output", "weird-unknown-thing"):
+    check(f"agent failure is outcome: {kind}",
+          classify(kind) == "outcome")
+for kind in ("machine-down", "provider-outage", "harness-crash"):
+    check(f"infra failure classified: {kind}",
+          classify(kind) == "infrastructure")
+led = PairLedger(os.path.join(BASE, "ledger.json"))
+led.record_run("p1", "A", "ship")
+led.record_run("p1", "B", "fix", failure_kind="tool-misuse")
+ok, why = led.request_replacement("p1", "tool-misuse", "settings-v1")
+check("agent failure replacement refused", not ok, why)
+ok, why = led.request_replacement("p1", "machine-down", "settings-v1")
+check("one infra whole-pair replacement allowed", ok, why)
+ok, why = led.request_replacement("p1", "machine-down", "settings-v1")
+check("second replacement refused + missing-evidence",
+      not ok and led.pair_status("p1") == "missing-evidence", why)
+led.record_run("p2", "A", "ship")
+led.record_run("p2", "B", "blocked", failure_kind="provider-outage")
+ok, why = led.request_replacement("p2", "provider-outage", "settings-v2")
+check("first replacement allowed (p2)", ok, why)
+ok, why = led.request_replacement("p2", "provider-outage", "settings-v3")
+check("changed-settings replacement refused", not ok, why)
+
+# --- chain: intact, deletion, reorder, substitution, tamper ---
+ch = Chain(os.path.join(BASE, "chain.jsonl"), "FREEZE-abc",
+           {"run": "r1", "lane": "A"})
+ch.append("model-call", {"usage": "u1"})
+ch.append("capability-event", {"invoked": "k1"})
+ch.append("evaluator", {"verdict": "ship"})
+ch.append("grade", {"grade": "PASS"})
+check("intact chain audits clean",
+      ch.audit("FREEZE-abc", {"run": "r1", "lane": "A"}) == [])
+# deletion
+lines = open(os.path.join(BASE, "chain.jsonl")).read().splitlines()
+open(os.path.join(BASE, "chain-del.jsonl"), "w").write(
+    "\n".join(lines[:2] + lines[3:]) + "\n")
+ch2 = Chain(os.path.join(BASE, "chain-del.jsonl"), "FREEZE-abc",
+            {"run": "r1", "lane": "A"})
+check("deletion detected",
+      any("predecessor" in f or "grade" in f
+          for f in ch2.audit("FREEZE-abc", {"run": "r1", "lane": "A"})))
+# reorder
+open(os.path.join(BASE, "chain-reo.jsonl"), "w").write(
+    "\n".join([lines[0], lines[2], lines[1], lines[3]]) + "\n")
+ch3 = Chain(os.path.join(BASE, "chain-reo.jsonl"), "FREEZE-abc",
+            {"run": "r1", "lane": "A"})
+check("reorder detected",
+      ch3.audit("FREEZE-abc", {"run": "r1", "lane": "A"}) != [])
+# substitution (edit a payload, keep hashes)
+import copy
+recs = [json.loads(l) for l in lines]
+recs[1]["payload"] = {"usage": "FORGED"}
+open(os.path.join(BASE, "chain-sub.jsonl"), "w").write(
+    "\n".join(json.dumps(r, sort_keys=True) for r in recs) + "\n")
+ch4 = Chain(os.path.join(BASE, "chain-sub.jsonl"), "FREEZE-abc",
+            {"run": "r1", "lane": "A"})
+check("substitution detected",
+      ch4.audit("FREEZE-abc", {"run": "r1", "lane": "A"}) != [])
+# wrong freeze commit
+check("wrong-freeze-commit detected",
+      ch.audit("OTHER", {"run": "r1", "lane": "A"}) != [])
+# unterminated chain
+ch5 = Chain(os.path.join(BASE, "chain5.jsonl"), "FREEZE-abc",
+            {"run": "r1", "lane": "A"})
+ch5.append("model-call", {"usage": "u1"})
+check("unterminated chain flagged",
+      any("grade" in f for f in
+          ch5.audit("FREEZE-abc", {"run": "r1", "lane": "A"})))
+
+bad = [n for n, ok_ in results if not ok_]
+print(f"\nH3 smoke: {len(results) - len(bad)}/{len(results)} closed")
+sys.exit(1 if bad else 0)
