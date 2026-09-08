@@ -49,6 +49,15 @@ def check(name, ok, extra=""):
           (f" [{extra}]" if extra and not ok else ""))
 
 
+def _h12_evidence_sha(role, cell_id):
+    """Deterministic h12 evaluator-evidence sha (same contract as the
+    shared fixture: real non-null 64-hex shas, stable per cell)."""
+    import hashlib as _hl
+    return _hl.sha256(json.dumps(
+        {"fixture": "h12-smoke", "role": role, "cell_id": cell_id},
+        sort_keys=True).encode()).hexdigest()
+
+
 os.system("rm -rf " + BASE)
 os.makedirs(BASE)
 os.chmod(BASE, 0o755)
@@ -122,8 +131,18 @@ def write_chain(c, m):
     if os.path.exists(p):
         os.unlink(p)
     ch = CH.Chain(p, FREEZE_COMMIT, m)
+    # A12b.7: the restored chain is production-shaped — the evaluator link
+    # carries real non-null evidence shas (promotion derives provenance
+    # from the verified link and denies nulls).
     ev = ch.append("evaluator", {"evaluator": "h12-smoke",
-                                 "cell_id": c["cell_id"], "verdict": "ship"})
+                                 "cell_id": c["cell_id"], "verdict": "ship",
+                                 "checker_sha256": _h12_evidence_sha(
+                                     "checker", c["cell_id"]),
+                                 "truth_sha256": _h12_evidence_sha(
+                                     "truth", c["cell_id"]),
+                                 "output_sha256": _h12_evidence_sha(
+                                     "output", c["cell_id"]),
+                                 "checker_returncode": 0})
     ch.append("grade", {"evaluator_link_hash": ev,
                         "grading_rule_hash": "0" * 64,
                         "grading_rule_version": "h12-smoke-1"})

@@ -61,7 +61,10 @@ DEFAULT_SOLVER = ("def solve(input_dir, output_path):\n"
 
 def _write_usage_evidence(d, lane):
     """Receipt -> normalized artifact -> identity, all cross-bound. Returns
-    (receipt_basename, primary_work)."""
+    (receipt_basename, primary_work, model_call_payload): the payload is the
+    production-shaped model-call link content (same keys the production
+    _wire_chain binds), so the fixture chain commits the identity bytes,
+    the echoed model, and the usage metrics at capture time."""
     spec = LANES[lane]
     body = dict(GEN_PARAMS)
     body.update({"model": spec["model"], "messages": MESSAGES})
@@ -103,8 +106,33 @@ def _write_usage_evidence(d, lane):
     UG.verify_request_binding(rp, idp)
     UG.verify_adapter_binding(receipt["normalizer_id"], lane=lane,
                               receipt=receipt)
-    pw = json.load(open(nu))["primary_work"]
-    return os.path.basename(rp), pw
+    nu_obj = json.load(open(nu))
+    pw = nu_obj["primary_work"]
+
+    def _sha_file(p):
+        with open(p, "rb") as f:
+            return hashlib.sha256(f.read()).hexdigest()
+
+    mc = {"call_id": call_id, "tag": "fixture_modelrun (NOT evidence)",
+          "model_requested": spec["model"], "endpoint": spec["base"],
+          "receipt_file": os.path.basename(rp),
+          "receipt_sha256": _sha_file(rp),
+          "usage_raw_sha256": receipt["usage_raw_sha256"],
+          "request_body_sha256": receipt["request_body_sha256"],
+          "provider_response_id": provider_obj["id"],
+          "model_echoed": provider_obj["model"],
+          "generation_params": dict(GEN_PARAMS),
+          "normalized_file": os.path.basename(nu),
+          "normalized_sha256": _sha_file(nu),
+          "primary_work": nu_obj["primary_work"],
+          "input_tokens_uncached": nu_obj["input_tokens_uncached"],
+          "output_tokens": nu_obj["output_tokens"],
+          "cached_tokens": nu_obj["cached_tokens"],
+          "call_count": 1,
+          "identity_file": os.path.basename(idp),
+          "identity_sha256": _sha_file(idp),
+          "identity_prereg_family": spec["family"]}
+    return os.path.basename(rp), pw, mc
 
 
 def cell_salt():
@@ -119,6 +147,17 @@ def _clean_run_dir(d):
             os.unlink(p)
 
 
+def _fixture_evidence_sha(role, cell_id):
+    """Deterministic fixture evaluator-evidence sha: namespaced by role and
+    cell so T0/T1 links differ and identical acquisitions reproduce. These
+    are fixture placeholders (no host checker runs on an acquisition
+    fixture), but they are real non-null 64-hex evidence shas, stable and
+    committed in the chain at capture time."""
+    return hashlib.sha256(json.dumps(
+        {"fixture": "fixture_modelrun", "role": role, "cell_id": cell_id},
+        sort_keys=True).encode()).hexdigest()
+
+
 def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                     decision="fresh", solver_py=None, capability=None,
                     reuse_overrides=None, manifest_overrides=None):
@@ -129,7 +168,7 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                                cell["family"], tail=("runs", cell["cell_id"]))
     _clean_run_dir(d)
     lane = cell["lane"]
-    receipt_name, primary_work = _write_usage_evidence(d, lane)
+    receipt_name, primary_work, model_call = _write_usage_evidence(d, lane)
 
     # ---- arrival: the unified contract, decision-driven -------------------
     if decision == "use_capability":
@@ -203,14 +242,32 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
     with open(os.path.join(d, "H1-RUN-MANIFEST.json"), "w") as f:
         json.dump(manifest, f, indent=1)
 
-    # ---- evidence chain: rooted genesis + evaluator + final grade --------
+    # ---- evidence chain: rooted genesis + model-call + evaluator + grade --
+    # A12b.7: the evaluator link is production-shaped — it carries real
+    # non-null checker/truth/output evidence shas, committed at capture, so
+    # promotion provenance can be derived from the VERIFIED link instead of
+    # nullable manifest fields. The model-call link commits the identity
+    # bytes and the echoed model at capture (post-hoc identity/echo edits
+    # are detectable at promotion time).
     chain_path = os.path.join(d, "EVIDENCE-CHAIN.jsonl")
     if os.path.exists(chain_path):
         os.unlink(chain_path)
     ch = CH.Chain(chain_path, freeze_commit, manifest)
+    ch.append("model-call", model_call)
     ev = ch.append("evaluator", {"evaluator": "fixture_modelrun",
                                  "cell_id": cell["cell_id"],
-                                 "verdict": verdict})
+                                 "verdict": verdict,
+                                 "checker_sha256":
+                                     _fixture_evidence_sha("checker",
+                                                           cell["cell_id"]),
+                                 "truth_sha256":
+                                     _fixture_evidence_sha("truth",
+                                                           cell["cell_id"]),
+                                 "output_sha256":
+                                     _fixture_evidence_sha("output",
+                                                           cell["cell_id"]),
+                                 "checker_returncode":
+                                     {"ship": 0, "fix": 1}.get(verdict)})
     ch.append("grade", {"evaluator_link_hash": ev,
                         "grading_rule_hash": "0" * 64,
                         "grading_rule_version": "fixture-1"})

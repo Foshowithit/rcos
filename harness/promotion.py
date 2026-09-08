@@ -36,6 +36,7 @@ if _HERE not in sys.path:
 
 import order  # noqa: E402
 import lock as _lock  # noqa: E402
+import identity as _identity  # noqa: E402
 
 GRADES = ("estimand", "harness-validation")
 CANDIDATE_FIELD = "execution_payload.solver_py"
@@ -263,6 +264,110 @@ def _arrival_payload(arrival):
     return arrival.get("execution_payload") or {}
 
 
+def _read_chain_links(run_dir):
+    """Parse one run's evidence chain into link dicts. The chain itself was
+    verified by cell_state() before run_evidence() runs; this reader only
+    extracts the committed evidence (fail closed on unreadable chains)."""
+    p = os.path.join(run_dir, "EVIDENCE-CHAIN.jsonl")
+    if not os.path.isfile(p) or os.path.islink(p):
+        raise PermissionError(f"PROMOTION-DENY no evidence chain at {p} "
+                              f"(remove/tamper the evaluator link -> deny)")
+    try:
+        links = [json.loads(line) for line in open(p) if line.strip()]
+    except ValueError as e:
+        raise PermissionError(f"PROMOTION-DENY evidence chain unparsable "
+                              f"at {p}: {e}")
+    if not links:
+        raise PermissionError(f"PROMOTION-DENY evidence chain empty at {p}")
+    return links
+
+
+def _evaluator_evidence(run_dir, event):
+    """Derive evaluator provenance from the VERIFIED evaluator chain link —
+    never from duplicated nullable manifest fields. Refuses when the link
+    is absent, when any evidence sha is null, or when the terminal grade
+    does not bind this evaluator state (remove/tamper -> PROMOTION-DENY)."""
+    links = _read_chain_links(run_dir)
+    evs = [l for l in links if l.get("kind") == "evaluator"]
+    if not evs:
+        raise PermissionError(
+            f"PROMOTION-DENY {event} chain has no verified evaluator link "
+            f"(remove/tamper the evaluator link -> deny)")
+    ev = evs[-1]
+    pay = ev.get("payload") or {}
+    missing = [f for f in ("checker_sha256", "truth_sha256", "output_sha256")
+               if not pay.get(f)]
+    if missing:
+        raise PermissionError(
+            f"PROMOTION-DENY {event} evaluator link carries null evidence "
+            f"field(s): {', '.join(missing)} (no null evaluator evidence)")
+    grades = [l for l in links if l.get("kind") == "grade"]
+    if not grades or (grades[-1].get("payload") or {}).get(
+            "evaluator_link_hash") != ev.get("link_hash"):
+        raise PermissionError(
+            f"PROMOTION-DENY {event} terminal grade does not bind the "
+            f"evaluator link (chain tamper -> deny)")
+    return {"evaluator": pay.get("evaluator"), "verdict": pay.get("verdict"),
+            "checker_sha256": pay["checker_sha256"],
+            "truth_sha256": pay["truth_sha256"],
+            "output_sha256": pay["output_sha256"],
+            "checker_returncode": pay.get("checker_returncode"),
+            "evaluator_link_hash": ev.get("link_hash"),
+            "chain_tip": links[-1].get("link_hash")}
+
+
+def _identity_evidence(run_dir, manifest, cell):
+    """Derive producer identity from the VALIDATED identity record. The
+    record is cross-verified against its usage receipt HERE at promotion
+    time (a swapped/foreign identity — e.g. a Q identity in a P run —
+    breaks the binding -> PROMOTION-DENY), and its current bytes plus the
+    echoed model are checked against the model-call link the verified
+    chain committed at capture (post-hoc identity/echo edits -> deny)."""
+    event = cell["event"]
+    receipts = manifest.get("usage_receipts") or []
+    if not receipts:
+        raise PermissionError(f"PROMOTION-DENY {event} run lists no usage "
+                              f"receipt (no producer identity derivable)")
+    rcp = os.path.join(run_dir, os.path.basename(receipts[0]))
+    idp = os.path.join(run_dir, "identity.json")
+    try:
+        id_rec = _identity.verify_identity_binding(idp, rcp)
+    except (ValueError, OSError) as e:
+        raise PermissionError(
+            f"PROMOTION-DENY {event} producer identity does not verify "
+            f"against its usage receipt (a swapped or foreign identity "
+            f"cannot promote): {e}")
+    family = manifest.get("identity_prereg_family")
+    links = _read_chain_links(run_dir)
+    mcs = [l for l in links if l.get("kind") == "model-call"]
+    if mcs:
+        mc = mcs[0].get("payload") or {}
+        if mc.get("identity_sha256") and \
+                mc["identity_sha256"] != _sha_file(idp):
+            raise PermissionError(
+                f"PROMOTION-DENY {event} identity.json bytes differ from "
+                f"the identity sha the verified chain committed at capture "
+                f"(post-hoc identity edit -> deny)")
+        if mc.get("model_echoed") and \
+                id_rec.get("model_echoed_model") != mc["model_echoed"]:
+            raise PermissionError(
+                f"PROMOTION-DENY {event} echoed model "
+                f"{id_rec.get('model_echoed_model')!r} != the echo "
+                f"{mc['model_echoed']!r} committed at capture (post-hoc "
+                f"echo edit -> deny)")
+        family = family or mc.get("identity_prereg_family")
+    return {"source_cell": cell["cell_id"], "lane": manifest.get("lane"),
+            "endpoint": id_rec.get("endpoint"),
+            "model_requested": id_rec.get("model_requested"),
+            "model_echoed": id_rec.get("model_echoed_model"),
+            "provider_response_id": id_rec.get("provider_response_id"),
+            "provider_response_created": id_rec.get("model_echoed_created"),
+            "identity_sha256": _sha_file(idp),
+            "request_body_sha256": id_rec.get("request_body_sha256"),
+            "messages_sha256": id_rec.get("messages_sha256"),
+            "identity_prereg_family": family}
+
+
 def run_evidence(fam_c_dir, cell, freeze_commit=None):
     """Derive ONE acquisition run's evidence from disk. Every value is read
     from the validated run itself — never supplied by the caller."""
@@ -290,9 +395,11 @@ def run_evidence(fam_c_dir, cell, freeze_commit=None):
           "manifest_sha256": _sha_file(mfp), "arrival_sha256": _sha_file(ap),
           "decision": decision,
           "task_snapshot_hash": mf.get("context_task_snapshot_hash"),
-          "checker_sha256": mf.get("checker_sha256"),
-          "truth_sha256": mf.get("truth_sha256"),
-          "output_sha256": mf.get("output_sha256"),
+          # A12b.7: evaluator provenance comes from the VERIFIED evaluator
+          # chain link (never nullable manifest fields), and producer
+          # identity from the VALIDATED identity record. Both refuse.
+          "evaluator": _evaluator_evidence(d, cell["event"]),
+          "identity": _identity_evidence(d, mf, cell),
           "solver_py_sha256": (_sha_bytes(payload["solver_py"].encode())
                                if isinstance(payload.get("solver_py"), str)
                                else None)}
@@ -301,6 +408,27 @@ def run_evidence(fam_c_dir, cell, freeze_commit=None):
                               f"{cell['cell_id']} verdict {ev['verdict']!r} "
                               f"!= 'ship'")
     return ev
+
+
+def _producer_identity(t0_ev, t1_ev):
+    """Derive the promotion receipt's producer identity EXCLUSIVELY from
+    the validated T0/T1 identity records: requested model, echoed model,
+    provider response id, identity sha, lane, and source cell per
+    acquisition event. No operator-supplied builder_identity."""
+    out = {"producer": "harness/promotion.py"}
+    for tag, ev in (("t0", t0_ev), ("t1", t1_ev)):
+        ident = ev["identity"]
+        out[tag] = {
+            "source_cell": ident["source_cell"], "lane": ident["lane"],
+            "endpoint": ident["endpoint"],
+            "model_requested": ident["model_requested"],
+            "model_echoed": ident["model_echoed"],
+            "provider_response_id": ident["provider_response_id"],
+            "identity_sha256": ident["identity_sha256"],
+            "identity_prereg_family": ident["identity_prereg_family"]}
+        out[tag + "_lane"] = ev["lane"]
+        out[tag + "_verdict"] = ev["verdict"]
+    return out
 
 
 def derive_candidate(t0_ev, t1_ev, t0_run_dir):
@@ -462,8 +590,14 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     if t0 is None or t1 is None:
         raise PermissionError("PROMOTION-DENY order has no T0/T1 pair for "
                               f"{block}/{family}/{universe}")
+    if evidence_grade == "estimand" and builder_identity is not None:
+        raise PermissionError(
+            "PROMOTION-DENY estimand promotion derives producer identity "
+            "exclusively from the validated T0/T1 identity records (no "
+            "operator-supplied builder_identity)")
     t0_ev = run_evidence(fam_c_dir, t0, freeze_commit)
     t1_ev = run_evidence(fam_c_dir, t1, freeze_commit)
+    producer_identity = _producer_identity(t0_ev, t1_ev)
     cand = derive_candidate(t0_ev, t1_ev, t0_ev["run_dir"])
     contract = capability_contract(fam_c_dir, family)
     core_sha = _sha_bytes(contract[0].encode())
@@ -498,24 +632,29 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
         "contract_sha256": contract[3],
         "t4_semantic_id": t4_id, "t4_ratified": t4_ratified,
         "evidence_grade": evidence_grade,
-        "producer_identity": dict(builder_identity or {
-            "producer": "harness/promotion.py",
-            "t0_lane": t0_ev["lane"], "t1_lane": t1_ev["lane"],
-            "t0_verdict": t0_ev["verdict"], "t1_verdict": t1_ev["verdict"]}),
+        "producer_identity": producer_identity,
         "protocol_lock_sha256": shas["protocol_lock_sha256"],
         "execution_lock_sha256": shas["execution_lock_sha256"],
         "authorization": {
             "order_sha256": exp_sha, "event_index": cell["index"],
             "done_cells_at_emit": sorted(done),
             "event": "PROMOTION"},
-        "t0_evidence": {k: t0_ev[k] for k in (
-            "cell_id", "task", "lane", "verdict", "chain_tip",
-            "manifest_sha256", "arrival_sha256", "decision",
-            "checker_sha256", "truth_sha256", "output_sha256")},
-        "t1_evidence": {k: t1_ev[k] for k in (
-            "cell_id", "task", "lane", "verdict", "chain_tip",
-            "manifest_sha256", "arrival_sha256", "decision",
-            "checker_sha256", "truth_sha256", "output_sha256")},
+        "t0_evidence": {"cell_id": t0_ev["cell_id"], "task": t0_ev["task"],
+                        "lane": t0_ev["lane"], "verdict": t0_ev["verdict"],
+                        "chain_tip": t0_ev["chain_tip"],
+                        "manifest_sha256": t0_ev["manifest_sha256"],
+                        "arrival_sha256": t0_ev["arrival_sha256"],
+                        "decision": t0_ev["decision"],
+                        "evaluator": t0_ev["evaluator"],
+                        "identity": t0_ev["identity"]},
+        "t1_evidence": {"cell_id": t1_ev["cell_id"], "task": t1_ev["task"],
+                        "lane": t1_ev["lane"], "verdict": t1_ev["verdict"],
+                        "chain_tip": t1_ev["chain_tip"],
+                        "manifest_sha256": t1_ev["manifest_sha256"],
+                        "arrival_sha256": t1_ev["arrival_sha256"],
+                        "decision": t1_ev["decision"],
+                        "evaluator": t1_ev["evaluator"],
+                        "identity": t1_ev["identity"]},
     }
     rp = order.emit_promotion_receipt(fam_c_dir, cell,
                                       cell["acquisition_chain_tips"]["T0"],

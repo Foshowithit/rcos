@@ -676,6 +676,9 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
         "usage_raw_sha256": rc.get("usage_raw_sha256"),
         "request_body_sha256": rc.get("request_body_sha256"),
         "provider_response_id": id_rec.get("provider_response_id"),
+        # A12b.7: bind the provider-echoed model id at capture, so a
+        # post-hoc echo alteration is detectable at promotion time.
+        "model_echoed": id_rec.get("model_echoed_model"),
         "generation_params": id_rec.get("generation_params"),
         "normalized_file": os.path.basename(nu_path),
         "normalized_sha256": h(nu_path),
@@ -691,18 +694,49 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
         mc["identity_sha256"] = h(identity_path)
         mc["identity_prereg_family"] = identity_family
     c.append("model-call", mc)
-    # capability events (correct arm only).
+    # capability events (correct arm only). A12b.4: ONE lifecycle object
+    # decides the chain flags and the reuse ledger — the event serializes
+    # the reuse record's own lifecycle facts, never an asserted triple. On
+    # a REJECT run the chain says rejected/not-loaded/not-invoked/not-
+    # consumed exactly as the ledger does.
     if cap_info:
+        if not reuse_path or not os.path.isfile(reuse_path):
+            raise RuntimeError(
+                "CHAIN-LIFECYCLE-DENY: capability available but no reuse "
+                "ledger to derive the lifecycle from (ledger and chain "
+                "share one lifecycle object)")
+        try:
+            ledger = json.load(open(reuse_path))
+        except ValueError as e:
+            raise RuntimeError(
+                f"CHAIN-LIFECYCLE-DENY: reuse ledger unreadable: {e}")
+        loaded = ledger.get("capability_loaded") is True
+        invoked = ledger.get("capability_invoked") is True
+        consumed = ledger.get("capability_output_consumed") is True
+        contributed = ledger.get("capability_materially_contributed") is True
+        rejected = ledger.get("reuse_rejected") is True
+        if rejected:
+            evidence = ("rejected: capability available but not selected "
+                        "(fresh decision); loaded/invoked/consumed false — "
+                        "see the reuse ledger for the recorded reason")
+        else:
+            evidence = ("consumed but not proven contributed: no ablation "
+                        "or downstream-node hash-linkage in this cell")
         c.append("capability-event", {
             "event": "reuse", "capability_id": cap_info["capability_id"],
             "capability_version": cap_info.get("capability_version"),
             "lock_sha256": cap_info["lock_sha256"],
             "engine_sha256": cap_info["engine_sha256"],
             "verified_pre_execution": True,
-            "loaded": True, "invoked": True, "output_consumed": True,
-            "materially_contributed": False,
-            "evidence": "consumed but not proven contributed: no ablation "
-                        "or downstream-node hash-linkage in this cell"})
+            "loaded": loaded, "invoked": invoked,
+            "output_consumed": consumed,
+            "rejected": rejected, "reuse_rejected": rejected,
+            "capability_available": ledger.get("capability_available"),
+            "capability_selected": ledger.get("capability_selected"),
+            "selected_capability_id": ledger.get("selected_capability_id"),
+            "reuse_rejection_reason": ledger.get("reuse_rejection_reason"),
+            "materially_contributed": contributed,
+            "evidence": evidence})
     # evaluator link: sealed truth + checker hashes + host-side outcome.
     ev_link = c.append("evaluator", {
         "checker_sha256": checker_sha, "truth_sha256": truth_sha,
