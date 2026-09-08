@@ -85,7 +85,10 @@ from admissibility import verify_instance_frozen, verify_freeze_tree
 from order import (verify_expansion as order_verify_expansion,
                    load_expansion as order_load_expansion,
                    completed_cells as order_completed_cells,
-                   authorize as order_authorize)
+                   authorize as order_authorize,
+                   derive_paths as order_derive_paths,
+                   check_namespace as order_check_namespace,
+                   cell_state as order_cell_state)
 # Item-4: three-authority preflight is importable (validate_all runs the
 # V1/V2/V3 validators without exiting); BASE on the path only exposes the
 # fam-c operational root (preflight import; no stdlib shadowing — no
@@ -121,34 +124,35 @@ LANES = {
           "echo_acceptable": ["agnes-2-0-flash:free", "agnes-2-0-flash"]},
 }
 
-# Item-6 canonical envelope (audit round 2 item 6): ONE envelope format
-# serves both arms; treatment/control differ ONLY by the mechanically
-# delimited capability-access block plus the frozen arm preamble/output
-# lines below. DISABLED bytes are unchanged from the pre-item-6 template;
-# CORRECT gains exactly the two delimiter lines (envelope v2, documented).
+# Item-6 / A11.3 canonical prompts: ONE envelope format, ONE neutral
+# preamble, ONE output contract serve both arms. Treatment and control
+# therefore differ ONLY by the mechanically delimited capability-access
+# block; the machine proof is
+#     strip_capability_block(treatment_prompt) == control_prompt.
 _CAP_BEGIN = "<<<CAPABILITY-ACCESS-BEGIN>>>"
 _CAP_END = "<<<CAPABILITY-ACCESS-END>>>"
-_PRE_CORRECT = ("You are solving the task below using a PROVIDED capability "
-                "interface. You have never seen its acquisition, no "
-                "transcripts, no prior tasks. Output ONLY one JSON object, "
-                "no other text.\n\n")
-_PRE_DISABLED = ("You are solving the task below from scratch. No "
-                 "registry/capability/prior solution exists. Output ONLY one "
-                 "JSON object, no other text.\n\n")
+# H-CTX-002 (audit round 3, item 6 / A11.3): the preamble is ONE neutral
+# string shared byte-for-byte by BOTH arms. The earlier per-arm preambles
+# ("using a PROVIDED capability interface ... you have never seen its
+# acquisition" vs "from scratch. No registry/capability/prior solution
+# exists") told the treatment model about its acquisition history and told
+# the control model a different world-state — treatment leakage in the
+# shared region, not symmetry. Everything the arms may NOT diverge on is
+# now literally the same bytes.
 _ENVELOPE_FMT = ("TASK DEFINITION:\n__TASKDEF__\n\n"
                  "TASK DIRECTORY LISTING: __LISTING__\n"
                  "TASK FILE CONTENTS (exact bytes):\n__BLOBS__\n")
 _CAP_FMT = ("\n" + _CAP_BEGIN + "\nCAPABILITY MANIFEST:\n__MANIFEST__\n"
             "ADAPTER NOTES:\n__NOTES__\nENGINE SOURCE (frozen, do not "
             "modify):\n__ENGINE__\n" + _CAP_END + "\n")
-_OUT_CORRECT = ('\nOutput object: {"records": <engine records>, '
-                '"field_map": <engine map>, "notes": "one line"}. '
-                "No explanations/fences.")
-_OUT_DISABLED = ('\nOutput object: {"solver_py": <complete Python script '
-                 "taking (src_dir, dst_path) and writing the ordinary task "
-                 'output>, "notes": "one line"}. No explanations/fences.')
-CORRECT = _PRE_CORRECT + _ENVELOPE_FMT + _CAP_FMT + _OUT_CORRECT
-DISABLED = _PRE_DISABLED + _ENVELOPE_FMT + _OUT_DISABLED
+_PRE = ("You are solving the task below.\n\n")
+# ONE arm-independent output contract. A treatment-only schema
+# ({"records","field_map"} vs {"solver_py"}) is a second hint channel: the
+# shape alone reveals which arm produced the prompt. Identical bytes.
+_OUT = ('\nOutput one JSON object with the keys "result" (your solution '
+        'payload) and "notes" (one line). No explanations, no code fences.')
+CORRECT = _PRE + _ENVELOPE_FMT + _CAP_FMT + _OUT
+DISABLED = _PRE + _ENVELOPE_FMT + _OUT
 # Counterfactual capability content (disabled-arm runs): builds the
 # never-sent correct-arm twin for the pair symmetry check. Fixed sentinel,
 # never model input, never executed.
@@ -169,73 +173,110 @@ def build_arm_prompt(arm, envelope, cap_manifest="", cap_notes="",
     if arm == "correct":
         cap = _CAP_FMT.replace("__MANIFEST__", cap_manifest).replace(
             "__NOTES__", cap_notes).replace("__ENGINE__", cap_engine)
-        return _PRE_CORRECT + envelope + cap + _OUT_CORRECT
+        return _PRE + envelope + cap + _OUT
     if arm == "disabled":
-        return _PRE_DISABLED + envelope + _OUT_DISABLED
+        return _PRE + envelope + _OUT
     raise ValueError("unknown arm")
+
+
+def strip_capability_block(prompt):
+    """Remove the delimited capability-access block (inclusive, plus the ONE
+    separator newline that frames it on each side). Returns the prompt
+    unchanged when no block is present.
+
+    The block is emitted as "\n" + BEGIN + ... + END + "\n", so the
+    treatment prompt minus the block still carries the framing newline that
+    precedes it; consuming that single adjacent newline is what makes the
+    stripped treatment bytes EQUAL the control bytes rather than control + a
+    stray blank line.
+    """
+    if _CAP_BEGIN not in prompt:
+        return prompt
+    i = prompt.index(_CAP_BEGIN)
+    j = prompt.index(_CAP_END, i) + len(_CAP_END)
+    head, tail = prompt[:i], prompt[j:]
+    if head.endswith("\n") and tail.startswith("\n"):
+        head = head[:-1]
+        tail = tail[1:]
+    return head + tail
+
+
+def _first_diff(a, b):
+    """Index + context of the first byte difference (diagnostics only)."""
+    for i, (x, y) in enumerate(zip(a, b)):
+        if x != y:
+            return (f"index {i}: {a[max(0, i - 20):i + 20]!r} != "
+                    f"{b[max(0, i - 20):i + 20]!r}")
+    return f"length {len(a)} != {len(b)}"
 
 
 def check_arm_symmetry(correct_prompt, disabled_prompt, envelope):
     """H-CTX-002 mechanical pair check (fail-closed findings list).
 
-    Proves treatment/control differ ONLY by the mechanically identified
-    capability-access block (+ frozen arm preamble/output lines):
-      - the delimited capability block occurs exactly once in correct,
-        never in disabled;
-      - the canonical envelope occurs verbatim exactly once in EACH
-        prompt (any one-byte hint asymmetry inside the shared region
-        breaks verbatim embedding in at least one arm);
-      - outside the envelope, each arm shows exactly its frozen preamble
-        and (for correct) the delimited block + frozen output schema.
+    A11.3 acceptance (machine proof, not prose): removing the delimited
+    capability-access block from the treatment prompt must yield BYTE-
+    IDENTICAL bytes to the control prompt:
+
+        strip_capability_block(treatment_prompt) == control_prompt
+
+    That single equality subsumes preamble, envelope and output-contract
+    symmetry: any divergence anywhere outside the delimited block makes the
+    strings differ. The older assertions ("each arm's own frozen preamble",
+    "the arm's own output schema") were WEAKER — they legitimized divergent
+    shared bytes — and are DELETED, not supplemented. Also checked: the
+    capability block occurs exactly once in treatment and never in control,
+    is well-delimited, sits strictly after the shared envelope, and is
+    non-empty with its frozen section headers.
     """
     out = []
     if (correct_prompt.count(_CAP_BEGIN) != 1
             or correct_prompt.count(_CAP_END) != 1):
         out.append("SYMMETRY-FAIL: capability-access delimiters != 1 each "
-                   "in correct prompt")
+                   "in treatment prompt")
         return out
     if correct_prompt.index(_CAP_BEGIN) > correct_prompt.index(_CAP_END):
         out.append("SYMMETRY-FAIL: capability-access end before begin")
         return out
     if _CAP_BEGIN in disabled_prompt or _CAP_END in disabled_prompt:
         out.append("SYMMETRY-FAIL: capability-access block present in "
-                   "disabled prompt")
-    for name, prompt in (("correct", correct_prompt),
-                         ("disabled", disabled_prompt)):
+                   "control prompt")
+    for name, prompt in (("treatment", correct_prompt),
+                         ("control", disabled_prompt)):
         if prompt.count(envelope) != 1:
-            out.append(f"SYMMETRY-FAIL: canonical envelope not "
-                       f"verbatim-once in {name} prompt (hint asymmetry "
-                       f"or drift in the shared region)")
+            out.append("SYMMETRY-FAIL: canonical envelope not "
+                       "verbatim-once in " + name + " prompt (hint "
+                       "asymmetry or drift in the shared region)")
     if out:
         return out
+    stripped = strip_capability_block(correct_prompt)
+    if stripped != disabled_prompt:
+        out.append("SYMMETRY-FAIL: strip_capability_block(treatment) != "
+                   "control - shared-region divergence at "
+                   + _first_diff(stripped, disabled_prompt))
+    if not correct_prompt.startswith(_PRE) or \
+            not disabled_prompt.startswith(_PRE):
+        out.append("SYMMETRY-FAIL: prompt does not start with the single "
+                   "shared neutral preamble")
+    if not correct_prompt.endswith(_OUT) or not disabled_prompt.endswith(_OUT):
+        out.append("SYMMETRY-FAIL: prompt does not end with the single "
+                   "shared output contract")
     head_c, tail_c = correct_prompt.split(envelope)
     head_d, tail_d = disabled_prompt.split(envelope)
-    if head_c != _PRE_CORRECT:
-        out.append("SYMMETRY-FAIL: correct preamble differs from the "
-                   "frozen arm preamble")
-    if head_d != _PRE_DISABLED:
-        out.append("SYMMETRY-FAIL: disabled preamble differs from the "
-                   "frozen arm preamble")
-    if tail_d != _OUT_DISABLED:
-        out.append("SYMMETRY-FAIL: disabled prompt carries content past "
-                   "the envelope other than the frozen output schema")
+    if head_c != head_d:
+        out.append("SYMMETRY-FAIL: preambles differ between arms")
     if not tail_c.startswith("\n" + _CAP_BEGIN + "\n"):
-        out.append("SYMMETRY-FAIL: correct capability block misdelimited "
-                   "after the envelope")
+        out.append("SYMMETRY-FAIL: capability block misdelimited after the "
+                   "envelope")
     elif tail_c.count(_CAP_END + "\n") != 1:
-        out.append("SYMMETRY-FAIL: correct capability block end "
-                   "misdelimited")
-    elif not tail_c.endswith(_OUT_CORRECT):
-        out.append("SYMMETRY-FAIL: correct prompt output schema differs "
-                   "from the frozen arm schema")
+        out.append("SYMMETRY-FAIL: capability block end misdelimited")
     else:
         body = tail_c[len("\n" + _CAP_BEGIN + "\n"):
-                      -len(_CAP_END + "\n" + _OUT_CORRECT)]
+                      -len(_CAP_END + "\n" + _OUT)]
         for marker in ("CAPABILITY MANIFEST:", "ADAPTER NOTES:",
                        "ENGINE SOURCE (frozen, do not modify):"):
             if marker not in body:
                 out.append("SYMMETRY-FAIL: capability block missing the "
-                           f"frozen section header {marker!r}")
+                           "frozen section header " + repr(marker))
         if not body.strip():
             out.append("SYMMETRY-FAIL: capability-access block empty")
     return out
@@ -347,18 +388,27 @@ def harness_manifest_sha():
     return hashlib.sha256("\n".join(sorted(lines)).encode()).hexdigest()
 
 
-def _verify_capability(capdir):
+def _verify_capability(capdir, cell=None):
     """H-LOCK-008: resolve the capability ONLY by exact locked hash.
-    Returns lock info dict; raises PermissionError on any mismatch."""
-    # Item-7 foreign-registry refusal: the capability registry surface is the
-    # frozen Fam-C tree (capabilities/ or a run dir inside it). A capability
-    # dir outside it is a foreign registry and never enters a measured cell.
+    Returns lock info dict; raises PermissionError on any mismatch.
+
+    A11.5: when the caller is an authorized estimand cell, the capability
+    directory must be EXACTLY that universe's derived registry
+    (state/<block>/<universe>/<family>/capability). Being somewhere inside
+    Fam-C is no longer sufficient — that was the round-3 hole that let a C
+    run consume A's registry, violating PREREG §2.
+    """
     r_cap = os.path.realpath(capdir)
-    r_base = os.path.realpath(BASE)
-    if not (r_cap == r_base or r_cap.startswith(r_base + os.sep)):
-        raise PermissionError(
-            "FOREIGN-REGISTRY-DENY capability dir outside the Fam-C "
-            f"registry surface: {capdir}")
+    if cell is not None:
+        denial = order_check_namespace(BASE, cell, capdir)
+        if denial:
+            raise PermissionError(denial)
+    else:
+        r_base = os.path.realpath(BASE)
+        if not (r_cap == r_base or r_cap.startswith(r_base + os.sep)):
+            raise PermissionError(
+                "FOREIGN-REGISTRY-DENY capability dir outside the Fam-C "
+                f"registry surface: {capdir}")
     lock_path = os.path.join(capdir, "CAPABILITY_LOCK.json")
     if not os.path.exists(lock_path):
         raise PermissionError("LOCK-DENY correct arm has no CAPABILITY_LOCK.json "
@@ -489,9 +539,22 @@ def selfcheck_wire():
                      "prompt_tokens_details": {"cached_tokens": 2}}
         raw_usage_sha = hashlib.sha256(
             json.dumps(raw_usage, sort_keys=True).encode()).hexdigest()
+        # A11.2: a v2 adapter id IS a lane binding, so a synthetic fixture
+        # must either use the lane's real bound endpoint/model or a v1
+        # adapter. The fixture mirrors the kenari lane's bound values and
+        # persists its request bytes like every real receipt.
+        fx_body = {"model": "agnes-2-0-flash:free",
+                   "messages": [{"role": "user", "content": "selfcheck"}]}
+        fx_req = os.path.join(tmp, "call-fixture.request.json")
+        with open(fx_req, "wb") as f:
+            f.write(json.dumps(fx_body).encode())
+        fx_sha = hashlib.sha256(open(fx_req, "rb").read()).hexdigest()
         json.dump({"call_id": "fx-1", "tag": "selfcheck",
-                   "model_requested": "fx", "endpoint": "https://fx/v1",
-                   "request_body_sha256": "fx-req-body",
+                   "model_requested": "agnes-2-0-flash:free",
+                   "endpoint": "https://kenari.id/v1",
+                   "request_body_sha256": fx_sha,
+                   "request_body_file": "call-fixture.request.json",
+                   "request_body_file_sha256": fx_sha,
                    "usage_raw": raw_usage, "usage_raw_sha256": raw_usage_sha,
                    "normalizer_id": "kenari-openai-chat-v2",
                    "normalizer_version": "usage-norm-v1",
@@ -542,14 +605,23 @@ def selfcheck_wire():
         assert os.path.exists(reuse), "reuse record not written"
         # H2 identity composes: provider-side echo record + prereg pass.
         # Item-3: nonempty provider id + exact request-body hash required.
-        idp = record_identity(tmp, "https://fx/v1", "fx",
-                              {"model": "fx", "id": "fx-1", "created": 1},
+        # A11.2: the identity fixture must agree with the receipt's bound
+        # lane values and persisted request bytes, exactly as a real call
+        # would; otherwise the binding probes below would trip on the
+        # fixture rather than on the defect under test.
+        idp = record_identity(tmp, "https://kenari.id/v1",
+                              "agnes-2-0-flash:free",
+                              {"model": "agnes-2-0-flash", "id": "fx-1",
+                               "created": 1},
                               extra_params={"max_tokens": 9000},
                               tag="selfcheck",
-                              request_body_sha256="fx-req-body")
+                              request_body_sha256=fx_sha,
+                              messages=fx_body["messages"])
         assert check_against_prereg(
-            idp, {"endpoint": "https://fx/v1", "requested_id": "fx",
-                  "acceptable_echoed_ids": ["fx"],
+            idp, {"endpoint": "https://kenari.id/v1",
+                  "requested_id": "agnes-2-0-flash:free",
+                  "acceptable_echoed_ids": ["agnes-2-0-flash:free",
+                                            "agnes-2-0-flash"],
                   "family": "famXX-fixture"}) == "famXX-fixture"
         try:
             record_identity(tmp, "https://fx/v1", "fx", {"id": "fx-1"},
@@ -609,7 +681,7 @@ def selfcheck_wire():
         # Item-3: the model-call link carries the provider response id, the
         # exact request-body hash, and the complete generation-param set.
         assert mc_payload.get("provider_response_id") == "fx-1"
-        assert mc_payload.get("request_body_sha256") == "fx-req-body"
+        assert mc_payload.get("request_body_sha256") == fx_sha
         assert mc_payload.get("generation_params") == {"max_tokens": 9000}
         # repromotion refused (H-LOCK-008 writes-once).
         try:
@@ -676,7 +748,8 @@ def selfcheck_prompt():
     return 0
 
 
-def prepare_arm(lane, family, task, arm, capdir, wire, run_id):
+def prepare_arm(lane, family, task, arm, capdir, wire, run_id,
+                cell=None):
     """Item-6 ONE SOURCE SNAPSHOT (audit round 2 item 6).
 
     Stage the agent-visible root ONCE (sealed copy: prompt.md + declared
@@ -727,7 +800,7 @@ def prepare_arm(lane, family, task, arm, capdir, wire, run_id):
         if wire:
             # H-LOCK-008: resolve the executed engine by exact locked hash
             # BEFORE it enters the jail. Dev-escape (unwired) copies unverified.
-            cap_info = _verify_capability(capdir)
+            cap_info = _verify_capability(capdir, cell=cell)
             cap_engine = cap_info["verified"]["engine.py"]
         else:
             cap_engine = os.path.join(capdir, "engine.py")
@@ -810,12 +883,32 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
         raise RuntimeError("ORDER-DENY refuse start: "
                            + " | ".join(exp_findings))
     expansion = order_load_expansion(BASE)
-    done_cells = order_completed_cells(os.path.join(BASE, "runs"))
+    # A11.6: progress is VALIDATED cell state (manifest + chain + identity +
+    # normalized usage + admissibility), never raw manifest presence.
+    done_cells = order_completed_cells(BASE, expansion=expansion)
     cell, order_findings = order_authorize(
         expansion, block, family, task, lane, arm, done_cells)
     if order_findings:
         raise RuntimeError("ORDER-DENY refuse start: "
                            + " | ".join(order_findings))
+    # A11.5: the scheduler — not the operator — derives the namespace. For a
+    # wired estimand cell the capability registry and the run directory MUST
+    # be the derived per-universe paths; a free CLI path is refused.
+    derived_cap, derived_out = order_derive_paths(BASE, cell)
+    if wire:
+        if capdir and os.path.realpath(capdir) != os.path.realpath(
+                derived_cap):
+            raise PermissionError(
+                "FOREIGN-REGISTRY-DENY: capability dir must be the derived "
+                f"universe registry {derived_cap}; got {capdir} "
+                f"(cell {cell['block']}/{cell['universe']}/{cell['family']}, "
+                f"capability_id {cell['capability_id']})")
+        if os.path.realpath(outdir) != os.path.realpath(derived_out):
+            raise PermissionError(
+                "ORDER-DENY: run dir must be the derived cell path "
+                f"{derived_out}; got {outdir}")
+        capdir = derived_cap
+        outdir = derived_out
     # Refuse-START: the executed instance subtree must be byte-identical to
     # the frozen package BEFORE any model token is spent. Item-5: the
     # manifest is resolved from the freeze commit via git (the working-tree
@@ -829,7 +922,8 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     # ---- Item-6 ONE SOURCE SNAPSHOT (audit round 2 item 6) -------------
     run_id = hashlib.sha256(
         f"{lane}|{family}|{task}|{arm}|{time.time()}".encode()).hexdigest()[:12]
-    prep = prepare_arm(lane, family, task, arm, capdir, wire, run_id)
+    prep = prepare_arm(lane, family, task, arm, capdir, wire, run_id,
+                       cell=cell)
     prompt = prep["prompt"]
     envelope = prep["envelope"]
     work, visible = prep["work"], prep["visible"]
@@ -914,6 +1008,10 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                 "cell_id": cell["cell_id"],
                 "cell_index": cell["index"],
                 "cell_letter": cell["letter"],
+                "cell_universe": cell["universe"],
+                "cell_event": cell["event"],
+                "cell_kind": cell["kind"],
+                "capability_id": cell["capability_id"],
                 "cell_lane_key": cell["lane_key"],
                 "order_sha256": expansion["order_sha256"],
                 "instance_freeze_commit": instance_freeze_commit,

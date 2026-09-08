@@ -33,6 +33,22 @@
    "reason": "item-4 three-authority re-scope (audit round 2): V1 instance / V2 protocol / V3 execution validators replace whole-tree diff; item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
    "base": "fca3df0",
    "slice": "a7-item-4"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "974ce924d019200508d7a00895c76e0441a28f31b151255dc526b563fb98f1ec",
+   "to_sha": "b11e00259a571a687c0de59f7f96f73745a7e9240fddb01c3af166fe3211d2cc",
+   "reason": "round-3 A11: register AUDIT-ROUND3-REPLY.txt as a meta pointer (integrity by git history + lock record), so the auditor's committed reply is not treated as an unlisted extra file by V1",
+   "base": "a11-round3-close",
+   "slice": "a11.1-6"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
+   "to_sha": "a0419cedc9a4c2534b7ec6e60303a1869d4ad0e6cf1f99ba3cf5d75bc6e086eb",
+   "reason": "round-3 A11: A11.1 live-branch identity; A11.2 persisted request bytes + adapter/request binding; A11.3 byte-identity symmetry proof (legacy weaker fixture deleted); A11.4 full event-universe expansion; A11.5 derived per-universe namespaces; A11.6 validated cell state",
+   "base": "a11-round3-close",
+   "slice": "a11.1-6"
   }
  ]
 }

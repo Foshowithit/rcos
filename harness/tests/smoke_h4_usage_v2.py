@@ -116,7 +116,7 @@ q_raw = {"prompt_tokens": 478, "completion_tokens": 1965,
          "total_tokens": 2443,
          "prompt_tokens_details": {"cached_tokens": 128}}
 q_copy = os.path.join(BASE, "call-qshape.json")
-json.dump({"call_id": "q-1", "tag": "qshape", "model_requested": "q-m",
+json.dump({"call_id": "q-1", "tag": "qshape", "model_requested": "agnes-2-0-flash:free",
            "endpoint": "https://kenari.id/v1",
            "request_body_sha256": "q-req",
            "usage_raw": q_raw,
@@ -147,7 +147,8 @@ except ValueError as e:
     check("unknown normalizer rejected",
           "USAGE-NORMALIZER-UNKNOWN" in str(e), str(e)[:120])
 no_usage = os.path.join(BASE, "call-nousse.json")
-json.dump({"call_id": "n-1", "model_requested": "m", "endpoint": EP,
+json.dump({"call_id": "n-1", "model_requested": "minimax-m3",
+           "endpoint": "https://api.router9.com/v1",
            "normalizer_id": "router9-openai-chat-v2",
            "usage_raw": None, "usage_raw_sha256": None},
           open(no_usage, "w"))
@@ -238,7 +239,7 @@ except ValueError as e:
 reply, sp = recorded_call(
     EP, "K", "dummy", "stub-m", [{"role": "user", "content": "hi"}],
     os.path.join(BASE, "usage"), tag="reqbody",
-    normalizer_id="router9-openai-chat-v2")
+    normalizer_id="openai-chat-total-input-v1")
 sr = json.load(open(sp))
 want_body = hashlib.sha256(json.dumps(
     {"model": "stub-m",
@@ -247,7 +248,7 @@ check("fresh receipt binds exact request-body hash",
       reply == "STUB-OK" and sr.get("request_body_sha256") == want_body,
       str(sr.get("request_body_sha256")))
 snu = verify_normalized_usage(write_normalized_usage(
-    sp, expect_normalizer_id="router9-openai-chat-v2"))
+    sp, expect_normalizer_id="openai-chat-total-input-v1"))
 check("fresh stub receipt normalizes (10-2+5=13)",
       snu["primary_work"] == 13 and snu["input_tokens_uncached"] == 8,
       str(snu["primary_work"]))
@@ -313,16 +314,51 @@ rundir = os.path.join(BASE, "P-famXX-T0self")
 os.makedirs(rundir, exist_ok=True)
 rd = os.path.join(rundir, "call-a1.json")
 shutil.copy(os.path.join(BASE, "call-qshape.json"), rd)
-rnu = write_normalized_usage(rd)
-json.dump({"endpoint": "https://kenari.id/v1", "model_requested": "q-m",
-           "model_echoed_model": "q-m", "provider_response_id": "qresp-1",
-           "request_body_sha256": "q-req", "generation_params": {}},
+# A11.2: a claim-grade receipt must persist its exact request bytes.
+_qsrc = json.load(open(rd))
+json.dump({"model": _qsrc["model_requested"],
+           "messages": [{"role": "user", "content": "q"}]},
+          open(os.path.join(rundir, "call-a1.request.json"), "w"))
+_qrc = json.load(open(rd))
+_qreq = open(os.path.join(rundir, "call-a1.request.json"), "rb").read()
+_qsha = hashlib.sha256(_qreq).hexdigest()
+_qrc["request_body_sha256"] = _qsha
+_qrc["request_body_file"] = "call-a1.request.json"
+_qrc["request_body_file_sha256"] = _qsha
+json.dump(_qrc, open(rd, "w"), indent=1)
+def _rebuild_claimable():
+    """Restore the clean receipt + persisted request bytes + artifact."""
+    import shutil as _sh
+    _nu_guess = rd[:-5] + ".normalized.json"
+    if os.path.exists(_nu_guess):
+        os.remove(_nu_guess)
+    _sh.copy(os.path.join(BASE, "call-qshape.json"), rd)
+    _rc = json.load(open(rd))
+    _raw = json.dumps({"model": _rc["model_requested"],
+                       "messages": [{"role": "user", "content": "q"}]}
+                      ).encode()
+    with open(os.path.join(rundir, "call-a1.request.json"), "wb") as _f:
+        _f.write(_raw)
+    _rc["request_body_sha256"] = hashlib.sha256(_raw).hexdigest()
+    _rc["request_body_file"] = "call-a1.request.json"
+    _rc["request_body_file_sha256"] = _rc["request_body_sha256"]
+    json.dump(_rc, open(rd, "w"), indent=1)
+    return write_normalized_usage(rd)
+
+
+json.dump({"endpoint": "https://kenari.id/v1", "model_requested": "agnes-2-0-flash:free",
+           "model_echoed_model": "agnes-2-0-flash", "provider_response_id": "qresp-1",
+           "request_body_sha256": _qsha, "generation_params": {},
+           "messages_sha256": hashlib.sha256(json.dumps(
+               [{"role": "user", "content": "q"}],
+               sort_keys=True).encode()).hexdigest()},
           open(os.path.join(rundir, "identity.json"), "w"))
 json.dump({"wired": True, "instance_freeze_commit": FREEZE,
            "usage_receipts": ["call-a1.json"], "dev_mode": False,
            "identity_file": "identity.json"},
           open(os.path.join(rundir, "H1-RUN-MANIFEST.json"), "w"))
 open(os.path.join(rundir, "EVIDENCE-CHAIN.jsonl"), "w").write("")
+rnu = write_normalized_usage(rd)
 s, r = ADM.classify_run_dir(rundir, FREEZE)
 check("full-gate run with verifying artifacts is ESTIMAND-ELIGIBLE",
       s == ADM.ELIGIBLE, r)
@@ -338,9 +374,9 @@ s3, r3 = ADM.classify_run_dir(rundir, FREEZE)
 check("tampered normalized artifact excludes",
       s3 == ADM.EXCLUDED and "normalized usage invalid" in r3, r3[:160])
 # rebuild both receipt + artifact cleanly after tamper round
-os.remove(rnu)
-shutil.copy(os.path.join(BASE, "call-qshape.json"), rd)
-rnu = write_normalized_usage(rd)
+if os.path.exists(rd + ""):
+    pass
+rnu = _rebuild_claimable()
 rr = json.load(open(rd))
 rr["usage_raw"] = dict(rr["usage_raw"], completion_tokens=7)
 json.dump(rr, open(rd, "w"), indent=1)
@@ -348,16 +384,17 @@ s4, r4 = ADM.classify_run_dir(rundir, FREEZE)
 check("tampered raw receipt excludes",
       s4 == ADM.EXCLUDED and "normalized usage invalid" in r4, r4[:160])
 # rebuild cleanly, then tamper the IDENTITY side: binding must fail too
-os.remove(rnu)
-shutil.copy(os.path.join(BASE, "call-qshape.json"), rd)
-rnu = write_normalized_usage(rd)
+if os.path.exists(rd + ""):
+    pass
+rnu = _rebuild_claimable()
 _idf = os.path.join(rundir, "identity.json")
 _idj = json.load(open(_idf))
-_idj["model_requested"] = "q-m-tampered"
+_idj["model_requested"] = "agnes-2-0-flash-tampered"
 json.dump(_idj, open(_idf, "w"))
 s5, r5 = ADM.classify_run_dir(rundir, FREEZE)
 check("tampered identity excludes via binding",
-      s5 == ADM.EXCLUDED and "identity binding invalid" in r5, r5[:160])
+      s5 == ADM.EXCLUDED and ("identity binding invalid" in r5
+                              or "request binding invalid" in r5), r5[:160])
 
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH4 smoke: {len(results) - len(bad)}/{len(results)} closed")

@@ -98,19 +98,17 @@ def _capture(lane, transport):
     body = _req_body(spec["model"])
     if transport == "live":
         api_key = open(spec["keyfile"]).read().strip()
-        reply, receipt = UG.recorded_call(
+        # ONE call, returning the parsed provider object so identity is
+        # captured from the REAL response (never re-issued: no double spend).
+        reply, receipt, provider_obj = UG.recorded_call(
             spec["base"], f"{lane}-key", api_key, spec["model"],
             [{"role": "user", "content": PROMPT}], out,
             extra_body=GEN_PARAMS, tag=f"calibration-{lane}",
-            normalizer_id=spec["normalizer"], return_response=False)
-        raw = json.load(open(receipt))
-        # re-read the real provider object for identity capture
-        provider_obj = dict(raw.get("usage") or {})
-        # recorded_call already persisted the receipt; the provider response
-        # object is needed verbatim, so re-issue through the same helper in
-        # return_response mode is NOT done (that would double-spend). Instead
-        # identity is captured from the response object we asked for below.
-        return reply, receipt, None
+            normalizer_id=spec["normalizer"], return_response=True)
+        if provider_obj is None:
+            raise ValueError("CALIBRATION-IDENTITY: the live transport "
+                             "returned no provider response object")
+        return reply, receipt, provider_obj
     # offline: synthesize a provider response with the SAME shape the lanes
     # return, so the compose path is exercised exactly.
     if lane == "P":
@@ -129,11 +127,18 @@ def _capture(lane, transport):
     call_id = hashlib.sha256(f"{spec['base']}|{spec['model']}|{t0:.3f}|"
                              f"{reply[:64]}".encode()).hexdigest()[:16]
     receipt = os.path.join(out, f"call-{call_id}.json")
+    # A11.2: the rehearsal writes the SAME persisted-request artifact the
+    # live path writes, so the compose path is exercised identically.
+    req_name = f"call-{call_id}.request.json"
+    with open(os.path.join(out, req_name), "wb") as f:
+        f.write(blob)
     json.dump({"call_id": call_id, "tag": f"calibration-{lane}",
                "endpoint": spec["base"], "model_requested": spec["model"],
                "wall_s": 0.0,
                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                "request_body_sha256": hashlib.sha256(blob).hexdigest(),
+               "request_body_file": req_name,
+               "request_body_file_sha256": hashlib.sha256(blob).hexdigest(),
                "usage_raw": usage_raw,
                "usage_raw_sha256": hashlib.sha256(
                    json.dumps(usage_raw, sort_keys=True).encode()).hexdigest(),
@@ -177,8 +182,14 @@ def _compose(lane, receipt, provider_obj, live):
     id_path = ID.record_identity(
         os.path.dirname(receipt), spec["base"], spec["model"], provider_obj,
         extra_params=params, tag=f"calibration-{lane}",
-        request_body_sha256=rc["request_body_sha256"])
+        request_body_sha256=rc["request_body_sha256"],
+        messages=[{"role": "user", "content": PROMPT}])
     id_rec = ID.verify_identity_binding(id_path, receipt)
+    # A11.2: the persisted request bytes must reproduce the receipt hash AND
+    # agree with the identity record field-by-field.
+    UG.verify_request_binding(receipt, id_path)
+    UG.verify_adapter_binding(spec["normalizer"], lane=lane,
+                              receipt=rc)
     rep["model_echoed"] = id_rec["model_echoed_model"]
     rep["provider_id"] = id_rec["provider_response_id"]
     rep["identity"] = os.path.basename(id_path)

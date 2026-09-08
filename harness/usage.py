@@ -135,10 +135,19 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
     # so later tampering of any request field (model/params/messages) breaks
     # the binding (identity + normalized-usage verifiers recompute it).
     request_body_sha256 = hashlib.sha256(blob).hexdigest()
+    # A11.2: persist the EXACT request bytes so the hash is independently
+    # verifiable and the declared generation params can be reconstructed
+    # (never trusted from identity.json alone).
+    req_path = os.path.join(out_dir, f"call-{call_id}.request.json")
+    with open(req_path, "wb") as f:
+        f.write(blob)
+    request_file_sha256 = hashlib.sha256(blob).hexdigest()
     receipt = {"call_id": call_id, "tag": tag, "endpoint": endpoint,
                "model_requested": model, "wall_s": round(wall, 2),
                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                "request_body_sha256": request_body_sha256,
+               "request_body_file": os.path.basename(req_path),
+               "request_body_file_sha256": request_file_sha256,
                "usage_raw": data.get("usage"),
                "usage_raw_sha256": raw_hash,
                "normalizer_id": normalizer_id,
@@ -174,14 +183,66 @@ def _req_int(u, path):
     return v
 
 
+def verify_adapter_binding(normalizer_id, lane=None, endpoint=None,
+                           requested_model=None, receipt=None):
+    """A11.2: the adapter id is a LANE BINDING, not a label. Verify the
+    declared adapter against the lane/endpoint/model actually used, and (when
+    a receipt is given) against the receipt's own endpoint/model_requested.
+
+    Raises ValueError on ANY mismatch. v1 historical adapters carry no bound
+    block and are accepted only when no lane/model claim is made (they are
+    excluded from the estimand surface anyway); a v2 id must match exactly.
+    """
+    if normalizer_id not in PROVIDER_NORMALIZERS:
+        raise ValueError(f"USAGE-ADAPTER-UNKNOWN: {normalizer_id!r}")
+    cfg = PROVIDER_NORMALIZERS[normalizer_id]
+    bound = cfg.get("bound")
+    if receipt is not None:
+        endpoint = endpoint if endpoint is not None else receipt.get("endpoint")
+        requested_model = (requested_model if requested_model is not None
+                           else receipt.get("model_requested"))
+        if receipt.get("normalizer_id") != normalizer_id:
+            raise ValueError(
+                f"USAGE-ADAPTER-BINDING: receipt declares "
+                f"{receipt.get('normalizer_id')!r}, expected "
+                f"{normalizer_id!r}")
+    if bound is None:
+        if lane is not None or requested_model is not None:
+            raise ValueError(
+                f"USAGE-ADAPTER-BINDING: {normalizer_id!r} is a historical "
+                "v1 adapter with no lane binding; it may not back a new "
+                "lane-bound call (use the lane's v2 id)")
+        return cfg
+    problems = []
+    if lane is not None and bound.get("lane") != lane:
+        problems.append(f"lane {lane!r} != bound lane {bound.get('lane')!r}")
+    if endpoint is not None and \
+            endpoint.rstrip("/").lower() != \
+            str(bound.get("endpoint_base", "")).rstrip("/").lower():
+        problems.append(f"endpoint {endpoint!r} != bound "
+                        f"{bound.get('endpoint_base')!r}")
+    if requested_model is not None and \
+            requested_model != bound.get("gateway_model"):
+        problems.append(f"model {requested_model!r} != bound "
+                        f"{bound.get('gateway_model')!r}")
+    if problems:
+        raise ValueError(f"USAGE-ADAPTER-BINDING-DENY {normalizer_id}: "
+                         + "; ".join(problems))
+    return cfg
+
+
 def normalize_usage(receipt, normalizer_id):
     """Frozen provider-schema adapter -> primary work.
     The adapter id declares BOTH the raw schema it consumes and its cache
     semantics. Unknown/undeclared adapter FAILS (no runtime field
-    guessing). Verifies raw usage hash before trusting usage_raw."""
+    guessing). Verifies raw usage hash before trusting usage_raw. A v2
+    adapter additionally verifies its LANE BINDING against the receipt's
+    own endpoint/model (A11.2) — a relabeled receipt is refused."""
     if normalizer_id not in PROVIDER_NORMALIZERS:
         raise ValueError(f"USAGE-NORMALIZER-UNKNOWN: {normalizer_id}")
     cfg = PROVIDER_NORMALIZERS[normalizer_id]
+    if cfg.get("bound") is not None:
+        verify_adapter_binding(normalizer_id, receipt=receipt)
     u = receipt.get("usage_raw")
     if not isinstance(u, dict):
         raise ValueError("USAGE-INCOMPLETE: usage_raw absent/non-object")
@@ -315,6 +376,74 @@ def write_normalized_usage(receipt_path, expect_normalizer_id=None):
     with open(path, "w") as f:
         f.write(content)
     return path
+
+
+def verify_request_binding(receipt_path, identity_path=None):
+    """A11.2: independently reconstruct the request binding.
+
+    The receipt's request_body_sha256 is checked against the PERSISTED
+    request bytes (call-<id>.request.json), and — when an identity record is
+    given — the request bytes must themselves agree with the identity
+    record: same model, same messages, and generation fields exactly equal
+    to identity.generation_params. This is what makes "the complete explicit
+    generation-param set is bound" mechanically true instead of
+    documentary: mutating temperature/max_tokens/model/messages in ANY one
+    representation breaks the check.
+
+    Raises ValueError (fail closed); returns the parsed request body.
+    """
+    rc = json.load(open(receipt_path))
+    req_name = rc.get("request_body_file")
+    if not req_name:
+        raise ValueError(f"REQUEST-BINDING-INCOMPLETE {receipt_path}: receipt "
+                         "has no request_body_file (re-record the call)")
+    req_path = os.path.join(os.path.dirname(receipt_path), req_name)
+    if not os.path.exists(req_path):
+        raise ValueError(f"REQUEST-BINDING-INCOMPLETE {receipt_path}: "
+                         f"persisted request {req_name!r} missing")
+    blob = open(req_path, "rb").read()
+    file_sha = hashlib.sha256(blob).hexdigest()
+    if file_sha != rc.get("request_body_sha256") or \
+            file_sha != rc.get("request_body_file_sha256"):
+        raise ValueError(f"REQUEST-BINDING-MISMATCH {receipt_path}: persisted "
+                         "request bytes do not match the recorded hashes")
+    try:
+        body = json.loads(blob.decode())
+    except (ValueError, UnicodeDecodeError) as e:
+        raise ValueError(f"REQUEST-BINDING-INCOMPLETE {receipt_path}: request "
+                         f"bytes unparsable: {e}")
+    if body.get("model") != rc.get("model_requested"):
+        raise ValueError(f"REQUEST-BINDING-MISMATCH {receipt_path}: request "
+                         f"model {body.get('model')!r} != "
+                         f"{rc.get('model_requested')!r}")
+    if identity_path is not None:
+        rec = json.load(open(identity_path))
+        probs = []
+        if rec.get("request_body_sha256") != file_sha:
+            probs.append("identity request_body_sha256 != persisted bytes")
+        if rec.get("model_requested") != body.get("model"):
+            probs.append(f"identity model_requested "
+                         f"{rec.get('model_requested')!r} != request "
+                         f"{body.get('model')!r}")
+        if rec.get("endpoint") != rc.get("endpoint"):
+            probs.append("identity endpoint != receipt endpoint")
+        gen = rec.get("generation_params")
+        if not isinstance(gen, dict):
+            probs.append("identity has no generation_params block")
+        else:
+            body_gen = {k: v for k, v in body.items()
+                        if k not in ("model", "messages")}
+            if body_gen != gen:
+                probs.append(f"generation_params {gen!r} != request "
+                             f"generation fields {body_gen!r}")
+        if rec.get("messages_sha256") != hashlib.sha256(
+                json.dumps(body.get("messages"), sort_keys=True)
+                .encode()).hexdigest():
+            probs.append("messages_sha256 != request messages")
+        if probs:
+            raise ValueError(f"REQUEST-BINDING-MISMATCH {identity_path} vs "
+                             f"{receipt_path}: " + "; ".join(probs))
+    return body
 
 
 def verify_normalized_usage(nu_path):

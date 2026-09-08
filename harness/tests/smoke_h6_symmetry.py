@@ -32,18 +32,10 @@ def check(name, ok, extra=""):
           (f" [{extra}]" if extra and not ok else ""))
 
 
-# Legacy (pre-item-6) DISABLED template: control-arm bytes must be unchanged.
-LEGACY_DISABLED = """You are solving the task below from scratch. No registry/capability/prior solution exists. Output ONLY one JSON object, no other text.
-
-TASK DEFINITION:
-__TASKDEF__
-
-TASK DIRECTORY LISTING: __LISTING__
-TASK FILE CONTENTS (exact bytes):
-__BLOBS__
-
-Output object: {"solver_py": <complete Python script taking (src_dir, dst_path) and writing the ordinary task output>, "notes": "one line"}. No explanations/fences."""
-
+# A11.3: the pre-round-3 per-arm templates are DELETED as assertions. They
+# encoded the weaker rule this suite used to enforce (a treatment-only
+# preamble and a treatment-only output schema). Keeping them as fixtures
+# would legitimize exactly the leakage the auditor flagged.
 os.system("rm -rf " + BASE)
 os.makedirs(BASE)
 
@@ -54,8 +46,6 @@ dis = RA.build_arm_prompt("disabled", env)
 check("canonical pair has zero findings",
       RA.check_arm_symmetry(cor, dis, env) == [],
       str(RA.check_arm_symmetry(cor, dis, env)))
-check("disabled arm bytes == legacy pre-item-6 template",
-      RA.DISABLED == LEGACY_DISABLED)
 check("both arms embed the identical envelope object",
       cor.count(env) == 1 and dis.count(env) == 1)
 
@@ -89,28 +79,39 @@ check("capability block missing frozen section header fails closed",
           RA.build_arm_prompt("correct", env, "M", "N", "E").replace(
               "ENGINE SOURCE (frozen, do not modify):", "ENGINE:"),
           dis, env) != [])
-check("correct preamble drift fails closed",
-      RA.check_arm_symmetry(cor.replace("PROVIDED capability", "PROVIDED CAPABILITY", 1),
-                            dis, env) != [])
+check("neutral preamble drift fails closed",
+      RA.check_arm_symmetry(
+          cor.replace("You are solving the task below.",
+                      "You are solving the task Below.", 1), dis, env) != [])
 check("disabled tail content past envelope fails closed",
       RA.check_arm_symmetry(cor, dis + "\nPS: prefer b.txt", env) != [])
-check("correct output schema drift fails closed",
-      RA.check_arm_symmetry(cor.replace('"records"', '"rows"', 1), dis, env) != [])
+check("output contract drift fails closed",
+      RA.check_arm_symmetry(
+          cor.replace('"result"', '"payload"', 1), dis, env) != [])
 check("capability block placed before the envelope fails closed",
       RA.check_arm_symmetry(
-          RA._PRE_CORRECT
+          RA._PRE
           + "\n" + RA._CAP_BEGIN + "\nCAPABILITY MANIFEST:\nM\nADAPTER "
           "NOTES:\nN\nENGINE SOURCE (frozen, do not modify):\nE\n"
-          + RA._CAP_END + "\n" + env + RA._OUT_CORRECT, dis, env) != [])
-# mechanical statement of the diff: shared envelope is all that is common
-cor_norm = cor.replace(RA._PRE_CORRECT, "P").replace(RA._OUT_CORRECT, "O")
-dis_norm = dis.replace(RA._PRE_DISABLED, "P").replace(RA._OUT_DISABLED, "O")
-check("disabled == preamble + envelope + frozen output schema",
-      dis_norm == "P" + env + "O", repr(dis_norm[:60]))
-check("correct == preamble + envelope + delimited block + output schema",
-      cor_norm.startswith("P" + env + "\n" + RA._CAP_BEGIN + "\n")
-      and cor_norm.endswith(RA._CAP_END + "\nO")
-      and cor_norm.count(env) == 1, repr(cor_norm[:60]))
+          + RA._CAP_END + "\n" + env + RA._OUT, dis, env) != [])
+# --- A11.3 core: byte-identity after removing the capability block ---
+check("strip_capability_block(treatment) == control (byte-identical)",
+      RA.strip_capability_block(cor) == dis,
+      repr((RA.strip_capability_block(cor)[:80], dis[:80])))
+check("single shared neutral preamble: no arm-specific wording",
+      cor.startswith(RA._PRE) and dis.startswith(RA._PRE)
+      and "PROVIDED capability" not in cor and "from scratch" not in dis
+      and "no prior tasks" not in cor and "No registry/capability" not in dis)
+check("single shared output contract: treatment-only schema forbidden",
+      cor.endswith(RA._OUT) and dis.endswith(RA._OUT)
+      and '"solver_py"' not in cor and '"records"' not in cor)
+check("one-byte divergence ANYWHERE in the shared region is detected",
+      RA.strip_capability_block(cor.replace("TASKDEF", "TASKDEE", 1)) != dis)
+check("output-contract drift only in treatment is detected",
+      RA.strip_capability_block(cor.replace('"notes"', '"note"', 1)) != dis)
+check("preamble drift only in treatment is detected",
+      RA.strip_capability_block(
+          cor.replace("solving the task", "solving the Task", 1)) != dis)
 check("counterfactual sentinel never enters the real disabled prompt",
       RA.COUNTERFACTUAL_CAP not in dis and RA.COUNTERFACTUAL_CAP in
       RA.build_arm_prompt("correct", env, RA.COUNTERFACTUAL_CAP,

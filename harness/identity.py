@@ -10,7 +10,8 @@ import time
 
 
 def record_identity(out_dir, endpoint, model_requested, response_obj,
-                    extra_params=None, tag="", request_body_sha256=None):
+                    extra_params=None, tag="", request_body_sha256=None,
+                    messages=None):
     """response_obj: parsed provider JSON. Extracts echoed identity.
     Returns path. Raises on missing identity evidence (fail closed).
 
@@ -44,6 +45,13 @@ def record_identity(out_dir, endpoint, model_requested, response_obj,
         raise ValueError("IDENTITY-INCOMPLETE: request_body_sha256 missing "
                          "(record from the usage receipt at call time)")
     rec["request_body_sha256"] = request_body_sha256
+    if messages is not None:
+        # A11.2: bind the exact prompt/context bytes too, so the request
+        # body verifier can prove messages identity == messages on the wire.
+        import hashlib as _hl
+        rec["messages_sha256"] = _hl.sha256(
+            json.dumps(messages, sort_keys=True).encode()).hexdigest()
+        rec["messages_count"] = len(messages)
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "identity.json")
     with open(path, "w") as f:

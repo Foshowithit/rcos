@@ -52,8 +52,20 @@ bytes verbatim in both arms; the delimited capability-access block
 exactly once in treatment and never in control; `check_arm_symmetry()`
 fails closed on any one-byte shared-region asymmetry, stray/duplicated
 delimiter, missing frozen section header, preamble/output-schema drift,
-or content past the envelope. Control-arm bytes are unchanged from the
-pre-item-6 template (regression-pinned).
+or content past the envelope.
+
+A11.3 (audit round 3 — the round-2 proof was weaker than the requirement):
+the requirement is BYTE IDENTITY, so the machine proof is now exactly that.
+Treatment and control are composed from ONE neutral preamble
+(`You are solving the task below.`) and ONE output contract; the treatment
+prompt is the control prompt with the delimited capability block inserted,
+and `strip_capability_block(treatment) == control` must hold byte-for-byte
+(including the single framing newline the block consumes on each side).
+`_first_diff()` reports the exact divergent index when it does not.
+The legacy fixture that asserted the weaker "same sections, different
+preamble" rule was DELETED, not supplemented: `smoke_h6_symmetry.py`
+probes byte identity, the single preamble, the single output contract, a
+one-byte divergence, and treatment-only drift (33/33).
 
 ### H-SES-003 — session/workdir/state isolation
 
@@ -112,6 +124,18 @@ model-call chain link, and admissibility re-verifies every artifact
 receipt OR the normalized artifact excludes the run. New receipts also
 carry `request_body_sha256` over the exact bytes POSTed.
 
+A11.2 (audit round 3): the exact request BYTES are now persisted per call
+as `call-<id>.request.json` with `request_body_file_sha256` alongside the
+digest, and `verify_request_binding()` re-reads those bytes and fails on
+any mismatch (REQUEST-BINDING-INCOMPLETE / REQUEST-BINDING-MISMATCH), so
+a mutated temperature / max_tokens / model / messages in ANY representation
+(messages, identity record, receipt digest, persisted file) is detected.
+`verify_adapter_binding()` additionally refuses a v2 adapter used off its
+bound lane/endpoint/model (`USAGE-ADAPTER-BINDING-DENY`): a v2 adapter id
+IS a lane binding, and v1 ids are historical unbound adapters that may only
+appear where no lane/model claim is made. Admissibility enforces both
+before the identity-binding gate.
+
 ### H-ID-006 — provider/model identity capture
 
 Requirement: every model call logs provider endpoint, requested model
@@ -134,7 +158,10 @@ sends AND records ONE param set (no drifting literals); the model-call
 chain link cross-verifies identity↔receipt binding and carries the
 provider id + body hash + params; admissibility re-verifies the binding
 per receipt — stripping the echo, stripping the provider id, or altering
-model/params on either side fails the chain and excludes the run.
+model/params on either side fails the chain and excludes the run. A11.2
+adds `messages_sha256` + `messages_count` to the identity record, so the
+exact prompt bytes the lane was asked to answer are bound into identity as
+well as into the persisted request file.
 
 ### H-REUSE-007 — full reuse lifecycle + material-contribution evidence
 
@@ -213,24 +240,53 @@ Requirement: the frozen ORDER.md sequence is the only authorized execution
 order; a run that is not the next authorized cell cannot start.
 Implementation (round-2 item 7): `harness/order.py` parses ORDER.md
 mechanically (family order, block order PQ→QP, per-family task order and
-letter permutation, seed) and expands it into 144 cells, each with a stable
-`cell_id`; the committed `ORDER-EXPANSION.json` is that expansion and is
-never hand-edited (preflight V2 re-derives it from ORDER.md and fails on
+letter permutation, seed) and expands it into enumerated cells, each with a
+stable `cell_id`; the committed `ORDER-EXPANSION.json` is that expansion and
+is never hand-edited (preflight V2 re-derives it from ORDER.md and fails on
 any drift). Before any model call the runner requires `--block PQ|QP`,
 resolves the requested (block, family, task, lane, arm) to its cell, and
 refuses on: a cell outside the frozen universe, an unknown block/lane/arm,
 a duplicate already-completed cell, or ANY earlier cell still incomplete
 (covers fam01 before fam05, QP before PQ completes, and wrong arm order
-within a family). The completion ledger counts only wired, non-dev
-manifests carrying a `cell_id`. Capability dirs outside the Fam-C registry
-surface are refused (FOREIGN-REGISTRY-DENY). The manifest stamps
-block/cell_id/cell_index/cell_letter/order_sha256 for the run. Preflight V3
-also checks the runner's whole IMPORT CLOSURE against EXECUTION-LOCK.json,
-so a module that executes during a run cannot ride outside the execution
-authority; `harness/mint_execution_lock.py --check` re-verifies that
-mechanically (and mints the amendment after an intentional change).
-Test: `harness/tests/smoke_h7_order.py` (adversarial refusals + real
-runner subprocess refusals, no model call).
+within a family). The manifest stamps block/cell_id/cell_index/cell_letter/
+cell_universe/cell_event/cell_kind/capability_id/order_sha256 for the run.
+Preflight V3 also checks the runner's whole IMPORT CLOSURE against
+EXECUTION-LOCK.json, so a module that executes during a run cannot ride
+outside the execution authority; `harness/mint_execution_lock.py --check`
+re-verifies that mechanically (and mints the amendment after an intentional
+change).
+
+A11.4 (audit round 3 — the expansion started at T2, so it enumerated
+downstream cells whose capability had never been acquired and could not
+instantiate PREREG §2): the expansion now covers the FULL per-family event
+sequence — `T0, T1, PROMOTION, CAPABILITY_LOCK` for universe A, then the
+same four for universe C, then `T2, T3, T4` × A/B/C/D in the frozen letter
+order. 240 events, 192 model calls. The A-vs-C acquisition order is
+resolved explicitly (PQ/A/fam05/T0 precedes PQ/C/fam05/T0), C's acquisition
+is refused until A's own promotion+lock complete, B/D carry no acquisition
+event (no K), and each universe has its own `capability_id`
+(`<family>-<block>-<universe>-K`). `authorize_event()` gates
+acquisition/promotion/lock events with the same fail-closed order logic.
+
+A11.5 (audit round 3 — a C run could be pointed at A's registry because the
+gate only checked "somewhere under Fam-C"): every estimand cell's namespace
+is DERIVED by the scheduler — `state/<block>/<universe>/<family>/capability`
+and `state/<block>/<universe>/<family>/runs/<cell_id>` — never accepted as
+a free operator path. A wired run whose capability dir or run dir is not the
+derived path is refused before any call (FOREIGN-REGISTRY-DENY /
+run-dir-denial), so A's and C's registries, runs, logs and caches cannot
+overlap.
+
+A11.6 (audit round 3 — order progress advanced on manifest presence):
+`completed_cells()` consumes `cell_state()`, which requires the derived run
+dir to exist as a real directory, the manifest to be wired/non-dev and to
+match the authorized cell on cell_id/block/family/task/kind/universe, the
+evidence chain to re-verify, and admissibility to classify the run ELIGIBLE.
+A malformed, tampered, dangling, dev, foreign-cell or inadmissible run no
+longer advances the frozen order.
+
+Test: `harness/tests/smoke_h7_order.py` (67/67 adversarial refusals +
+validated-state probes + real runner subprocess refusals, no model call).
 
 ### H-CAL-012 — P/Q calibration pair (CALIBRATION / NEVER-ESTIMAND)
 
@@ -254,9 +310,18 @@ controls (tampered raw usage, missing echoed model, missing provider id);
 `--approve-quota`, so a live calibration can never be accidental. A lane
 failure is INCONCLUSIVE missing evidence, never a substituted model and
 never retried.
+A11.1 (audit round 3): the live branch previously discarded the provider
+response object, so identity could not be established from a real call. It
+now makes exactly ONE recorded call with `return_response=True`, requires
+the provider object (ValueError if absent), and records
+`messages`/`messages_sha256`, persists the exact request bytes, and
+re-verifies both request and adapter binding on the live path — the same
+checks the offline rehearsal exercises.
+
 Status: scaffold + offline rehearsal green (`smoke_h8_calibration.py`,
-38/38). The real pair is time-gated — the Q lane (free tier) quota resets
-00:00 UTC — and runs after items 1–13, immediately before the
+48/48, including the stub-transport live-branch probe and the A11.2
+mutation probes). The real pair is time-gated — the Q lane (free tier)
+quota resets 00:00 UTC — and runs after items 1–13, immediately before the
 EXECUTION-LOCK mint.
 
 ### H-MAN-010 — evidence/manifest chain
