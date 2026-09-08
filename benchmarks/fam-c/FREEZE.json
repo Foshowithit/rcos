@@ -1,0 +1,5 @@
+{
+ "freeze_commit": "ca19665b339314de6ddd9f0b257b8a24aa575506",
+ "freeze_tree": "c20cd08669a1b794d03cdd884b9f198e6f76e1fd",
+ "note": "preflight verifies content manifest + freeze-commit ancestry; FREEZE.json itself is meta"
+}

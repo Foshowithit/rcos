@@ -5,6 +5,7 @@ Checks per task dir: every VISIBLE-declared fixture exists; every
 fixture file present is declared; prompt/checker/truth hashes match
 FREEZE-HASHES.sha256; no forbidden basenames inside task dirs."""
 import hashlib
+import json
 import os
 import sys
 
@@ -57,13 +58,14 @@ if os.path.exists(fj):
     import subprocess
     pin = json.load(open(fj))
     try:
-        out = subprocess.run(
-            ["git", "-C", os.path.dirname(HERE), "rev-parse",
-             "HEAD:benchmarks/fam-c"], capture_output=True, text=True)
-        if out.returncode == 0 and out.stdout.strip() != pin.get("tree", ""):
-            fail("working tree benchmarks/fam-c != frozen tree "
-                 f"{pin.get('tree', '')[:12]}")
+        base = subprocess.run(
+            ["git", "-C", os.path.dirname(HERE), "merge-base",
+             "--is-ancestor", pin.get("freeze_commit", ""), "HEAD"],
+            capture_output=True, text=True)
+        if base.returncode != 0:
+            fail("freeze commit " + pin.get("freeze_commit", "")[:12]
+                 + " is not an ancestor of HEAD (history rewritten?)")
     except FileNotFoundError:
-        fail("git unavailable for tree-pin check")
+        fail("git unavailable for ancestry check")
 print(f"preflight: {len(fails)} findings")
 sys.exit(1 if fails else 0)
