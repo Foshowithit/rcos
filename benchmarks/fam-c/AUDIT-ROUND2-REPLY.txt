@@ -1,0 +1,133 @@
+I verified the public branch is exactly at 2c752fe00695c98d01e2e65b700b843aab53295b.
+
+Round 2 is improved substantially, but I am not clearing estimand execution yet. The biggest new finding is that one of the stated A1 acceptance claims is ahead of the implementation: the real P usage normalizes correctly, but normalized metrics are not yet hash-bound into the production chain. There are also two freeze/versioning issues I want closed before we lock the harness.
+
+Verification of the Round-1 fixes
+Round-1 item	Verdict	What I verified
+#1 H1/ad-hoc exclusion	PASS	admissibility.py mechanically excludes every H1-* run and anything with no run manifest. The status doc correctly says estimand-grade remains 0.
+#2 real usage schema	PARTIAL PASS	The real P receipt is 478 prompt - 128 cached + 1965 output = 2315 primary_work, and the normalizer implements that schema correctly. But the production runner does not currently call normalize_usage() or persist/bind the normalized result.
+#3 provider identity	PARTIAL PASS	Real-response identity plumbing is wired and identity SHA enters the model-call chain. But provider_response_id is optional in identity.py, and no post-fix real P/Q receipt yet proves the production path against both providers.
+#4 dual anchors	PARTIAL PASS	FREEZE.json's d1292434… is now distinct from execution HEAD, and task-instance byte drift is checked before the call. But the current FREEZE-HASHES.sha256 is still read from the working tree, not cryptographically resolved from the freeze commit.
+#19 --no-wire	PASS	The estimand surface refuses it; the explicit dev escape is forced outside Fam-C and stamped non-estimand.
+Promotion/retirement wording	PASS	Current status correctly says promotion + locked reuse, not retirement.
+
+One terminology correction for later: admissibility.py currently returns ESTIMAND-ELIGIBLE, while the CLI/status talks about estimand-grade. Right now that causes no false positive because the count is zero, but once runs exist those terms must not be synonyms until the full §24/chain gate passes.
+
+Prioritized Round-2 fix list
+
+P0 — Finish A1 rather than freezing it as-is.
+What/where: harness/usage.py, run_arm_h1.py. Do not reinterpret openai-chat-total-input-v1 in place for claim-grade execution. Mint provider-bound/versioned adapters, e.g. router9-openai-chat-v2 and kenari-openai-chat-v2, or equivalent. The existing H1 receipts can remain attached to the historical ID because they're excluded anyway. The runner must normalize every call immediately, write an immutable normalized-usage.json, hash it, and bind that hash plus primary_work, uncached input, output, cached tokens, and call count into the model-call chain. Right now _wire_chain() only binds the raw usage SHA.
+Why: silently changing the semantics behind an existing versioned ID defeats the point of versioning, and the primary estimand presently cannot be reconstructed from the chain alone.
+Acceptance: saved real P receipt → exactly 2315; a real non-estimand Q calibration receipt → deterministic declared normalization; missing/mismatched schema → fail; chain contains normalized-record SHA; tampering either raw or normalized record breaks admissibility.
+
+P0 — Do one P/Q calibration pair before EXECUTION-LOCK.
+What: after Q resets, make tiny explicitly CALIBRATION / NEVER ESTIMAND calls to P and Q through the final identity+usage path. No benchmark task.
+Why: P's raw usage shape is empirically known, but Q's is currently assumed; likewise the new identity implementation hasn't yet seen real provider responses. LANES.md currently allows two possible Q echoes without a post-fix observation.
+Acceptance: both produce echoed model, provider response ID, raw usage, normalized usage, and requested parameters. Freeze the actually observed acceptable echo behavior before estimand execution. After EXECUTION-LOCK, a new unexpected echo is identity failure/infrastructure-invalid—not permission to amend the same epoch.
+
+P0 — Strengthen identity evidence.
+What/where: identity.py. For the P/Q adapters, require a nonempty provider response/request ID when the endpoint supplies one; preserve the exact request-body hash and complete explicit generation-parameter set. record_identity() currently only makes the echoed model mandatory; response ID is optional.
+Acceptance: strip echoed model → fail; strip required provider ID → fail; alter model/request params after receipt → chain/admissibility fail.
+
+P0 — Re-scope preflight; do not re-freeze the original instance package.
+Ruling: choose (b) re-scope, with explicit multi-lock provenance. Keep d1292434… as the historical instance freeze. Do not advance it just to make post-freeze harness/audit files look frozen. preflight.py currently compares nearly the whole benchmarks/fam-c tree to that old commit, so legitimate audit changes necessarily make it red.
+Create three distinct authorities:
+INSTANCE-FREEZE = original family/task/truth/checker bytes at d1292434; PROTOCOL-LOCK = current PREREG/ORDER/LANES/HARNESS-READINESS plus explicit post-freeze amendments; EXECUTION-LOCK = final executable harness.
+A2's LANES identity additions occurred after the original freeze, so record them explicitly as a forward protocol amendment before estimand data, not as though they were in the original freeze.
+Acceptance: all three validators independently green; modifying any governed file makes the appropriate lock fail.
+
+P0 — Make the instance manifest itself immutable.
+What: verify_instance_frozen() currently trusts the working-tree copy of FREEZE-HASHES.sha256. Resolve that manifest from d1292434 via Git, or prove the current manifest bytes against the frozen Git object before using it. Also verify FREEZE.json.freeze_tree actually equals the recorded freeze commit's expected tree rather than merely recording it.
+Why: otherwise changing the manifest and the task together could make the runtime gate bless drift. Git history would expose it later, but the runner should refuse it live.
+Acceptance: edit local FREEZE-HASHES.sha256 → cannot redefine truth; alter freeze_tree → refuse start.
+
+P0 — #6 and #7: context symmetry + one source snapshot. MANDATORY before any countable T0.
+Current CORRECT and DISABLED are materially different prompts and even demand different response formats. Also the model prompt is constructed from taskdir, while the Docker snapshot is created afterward from a separate read.
+Stage VISIBLE once before the model call. Build both model context and Docker /task from those exact staged bytes. Use one canonical prompt/envelope; treatment/control may differ only by a mechanically identified capability-access block.
+Acceptance: context_task_snapshot_hash == sandbox_task_snapshot_hash; A/B and C/D canonical diff reports only the capability block; injected one-byte hint asymmetry fails closed.
+
+P0 — #8/#9/#10: build the actual experimental scheduler and namespace model. MANDATORY.
+ORDER.md freezes fam05 first and PQ before QP. But the generic runner still accepts arbitrary lane/family/task/arm arguments, and it has no A/B/C/D universe identity.
+There is also a real frozen-order ambiguity that needs a pre-run clarification: PREREG requires A and C to be independent universes with independently acquired P capabilities, but ORDER.md does not fully enumerate the A-vs-C T0/T1 acquisition-cell ordering.
+Freeze a machine-readable ORDER-EXPANSION.json before data. Pick the acquisition order mechanically now—e.g. PQ/A/fam05/T0 before PQ/C/fam05/T0 if that's the chosen rule—and enumerate every authorized cell through QP.
+Acceptance: fam01-before-fam05, QP-before-PQ-complete, duplicate cell, wrong A/B/C/D universe, foreign registry, wrong arm order → all refuse before model call.
+
+P0 — #11: replace --promote with a real two-evidence promotion controller. MANDATORY.
+Current promotion path is still not the preregistered rule; it can only promote when cap_info already exists, meaning it assumes a lock in order to create a lock. Fam-C requires T0 SHIP + T1 SHIP, distinct task/surface, frozen semantic capability, and both evaluator evidences before promotion.
+Acceptance: T0-only denied; T0 ship/T1 fix denied; cross-universe source runs denied; same-surface duplicate denied; missing chain tip denied; valid T0+T1 yields exactly one lock; second promotion denied.
+
+P0 — #12/#14: make locks estimand-aware and legacy locks inadmissible. MANDATORY.
+New locks need block/universe, capability ID/version, source T0/T1 chain tips, producer identity, protocol-lock SHA, execution-lock SHA, immutable artifact hashes, and the machine-readable semantic_core/preconditions/limitations plus auditor-only T4 semantic ID. Old global locks must fail because they lack these fields. Current lock.py only hashes artifacts and stores generic training receipts.
+Acceptance: every existing pre-H1 lock → LOCK-INADMISSIBLE; semantic ID entering consumer context → INVALID; missing required T4 limitation → T4 marked non-discriminating exactly per prereg, never repaired.
+
+P0 — #13: treatment must be reuse-enabled, not forced-reuse. MANDATORY.
+Current correct path necessarily loads and invokes K. That makes preregistered T4 correct behavior impossible.
+Add a selection decision before loading: USE or REJECT. A rejection follows the same fresh-solve machinery as control, while preserving that K was available and considered.
+Acceptance: synthetic near-neighbor → available=true, candidate recorded, selected=false, loaded=false, invoked=false, reuse_rejected=true, fresh solution SHIPs.
+
+P0 — #15: wire objective material contribution. MANDATORY.
+The current production runner deliberately records materially_contributed=false; therefore present code can never satisfy the frozen genuine-reuse coverage gate.
+I recommend the hash-lineage route rather than an expensive ablation on every cell: capability emits an immutable intermediate artifact; a deterministic downstream/finalization step takes that exact hash as input; evaluator consumes the finalizer output. This satisfies the already frozen machine predicate without model testimony.
+Acceptance: valid lineage → genuine_reuse() true; substitute intermediate hash → false/fail closed.
+
+P0 — #16 retry rule: RATIFY WITH AMENDMENT.
+I reject an unspecified “N-cap.” Freeze exactly one infrastructure replacement per T0 or T1 acquisition cell, mirroring the downstream discipline. A qualifying 429/5xx/transport/machine/harness failure that prevents a model completion may authorize one same-cell retry after recovery. Original attempt stays immutable; exact settings/order authorization must match; replacement links to original. A second infrastructure failure makes that acquisition cell missing evidence, so that universe/family cannot promote and is reported INCONCLUSIVE for the relevant evidence—no third try, no family substitution. Model reasoning failure, malformed answer, bad generated code, model-caused timeout, or checker FIX gets zero retries.
+Also change recorded_call(): today it catches every provider exception and collapses it into a generic RuntimeError, losing structured HTTP status needed by invalid.py. Preserve typed failure category/status and an immutable failed-attempt receipt.
+Acceptance: 429 before completion → one authorized same-cell replacement; second 429 → missing evidence; 500 same; model FIX → no retry; manual second retry → denied.
+
+P0 — #17/#18: make the chain and admissibility gate the actual estimand gate. MANDATORY.
+This should be the final large implementation unit before locking. Generate run_id before the model call—currently it's generated afterward, so the API receipt cannot be causally bound to run identity. Add block, universe, pair ID, order authorization, session ID, context hash, task-snapshot hash, registry namespace/hash, instance/protocol/execution lock hashes, provider identity, normalized usage, capability lifecycle, sandbox command/arrival hash, expected checker/truth hashes, and final metrics. Call Chain.audit(... expected_grading_rule=...); current production _wire_chain() doesn't.
+Emit a closed-schema ESTIMAND-ROW.json containing every §24 field only after all gates pass. Upgrade admissibility.py from the current presence test to full cryptographic/semantic validation. Rename intermediate status to STRUCTURALLY-ELIGIBLE; reserve ESTIMAND-GRADE for a valid §24 row + clean chain.
+Acceptance: mutate every graph node/edge/authorization/metric/identity field one at a time → zero mutations survive grading.
+
+P0 — #5 EXECUTION-LOCK comes LAST, after items 1–13 and a full-stack synthetic attack.
+Do not freeze it now. Once the production fixture can execute an acquisition, two-task promotion, correct reuse, disabled control, T4 rejection, infrastructure replacement, normalized accounting, and §24 emission with no external model calls, freeze the exact harness bytes/configs/image digest/protocol lock. harness_manifest_sha() should also fail if a listed required module is missing; it currently silently skips nonexistent files.
+Acceptance: one synthetic complete PQ family passes; every adversarial substitution fails; then create/push EXECUTION-LOCK. Only after that may the first countable Fam-C call occur.
+
+P1/P2 can ride, but they are not waived from the final loop.
+QUARANTINE-INDEX/ESTIMAND-INDEX, no-new-privileges/runtime-version hardening, contamination language, architecture refresh, and paper wording do not need to block the first T0 once the P0 execution system above is frozen. They do have to be closed before I issue the final stop signal.
+
+Sequencing ruling
+
+fam05 remains the first family. Do not restart at fam01.
+
+But I am not yet approving a specific first countable command, because the frozen material does not fully order the independent A-vs-C acquisition universes. Resolve that now in the machine-readable order expansion, before any estimand data. The earlier attempted H1-Q-fam05-T0 stays harness-validation/quarantined and has no effect on the eventual order.
+
+Preflight ruling
+
+Re-scope, don't re-freeze.
+
+The clean provenance story should become:
+
+ORIGINAL INSTANCE FREEZE
+d1292434
+families/tasks/truth/checkers
+        │
+        ├── unchanged forever
+        │
+FORWARD PROTOCOL AMENDMENTS
+identity/accounting/retry/order clarification
+        │
+        ▼
+PROTOCOL-LOCK
+        │
+FINAL HARNESS
+        ▼
+EXECUTION-LOCK
+        │
+        ▼
+FIRST ESTIMAND RUN
+
+That preserves the strongest fact you have: the benchmark instances themselves stayed unchanged while the experimental machinery was being hardened.
+
+Stop condition
+
+I will not use “perfect” to mean “no conceivable future improvement exists.” I will give you an explicit finite stop signal when the audited RCOS scope has no remaining actionable defect.
+
+I will say exactly:
+
+Everything on RCOS is perfect for the audited scope. Stop and produce the final receipt.
+
+only when all of these are true: every P0/P1/P2 flag raised in this loop is closed; protocol and execution locks are immutable and green; the full-stack adversarial fixture fails closed on every mutation; all estimand data follow the frozen scheduler with no unresolved provenance deviations; the §24 table and verdicts can be regenerated solely from committed evidence; quarantined data cannot enter results mechanically; Fam-C analysis follows the prereg without metric shopping; and README/architecture/paper claims match exactly what the evidence supports.
+
+We are not there yet. But Round 2 moved the system from “modules exist” to “the production boundary is taking shape.” The next useful diff is items 1–7 first, with no real benchmark calls.
