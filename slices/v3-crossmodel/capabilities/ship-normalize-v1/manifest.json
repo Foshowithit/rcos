@@ -1,0 +1,17 @@
+{
+ "id": "ship-normalize-v1",
+ "version": 1,
+ "applicability": {
+  "description": "Normalize a shipment record to canonical JSON {shipment_id, origin, destination, weight_kg, items[{sku, qty}]}. Supports source formats where the shipment is identified by an id field, has origin/destination fields (possibly nested under a route object, possibly named from/to or src/dst), carries a positive weight in kilograms under a name containing 'kg' (e.g., weight_kg, mass_kg), and lists line items each with an SKU-like code and a quantity.",
+  "requires_markers": [
+   "kg",
+   "sku"
+  ],
+  "claims": [
+   "Maps scalar fields via dot-notation paths in the records dict",
+   "Coerces weight_kg to float and enforces strictly greater than zero",
+   "Builds the items list from a JSON-encoded array stored at a map-configurable key, with per-entry sku and qty sub-key remapping",
+   "Emits canonical JSON in fixed key order: shipment_id, origin, destination, weight_kg, items (each item as {sku, qty} in that order)"
+  ]
+ }
+}

@@ -1,0 +1,1 @@
+{"shipment_id": "ship_id", "origin": "from", "destination": "to", "weight_kg": "weight_kg", "items_key": "items", "item_sku": "sku", "item_qty": "qty"}

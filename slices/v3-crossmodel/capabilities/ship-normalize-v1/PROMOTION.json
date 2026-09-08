@@ -1,0 +1,2 @@
+{"id": "ship-normalize-v1", "version": 1, "status": "promoted",
+ "evals": [{"task": "s1-csv", "verdict": "ship"}, {"task": "s2-json", "verdict": "ship"}]}

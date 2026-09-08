@@ -1,0 +1,12 @@
+{
+  "id": "ship-normalize-v2",
+  "version": 1,
+  "status": "candidate",
+  "author": "session-lane operator (Amendment 2)",
+  "applicability": {
+    "description": "Shipment records with an id, origin/destination, positive weight, and sku/qty line items -> canonical JSON. Operates over pre-parsed records (list under items_key); parsing is adapter work.",
+    "requires_markers": ["ship", "weight", "kg", "sku", "qty", "origin", "destination"],
+    "claims": ["canonical mapping", "numeric coercion", "weight validation"]
+  },
+  "lineage": {"derived_from": ["tasks/s1-csv", "tasks/s2-json"]}
+}

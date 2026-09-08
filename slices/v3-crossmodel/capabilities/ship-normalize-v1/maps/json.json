@@ -1,0 +1,11 @@
+{
+ "shipment_id": "id",
+ "origin": "route.src",
+ "destination": "route.dst",
+ "weight_kg": "mass_kg",
+ "items": {
+  "__list__": "contents",
+  "sku": "code",
+  "qty": "n"
+ }
+}

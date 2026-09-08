@@ -1,0 +1,8 @@
+{
+  "capabilities": [
+    {"id": "ship-normalize-v2", "version": 1, "status": "promoted",
+     "path": "capabilities/ship-normalize-v2",
+     "author_lane": "session-lane operator (Amendment 2)",
+     "promotion": {"rule": "two-ship-distinct-tasks", "runs": ["b2/s1", "b2/s2"]}}
+  ]
+}
