@@ -81,27 +81,81 @@ check("first replacement allowed (p2)", ok, why)
 ok, why = led.request_replacement("p2", "provider-outage", "settings-v3")
 check("changed-settings replacement refused", not ok, why)
 # replacement completion: manifests bound, both arms required
-import hashlib as _hlm
-def _rman(path, pair, arm, epoch, repl_of, authz, settings, snap, run):
-    m = {"run_id": run, "pair_id": pair, "arm": arm,
-         "replacement_epoch": epoch, "replaces_original_run_id": repl_of,
+import hashlib as _hlx
+def _rman_orig(path, pair, arm, run):
+    open(path, "w").write(json.dumps(
+        {"pair": pair, "arm": arm, "run": run}, sort_keys=True))
+    return path
+_omA = _rman_orig(os.path.join(BASE, "orig-A.json"), "p3", "A", "run-old-A")
+_omB = _rman_orig(os.path.join(BASE, "orig-B.json"), "p3", "B", "run-old-B")
+led.record_run("p3", "A", "blocked", failure_kind="provider-outage",
+               task_snapshot={"t": 1}, run_manifest_path=_omA)
+led.record_run("p3", "B", "blocked", failure_kind="provider-outage",
+               task_snapshot={"t": 1}, run_manifest_path=_omB)
+_SNAP = led.state["pairs"]["p3"]["task_snapshot_hash"]
+
+
+def _rman2(path, pair, arm, epoch, repl_of_hash, authz, settings, snap, run,
+           extra=None):
+    m = {"schema_version": "replacement-manifest-v1",
+         "run_id": run, "pair_id": pair, "arm": arm,
+         "replacement_epoch": epoch,
+         "replaces_original_manifest_hash": repl_of_hash,
          "authorization_hash": authz, "frozen_settings_hash": settings,
-         "task_snapshot_hash": snap, "evidence_genesis": "g"}
+         "task_snapshot_hash": snap,
+         "execution_manifest_hash": "exec-" + arm,
+         "execution_manifest_path": os.path.join(BASE, f"exec-{arm}.json"),
+         "evidence_genesis_hash": "gen-" + arm}
+    if extra:
+        m.update(extra)
     open(path, "w").write(json.dumps(m, sort_keys=True))
     return path
-led.record_run("p3", "A", "blocked", failure_kind="provider-outage",
-               task_snapshot={"t": 1})
-led.record_run("p3", "B", "blocked", failure_kind="provider-outage",
-               task_snapshot={"t": 1})
+
+
+def _rman_orig(path, pair, arm, run):
+    open(path, "w").write(json.dumps(
+        {"pair": pair, "arm": "arm", "run": run}, sort_keys=True).replace('"arm"', '"arm"'))
+    d = json.load(open(path))
+    d["arm"] = arm
+    open(path, "w").write(json.dumps(d, sort_keys=True))
+    return path
+def _exec_manifest(path, pair, arm):
+    open(path, "w").write(json.dumps(
+        {"pair_id": pair, "arm": arm, "steps": []}, sort_keys=True))
+    return path
+# NOTE: old-schema _rman block removed; new-schema flow below replaces it.
+import hashlib as _hlo
+def _oh(p):
+    return _hlo.sha256(open(p, "rb").read()).hexdigest()
+_omAh, _omBh = _oh(_omA), _oh(_omB)
+for _arm, _orig in (("A", _omA), ("B", _omB)):
+    _exec_manifest(os.path.join(BASE, f"exec-{_arm}.json"), "p3", _arm)
 ok, _ = led.request_replacement("p3", "provider-outage", "settings-v1")
 check("p3 replacement authorized", ok)
 _authz = led.state["pairs"]["p3"]["authorization_hash"]
 _settings = led.state["pairs"]["p3"]["settings_hash"]
 _snap = led.state["pairs"]["p3"]["task_snapshot_hash"]
-_mA = _rman(os.path.join(BASE, "repl-A.json"), "p3", "A", 1, "run-old-A",
-            _authz, _settings, _snap, "run-new-A")
-_mB = _rman(os.path.join(BASE, "repl-B.json"), "p3", "B", 1, "run-old-B",
-            _authz, _settings, _snap, "run-new-B")
+def _gen(arm):
+    return _hlo.sha256("|".join(["p3", arm, _authz, _snap]).encode()).hexdigest()
+def _mkv2(path, pair, arm, epoch, repl_of_hash, run, extra=None):
+    _ex = os.path.join(BASE, f"exec-{arm}.json")
+    with open(_ex, "rb") as _f:
+        _exh = _hlx.sha256(_f.read()).hexdigest()
+    m = {"schema_version": "replacement-manifest-v1",
+         "run_id": run, "pair_id": pair, "arm": arm,
+         "replacement_epoch": epoch,
+         "replaces_original_manifest_hash": repl_of_hash,
+         "authorization_hash": _authz, "frozen_settings_hash": _settings,
+         "task_snapshot_hash": _snap,
+         "execution_manifest_hash": _exh,
+         "execution_manifest_path": _ex,
+         "evidence_genesis_hash": _gen(arm)}
+    if extra:
+        m.update(extra)
+    open(path, "w").write(json.dumps(m, sort_keys=True))
+    return path
+_mA = _mkv2(os.path.join(BASE, "repl-A.json"), "p3", "A", 1, _omAh, "run-new-A")
+_mB = _mkv2(os.path.join(BASE, "repl-B.json"), "p3", "B", 1, _omBh, "run-new-B")
 check("grading gate closed before completion",
       not led.replacement_complete("p3"))
 led.complete_replacement("p3", _mA)
@@ -115,22 +169,69 @@ try:
     check("duplicate arm recording refused", False)
 except ValueError:
     check("duplicate arm recording refused", True)
-# substitution attacks: foreign pair / wrong epoch / wrong settings / wrong task
-_mX = _rman(os.path.join(BASE, "repl-X.json"), "pX", "A", 1, "run-old-A",
-            _authz, _settings, _snap, "run-evil-A")
+# substitution attacks
+_mX = _mkv2(os.path.join(BASE, "repl-X.json"), "pX", "A", 1, _omAh,
+            "run-evil-A")
 for label, mp in [("foreign-pair manifest refused", _mX)]:
     try:
         led.complete_replacement("p3", mp)
         check(label, False)
     except ValueError:
         check(label, True)
-_mW = _rman(os.path.join(BASE, "repl-W.json"), "p3", "B", 99, "run-old-B",
-            _authz, _settings, _snap, "run-evil-B")
+_mW = _mkv2(os.path.join(BASE, "repl-W.json"), "p3", "B", 99, _omBh,
+            "run-evil-B")
 try:
     led.complete_replacement("p3", _mW)
     check("wrong-epoch manifest refused", False)
 except ValueError:
     check("wrong-epoch manifest refused", True)
+# cross-arm parent swap + fabricated parent (fresh ledger)
+led2 = PairLedger(os.path.join(BASE, "ledger2.json"))
+led2.record_run("q1", "A", "blocked", failure_kind="provider-outage",
+                task_snapshot={"t": 1},
+                run_manifest_path=_omA)
+led2.record_run("q1", "B", "blocked", failure_kind="provider-outage",
+                task_snapshot={"t": 1},
+                run_manifest_path=_omB)
+led2.request_replacement("q1", "provider-outage", "settings-v1")
+_a2 = led2.state["pairs"]["q1"]["authorization_hash"]
+_s2 = led2.state["pairs"]["q1"]["settings_hash"]
+_n2 = led2.state["pairs"]["q1"]["task_snapshot_hash"]
+def _mkq(path, pair, arm, epoch, repl_of_hash, run, authz=None):
+    az = authz or _a2
+    m = {"schema_version": "replacement-manifest-v1",
+         "run_id": run, "pair_id": pair, "arm": arm,
+         "replacement_epoch": epoch,
+         "replaces_original_manifest_hash": repl_of_hash,
+         "authorization_hash": az, "frozen_settings_hash": _s2,
+         "task_snapshot_hash": _n2,
+         "execution_manifest_hash": "exec-" + arm,
+         "execution_manifest_path": os.path.join(BASE, f"exec-{arm}.json"),
+         "evidence_genesis_hash": _hlo.sha256(
+             "|".join([pair, arm, az, _n2]).encode()).hexdigest()}
+    open(path, "w").write(json.dumps(m, sort_keys=True))
+    return path
+_mS2 = _mkq(os.path.join(BASE, "repl-S2.json"), "q1", "A", 1,
+            "totally-made-up-hash", "run-evil")
+try:
+    led2.complete_replacement("q1", _mS2)
+    check("fabricated-parent manifest refused", False)
+except ValueError:
+    check("fabricated-parent manifest refused", True)
+# cross-arm parent swap: A manifest claiming B's original hash
+_mS3 = _mkq(os.path.join(BASE, "repl-S3.json"), "q1", "A", 1, None,
+            "run-evil-S3")
+_d3 = json.load(open(_mS3))
+_d3["replaces_original_manifest_hash"] = _hlo.sha256(
+    open(_omB, "rb").read()).hexdigest()
+_d3["evidence_genesis_hash"] = _hlo.sha256(
+    "|".join(["q1", "A", _a2, _n2]).encode()).hexdigest()
+open(_mS3, "w").write(json.dumps(_d3, sort_keys=True))
+try:
+    led2.complete_replacement("q1", _mS3)
+    check("cross-arm parent swap refused", False)
+except ValueError:
+    check("cross-arm parent swap refused", True)
 
 # --- chain: intact, deletion, reorder, substitution, tamper ---
 ch = Chain(os.path.join(BASE, "chain.jsonl"), "FREEZE-abc",
