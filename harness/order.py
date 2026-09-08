@@ -391,6 +391,39 @@ def verify_namespace_ancestry(fam_c_dir, block, universe, family, tail=()):
     return None
 
 
+def ensure_namespace(fam_c_dir, block, universe, family, tail=()):
+    """Create the derived namespace with EXPLICIT 0755 components, one at a
+    time, after proving the existing chain is clean (A11.6 "create the tree
+    yourself with no-follow semantics").
+
+    os.makedirs() applies its mode to the LEAF only: under a umask of 002
+    every intermediate becomes 0775 and the ancestry rule above then
+    refuses the tree it just created. mkdir-per-component at 0755 is
+    umask-independent. An existing harness-owned component that is
+    group/world writable is repaired to 0755 — never through a symlink,
+    because verify_namespace_ancestry() has already refused those.
+    Returns the leaf path."""
+    denial = verify_namespace_ancestry(fam_c_dir, block, universe, family,
+                                       tail=tail)
+    if denial:
+        raise PermissionError(denial)
+    p = os.path.join(fam_c_dir, "state")
+    for comp in (block, universe, family) + tuple(tail):
+        p = os.path.join(p, comp)
+        if not os.path.lexists(p):
+            os.mkdir(p, 0o755)
+        else:
+            st = os.lstat(p)
+            if (stat.S_ISDIR(st.st_mode) and st.st_uid == os.geteuid()
+                    and st.st_mode & (stat.S_IWGRP | stat.S_IWOTH)):
+                os.chmod(p, 0o755)
+    denial = verify_namespace_ancestry(fam_c_dir, block, universe, family,
+                                       tail=tail)
+    if denial:
+        raise PermissionError(denial)
+    return p
+
+
 def check_namespace(fam_c_dir, cell, capdir):
     """A11.5: the capability directory must be exactly the authorized
     universe's directory — inside Fam-C is NOT enough (a C cell pointed at
@@ -464,6 +497,16 @@ def cell_state(fam_c_dir, cell, freeze_commit=None):
     """
     kind = cell.get("kind")
     event = cell.get("event")
+    # A11.6 defense in depth (TOCTOU): the runner derives paths through
+    # derive_paths(), but a namespace parent could be replaced by a symlink
+    # AFTER derivation. Every reader of cell state re-verifies the same
+    # lstat ancestry before traversing it, so a symlinked parent can never
+    # make another universe's run artifacts look like this cell's.
+    denial = verify_namespace_ancestry(fam_c_dir, cell["block"],
+                                       cell["universe"], cell["family"],
+                                       tail=("runs", cell["cell_id"]))
+    if denial:
+        return _result(cell, [denial], True)
     if kind in MODEL_RUN_KINDS:
         return _model_run_state(fam_c_dir, cell, freeze_commit)
     if kind == "harness-event":
@@ -743,13 +786,9 @@ def emit_promotion_receipt(fam_c_dir, cell, t0_tip, t1_tip,
     if cell["capability_id"] != want:
         raise ValueError(f"PROMOTION-DENY cell capability_id "
                          f"{cell['capability_id']!r} != derived {want!r}")
-    denial = verify_namespace_ancestry(fam_c_dir, cell["block"],
-                                       cell["universe"], cell["family"],
-                                       tail=("runs", cell["cell_id"]))
-    if denial:
-        raise PermissionError(denial)
-    d = run_dir(fam_c_dir, cell)
-    os.makedirs(d, exist_ok=True)
+    d = ensure_namespace(fam_c_dir, cell["block"], cell["universe"],
+                         cell["family"],
+                         tail=("runs", cell["cell_id"]))
     rp = os.path.join(d, "PROMOTION-RECEIPT.json")
     if os.path.exists(rp):
         raise PermissionError("PROMOTION-DENY receipt already exists "
@@ -782,13 +821,8 @@ def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),
     if cell["capability_id"] != want:
         raise ValueError(f"LOCK-DENY cell capability_id "
                          f"{cell['capability_id']!r} != derived {want!r}")
-    denial = verify_namespace_ancestry(fam_c_dir, cell["block"],
-                                       cell["universe"], cell["family"],
-                                       tail=("capability",))
-    if denial:
-        raise PermissionError(denial)
-    capdir = capability_dir(fam_c_dir, cell["block"], cell["universe"],
-                            cell["family"])
+    capdir = ensure_namespace(fam_c_dir, cell["block"], cell["universe"],
+                              cell["family"], tail=("capability",))
     prom = _cell_for_event(fam_c_dir, cell, "PROMOTION")
     if prom is None:
         raise ValueError("LOCK-DENY no PROMOTION cell in the order for "

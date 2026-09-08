@@ -89,6 +89,7 @@ from order import (verify_expansion as order_verify_expansion,
                    authorize as order_authorize,
                    derive_paths as order_derive_paths,
                    check_namespace as order_check_namespace,
+                   ensure_namespace as order_ensure_namespace,
                    cell_state as order_cell_state)
 # Item-4: three-authority preflight is importable (validate_all runs the
 # V1/V2/V3 validators without exiting); BASE on the path only exposes the
@@ -1100,7 +1101,16 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     verify_instance_frozen(BASE, family, task,
                            freeze_commit=instance_freeze_commit)
     frozen = instance_freeze_commit
-    os.makedirs(outdir, exist_ok=True)
+    # A11.6: the scheduler creates the derived namespace itself, one
+    # component at a time at 0755 (os.makedirs would leave 0775
+    # intermediates under umask 002, which the ancestry rule then refuses
+    # on the next read). A free (dev) outdir keeps plain makedirs.
+    if wire:
+        order_ensure_namespace(BASE, cell["block"], cell["universe"],
+                               cell["family"],
+                               tail=("runs", cell["cell_id"]))
+    else:
+        os.makedirs(outdir, exist_ok=True)
     taskdir = os.path.join(BASE, "families", family, task)
     # ---- Item-6 ONE SOURCE SNAPSHOT (audit round 2 item 6) -------------
     run_id = hashlib.sha256(

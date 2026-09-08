@@ -282,6 +282,23 @@ json.dump(good, open(os.path.join(state_root, "ORDER-EXPANSION.json"), "w"))
 tcell = cell("PQ", "fam05", "T2", "A")
 rdir = ORD.run_dir(state_root, tcell)
 os.makedirs(rdir)
+
+
+def tighten(p):
+    """The session umask (002) leaves 0775 intermediates, which the A11.6
+    lstat ancestry rule correctly refuses. Make the probe tree clean 0755
+    (exactly as the H10 namespace suite does); symlinks are never chmodded."""
+    base = os.path.abspath(BASE)
+    p = os.path.abspath(p)
+    while p.startswith(base):
+        if os.path.isdir(p) and not os.path.islink(p):
+            os.chmod(p, 0o755)
+        if p == base:
+            break
+        p = os.path.dirname(p)
+
+
+tighten(rdir)
 FREEZE_COMMIT = "f" * 40
 manifest = {"wired": True, "dev_mode": False,
             "cell_id": tcell["cell_id"], "cell_index": tcell["index"],
