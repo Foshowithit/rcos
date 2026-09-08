@@ -21,8 +21,8 @@
   {
    "file": "HARNESS-READINESS.md",
    "from_sha": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
-   "to_sha": "a23db0c07f124f7237ec7e237f1fd9bb43abd8ec8e9c466739e71aa040d573a5",
-   "reason": "A1 H-USE-005 implementation note; item-3 H-ID-006 note (audit round 2); authority-locks section (item 4)",
+   "to_sha": "86a3c0471e7df8a585bc14cb565d2e38e3080d151789b581f001fed9ac8d1398",
+   "reason": "A1 H-USE-005 implementation note; item-3 H-ID-006 note (audit round 2); authority-locks section (item 4); item-6 single-snapshot + envelope symmetry implementation note",
    "base": "fca3df0",
    "slice": "a4/a5/a7-item-1+3+5"
   },

@@ -39,9 +39,17 @@ Usage: run_arm_h1.py [--promote <capstore_dir>] \\
                      are REFUSED (runs/ is the wired estimand surface).
       --selfcheck-wire  offline fixture compose-test of the wiring (no model
                      call, no docker, no run) — CI use only.
+      --selfcheck-prompt  offline proof of the item-6 prompt path on real
+                     fam05/T0: one staged snapshot -> canonical envelope ->
+                     both arms + symmetry/snapshot refusal gates (no model
+                     call, no docker, no run) — CI use only.
 Before ANY model call the runner verifies the executed instance subtree is
 byte-identical to FREEZE-HASHES.sha256 and that FREEZE.json's freeze_commit
-is a resolvable git object (refuse-START on drift; audit P0 #4).
+is a resolvable git object (refuse-START on drift; audit P0 #4), and that
+all three authority locks (instance/protocol/execution) are green (item 4).
+The model context and the docker /task mount are built from ONE staged
+visible snapshot, and the arm pair must pass the mechanical symmetry check
+(item 6) before any token is spent.
 No P/Q calls are made by smoke; use the script only after H1 smoke is green.
 """
 import hashlib
@@ -59,7 +67,7 @@ BASE = "/home/chow/chow-work/rcos/benchmarks/fam-c"
 HARNESS = "/home/chow/chow-work/rcos/harness"
 ROOT = os.path.abspath(os.path.join(BASE, os.pardir, os.pardir))
 sys.path.insert(0, HARNESS)
-from dockersandbox import DockerSandbox, ensure_roots
+from dockersandbox import DockerSandbox, ensure_roots, _hash_tree
 from seal import build_visible_root
 from usage import (recorded_call, write_normalized_usage,
                    verify_normalized_usage)
@@ -104,33 +112,124 @@ LANES = {
           "echo_acceptable": ["agnes-2-0-flash:free", "agnes-2-0-flash"]},
 }
 
-CORRECT = """You are solving the task below using a PROVIDED capability interface. You have never seen its acquisition, no transcripts, no prior tasks. Output ONLY one JSON object, no other text.
+# Item-6 canonical envelope (audit round 2 item 6): ONE envelope format
+# serves both arms; treatment/control differ ONLY by the mechanically
+# delimited capability-access block plus the frozen arm preamble/output
+# lines below. DISABLED bytes are unchanged from the pre-item-6 template;
+# CORRECT gains exactly the two delimiter lines (envelope v2, documented).
+_CAP_BEGIN = "<<<CAPABILITY-ACCESS-BEGIN>>>"
+_CAP_END = "<<<CAPABILITY-ACCESS-END>>>"
+_PRE_CORRECT = ("You are solving the task below using a PROVIDED capability "
+                "interface. You have never seen its acquisition, no "
+                "transcripts, no prior tasks. Output ONLY one JSON object, "
+                "no other text.\n\n")
+_PRE_DISABLED = ("You are solving the task below from scratch. No "
+                 "registry/capability/prior solution exists. Output ONLY one "
+                 "JSON object, no other text.\n\n")
+_ENVELOPE_FMT = ("TASK DEFINITION:\n__TASKDEF__\n\n"
+                 "TASK DIRECTORY LISTING: __LISTING__\n"
+                 "TASK FILE CONTENTS (exact bytes):\n__BLOBS__\n")
+_CAP_FMT = ("\n" + _CAP_BEGIN + "\nCAPABILITY MANIFEST:\n__MANIFEST__\n"
+            "ADAPTER NOTES:\n__NOTES__\nENGINE SOURCE (frozen, do not "
+            "modify):\n__ENGINE__\n" + _CAP_END + "\n")
+_OUT_CORRECT = ('\nOutput object: {"records": <engine records>, '
+                '"field_map": <engine map>, "notes": "one line"}. '
+                "No explanations/fences.")
+_OUT_DISABLED = ('\nOutput object: {"solver_py": <complete Python script '
+                 "taking (src_dir, dst_path) and writing the ordinary task "
+                 'output>, "notes": "one line"}. No explanations/fences.')
+CORRECT = _PRE_CORRECT + _ENVELOPE_FMT + _CAP_FMT + _OUT_CORRECT
+DISABLED = _PRE_DISABLED + _ENVELOPE_FMT + _OUT_DISABLED
+# Counterfactual capability content (disabled-arm runs): builds the
+# never-sent correct-arm twin for the pair symmetry check. Fixed sentinel,
+# never model input, never executed.
+COUNTERFACTUAL_CAP = ("COUNTERFACTUAL-ONLY never sent to any model: "
+                      "placeholder capability content so the disabled arm "
+                      "can prove pair symmetry without touching K.")
 
-TASK DEFINITION:
-__TASKDEF__
 
-TASK DIRECTORY LISTING: __LISTING__
-TASK FILE CONTENTS (exact bytes):
-__BLOBS__
+def build_envelope(taskdef, listing, block):
+    """One canonical envelope: the shared task bytes both arms embed."""
+    return _ENVELOPE_FMT.replace("__TASKDEF__", taskdef).replace(
+        "__LISTING__", listing).replace("__BLOBS__", block)
 
-CAPABILITY MANIFEST:
-__MANIFEST__
-ADAPTER NOTES:
-__NOTES__
-ENGINE SOURCE (frozen, do not modify):
-__ENGINE__
 
-Output object: {"records": <engine records>, "field_map": <engine map>, "notes": "one line"}. No explanations/fences."""
-DISABLED = """You are solving the task below from scratch. No registry/capability/prior solution exists. Output ONLY one JSON object, no other text.
+def build_arm_prompt(arm, envelope, cap_manifest="", cap_notes="",
+                     cap_engine=""):
+    """Build one arm's prompt from the shared envelope object."""
+    if arm == "correct":
+        cap = _CAP_FMT.replace("__MANIFEST__", cap_manifest).replace(
+            "__NOTES__", cap_notes).replace("__ENGINE__", cap_engine)
+        return _PRE_CORRECT + envelope + cap + _OUT_CORRECT
+    if arm == "disabled":
+        return _PRE_DISABLED + envelope + _OUT_DISABLED
+    raise ValueError("unknown arm")
 
-TASK DEFINITION:
-__TASKDEF__
 
-TASK DIRECTORY LISTING: __LISTING__
-TASK FILE CONTENTS (exact bytes):
-__BLOBS__
+def check_arm_symmetry(correct_prompt, disabled_prompt, envelope):
+    """H-CTX-002 mechanical pair check (fail-closed findings list).
 
-Output object: {"solver_py": <complete Python script taking (src_dir, dst_path) and writing the ordinary task output>, "notes": "one line"}. No explanations/fences."""
+    Proves treatment/control differ ONLY by the mechanically identified
+    capability-access block (+ frozen arm preamble/output lines):
+      - the delimited capability block occurs exactly once in correct,
+        never in disabled;
+      - the canonical envelope occurs verbatim exactly once in EACH
+        prompt (any one-byte hint asymmetry inside the shared region
+        breaks verbatim embedding in at least one arm);
+      - outside the envelope, each arm shows exactly its frozen preamble
+        and (for correct) the delimited block + frozen output schema.
+    """
+    out = []
+    if (correct_prompt.count(_CAP_BEGIN) != 1
+            or correct_prompt.count(_CAP_END) != 1):
+        out.append("SYMMETRY-FAIL: capability-access delimiters != 1 each "
+                   "in correct prompt")
+        return out
+    if correct_prompt.index(_CAP_BEGIN) > correct_prompt.index(_CAP_END):
+        out.append("SYMMETRY-FAIL: capability-access end before begin")
+        return out
+    if _CAP_BEGIN in disabled_prompt or _CAP_END in disabled_prompt:
+        out.append("SYMMETRY-FAIL: capability-access block present in "
+                   "disabled prompt")
+    for name, prompt in (("correct", correct_prompt),
+                         ("disabled", disabled_prompt)):
+        if prompt.count(envelope) != 1:
+            out.append(f"SYMMETRY-FAIL: canonical envelope not "
+                       f"verbatim-once in {name} prompt (hint asymmetry "
+                       f"or drift in the shared region)")
+    if out:
+        return out
+    head_c, tail_c = correct_prompt.split(envelope)
+    head_d, tail_d = disabled_prompt.split(envelope)
+    if head_c != _PRE_CORRECT:
+        out.append("SYMMETRY-FAIL: correct preamble differs from the "
+                   "frozen arm preamble")
+    if head_d != _PRE_DISABLED:
+        out.append("SYMMETRY-FAIL: disabled preamble differs from the "
+                   "frozen arm preamble")
+    if tail_d != _OUT_DISABLED:
+        out.append("SYMMETRY-FAIL: disabled prompt carries content past "
+                   "the envelope other than the frozen output schema")
+    if not tail_c.startswith("\n" + _CAP_BEGIN + "\n"):
+        out.append("SYMMETRY-FAIL: correct capability block misdelimited "
+                   "after the envelope")
+    elif tail_c.count(_CAP_END + "\n") != 1:
+        out.append("SYMMETRY-FAIL: correct capability block end "
+                   "misdelimited")
+    elif not tail_c.endswith(_OUT_CORRECT):
+        out.append("SYMMETRY-FAIL: correct prompt output schema differs "
+                   "from the frozen arm schema")
+    else:
+        body = tail_c[len("\n" + _CAP_BEGIN + "\n"):
+                      -len(_CAP_END + "\n" + _OUT_CORRECT)]
+        for marker in ("CAPABILITY MANIFEST:", "ADAPTER NOTES:",
+                       "ENGINE SOURCE (frozen, do not modify):"):
+            if marker not in body:
+                out.append("SYMMETRY-FAIL: capability block missing the "
+                           f"frozen section header {marker!r}")
+        if not body.strip():
+            out.append("SYMMETRY-FAIL: capability-access block empty")
+    return out
 
 
 def h(path):
@@ -507,6 +606,134 @@ def selfcheck_wire():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def selfcheck_prompt():
+    """Offline proof of the item-6 prompt path on a REAL frozen task
+    (fam05/T0), no model / no docker / no network: one staged snapshot ->
+    canonical envelope -> both arms, plus the two refusal gates."""
+    ensure_roots()
+    tmp = tempfile.mkdtemp(prefix="rcos-prompt-selfcheck-")
+    capdir = os.path.join(tmp, "cap")
+    os.makedirs(capdir)
+    open(os.path.join(capdir, "engine.py"), "w").write(
+        "def run(field_map, records):\n    return records\n")
+    open(os.path.join(capdir, "manifest.json"), "w").write(
+        '{"capability_id": "fx-prompt", "version": "v1"}')
+    open(os.path.join(capdir, "adapter_notes.md"), "w").write(
+        "fixture notes; never sent to a model\n")
+    cor = prepare_arm("P", "fam05", "T0", "correct", capdir, False, "sc-cor")
+    dis = prepare_arm("Q", "fam05", "T0", "disabled", None, False, "sc-dis")
+    # 1. real pair passes the mechanical symmetry check with no findings.
+    assert cor["symmetry"] == [] and dis["symmetry"] == [], "symmetry findings"
+    # 2. delimiters: exactly once in treatment, absent in control.
+    assert cor["prompt"].count(_CAP_BEGIN) == 1
+    assert cor["prompt"].count(_CAP_END) == 1
+    assert _CAP_BEGIN not in dis["prompt"] and _CAP_END not in dis["prompt"]
+    # 3. both arms embed the SAME envelope bytes (one source snapshot).
+    assert cor["envelope"] == dis["envelope"], "envelope differs across arms"
+    assert cor["prompt"].count(cor["envelope"]) == 1
+    assert dis["prompt"].count(cor["envelope"]) == 1
+    # 4. context snapshot == sandbox staged snapshot (byte binding).
+    sb = DockerSandbox(cor["work"], cor["visible"])
+    assert sb.task_snapshot == cor["staged_tree"], "snapshot binding broken"
+    # 5. ONE-BYTE asymmetry in the SHARED region is caught (verbatim
+    #    envelope embedding breaks), while a change INSIDE the delimited
+    #    capability block is correctly allowed (that bit is treatment-only).
+    shared = dis["prompt"].replace(cor["envelope"], cor["envelope"][:-1] + "Z")
+    assert check_arm_symmetry(cor["prompt"], shared, cor["envelope"]) != []
+    in_block = cor["prompt"].replace("fixture notes", "fixture note5", 1)
+    assert in_block != cor["prompt"]
+    assert check_arm_symmetry(in_block, dis["prompt"], cor["envelope"]) == [], \
+        "capability-block content must be the only permitted difference"
+    # 6. a drifted staged root breaks the context snapshot binding.
+    os.rename(os.path.join(cor["visible"], "alpha.txt"),
+              os.path.join(cor["visible"], "alpha.txt.bak"))
+    assert _hash_tree(cor["visible"]) != cor["staged_tree"]
+    print("PROMPT-SELFCHECK ok: real fam05/T0 pair — one staged snapshot, "
+          "canonical envelope, delimited capability block, symmetry "
+          "fail-closed (offline fixture, not a run)")
+    shutil.rmtree(tmp, ignore_errors=True)
+    return 0
+
+
+def prepare_arm(lane, family, task, arm, capdir, wire, run_id):
+    """Item-6 ONE SOURCE SNAPSHOT (audit round 2 item 6).
+
+    Stage the agent-visible root ONCE (sealed copy: prompt.md + declared
+    fixtures only). The MODEL CONTEXT and the docker /task mount are both
+    built from these exact staged bytes — never from two independent reads
+    of the frozen task dir — and the two hashes must agree. The prompt is
+    assembled from one canonical envelope plus, for the treatment arm, one
+    mechanically delimited capability-access block; the pair must pass the
+    symmetry check BEFORE any model token is spent.
+    """
+    taskdir = os.path.join(BASE, "families", family, task)
+    work = os.path.join("/tmp/rcos-runs", "famc-" + run_id)
+    visible = os.path.join("/tmp/rcos-visible", "famc-" + run_id)
+    os.makedirs(work, exist_ok=True)
+    copied, refused = build_visible_root(taskdir, visible)
+    staged_tree = _hash_tree(visible)
+    taskdef = open(os.path.join(visible, "prompt.md")).read()
+    listing = ", ".join(sorted(os.listdir(visible)))
+    blobs = []
+    read_files = {}
+    for root, _dirs, files in os.walk(visible):
+        for fn in sorted(files):
+            p = os.path.join(root, fn)
+            rel = os.path.relpath(p, visible)
+            data = open(p, "rb").read()
+            read_files[f"file|{rel}"] = hashlib.sha256(data).hexdigest()
+            if rel != "prompt.md":
+                blobs.append(f"--- {rel} ---\n" + data.decode())
+    block = "\n".join(blobs)
+    envelope = build_envelope(taskdef, listing, block)
+    # The model context must BE the staged bytes: every file hash read into
+    # the prompt equals the staged tree's file hash (dirs are irrelevant to
+    # prompt content but ride the tree binding below).
+    staged_files = {k: v for k, v in staged_tree.items()
+                    if k.startswith("file|")}
+    if read_files != staged_files:
+        drift = sorted(set(read_files.items()) ^ set(staged_files.items()))
+        raise RuntimeError(
+            f"CONTEXT-SNAPSHOT-DENY prompt bytes != staged snapshot bytes: "
+            f"{drift[:3]}")
+    context_task_snapshot_hash = hashlib.sha256(json.dumps(
+        staged_tree, sort_keys=True).encode()).hexdigest()
+    cap_info = None
+    cap_engine = None
+    if arm == "correct":
+        if not capdir:
+            raise ValueError("correct arm requires locked capability dir")
+        if wire:
+            # H-LOCK-008: resolve the executed engine by exact locked hash
+            # BEFORE it enters the jail. Dev-escape (unwired) copies unverified.
+            cap_info = _verify_capability(capdir)
+            cap_engine = cap_info["verified"]["engine.py"]
+        else:
+            cap_engine = os.path.join(capdir, "engine.py")
+        prompt = build_arm_prompt(
+            "correct", envelope,
+            open(os.path.join(capdir, "manifest.json")).read(),
+            open(os.path.join(capdir, "adapter_notes.md")).read(),
+            open(cap_engine).read())
+        twin = build_arm_prompt("disabled", envelope)
+        sym = check_arm_symmetry(prompt, twin, envelope)
+    else:
+        prompt = build_arm_prompt("disabled", envelope)
+        twin = build_arm_prompt("correct", envelope, COUNTERFACTUAL_CAP,
+                                COUNTERFACTUAL_CAP, COUNTERFACTUAL_CAP)
+        sym = check_arm_symmetry(twin, prompt, envelope)
+    # H-CTX-002 mechanical pair symmetry: any one-byte hint asymmetry in
+    # the shared region, any stray capability block, or a missing/duplicate
+    # delimiter FAILS CLOSED before any model call.
+    if sym:
+        raise RuntimeError("SYMMETRY-DENY refuse start: " + " | ".join(sym))
+    return {"prompt": prompt, "envelope": envelope, "work": work,
+            "visible": visible, "copied": copied, "refused": refused,
+            "staged_tree": staged_tree,
+            "context_task_snapshot_hash": context_task_snapshot_hash,
+            "symmetry": sym, "cap_info": cap_info, "cap_engine": cap_engine}
+
+
 def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     opts = opts or {}
     wire = opts.get("wire", True)
@@ -556,47 +783,30 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     frozen = instance_freeze_commit
     os.makedirs(outdir, exist_ok=True)
     taskdir = os.path.join(BASE, "families", family, task)
-    taskdef = open(os.path.join(taskdir, "prompt.md")).read()
-    listing = ", ".join(sorted(os.listdir(taskdir)))
-    blobs = []
-    for root, _dirs, files in os.walk(taskdir):
-        for fn in sorted(files):
-            p = os.path.join(root, fn)
-            rel = os.path.relpath(p, taskdir)
-            if fn not in ("prompt.md", "VISIBLE.md") and os.path.getsize(p) <= 4096:
-                blobs.append(f"--- {rel} ---\n" + open(p).read())
-    block = "\n".join(blobs)
-    cap_info = None
-    if arm == "correct":
-        if not capdir:
-            raise ValueError("correct arm requires locked capability dir")
-        prompt = CORRECT.replace("__TASKDEF__", taskdef).replace(
-            "__LISTING__", listing).replace("__BLOBS__", block).replace(
-            "__MANIFEST__", open(os.path.join(capdir, "manifest.json")).read()).replace(
-            "__NOTES__", open(os.path.join(capdir, "adapter_notes.md")).read()).replace(
-            "__ENGINE__", open(os.path.join(capdir, "engine.py")).read())
-        if wire:
-            # H-LOCK-008: resolve the executed engine by exact locked hash
-            # BEFORE it enters the jail. Dev-escape (unwired) copies unverified.
-            cap_info = _verify_capability(capdir)
-            cap_engine = cap_info["verified"]["engine.py"]
-        else:
-            cap_engine = os.path.join(capdir, "engine.py")
-    else:
-        prompt = DISABLED.replace("__TASKDEF__", taskdef).replace(
-            "__LISTING__", listing).replace("__BLOBS__", block)
+    # ---- Item-6 ONE SOURCE SNAPSHOT (audit round 2 item 6) -------------
+    run_id = hashlib.sha256(
+        f"{lane}|{family}|{task}|{arm}|{time.time()}".encode()).hexdigest()[:12]
+    prep = prepare_arm(lane, family, task, arm, capdir, wire, run_id)
+    prompt = prep["prompt"]
+    envelope = prep["envelope"]
+    work, visible = prep["work"], prep["visible"]
+    copied, refused = prep["copied"], prep["refused"]
+    staged_tree = prep["staged_tree"]
+    context_task_snapshot_hash = prep["context_task_snapshot_hash"]
+    sym = prep["symmetry"]
+    cap_info, cap_engine = prep["cap_info"], prep["cap_engine"]
     open(os.path.join(outdir, "prompt.txt"), "w").write(prompt)
     raw, receipt, nu_path, id_path, identity_family = call(
         lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
     arrival, parse_mode = extract(raw, arm)
     open(os.path.join(outdir, "arrival.json"), "w").write(json.dumps(arrival, indent=1))
-    # Stage under trusted roots (DockerSandbox rejects outside paths).
-    run_id = hashlib.sha256(f"{lane}|{family}|{task}|{arm}|{time.time()}".encode()).hexdigest()[:12]
-    work = os.path.join("/tmp/rcos-runs", "famc-" + run_id)
-    visible = os.path.join("/tmp/rcos-visible", "famc-" + run_id)
-    os.makedirs(work, exist_ok=True)
-    build_visible_root(taskdir, visible)
+    # DockerSandbox stages its own private copy of `visible` and refuses on
+    # drift; its task_snapshot must equal the hash the context was built
+    # from (same staged bytes -> same hash), else refuse.
     sb = DockerSandbox(work, visible)
+    if sb.task_snapshot != staged_tree:
+        raise RuntimeError("CONTEXT-SNAPSHOT-DENY sandbox task_snapshot != "
+                           "context_task_snapshot_hash source")
     # Execute arrival inside H1 jail. No evaluator/truth/checker is mounted.
     command = None
     if arm == "correct":
@@ -661,6 +871,15 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                 "execution_harness_manifest_sha256": execution_harness_manifest_sha,
                 "dev_mode": bool(not wire),
                 "usage_receipts": [os.path.basename(receipt)] if wire else [],
+                # Item-6 single-snapshot + symmetry evidence (audit round 2).
+                "context_task_snapshot_hash": context_task_snapshot_hash,
+                "context_task_snapshot_source": "sealed staged visible root",
+                "envelope_sha256": hashlib.sha256(
+                    envelope.encode()).hexdigest(),
+                "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
+                "arm_symmetry_findings": sym,
+                "visible_root_copied": sorted(copied),
+                "visible_root_refused": sorted(refused),
                 "usage_normalized": [os.path.basename(nu_path)] if wire else [],
                 "identity_file": (os.path.basename(id_path) if wire
                                   else None),
@@ -715,6 +934,8 @@ if __name__ == "__main__":
     argv = sys.argv[1:]
     if "--selfcheck-wire" in argv:
         sys.exit(selfcheck_wire())
+    if "--selfcheck-prompt" in argv:
+        sys.exit(selfcheck_prompt())
     opts = {}
     if "--no-wire" in argv:
         # Audit P0 #19: --no-wire is banned on the estimand surface. Dev

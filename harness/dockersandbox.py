@@ -187,6 +187,8 @@ class DockerSandbox:
             raise PermissionError(
                 "STABILITY-DENY staged copy differs from stable source")
         self.mounts = [(work, "/work", "rw"), (self.staged, "/task", "ro")]
+        self.work = work
+        self.source = vis
         self.image = IMAGE
         self._base = [
             "docker", "run", "--rm", "--name", self.name,
@@ -210,6 +212,26 @@ class DockerSandbox:
                 "task_snapshot": self.task_snapshot,
                 "mounts": [{"host": h, "container": c, "mode": m}
                            for h, c, m in self.mounts]}
+
+    def attempt_read(self, host_path):
+        """Jail-visibility oracle (no daemon): would this HOST path be
+        readable from inside the jail? Only the staged copy (/task, ro)
+        and the workdir (/work, rw) are mounted. The caller's visible
+        SOURCE is byte-identical to the staged copy (proved at
+        construction: task_snapshot == source hash), so it answers in the
+        same /task namespace — that is what makes a planted sealed file
+        a detectable finding. Symlinks and `..` traversal resolve via
+        realpath first, so escape attempts report DENIED."""
+        p = os.path.realpath(host_path)
+        for src, mnt in ((self.staged, "/task"), (self.source, "/task"),
+                         (self.work, "/work")):
+            src_r = os.path.realpath(src)
+            if p == src_r or p.startswith(src_r + os.sep):
+                rel = os.path.relpath(p, src_r)
+                if os.path.exists(p):
+                    return True, mnt + ("/" + rel if rel != "." else "")
+                return False, f"not found under {mnt}"
+        return False, "outside jail mounts"
 
     def verify_task_snapshot(self):
         """Byte binding: hash /task INSIDE a fresh jail container and

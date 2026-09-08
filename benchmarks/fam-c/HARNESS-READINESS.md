@@ -40,6 +40,21 @@ Failure: pair void; must rebuild contexts, never patch mid-run.
 Test: fixture pair with a deliberately injected asymmetry → checker
 must FAIL closed.
 
+Implementation (round-2 item 6): the runner stages the agent-visible root
+ONCE (sealed copy: prompt.md + VISIBLE-declared fixtures) and builds BOTH
+the model context and the docker `/task` mount from those exact staged
+bytes — never from two independent reads of the frozen task dir. The
+manifest records `context_task_snapshot_hash`, which must equal the
+sandbox `task_snapshot` (same staged bytes → same hash; drift refuses
+before the call). One canonical envelope object carries the shared task
+bytes verbatim in both arms; the delimited capability-access block
+(`<<<CAPABILITY-ACCESS-BEGIN>>>` … `<<<CAPABILITY-ACCESS-END>>>`) appears
+exactly once in treatment and never in control; `check_arm_symmetry()`
+fails closed on any one-byte shared-region asymmetry, stray/duplicated
+delimiter, missing frozen section header, preamble/output-schema drift,
+or content past the envelope. Control-arm bytes are unchanged from the
+pre-item-6 template (regression-pinned).
+
 ### H-SES-003 — session/workdir/state isolation
 
 Requirement: every task invocation starts in a fresh model session with
