@@ -5,6 +5,9 @@ Three INDEPENDENT validators, each green on its own authority. Exit 0 =
 all green, 1 = findings (each finding names its authority). Importable:
 `validate_all(fam_c_dir)` returns findings without exiting, so the runner
 refuses to start on any lock failure before any model token is spent.
+A12c C1-2 (auditor P0 #7): V2 additionally enforces exact
+T4-SEMANTIC-IDS.json <-> PREREG set equality, so a wrong registry
+refuses here — naming the offending id — before any model call.
 
   V1 INSTANCE-FREEZE — the frozen instance bytes (families/** task inputs,
       checkers, truth + frozen meta STAGED.md/FAMILIES.md) are byte-identical
@@ -38,6 +41,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), os.pardir, "harness"))
 from admissibility import (frozen_manifest_bytes, verify_freeze_tree,
                            load_freeze)
 from order import verify_expansion as order_verify_expansion
+import t4_ids
 
 FREEZE_COMMIT = "d1292434a261f44ad910c556e18624cef1676f37"
 
@@ -209,6 +213,88 @@ def validate_protocol(fam_c_dir, freeze_commit):
     # hand-edited or stale expansion is protocol drift by construction.
     for f in order_verify_expansion(fam_c_dir):
         out.append("V2 PROTOCOL-LOCK: " + f)
+    # A12c C1-2 (auditor P0 #7): exact registry<->PREREG set equality is
+    # a V2 gate, not a suite-only assertion — a missing/extra/renamed id
+    # or key/value family mismatch refuses here, before any model call.
+    out += validate_t4_registry(fam_c_dir)
+    return out
+
+
+def validate_t4_registry(fam_c_dir):
+    """V2 T4-REGISTRY (A12c C1-2, auditor P0 #7). Returns findings list.
+
+    Exact registry<->PREREG set equality, enforced BEFORE any model
+    call. V2 fails (nonzero) unless ALL of:
+      - T4-SEMANTIC-IDS.json keys are EXACTLY fam01..fam06;
+      - the registry value set equals the PREREG frozen id set EXACTLY
+        (no missing, no extra);
+      - every registry value appears verbatim in PREREG.md;
+      - every value matches <family>.<snake_case> with its family
+        prefix equal to its key.
+    A missing id, an extra id, a renamed id, or a key/value family
+    mismatch refuses here naming the offending id. Importable without
+    git: needs only the two files in fam_c_dir (hermetic fixtures).
+    Stdlib only; fails closed (an unreadable registry or PREREG block
+    is a finding, never a pass)."""
+    out = []
+    reg, reg_err = None, None
+    try:
+        reg = t4_ids.frozen_set(fam_c_dir)
+    except PermissionError as e:
+        reg_err = str(e)
+    frozen, frozen_err = None, None
+    try:
+        frozen = t4_ids.prereg_frozen_set(fam_c_dir)
+    except PermissionError as e:
+        frozen_err = str(e)
+    if reg_err is not None:
+        out.append("V2 PROTOCOL-LOCK: " + reg_err)
+    if frozen_err is not None:
+        out.append("V2 PROTOCOL-LOCK: " + frozen_err)
+        return out
+    if reg is None:
+        # Malformed registry (frozen_set refused): still report the
+        # set-equality directions best-effort from the raw bytes, so a
+        # missing PREREG id is named alongside the malformed entry.
+        try:
+            raw = json.load(open(os.path.join(
+                fam_c_dir, "T4-SEMANTIC-IDS.json")))
+            raw_fams = raw.get("families")
+            reg = dict(raw_fams) if isinstance(raw_fams, dict) else {}
+        except (ValueError, OSError):
+            return out
+    want_keys = [f"fam0{i}" for i in range(1, 7)]
+    if sorted(reg) != want_keys:
+        out.append(f"V2 PROTOCOL-LOCK: T4-SEMANTIC-IDS.json keys "
+                   f"{sorted(reg)} != exactly {want_keys} (a dropped "
+                   f"or added family refuses before any model call)")
+    reg_vals = set(v for v in reg.values() if isinstance(v, str))
+    for tid in sorted(reg_vals - frozen):
+        out.append(f"V2 PROTOCOL-LOCK: T4 registry id {tid!r} is not "
+                   f"frozen in PREREG.md ## Conformance semantic IDs "
+                   f"(frozen) (register an id only by forward PREREG "
+                   f"amendment before the runs it governs)")
+    for tid in sorted(frozen - reg_vals):
+        out.append(f"V2 PROTOCOL-LOCK: PREREG frozen T4 id {tid!r} is "
+                   f"missing from T4-SEMANTIC-IDS.json (registry and "
+                   f"PREREG must agree exactly)")
+    try:
+        text = open(os.path.join(fam_c_dir, "PREREG.md")).read()
+    except OSError as e:
+        return out + [f"V2 PROTOCOL-LOCK: PREREG.md unreadable: {e}"]
+    for fam in sorted(reg):
+        tid = reg[fam]
+        if not isinstance(tid, str):
+            out.append(f"V2 PROTOCOL-LOCK: T4 registry entry {fam!r} "
+                       f"is not a string id: {tid!r}")
+            continue
+        if tid not in text:
+            out.append(f"V2 PROTOCOL-LOCK: T4 registry id {tid!r} "
+                       f"does not appear verbatim in PREREG.md")
+        if not tid.startswith(fam + "."):
+            out.append(f"V2 PROTOCOL-LOCK: T4 registry key/value "
+                       f"family mismatch: key {fam!r} maps to id "
+                       f"{tid!r} (the id prefix must equal its key)")
     return out
 
 

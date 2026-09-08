@@ -131,6 +131,14 @@
    "reason": "A12b.5 genesis: frozen governed six-family T4 semantic-ID registry (PREREG ## Conformance semantic IDs (frozen) + AMEND-2026-09-08-fam01)",
    "base": "d129243",
    "slice": "a12b.5"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "2ebf24336c56b5165f95ae0a4b87930779d8505315d52e2f9888192c972a8df5",
+   "to_sha": "0d6bb91f072771f2f0a31e00b4e65dc4b87be4f0695264ac63cc5daad936c351",
+   "reason": "A12c slice C1 (auditor P0 #7): exact T4 registry<->PREREG set equality in V2 preflight (validate_t4_registry: exactly fam01..fam06 keys, value-set equality both directions, verbatim PREREG presence, key/value family-prefix match); a missing/extra/renamed id or mismatch refuses before any model call naming the offending id",
+   "base": "64247a2",
+   "slice": "a12c-slice-c1"
   }
  ]
 }

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""H18 — specificity production-caller smoke (RCOS A12b slice 3).
+"""H18 — specificity production-caller smoke (RCOS A12b slice 3;
+A12c C1-3 reframe: the surface is T4-CONFORMANCE-READINESS with verdicts
+contract-conformance-ready / contract-conformance-failure plus the
+contract_conformance_ready bool).
 
 `lock.specificity_gate` was previously called only from H17 with
 hand-built dicts. `harness/specificity.py` is the production caller:
@@ -9,15 +12,16 @@ the REAL fixture writer + production promotion controller:
 
   (a) the real committed fam05 lock (minted through promotion) ->
       fam05 in non_discriminating with a non-empty cause, verdict
-      specificity-failure, CLI exit 1, cause on stderr;
+      contract-conformance-failure, CLI exit 1, cause on stderr;
   (b) a lock variant with a real limitation (limitations non-empty,
       limitation_present True, non_discriminating False, cause text)
-      that still passes verify_lock -> verdict specificity-pass,
-      CLI exit 0;
+      that still passes verify_lock -> verdict
+      contract-conformance-ready, CLI exit 0;
   (c) an inadmissible lock (discrimination claimed with empty
-      limitations) -> specificity-failure with the LOCK-INADMISSIBLE
-      reason;
-  (d) empty lock set -> specificity-failure, never a vacuous pass;
+      limitations) -> contract-conformance-failure with the
+      LOCK-INADMISSIBLE reason;
+  (d) empty lock set -> contract-conformance-failure, never a vacuous
+      pass;
   (e) discovery is from disk, not caller input: the discovered family
       set equals the families with committed locks under the root.
 
@@ -142,8 +146,10 @@ check("real fam05 pair promotes then locks (not vacuous)",
       and res2_a.get("event") == "CAPABILITY_LOCK",
       f"{res_a.get('event')} -> {res2_a.get('event')}")
 rep_a = SPEC.report(root_a)
-check("real fam05 lock -> specificity-failure",
-      rep_a["verdict"] == "specificity-failure", rep_a["verdict"])
+check("real fam05 lock -> contract-conformance-failure",
+      rep_a["verdict"] == "contract-conformance-failure", rep_a["verdict"])
+check("not-ready root reports contract_conformance_ready False",
+      rep_a["contract_conformance_ready"] is False)
 check("fam05 in non_discriminating with a non-empty cause",
       isinstance(rep_a["non_discriminating"].get("fam05"), str)
       and bool(rep_a["non_discriminating"]["fam05"].strip()),
@@ -160,11 +166,13 @@ cli_a = run_cli(root_a)
 check("CLI exits 1 on the non-discriminating root", cli_a.returncode == 1,
       f"rc={cli_a.returncode}")
 check("CLI prints the cause on stderr",
-      "SPECIFICITY-FAILURE:" in cli_a.stderr
+      "CONFORMANCE-NOT-READY:" in cli_a.stderr
       and "non-discriminating" in cli_a.stderr,
       cli_a.stderr[:160])
 check("CLI stdout carries the JSON failure verdict",
-      '"verdict": "specificity-failure"' in cli_a.stdout)
+      '"verdict": "contract-conformance-failure"' in cli_a.stdout)
+check("CLI stdout carries contract_conformance_ready false",
+      '"contract_conformance_ready": false' in cli_a.stdout)
 
 # --- (b) lock variant with a real limitation ---------------------------
 # A12c slice B: the stand-in no longer reads K.md, so the K.md append
@@ -194,8 +202,9 @@ check("variant lock carries a real limitation and passes verify_lock",
       and LOCK_MOD.verify_lock(lock_b) == [],
       str(LOCK_MOD.verify_lock(lock_b)[:1]))
 rep_b = SPEC.report(root_b)
-check("real limitation -> specificity-pass, fam05 discriminating",
-      rep_b["verdict"] == "specificity-pass"
+check("real limitation -> contract-conformance-ready, fam05 discriminating",
+      rep_b["verdict"] == "contract-conformance-ready"
+      and rep_b["contract_conformance_ready"] is True
       and rep_b["discriminating"] == ["fam05"]
       and rep_b["non_discriminating"] == {}
       and rep_b["inadmissible"] == {}, str(rep_b))
@@ -212,8 +221,10 @@ mutated = json.load(open(lock_c_path))
 mutated["non_discriminating"] = False
 json.dump(mutated, open(lock_c_path, "w"), indent=1)
 rep_c = SPEC.report(root_c)
-check("discrimination claim without a limitation -> specificity-failure",
-      rep_c["verdict"] == "specificity-failure", rep_c["verdict"])
+check("discrimination claim without a limitation -> "
+      "contract-conformance-failure",
+      rep_c["verdict"] == "contract-conformance-failure"
+      and rep_c["contract_conformance_ready"] is False, rep_c["verdict"])
 bad_reasons = rep_c["inadmissible"].get("fam05") or []
 check("inadmissible lists fam05 with the LOCK-INADMISSIBLE reason",
       any("LOCK-INADMISSIBLE" in r and "no limitations" in r
@@ -225,8 +236,9 @@ check("CLI exits 1 on the inadmissible root", cli_c.returncode == 1,
 # --- (d) empty lock set is a failure, never a vacuous pass ------------
 root_d = hermetic()
 rep_d = SPEC.report(root_d)
-check("empty lock set -> specificity-failure (anti-vacuity)",
-      rep_d["verdict"] == "specificity-failure"
+check("empty lock set -> contract-conformance-failure (anti-vacuity)",
+      rep_d["verdict"] == "contract-conformance-failure"
+      and rep_d["contract_conformance_ready"] is False
       and rep_d["families"] == []
       and rep_d["discriminating"] == [], str(rep_d))
 check("empty report carries the committed no-locks cause",
@@ -261,6 +273,17 @@ check("specificity.py derives capability dirs via the order API",
       "capability_dir" in _src)
 check("specificity.py has no hidden-contract reader (no K.md open)",
       _re.search(r"open\([^)]*K\.md", _src) is None)
+check("specificity.py names the surface T4-CONFORMANCE-READINESS",
+      "T4-CONFORMANCE-READINESS" in _src)
+check("specificity.py disclaims final observed T4 specificity",
+      "NOT the final" in _src and "post-T4 lifecycle" in _src)
+check("specificity.py reports contract_conformance_ready",
+      "contract_conformance_ready" in _src
+      and "contract-conformance-ready" in _src
+      and "contract-conformance-failure" in _src)
+check("specificity.py never silently skips a bad lock",
+      "discover_problems" in _src
+      and "never silently skipped" in _src)
 
 bad = [n for n, ok_ in RESULTS if not ok_]
 print(f"\nH18 specificity smoke: {len(RESULTS) - len(bad)}/{len(RESULTS)} closed")

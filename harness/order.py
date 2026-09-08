@@ -987,7 +987,7 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     # against the FROZEN T0 arrival declaration — verbatim equality on
     # semantic_core/preconditions/limitations, the same declaration the
     # promotion controller used (one source of truth) — never against
-    # hidden K.md. A receipt that rewrites the producer's declared text
+    # hidden capability text. A receipt that rewrites the producer's declared text
     # is refused here, exactly as a non-frozen contract was before.
     sc = r.get("semantic_core")
     if not isinstance(sc, str) or not sc.strip():
@@ -1026,7 +1026,7 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     # A12b.6 actual-contract conformance: the receipt carries the
     # producer's ACTUAL limitations plus the derived verdict (the lock
     # records exactly these; the conformance check reads the lock only,
-    # never hidden K.md). limitation_present must equal
+    # never hidden capability text). limitation_present must equal
     # bool(limitations); a receipt that claims discrimination
     # (non_discriminating False) while the limitation is absent is
     # refused — empty limitations never silently lock as discriminating.
@@ -1364,7 +1364,7 @@ def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),
                                   "provenance does not re-validate: "
                                   + " | ".join(prov[:3]))
     # Presence is not truthiness: a frozen contract may legitimately declare
-    # NO limitations (fam05's K.md does not), so an empty list is a real
+    # NO limitations (fam05's hidden contract declares none), so an empty list is a real
     # value. The fields that must carry content are checked separately, so
     # an empty provenance map can never pass as "present".
     need = ("acquisition_chain_tips", "source_cells", "candidate",

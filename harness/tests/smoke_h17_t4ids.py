@@ -219,7 +219,9 @@ v2 = os.path.join(tempfile.mkdtemp(prefix="h17-v2-"), "repo",
 os.makedirs(v2)
 open(os.path.join(v2, "PREREG.md"), "w").write(
     "## Conformance semantic IDs (frozen)\n\n```text\n"
-    "fam01.rows_are_records\n```\n")
+    "fam01.rows_are_records\nfam02.pages_disjoint\n"
+    "fam03.repeats_are_duplicates\nfam04.promised_acyclic\n"
+    "fam05.local_v1_sha256\nfam06.common_unit_basis\n```\n")
 open(os.path.join(v2, "ORDER.md"), "w").write("frozen order\n")
 repo = os.path.dirname(os.path.dirname(v2))
 git(repo, "init", "-q")
@@ -228,7 +230,12 @@ git(repo, "commit", "-qm", "freeze")
 FC = git(repo, "rev-parse", "HEAD")
 disk_reg = {"version": "t4-semantic-ids-v1",
             "prereg_source": "h17 fixture",
-            "families": {"fam01": "fam01.rows_are_records"}}
+            "families": {"fam01": "fam01.rows_are_records",
+                         "fam02": "fam02.pages_disjoint",
+                         "fam03": "fam03.repeats_are_duplicates",
+                         "fam04": "fam04.promised_acyclic",
+                         "fam05": "fam05.local_v1_sha256",
+                         "fam06": "fam06.common_unit_basis"}}
 open(os.path.join(v2, "T4-SEMANTIC-IDS.json"), "w").write(
     json.dumps(disk_reg, indent=1))
 reg_sha = sha_file(os.path.join(v2, "T4-SEMANTIC-IDS.json"))
