@@ -40,3 +40,26 @@ def check_distinct_families(id_a, id_b):
     return (ea["endpoint"].lower() != eb["endpoint"].lower()
             and ea["model_echoed_model"].lower()
             != eb["model_echoed_model"].lower())
+
+
+def check_against_prereg(identity_path, prereg_entry):
+    """Verify a provider receipt against a PREREGISTERED identity entry:
+    {provider, endpoint, requested_id, acceptable_echoed_ids (list of
+    exact ids or prefix patterns ending in *), family}. Returns the
+    family string on match; raises otherwise. Family distinction lives
+    in preregistration, never in endpoint-string heuristics."""
+    rec = json.load(open(identity_path))
+    problems = []
+    if rec.get("endpoint", "").lower() != prereg_entry["endpoint"].lower():
+        problems.append("endpoint mismatch")
+    if rec.get("model_requested") != prereg_entry["requested_id"]:
+        problems.append("requested-id mismatch")
+    echoed = str(rec.get("model_echoed_model", ""))
+    pats = prereg_entry.get("acceptable_echoed_ids", [])
+    def _hit(pat):
+        return echoed == pat if not pat.endswith("*") else echoed.startswith(pat[:-1])
+    if not any(_hit(p) for p in pats):
+        problems.append(f"echoed id {echoed!r} matches no acceptable pattern")
+    if problems:
+        raise ValueError("IDENTITY-PREREG-MISMATCH: " + "; ".join(problems))
+    return prereg_entry["family"]

@@ -14,9 +14,9 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
-from usage import recorded_call, summarize
-from identity import record_identity, check_distinct_families
-from reuse_log import write_record, genuine_reuse
+from usage import recorded_call, summarize, normalize_usage, NORMALIZER_VERSION
+from identity import record_identity, check_distinct_families, check_against_prereg
+from reuse_log import write_record, genuine_reuse, check_ablation
 
 BASE = "/tmp/h2-smoke"
 results = []
@@ -77,6 +77,12 @@ reply, p1 = call("a")
 check("stub call captured", reply == "STUB-OK" and p1.endswith(".json"))
 _, p2 = call("b")
 s = summarize([p1, p2])
+r0 = json.load(open(p1))
+check("provenance fields present",
+      r0.get("usage_raw_sha256") and r0.get("normalizer_version") == NORMALIZER_VERSION,
+      str({k: r0.get(k) for k in ("usage_raw_sha256", "normalizer_version")}))
+check("normalize_usage primary work exact",
+      __import__("usage").normalize_usage(r0)["primary_work"] == 15)
 check("derived metrics exact",
       s == {"model_calls": 2, "input_tokens_uncached": 20,
             "output_tokens": 10, "cached_tokens": 4,
@@ -119,6 +125,18 @@ json.dump({"endpoint": EP, "model_echoed_model": "stub-m"},
 os.makedirs(os.path.join(BASE, "idE"), exist_ok=True)
 json.dump({"endpoint": EP, "model_echoed_model": "stub-m"},
           open(os.path.join(BASE, "idE", "identity.json"), "w"))
+PREREG_P = {"provider": "p1", "endpoint": EP, "requested_id": "stub-m",
+              "acceptable_echoed_ids": ["stub-m", "stub-*"], "family": "FamP"}
+PREREG_Q = {"provider": "p2", "endpoint": EP + ":1",
+            "requested_id": "stub-m", "acceptable_echoed_ids": ["stub-*"],
+            "family": "FamQ"}
+check("prereg identity match returns family",
+      check_against_prereg(os.path.join(BASE, "idA", "identity.json"), PREREG_P) == "FamP")
+try:
+    check_against_prereg(os.path.join(BASE, "idA", "identity.json"), PREREG_Q)
+    check("prereg endpoint mismatch rejected", False)
+except ValueError:
+    check("prereg endpoint mismatch rejected", True)
 check("same endpoint+model not distinct",
       not check_distinct_families(
           os.path.join(BASE, "idC", "identity.json").replace("idC", "idE"),
@@ -179,6 +197,36 @@ try:
 except ValueError:
     check("missing field rejected", True)
 
+def _man(path, cap, verdict):
+    m = {"input_snapshot_hash": "in1", "context_hash": "cx",
+         "model_identity": "m", "generation_params": {"t": 0},
+         "tool_policy_hash": "tp", "initial_workdir_hash": "wd",
+         "capability_step_hash": cap,
+         "evaluator_verdict": verdict, "evaluator_evidence_hash": "ev-" + verdict}
+    open(path, "w").write(json.dumps(m))
+    return path
+_mt = os.path.join(BASE, "man-t.json")
+_ma = os.path.join(BASE, "man-a.json")
+_t = {"input_snapshot_hash": "in1", "context_hash": "cx", "model_identity": "m",
+      "generation_params": {"t": 0}, "tool_policy_hash": "tp",
+      "initial_workdir_hash": "wd", "capability_step_hash": "capA",
+      "evaluator_verdict": "ship", "evaluator_evidence_hash": "ev-ship"}
+_a = dict(_t, capability_step_hash="ABSENT", evaluator_verdict="fix",
+          evaluator_evidence_hash="ev-fix")
+json.dump(_t, open(_mt, "w"))
+json.dump(_a, open(_ma, "w"))
+ok, der = check_ablation(_mt, _ma)
+check("derived ablation passes (differing verdicts)",
+      ok and der["outcome_changed"] is True, str(der))
+_a2 = dict(_t, capability_step_hash="ABSENT",
+           evaluator_verdict="ship", evaluator_evidence_hash="ev-ship")
+json.dump(_a2, open(_ma, "w"))
+ok2, der2 = check_ablation(_mt, _ma)
+check("same-verdict ablation fails (no outcome change proven)", not ok2)
+_t3 = dict(_t, context_hash="DIFFERENT")
+json.dump(_t3, open(_mt, "w"))
+ok3, der3 = check_ablation(_mt, _ma)
+check("differing-context ablation fails", not ok3)
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH2 smoke: {len(results) - len(bad)}/{len(results)} closed")
 srv.shutdown()

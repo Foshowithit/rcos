@@ -38,15 +38,41 @@ def check_hash_linkage(capability_output_path, downstream_inputs):
                    "artifact_sha256": want, "consumed_at": None}
 
 
-def check_ablation(ablation_receipt_path):
-    """Predicate (b): an ablation receipt file asserting byte-identical
-    re-execution minus the capability step with changed outcome.
-    Format: {"identical_prefix": true, "capability_step_removed": true,
-    "outcome_changed": bool, "evidence": str}."""
-    r = json.load(open(ablation_receipt_path))
-    ok = bool(r.get("identical_prefix") and r.get("capability_step_removed"))
-    return ok, {"mechanism": "ablation", "receipt": ablation_receipt_path,
-                "outcome_changed": bool(r.get("outcome_changed"))}
+def check_ablation(treatment_manifest_path, ablation_manifest_path):
+    """Predicate (b): DERIVED, never asserted. Both manifests must carry:
+    input_snapshot_hash, context_hash, model_identity (endpoint + echoed
+    id), generation_params, tool_policy_hash, initial_workdir_hash,
+    capability_step_hash (or the literal string "ABSENT"), and
+    evaluator verdict + evidence hash. The validator derives:
+      identical_except_capability = all shared fields equal AND exactly
+        the capability step differs (present vs ABSENT)
+      outcome_changed = evaluator verdicts differ
+    No boolean in either manifest is trusted; both conditions are
+    recomputed from hashes. Returns (ok, derived_dict)."""
+    t = json.load(open(treatment_manifest_path))
+    a = json.load(open(ablation_manifest_path))
+    shared = ("input_snapshot_hash", "context_hash", "model_identity",
+              "generation_params", "tool_policy_hash",
+              "initial_workdir_hash")
+    missing = [k for k in shared if k not in t or k not in a]
+    if missing:
+        return False, {"mechanism": "ablation-derived",
+                       "reason": f"missing shared fields: {missing}"}
+    same = all(t[k] == a[k] for k in shared)
+    cap_differs = (t.get("capability_step_hash") not in (None, "ABSENT")
+                   and a.get("capability_step_hash") == "ABSENT")
+    identical_except = bool(same and cap_differs)
+    tv, av = (t.get("evaluator_verdict"), t.get("evaluator_evidence_hash")), \
+             (a.get("evaluator_verdict"), a.get("evaluator_evidence_hash"))
+    if None in (tv[0], tv[1], av[0], av[1]):
+        return False, {"mechanism": "ablation-derived",
+                       "reason": "evaluator verdict/evidence missing"}
+    changed = tv != av
+    ok = bool(identical_except and changed)
+    return ok, {"mechanism": "ablation-derived",
+                "identical_except_capability": identical_except,
+                "outcome_changed": changed,
+                "treatment_verdict": tv[0], "ablation_verdict": av[0]}
 
 
 def write_record(out_dir, task_id, lane, arm, **fields):
@@ -66,13 +92,16 @@ def write_record(out_dir, task_id, lane, arm, **fields):
             if not ok:
                 raise ValueError("REUSE-UNPROVEN: hash linkage claimed "
                                  "but artifact absent from consumer inputs")
-        elif mech == "ablation":
-            ok, _ = check_ablation(ev["receipt"])
+        elif mech == "ablation-derived":
+            ok, _ = check_ablation(ev["treatment_manifest"],
+                                   ev["ablation_manifest"])
             if not ok:
-                raise ValueError("REUSE-UNPROVEN: ablation receipt invalid")
+                raise ValueError("REUSE-UNPROVEN: derived ablation check "
+                                 "failed (see evidence)")
         else:
             raise ValueError("REUSE-UNPROVEN: contribution needs hash-linkage "
-                             "or ablation evidence, never self-report")
+                             "or derived ablation evidence, never self-report "
+                             "or asserted receipts")
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, f"reuse-{task_id}-{arm}.json")
     with open(path, "w") as f:
