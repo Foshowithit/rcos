@@ -32,6 +32,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import sys
 
 BLOCKS = ("PQ", "QP")
@@ -325,16 +326,85 @@ def run_dir(fam_c_dir, cell):
 
 
 def derive_paths(fam_c_dir, cell):
-    """The only sanctioned (capability_dir, run_dir) pair for a cell."""
-    return (capability_dir(fam_c_dir, cell["block"], cell["universe"],
-                           cell["family"]),
+    """The only sanctioned (capability_dir, run_dir) pair for a cell.
+
+    A11.6: derivation first verifies BOTH derived chains with lstat
+    (state/<block>/<universe>/<family>[/capability] and
+    state/<block>/<universe>/<family>/runs/<cell_id>). Any EXISTING
+    component that is a symlink, not a directory, foreign-owned, or
+    group/world writable raises PermissionError with a specific named
+    denial BEFORE the runner can create or use a run directory — a
+    symlinked namespace parent must never be traversed or created
+    through.
+    """
+    block, universe, family = cell["block"], cell["universe"], cell["family"]
+    for tail in (("capability",), ("runs", cell["cell_id"])):
+        denial = verify_namespace_ancestry(fam_c_dir, block, universe,
+                                           family, tail=tail)
+        if denial:
+            raise PermissionError(denial)
+    return (capability_dir(fam_c_dir, block, universe, family),
             run_dir(fam_c_dir, cell))
+
+
+def verify_namespace_ancestry(fam_c_dir, block, universe, family, tail=()):
+    """A11.6: verify the derived namespace chain with lstat, no realpath.
+
+    Every EXISTING component from `state/` downward — state root, block,
+    universe, family, then any `tail` components (capability, or runs /
+    run cell) — must satisfy all four rules:
+      (a) is a directory,
+      (b) is NOT a symlink,
+      (c) is harness-owned (uid == os.geteuid()),
+      (d) is NOT group/world writable.
+    Absent components are allowed (the harness creates them afterwards
+    with no-follow semantics). Returns None when the chain is clean, else
+    a specific named denial string (NAMESPACE-SYMLINK-DENY /
+    NAMESPACE-TYPE-DENY / NAMESPACE-OWNERSHIP-DENY /
+    NAMESPACE-WRITABLE-DENY). Fail closed: never assert, never let
+    realpath() normalize a symlinked parent into acceptance.
+    """
+    p = os.path.join(fam_c_dir, "state")
+    parts = [p]
+    for comp in (block, universe, family) + tuple(tail):
+        p = os.path.join(p, comp)
+        parts.append(p)
+    for part in parts:
+        try:
+            st = os.lstat(part)
+        except OSError:
+            continue  # absent: nothing to traverse, created later no-follow
+        mode = st.st_mode
+        if stat.S_ISLNK(mode):
+            return (f"NAMESPACE-SYMLINK-DENY: {part} is a symlink; refuse "
+                    f"to derive or traverse a namespace through it")
+        if not stat.S_ISDIR(mode):
+            return (f"NAMESPACE-TYPE-DENY: {part} exists but is not a "
+                    f"directory")
+        if st.st_uid != os.geteuid():
+            return (f"NAMESPACE-OWNERSHIP-DENY: {part} is owned by uid "
+                    f"{st.st_uid}, expected harness uid {os.geteuid()}")
+        if mode & (stat.S_IWGRP | stat.S_IWOTH):
+            return (f"NAMESPACE-WRITABLE-DENY: {part} is group/world "
+                    f"writable (mode {oct(stat.S_IMODE(mode))})")
+    return None
 
 
 def check_namespace(fam_c_dir, cell, capdir):
     """A11.5: the capability directory must be exactly the authorized
     universe's directory — inside Fam-C is NOT enough (a C cell pointed at
-    A's registry is the §2 violation the round-3 audit found)."""
+    A's registry is the §2 violation the round-3 audit found).
+
+    A11.6: the DERIVED namespace chain (state/.../<family>/capability) is
+    verified with lstat BEFORE the realpath comparison, so a symlinked
+    parent (e.g. state/PQ/C -> state/PQ/A) is refused with a specific
+    NAMESPACE-SYMLINK-DENY instead of being normalized away by realpath().
+    Returns None or a named denial string; never asserts."""
+    denial = verify_namespace_ancestry(
+        fam_c_dir, cell["block"], cell["universe"], cell["family"],
+        tail=("capability",))
+    if denial:
+        return denial
     want = os.path.realpath(capability_dir(
         fam_c_dir, cell["block"], cell["universe"], cell["family"]))
     got = os.path.realpath(capdir)
