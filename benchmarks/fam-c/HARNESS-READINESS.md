@@ -224,9 +224,40 @@ a duplicate already-completed cell, or ANY earlier cell still incomplete
 within a family). The completion ledger counts only wired, non-dev
 manifests carrying a `cell_id`. Capability dirs outside the Fam-C registry
 surface are refused (FOREIGN-REGISTRY-DENY). The manifest stamps
-block/cell_id/cell_index/cell_letter/order_sha256 for the run.
+block/cell_id/cell_index/cell_letter/order_sha256 for the run. Preflight V3
+also checks the runner's whole IMPORT CLOSURE against EXECUTION-LOCK.json,
+so a module that executes during a run cannot ride outside the execution
+authority; `harness/mint_execution_lock.py --check` re-verifies that
+mechanically (and mints the amendment after an intentional change).
 Test: `harness/tests/smoke_h7_order.py` (adversarial refusals + real
 runner subprocess refusals, no model call).
+
+### H-CAL-012 — P/Q calibration pair (CALIBRATION / NEVER-ESTIMAND)
+
+Requirement: exactly ONE P/Q calibration pair runs through the FINAL
+identity+usage path before the execution lock is minted, proving both lanes
+answer with the requested params and produce the full evidence set (echoed
+model id, nonempty provider response id, raw usage + hash, normalized usage
++ hash, request-body binding) — without contributing anything to the
+estimand.
+
+Implementation (round-2 item 2): `benchmarks/fam-c/harness-run/calibrate.py`.
+A calibration call is a CALIBRATION / NEVER-ESTIMAND call: it is not a cell
+of ORDER.md, never enters `ORDER-EXPANSION.json` or the runner's completion
+ledger, writes no `H1-RUN-MANIFEST.json` (so admissibility returns EXCLUDED
+and estimand-grade stays 0), and lives under `runs/_calibration/`. Modes:
+`--plan` (default) prints the exact calls and performs none; `--offline`
+rehearses the entire capture→identity→normalize→verify→bind path against a
+synthetic provider response with zero network, plus the fail-closed
+controls (tampered raw usage, missing echoed model, missing provider id);
+`--live` makes the REAL calls and requires BOTH `--i-know-this-spends` and
+`--approve-quota`, so a live calibration can never be accidental. A lane
+failure is INCONCLUSIVE missing evidence, never a substituted model and
+never retried.
+Status: scaffold + offline rehearsal green (`smoke_h8_calibration.py`,
+38/38). The real pair is time-gated — the Q lane (free tier) quota resets
+00:00 UTC — and runs after items 1–13, immediately before the
+EXECUTION-LOCK mint.
 
 ### H-MAN-010 — evidence/manifest chain
 
