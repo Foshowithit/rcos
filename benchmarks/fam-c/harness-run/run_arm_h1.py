@@ -7,15 +7,17 @@ arrival execution happens in DockerSandbox (--network none, exactly /work rw
 + /task ro, digest-pinned image). Evaluator runs on the host only after the
 container exits and is never mounted into it.
 
-Wiring (ON by default; --no-wire restores the legacy unlinked behavior):
+Wiring (ON by default; unwired execution is a dev escape only — see usage):
 - H2 usage: every model call goes through usage.recorded_call(); the raw
   provider usage block + identity receipt is persisted per call and each
   receipt is bound into the run's evidence chain as a model-call link.
 - H3 chain: every completed run emits EVIDENCE-CHAIN.jsonl — genesis binds
-  the frozen commit + final run manifest; links then record model calls,
-  capability events (reuse / promote), the evaluator (sealed truth + checker
-  hashes + verdict), and a terminal grade. Chain.audit() re-verifies every
-  link before the run returns; any finding aborts loudly (never silent).
+  the INSTANCE freeze commit (FREEZE.json freeze_commit — never an execution
+  HEAD masquerading as the freeze, audit P0 #4 dual anchors) + the final run
+  manifest; links then record model calls, capability events (reuse /
+  promote), the evaluator (sealed truth + checker hashes + verdict), and a
+  terminal grade. Chain.audit() re-verifies every link before the run
+  returns; any finding aborts loudly (never silent).
 - H3 CAPABILITY_LOCK: the correct arm loads its capability ONLY through
   lock.load_artifact() (exact locked hash, verified pre-execution). A run
   that ships a capability may promote it once via lock.promote() — granted
@@ -27,13 +29,19 @@ Wiring (ON by default; --no-wire restores the legacy unlinked behavior):
   ablation evidence in this cell it is recorded False (consumed, not proven
   contributed) — never model self-report.
 
-Usage: run_arm_h1.py [--no-wire] [--promote <capstore_dir>] \\
+Usage: run_arm_h1.py [--promote <capstore_dir>] \\
     <lane P|Q> <family> <task> <correct|disabled> <outdir> [capdir]
-      --no-wire      legacy behavior: no chain/reuse/lock records.
       --promote DIR  on a ship verdict, write CAPABILITY_LOCK.json into DIR
                      for the capability consumed by this run (writes once).
+      --dev-unwired-outdir DIR  dev escape: UNWIRED run writing to DIR, which
+                     must lie OUTSIDE the Fam-C tree; the manifest stamps
+                     dev_mode=true. Unwired runs under benchmarks/fam-c/runs
+                     are REFUSED (runs/ is the wired estimand surface).
       --selfcheck-wire  offline fixture compose-test of the wiring (no model
                      call, no docker, no run) — CI use only.
+Before ANY model call the runner verifies the executed instance subtree is
+byte-identical to FREEZE-HASHES.sha256 and that FREEZE.json's freeze_commit
+is a resolvable git object (refuse-START on drift; audit P0 #4).
 No P/Q calls are made by smoke; use the script only after H1 smoke is green.
 """
 import hashlib
@@ -58,6 +66,7 @@ from identity import record_identity, check_against_prereg
 from chain import Chain
 from lock import promote as lock_promote, load_artifact
 from reuse_log import write_record as reuse_write_record
+from admissibility import verify_instance_frozen
 
 CHAIN_FILE = "EVIDENCE-CHAIN.jsonl"
 GRADING_RULE_VERSION = "checker-contract-v1"
@@ -151,13 +160,49 @@ def call(lane, prompt, outdir, tag):
     return reply, receipt, id_path, identity_family
 
 
-def frozen_commit():
+def exec_commit():
+    """Execution-harness anchor: git HEAD at the moment of the run."""
     p = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"],
                        capture_output=True, text=True)
     if p.returncode != 0:
-        raise RuntimeError("FROZEN-COMMIT-UNAVAILABLE: "
+        raise RuntimeError("EXEC-COMMIT-UNAVAILABLE: "
                            + (p.stderr or p.stdout)[:200])
     return p.stdout.strip()
+
+
+def freeze_anchors():
+    """INSTANCE-freeze anchor (audit P0 #4 dual anchors): the frozen commit
+    is FREEZE.json's freeze_commit — never an execution HEAD masquerading as
+    the freeze. Verifies the git object still resolves so the chain genesis
+    can bind it. Returns (freeze_commit, freeze_tree)."""
+    fp = os.path.join(BASE, "FREEZE.json")
+    if not os.path.exists(fp):
+        raise RuntimeError("FREEZE-ANCHOR-MISSING " + fp)
+    fj = json.load(open(fp))
+    fc = fj.get("freeze_commit")
+    if not fc:
+        raise RuntimeError("FREEZE-ANCHOR-INVALID: no freeze_commit in " + fp)
+    p = subprocess.run(["git", "-C", ROOT, "cat-file", "-e", fc + "^{commit}"],
+                       capture_output=True)
+    if p.returncode != 0:
+        raise RuntimeError(f"FREEZE-ANCHOR-UNRESOLVABLE {fc[:12]} is not a "
+                           "resolvable git object at execution time")
+    return fc, fj.get("freeze_tree")
+
+
+def harness_manifest_sha():
+    """sha256 over the executing harness code (paths + per-file sha256 of the
+    modules a run imports plus this runner). Pins the exact harness bytes
+    even when HEAD moves after the run."""
+    names = ["usage.py", "identity.py", "chain.py", "lock.py",
+             "reuse_log.py", "seal.py", "dockersandbox.py",
+             "admissibility.py"]
+    files = [os.path.join(HARNESS, n) for n in names]
+    files.append(os.path.abspath(__file__))
+    lines = sorted(
+        f"{os.path.relpath(f, ROOT)}:{h(f)}" for f in files
+        if os.path.exists(f))
+    return hashlib.sha256("\n".join(lines).encode()).hexdigest()
 
 
 def _verify_capability(capdir):
@@ -337,8 +382,37 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     opts = opts or {}
     wire = opts.get("wire", True)
     promote_dir = opts.get("promote_dir")
-    frozen = frozen_commit() if wire else None
+    dev_out = opts.get("dev_unwired_outdir")
     ensure_roots()
+    if not wire:
+        # Audit P0 #19: no unwired execution on the estimand surface. Unwired
+        # runs are a dev escape only: an explicit --dev-unwired-outdir that
+        # must be OUTSIDE the Fam-C tree (runs/ is the wired surface); the
+        # manifest then stamps dev_mode=true so admissibility excludes it.
+        if dev_out is None:
+            raise ValueError("NO-WIRE-REFUSED: unwired runs are dev-only; "
+                             "pass --dev-unwired-outdir DIR outside the "
+                             "Fam-C tree (manifest stamps dev_mode=true)")
+        if os.path.realpath(outdir) != os.path.realpath(dev_out):
+            raise ValueError("NO-WIRE-REFUSED: outdir must equal "
+                             "--dev-unwired-outdir DIR")
+        r_out = os.path.realpath(outdir)
+        r_base = os.path.realpath(BASE)
+        if r_out == r_base or r_out.startswith(r_base + os.sep):
+            raise ValueError("NO-WIRE-REFUSED: unwired outdir must lie "
+                             "OUTSIDE the Fam-C tree; runs/ is the wired "
+                             "estimand surface")
+    # Audit P0 #4 dual anchors: the chain genesis binds the INSTANCE freeze
+    # commit read from FREEZE.json — never an execution HEAD masquerading as
+    # the freeze. The execution harness commit + executed harness bytes are
+    # recorded alongside as the second anchor.
+    instance_freeze_commit, instance_freeze_tree = freeze_anchors()
+    execution_harness_commit = exec_commit()
+    execution_harness_manifest_sha = harness_manifest_sha()
+    # Refuse-START: the executed instance subtree must be byte-identical to
+    # the frozen package BEFORE any model token is spent.
+    verify_instance_frozen(BASE, family, task)
+    frozen = instance_freeze_commit
     os.makedirs(outdir, exist_ok=True)
     taskdir = os.path.join(BASE, "families", family, task)
     taskdef = open(os.path.join(taskdir, "prompt.md")).read()
@@ -362,7 +436,7 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
             "__ENGINE__", open(os.path.join(capdir, "engine.py")).read())
         if wire:
             # H-LOCK-008: resolve the executed engine by exact locked hash
-            # BEFORE it enters the jail. Legacy --no-wire copies unverified.
+            # BEFORE it enters the jail. Dev-escape (unwired) copies unverified.
             cap_info = _verify_capability(capdir)
             cap_engine = cap_info["verified"]["engine.py"]
         else:
@@ -408,7 +482,7 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                "fix" if chk and chk.returncode == 1 else "blocked")
     output_sha = h(out) if os.path.exists(out) else None
 
-    # ---- H2/H3 wiring (skipped entirely under --no-wire) ----
+    # ---- H2/H3 wiring (skipped only under the unwired dev escape) ----
     reuse_path = None
     if wire and cap_info:
         # Reuse ledger: correct arm reused a previously locked capability.
@@ -440,6 +514,11 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                 "verdict": verdict, "output_sha256": output_sha,
                 "wired": bool(wire),
                 "frozen_commit": frozen,
+                "instance_freeze_commit": instance_freeze_commit,
+                "instance_freeze_tree": instance_freeze_tree,
+                "execution_harness_commit": execution_harness_commit,
+                "execution_harness_manifest_sha256": execution_harness_manifest_sha,
+                "dev_mode": bool(not wire),
                 "usage_receipts": [os.path.basename(receipt)] if wire else [],
                 "identity_file": (os.path.basename(id_path) if wire
                                   else None),
@@ -496,8 +575,16 @@ if __name__ == "__main__":
         sys.exit(selfcheck_wire())
     opts = {}
     if "--no-wire" in argv:
+        # Audit P0 #19: --no-wire is banned on the estimand surface. Dev
+        # unwired runs must opt into the escape flag below instead.
+        raise SystemExit("NO-WIRE-REFUSED: use --dev-unwired-outdir DIR "
+                         "(outside the Fam-C tree) for unwired dev runs; "
+                         "runs/ is the wired estimand surface")
+    if "--dev-unwired-outdir" in argv:
+        i = argv.index("--dev-unwired-outdir")
         opts["wire"] = False
-        argv = [a for a in argv if a != "--no-wire"]
+        opts["dev_unwired_outdir"] = argv[i + 1]
+        del argv[i:i + 2]
     if "--promote" in argv:
         i = argv.index("--promote")
         opts["promote_dir"] = argv[i + 1]

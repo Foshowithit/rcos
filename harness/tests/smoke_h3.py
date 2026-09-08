@@ -462,6 +462,82 @@ chV.append("grade", {"evaluator_link_hash": "wrong-hash",
                      "grading_rule_hash": "gr1", "grading_rule_version": "v1"})
 check("misbound grade fails audit",
       any("bind" in f for f in chV.audit("FREEZE-x", {"run": "v"})))
+# --- A3: admissibility classification + frozen-instance refuse gate ---
+import admissibility as ADM
+
+FAMC = os.path.join(os.path.dirname(ROOT), "benchmarks", "fam-c")
+FREEZE_C = ADM.load_freeze(FAMC)["freeze_commit"]
+res, count = ADM.classify_runs(os.path.join(FAMC, "runs"), FREEZE_C)
+h1s = [(n, s, r) for n, s, r in res if n.startswith("H1-")]
+check("admissibility: all H1 runs EXCLUDED harness-validation",
+      len(h1s) >= 2 and all(s == ADM.EXCLUDED and "harness-validation" in r
+                            for _n, s, r in h1s),
+      f"estimand-grade={count}")
+check("admissibility: real runs/ estimand-grade = 0 (STOP status)",
+      count == 0)
+# hermetic ESTIMAND-ELIGIBLE fixture (full evidence gate)
+runs = os.path.join(BASE, "a3-runs")
+good = os.path.join(runs, "P-fam07-T0")
+os.makedirs(good)
+json.dump({"wired": True, "instance_freeze_commit": FREEZE_C,
+           "usage_receipts": [], "dev_mode": False},
+          open(os.path.join(good, "H1-RUN-MANIFEST.json"), "w"))
+open(os.path.join(good, "identity.json"), "w").write("{}")
+open(os.path.join(good, "EVIDENCE-CHAIN.jsonl"), "w").write("")
+s, r = ADM.classify_run_dir(good, FREEZE_C)
+check("admissibility: full-gate dir is ESTIMAND-ELIGIBLE", s == ADM.ELIGIBLE, r)
+bad_dev = os.path.join(runs, "P-fam07-T0-dev")
+os.makedirs(bad_dev)
+json.dump({"wired": True, "instance_freeze_commit": FREEZE_C,
+           "usage_receipts": [], "dev_mode": True},
+          open(os.path.join(bad_dev, "H1-RUN-MANIFEST.json"), "w"))
+open(os.path.join(bad_dev, "identity.json"), "w").write("{}")
+open(os.path.join(bad_dev, "EVIDENCE-CHAIN.jsonl"), "w").write("")
+check("admissibility: dev_mode dir EXCLUDED",
+      ADM.classify_run_dir(bad_dev, FREEZE_C)[0] == ADM.EXCLUDED)
+bad_anchor = os.path.join(runs, "P-fam07-T0-anchor")
+os.makedirs(bad_anchor)
+json.dump({"wired": True, "instance_freeze_commit": "0" * 40,
+           "usage_receipts": [], "dev_mode": False},
+          open(os.path.join(bad_anchor, "H1-RUN-MANIFEST.json"), "w"))
+open(os.path.join(bad_anchor, "identity.json"), "w").write("{}")
+open(os.path.join(bad_anchor, "EVIDENCE-CHAIN.jsonl"), "w").write("")
+check("admissibility: wrong instance anchor EXCLUDED",
+      ADM.classify_run_dir(bad_anchor, FREEZE_C)[0] == ADM.EXCLUDED)
+# verify_instance_frozen hermetic: clean passes, drift/extras refuse
+drift = os.path.join(BASE, "a3-drift")
+os.makedirs(os.path.join(drift, "families", "fam99", "T0"))
+for rel, body in (("families/fam99/T0/prompt.md", "frozen\n"),
+                  ("families/fam99/check.py", "print(1)\n"),
+                  ("families/fam99/truth.json", "{}\n")):
+    fp = os.path.join(drift, rel)
+    os.makedirs(os.path.dirname(fp), exist_ok=True)
+    open(fp, "w").write(body)
+lines = [f"{ADM._sha(os.path.join(drift, rel))}  {rel}"
+         for rel in ("families/fam99/T0/prompt.md",
+                     "families/fam99/check.py",
+                     "families/fam99/truth.json")]
+open(os.path.join(drift, "FREEZE-HASHES.sha256"), "w").write(
+    "\n".join(lines) + "\n")
+check("frozen-instance gate: clean fixture passes",
+      ADM.verify_instance_frozen(drift, "fam99", "T0")["verified_files"] == 3)
+open(os.path.join(drift, "families", "fam99", "T0", "prompt.md"), "w").write(
+    "TAMPERED\n")
+try:
+    ADM.verify_instance_frozen(drift, "fam99", "T0")
+    check("frozen-instance gate: drift refused", False)
+except RuntimeError:
+    check("frozen-instance gate: drift refused", True)
+open(os.path.join(drift, "families", "fam99", "T0", "prompt.md"), "w").write(
+    "frozen\n")
+open(os.path.join(drift, "families", "fam99", "T0", "extra.txt"), "w").write(
+    "x\n")
+try:
+    ADM.verify_instance_frozen(drift, "fam99", "T0")
+    check("frozen-instance gate: extra file refused", False)
+except RuntimeError:
+    check("frozen-instance gate: extra file refused", True)
+
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH3 smoke: {len(results) - len(bad)}/{len(results)} closed")
 sys.exit(1 if bad else 0)
