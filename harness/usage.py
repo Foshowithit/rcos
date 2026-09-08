@@ -104,45 +104,58 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
     body = dict(extra_body or {})
     body.update({"model": model, "messages": messages})
     blob = json.dumps(body).encode()
-    t0 = time.time()
-    req = urllib.request.Request(
-        endpoint.rstrip("/") + "/chat/completions", data=blob,
-        headers={"Authorization": "Bearer " + api_key,
-                 "Content-Type": "application/json"})
-    try:
-        resp = urllib.request.urlopen(req, timeout=timeout)
-        status = resp.status
-        data = json.load(resp)
-    except Exception as e:
-        raise RuntimeError(f"USAGE-CALL-FAIL {endpoint} {model}: "
-                           f"{type(e).__name__} {str(e)[:200]}")
-    wall = time.time() - t0
-    try:
-        reply = data["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError) as e:
-        raise RuntimeError(f"USAGE-MALFORMED {endpoint} {model}: {e}")
-    # Provenance layer: raw block + its hash travel with every receipt.
-    # Normalization is a separate, versioned, reproducible step below.
-    import hashlib as _hl
-    raw_hash = _hl.sha256(json.dumps(
-        data.get("usage"), sort_keys=True).encode()).hexdigest() \
-        if data.get("usage") is not None else None
     os.makedirs(out_dir, exist_ok=True)
-    call_id = hashlib.sha256(
-        f"{endpoint}|{model}|{t0:.3f}|{reply[:64]}".encode()).hexdigest()[:16]
-    # Request-body binding: sha256 of the EXACT bytes POSTed (model +
-    # messages + every explicit generation param). Persisted at record time
-    # so later tampering of any request field (model/params/messages) breaks
-    # the binding (identity + normalized-usage verifiers recompute it).
-    request_body_sha256 = hashlib.sha256(blob).hexdigest()
-    # A11.2: persist the EXACT request bytes so the hash is independently
-    # verifiable and the declared generation params can be reconstructed
-    # (never trusted from identity.json alone).
-    req_path = os.path.join(out_dir, f"call-{call_id}.request.json")
-    with open(req_path, "wb") as f:
-        f.write(blob)
-    request_file_sha256 = hashlib.sha256(blob).hexdigest()
-    receipt = {"call_id": call_id, "tag": tag, "endpoint": endpoint,
+    # P1 (audit): ONE source of truth for the send AND the record. The exact
+    # request bytes are PERSISTED first; the PERSISTED bytes are hashed; and
+    # those same persisted bytes are the bytes transmitted (the Request
+    # carries data read back from disk, never a second in-memory literal).
+    # The request bytes are mutation-evident and execution-bound under the
+    # frozen harness trust boundary: any post-write mutation of the artifact
+    # breaks every recorded hash, and the transport can only ever send what
+    # is on disk. The canonical call-<id>.request.json name embeds the
+    # reply-derived call id, so the pre-send write is staged under a private
+    # name and RENAMED into place after the response (a rename never touches
+    # a byte) — the persisted/sent/hashed bytes are one and the same.
+    stage = os.path.join(out_dir, ".stage-%d-%d.request.tmp"
+                         % (os.getpid(), time.time_ns()))
+    try:
+        with open(stage, "wb") as f:
+            f.write(blob)
+        with open(stage, "rb") as f:
+            persisted = f.read()  # EXACT bytes: hashed below AND sent below
+        request_body_sha256 = hashlib.sha256(persisted).hexdigest()
+        t0 = time.time()
+        req = urllib.request.Request(
+            endpoint.rstrip("/") + "/chat/completions", data=persisted,
+            headers={"Authorization": "Bearer " + api_key,
+                     "Content-Type": "application/json"})
+        try:
+            resp = urllib.request.urlopen(req, timeout=timeout)
+            status = resp.status
+            data = json.load(resp)
+        except Exception as e:
+            raise RuntimeError(f"USAGE-CALL-FAIL {endpoint} {model}: "
+                               f"{type(e).__name__} {str(e)[:200]}")
+        wall = time.time() - t0
+        try:
+            reply = data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as e:
+            raise RuntimeError(f"USAGE-MALFORMED {endpoint} {model}: {e}")
+        # Provenance layer: raw block + its hash travel with every receipt.
+        # Normalization is a separate, versioned, reproducible step below.
+        import hashlib as _hl
+        raw_hash = _hl.sha256(json.dumps(
+            data.get("usage"), sort_keys=True).encode()).hexdigest() \
+            if data.get("usage") is not None else None
+        call_id = hashlib.sha256(
+            f"{endpoint}|{model}|{t0:.3f}|{reply[:64]}".encode()).hexdigest()[:16]
+        # P1: rename the staged bytes into the canonical artifact name —
+        # byte-for-byte the bytes that were hashed AND sent above. The two
+        # recorded hashes cover the persisted artifact, never a memory copy.
+        req_path = os.path.join(out_dir, f"call-{call_id}.request.json")
+        os.replace(stage, req_path)
+        request_file_sha256 = request_body_sha256
+        receipt = {"call_id": call_id, "tag": tag, "endpoint": endpoint,
                "model_requested": model, "wall_s": round(wall, 2),
                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                "request_body_sha256": request_body_sha256,
@@ -153,9 +166,18 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
                "normalizer_id": normalizer_id,
                "normalizer_version": NORMALIZER_VERSION,
                "normalizer_rule": NORMALIZER_RULE}
-    path = os.path.join(out_dir, f"call-{call_id}.json")
-    with open(path, "w") as f:
-        json.dump(receipt, f, indent=1)
+        path = os.path.join(out_dir, f"call-{call_id}.json")
+        with open(path, "w") as f:
+            json.dump(receipt, f, indent=1)
+    finally:
+        # Any failure path (transport error, malformed response, rename
+        # error, receipt write error) must not leave a staging artifact
+        # behind; the canonical file was only ever created by os.replace.
+        if os.path.exists(stage):
+            try:
+                os.unlink(stage)
+            except OSError:
+                pass
     if return_response:
         return reply, path, data
     return reply, path
