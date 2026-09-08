@@ -163,6 +163,51 @@ T4 is a specificity measurement, not part of the efficiency estimate.
 
 ---
 
+### Promotion protocol (A12 freeze)
+
+**Acquisition path.** T0 and T1 are model calls through the ONE production
+path (`run_arm_h1.py`), authorized by `order.authorize_event()`, never by the
+downstream cell authorizer. An acquisition prompt carries the same neutral
+envelope and the same shared output contract as every other cell; no
+capability-access block exists yet, so the only legal decision is `fresh`.
+
+**Candidate.** The candidate is the T0 arrival's
+`execution_payload.solver_py` python source, content-addressed by sha256. It
+is derived by `harness/promotion.py` from the committed T0 run and the
+committed T1 run; an operator never supplies candidate bytes, a candidate
+hash, a chain tip, or an event cell.
+
+**T1 rule (frozen).** T1 may build a new local adapter and may invoke/test
+the candidate; T1 may NOT alter the candidate's semantic core or its artifact
+bytes. If T1 declares a `candidate_sha256` it must equal T0's exactly.
+Promotion requires T0 and T1 COMPLETE with distinct task ids and distinct
+task-snapshot hashes.
+
+**Lock.** `CAPABILITY_LOCK.json` is `capability-lock-v2`. It may lock only
+the artifact hashes the validated PROMOTION receipt names, and it is minted
+through `order.emit_capability_lock()` → `lock.promote()`. A pre-A12
+(legacy) lock is LOCK-INADMISSIBLE and never resolvable. An estimand-grade
+lock requires a ratified auditor T4 semantic id (`T4-SEMANTIC-IDS.json`);
+harness-validation locks are explicitly unratified (`T4-UNRATIFIED-*`) and
+may never be consumed by an estimand cell.
+
+**Reuse ledger is evidence, not a claim.** Every wired cell writes a
+`reuse_log` record naming its own arrival decision. The record must agree
+with the decision the runtime executed: `use_capability` requires
+available/selected/loaded/invoked/consumed true and `reuse_rejected` false;
+`fresh` with a capability available requires all four false and
+`reuse_rejected` true with a recorded reason (the REJECT path); `fresh` with
+no capability available requires `capability_available` false and
+`reuse_rejected` false. A ledger that contradicts the executed decision is
+inadmissible evidence and the cell is not COMPLETE.
+
+**Trust boundary (TCB).** The frozen harness modules and the host account
+that runs them are inside the TCB. Evidence is mutation-evident and
+execution-bound under that boundary; the protocol does not claim
+cryptographic protection against a compromised host.
+
+---
+
 # 5. Adapter-boundary rule
 
 T2/T3 may not be trivial repetitions of T0/T1.

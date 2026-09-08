@@ -10,7 +10,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
-from lock import promote, load_artifact
+from lock import promote, load_artifact, verify_lock
 from invalid import classify, PairLedger
 from chain import Chain
 
@@ -27,13 +27,52 @@ def check(name, fail_closed, extra=""):
 os.system("rm -rf " + BASE)
 
 # --- lock: promote once, resolve exact, refuse tamper/repromote ---
+# A12.2: the lock is ESTIMAND-AWARE. Minting requires the full provenance
+# field set (block/universe/family, T0+T1 tips, source cells, producer
+# identity, both governance lock hashes, semantic core/preconditions/
+# limitations, the auditor T4 semantic id, evidence grade, candidate root +
+# provenance sha, promotion receipt sha). A legacy pre-A12 lock is
+# LOCK-INADMISSIBLE by construction and is never resolvable.
 os.makedirs(os.path.join(BASE, "store"), exist_ok=True)
 open(os.path.join(BASE, "store", "cap.py"), "w").write("print('v1')\n")
+_EST = dict(
+    block="PQ", universe="A", family="fam05",
+    acquisition_chain_tips={"T0": "0" * 64, "T1": "1" * 64},
+    source_cells={"T0": "c-fixture-T0", "T1": "c-fixture-T1"},
+    producer_identity={"lane": "P", "adapter": "router9-openai-chat-v2"},
+    protocol_lock_sha256="2" * 64, execution_lock_sha256="3" * 64,
+    semantic_core="fixture semantic core",
+    preconditions=["fixture precondition"],
+    limitations=["synthetic fixture, never an estimand artifact"],
+    t4_semantic_id="T4-UNRATIFIED-fixture",
+    evidence_grade="harness-validation",
+    candidate_sha256="4" * 64, candidate_provenance_sha256="5" * 64)
 lp = promote(os.path.join(BASE, "lock"), "k1", 1,
              [os.path.join(BASE, "store", "cap.py")],
              {"contract": "c"}, ["ev1"],
-             {"builder": "b", "lane": "L"})
+             {"builder": "b", "lane": "L"},
+             promotion_receipt_sha256="6" * 64, **_EST)
 check("promotion writes lock", lp.endswith("CAPABILITY_LOCK.json"))
+_lk = json.load(open(lp))
+check("minted lock passes the estimand contract",
+      verify_lock(_lk) == [] and
+      _lk["schema_version"] == "capability-lock-v2", str(verify_lock(_lk)[:1]))
+check("verify_lock pins the bound universe/candidate",
+      verify_lock(_lk, expect={"universe": "A",
+                               "candidate_sha256": "4" * 64}) == [] and
+      verify_lock(_lk, expect={"universe": "C"}) != [])
+try:
+    promote(os.path.join(BASE, "lock-nofields"), "k2", 1,
+            [os.path.join(BASE, "store", "cap.py")], {}, [], {},
+            promotion_receipt_sha256="6" * 64)
+    check("promotion without estimand fields refused", False)
+except ValueError as e:
+    check("promotion without estimand fields refused",
+          "LOCK-INADMISSIBLE" in str(e), str(e)[:80])
+_legacy = {k: _lk[k] for k in ("capability_id", "version", "artifacts",
+                               "manifest_sha256", "locked_at")}
+check("legacy pre-A12 lock shape is inadmissible",
+      any("LOCK-INADMISSIBLE" in r for r in verify_lock(_legacy)))
 got = load_artifact(lp, "cap.py", os.path.join(BASE, "store"))
 check("exact-hash resolution succeeds", got.endswith("cap.py"))
 open(os.path.join(BASE, "store", "cap.py"), "w").write("print('v2-TAMPERED')\n")
@@ -50,10 +89,63 @@ except PermissionError:
 open(os.path.join(BASE, "store", "cap.py"), "w").write("print('v1')\n")
 try:
     promote(os.path.join(BASE, "lock"), "k1", 2,
-            [os.path.join(BASE, "store", "cap.py")], {}, [], {})
+            [os.path.join(BASE, "store", "cap.py")], {}, [], {},
+            promotion_receipt_sha256="6" * 64, **_EST)
     check("repromotion refused", False)
 except PermissionError:
     check("repromotion refused", True)
+
+# A12.2 lock-contract mutations: every one must be refused BY NAME.
+import copy as _copy
+
+
+def _bad_lock(name, mut, token):
+    l = _copy.deepcopy(_lk)
+    mut(l)
+    reasons = verify_lock(l)
+    check(f"lock contract refuses {name}",
+          any("LOCK-INADMISSIBLE" in r and token in r for r in reasons),
+          str(reasons[:1]))
+
+
+_bad_lock("a dropped schema_version", lambda l: l.pop("schema_version"),
+          "legacy lock")
+_bad_lock("an unknown schema_version",
+          lambda l: l.update(schema_version="capability-lock-v1"),
+          "schema_version")
+_bad_lock("a dropped estimand field", lambda l: l.pop("evidence_grade"),
+          "missing required field")
+_bad_lock("a non-hex candidate root",
+          lambda l: l.update(candidate_sha256="nothex"), "candidate_sha256")
+_bad_lock("identical T0/T1 tips",
+          lambda l: l.update(acquisition_chain_tips={"T0": "0" * 64,
+                                                     "T1": "0" * 64}),
+          "identical")
+_bad_lock("swapped source cells",
+          lambda l: l.update(source_cells={"T0": "same", "T1": "same"}),
+          "identical")
+_bad_lock("an empty artifact map", lambda l: l.update(artifacts={}),
+          "artifacts")
+_bad_lock("a path-shaped artifact name",
+          lambda l: l.update(artifacts={"a/b.py": "0" * 64}), "bare filename")
+_bad_lock("a bogus evidence grade",
+          lambda l: l.update(evidence_grade="estimand-ish"), "evidence_grade")
+_bad_lock("a blank semantic core", lambda l: l.update(semantic_core="  "),
+          "semantic_core")
+_bad_lock("a string preconditions", lambda l: l.update(preconditions="p"),
+          "preconditions")
+_bad_lock("a dropped T4 semantic id", lambda l: l.pop("t4_semantic_id"),
+          "missing required field")
+for _pin, _want in (("universe", "C"), ("family", "fam03"), ("block", "QP"),
+                    ("capability_id", "other-K"),
+                    ("promotion_receipt_sha256", "9" * 64),
+                    ("candidate_sha256", "8" * 64)):
+    check(f"expect pin refuses {_pin}={_want}",
+          verify_lock(_lk, expect={_pin: _want}) != [])
+check("expect pin accepts the true bound values",
+      verify_lock(_lk, expect={"universe": "A", "family": "fam05",
+                               "block": "PQ", "capability_id": "k1",
+                               "promotion_receipt_sha256": "6" * 64}) == [])
 
 # --- invalid state machine ---
 for kind in ("reasoning-failure", "tool-misuse", "agent-timeout",
@@ -475,17 +567,34 @@ check("admissibility: all H1 runs EXCLUDED harness-validation",
       f"estimand-grade={count}")
 check("admissibility: real runs/ estimand-grade = 0 (STOP status)",
       count == 0)
-# hermetic ESTIMAND-ELIGIBLE fixture (full evidence gate)
-runs = os.path.join(BASE, "a3-runs")
-good = os.path.join(runs, "P-fam07-T0")
-os.makedirs(good)
-json.dump({"wired": True, "instance_freeze_commit": FREEZE_C,
-           "usage_receipts": [], "dev_mode": False},
-          open(os.path.join(good, "H1-RUN-MANIFEST.json"), "w"))
-open(os.path.join(good, "identity.json"), "w").write("{}")
-open(os.path.join(good, "EVIDENCE-CHAIN.jsonl"), "w").write("")
+# hermetic ESTIMAND-ELIGIBLE fixture (full evidence gate). A12: a wired run
+# that spends NO model work is ZERO-WORK and refused, and a receipt-less stub
+# cannot exercise the gate — so the fixture is built through the shared
+# production-shaped fixture (real receipt + normalized artifact + identity
+# binding + real evidence chain + arrival + reuse record).
+import shutil
+sys.path.insert(0, HERE)
+import order as ORD
+from fixture_modelrun import build_model_run
+froot = os.path.join(BASE, "a3-estimand")
+os.makedirs(os.path.join(froot, "families"))
+for _name in ("ORDER-EXPANSION.json", "PROTOCOL-LOCK.json",
+              "EXECUTION-LOCK.json"):
+    shutil.copy2(os.path.join(FAMC, _name), os.path.join(froot, _name))
+shutil.copytree(os.path.join(FAMC, "families", "fam05"),
+                os.path.join(froot, "families", "fam05"))
+os.chmod(froot, 0o755)
+for _dp, _dn, _f in os.walk(froot):
+    os.chmod(_dp, 0o755)
+    for _d in _dn:
+        os.chmod(os.path.join(_dp, _d), 0o755)
+_exp = ORD.load_expansion(froot)
+good = build_model_run(froot, cell=ORD.expected_event(_exp, "PQ", "fam05",
+                                                      "T0", "A"),
+                       freeze_commit=FREEZE_C)
 s, r = ADM.classify_run_dir(good, FREEZE_C)
 check("admissibility: full-gate dir is ESTIMAND-ELIGIBLE", s == ADM.ELIGIBLE, r)
+runs = os.path.join(BASE, "a3-runs")
 bad_dev = os.path.join(runs, "P-fam07-T0-dev")
 os.makedirs(bad_dev)
 json.dump({"wired": True, "instance_freeze_commit": FREEZE_C,

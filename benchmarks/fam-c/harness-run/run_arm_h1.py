@@ -19,34 +19,50 @@ Wiring (ON by default; unwired execution is a dev escape only — see usage):
   terminal grade. Chain.audit() re-verifies every link before the run
   returns; any finding aborts loudly (never silent).
 - H3 CAPABILITY_LOCK: the correct arm loads its capability ONLY through
-  lock.load_artifact() (exact locked hash, verified pre-execution). A run
-  that ships a capability may promote it once via lock.promote() — granted
-  only on a ship verdict and only when --promote <capstore> is passed; the
-  lock-exists check refuses repromotion (fail closed).
-- H2 reuse ledger: a correct-arm run that reuses a previously locked
-  capability writes a reuse_log record with the PREREG §12 field split.
-  materially_contributed is never asserted: absent a hash-linkage or derived
-  ablation evidence in this cell it is recorded False (consumed, not proven
-  contributed) — never model self-report.
+  lock.load_artifact() (exact locked hash, verified pre-execution). P0-3: the
+  runner NEVER mints a promotion lock — promotion is the sole route of the
+  A12.1 order-authorized promotion controller (harness/promotion.py); the
+  chain records a promote event only when a caller supplies that controller's
+  lock (promote_info), never from a runner-written lock.
+- H2 reuse ledger: every wired run writes a reuse_log record whose lifecycle
+  fields are derived from the ACTUAL decision/execution path (P0-2):
+  use_capability -> selected/loaded/invoked/output_consumed as observed;
+  fresh with a capability available -> reuse_rejected with the arrival's
+  recorded notes as reuse_rejection_reason; fresh with no capability ->
+  capability_available=False. materially_contributed is never asserted:
+  absent a hash-linkage or derived ablation evidence in this cell it is
+  recorded False (consumed, not proven contributed) — never model self-report.
 
-Usage: run_arm_h1.py [--promote <capstore_dir>] \\
+Usage: run_arm_h1.py \\
     <lane P|Q> <family> <task> <correct|disabled> <outdir> [capdir]
       --block PQ|QP  REQUIRED: the reciprocal block this invocation belongs
                      to (item 7). The runner refuses to start unless the
                      requested cell is the next authorized cell of the
                      frozen ORDER.md sequence (ORDER-EXPANSION.json).
-      --promote DIR  on a ship verdict, write CAPABILITY_LOCK.json into DIR
-                     for the capability consumed by this run (writes once).
       --dev-unwired-outdir DIR  dev escape: UNWIRED run writing to DIR, which
                      must lie OUTSIDE the Fam-C tree; the manifest stamps
                      dev_mode=true. Unwired runs under benchmarks/fam-c/runs
                      are REFUSED (runs/ is the wired estimand surface).
+      --acquisition-event T0|T1 --acquisition-universe A|C  the production
+                     ACQUISITION executor (A12.0). A mandated pair: the runner
+                     authorizes the event cell itself through the frozen order
+                     (order.authorize_event), stamps arm=acquisition, builds
+                     the prompt with NO capability-access block (none exists
+                     before PROMOTION), refuses any arrival decision other
+                     than fresh, and writes the same evidence set as any other
+                     wired cell. Before this path existed the experiment was
+                     mechanically deadlocked at cell 0.
+      --selfcheck  offline battery: wiring selfcheck then prompt selfcheck
+                     (no model call, no docker, no run) — CI use only.
       --selfcheck-wire  offline fixture compose-test of the wiring (no model
                      call, no docker, no run) — CI use only.
       --selfcheck-prompt  offline proof of the item-6 prompt path on real
                      fam05/T0: one staged snapshot -> canonical envelope ->
                      both arms + symmetry/snapshot refusal gates (no model
                      call, no docker, no run) — CI use only.
+      --promote is REFUSED hard (P0-3): promotion is the sole route of the
+                     A12.1 order-authorized promotion controller
+                     (harness/promotion.py); the runner never mints locks.
 Before ANY model call the runner verifies the executed instance subtree is
 byte-identical to FREEZE-HASHES.sha256 and that FREEZE.json's freeze_commit
 is a resolvable git object (refuse-START on drift; audit P0 #4), and that
@@ -87,6 +103,7 @@ from order import (verify_expansion as order_verify_expansion,
                    load_expansion as order_load_expansion,
                    completed_cells as order_completed_cells,
                    authorize as order_authorize,
+                   authorize_event as order_authorize_event,
                    derive_paths as order_derive_paths,
                    check_namespace as order_check_namespace,
                    ensure_namespace as order_ensure_namespace,
@@ -160,7 +177,10 @@ _OUT = ('\nOutput one JSON object with the keys "decision", '
         '"execution_payload" is {"field_map": <object>, "records": <object>}. '
         'When "decision" is "fresh", "execution_payload" is '
         '{"solver_py": <python source string of a self-contained solver>}. '
-        '"notes" is one line. No explanations, no code fences.')
+        '"notes" is one line. '
+        'choose use_capability only when a capability-access block is present '
+        'and applicable; otherwise choose fresh. '
+        'No explanations, no code fences.')
 CORRECT = _PRE + _ENVELOPE_FMT + _CAP_FMT + _OUT
 DISABLED = _PRE + _ENVELOPE_FMT + _OUT
 # Counterfactual capability content (disabled-arm runs): builds the
@@ -401,7 +421,10 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
       CONTRACT-ENGINE-DENY    use_capability without a capability engine
     Returns {"verdict", "checker_returncode", "checker_output",
              "output_sha256", "decision", "execution_mode",
-             "container_returncode"}."""
+             "container_returncode", "checker_path", "checker_sha256",
+             "truth_sha256"} — the two sha256s are the exact bytes THIS
+    arrival's evaluation path used (checker_sha256 bound before the host-side
+    checker ran; truth_sha256 from the same frozen family dir)."""
     decision = arrival["decision"]
     execution_mode = None
     if decision == "use_capability":
@@ -434,6 +457,12 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
         shutil.copy2(out, os.path.join(outdir, "OUTPUT.json"))
     # Host-side evaluator only after container; truth/checker never entered jail.
     checker = os.path.join(taskdir, "..", "check.py")
+    truth_path = os.path.join(taskdir, "..", "truth.json")
+    # Bind the EXACT bytes this arrival's evaluation path uses — before the
+    # checker subprocess runs — so the caller's evidence never recomputes a
+    # hash over a different path or a post-checker-modified file.
+    checker_sha256 = h(checker) if os.path.exists(checker) else None
+    truth_sha256 = h(truth_path) if os.path.exists(truth_path) else None
     chk = None
     if os.path.exists(out):
         chk = subprocess.run([sys.executable, checker,
@@ -449,7 +478,10 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
             "output_sha256": h(out) if os.path.exists(out) else None,
             "decision": decision,
             "execution_mode": execution_mode,
-            "container_returncode": p.returncode}
+            "container_returncode": p.returncode,
+            "checker_path": checker,
+            "checker_sha256": checker_sha256,
+            "truth_sha256": truth_sha256}
 
 
 def call(lane, prompt, outdir, tag):
@@ -761,13 +793,31 @@ def selfcheck_wire():
                     "checker_returncode": 0, "output_sha256": "fx",
                     "verdict": "ship"}
         # promote composes (writes once) and load_artifact verifies by hash.
+        # A12.2 lock contract: promote requires the full estimand set (a lock
+        # may only be minted from a validated promotion, never from whatever
+        # artifacts sit in a dir) — the fixture supplies labeled synthetic
+        # values, identical for both the compose and the refusal probes.
+        _fx_promote = dict(
+            block="PQ", universe="u-fixture", family="famXX-fixture",
+            acquisition_chain_tips={"T0": "1" * 64, "T1": "2" * 64},
+            source_cells={"T0": "famXX-fixture/T0",
+                          "T1": "famXX-fixture/T1"},
+            producer_identity={"lane": "Q", "builder": "selfcheck"},
+            protocol_lock_sha256="3" * 64, execution_lock_sha256="4" * 64,
+            semantic_core="selfcheck fixture: no semantic claim",
+            preconditions=["fixture"], limitations=["fixture"],
+            t4_semantic_id="famXX-fixture-selfcheck",
+            evidence_grade="harness-validation",
+            candidate_sha256="5" * 64,
+            candidate_provenance_sha256="6" * 64,
+            promotion_receipt_sha256="7" * 64)
         lock_path = lock_promote(
             capdir, "famXX-fixture", "v1",
             [os.path.join(capdir, "engine.py"),
              os.path.join(capdir, "manifest.json"),
              os.path.join(capdir, "adapter_notes.md")],
             manifest, [receipt],
-            {"lane": "Q", "builder": "selfcheck"})
+            {"lane": "Q", "builder": "selfcheck"}, **_fx_promote)
         assert os.path.exists(lock_path), "promote did not write lock"
         v = load_artifact(lock_path, "engine.py", capdir)
         assert v.endswith("engine.py"), "load_artifact wrong path"
@@ -871,7 +921,7 @@ def selfcheck_wire():
         try:
             lock_promote(capdir, "famXX-fixture", "v2",
                          [os.path.join(capdir, "engine.py")], manifest,
-                         [receipt], {"lane": "Q"})
+                         [receipt], {"lane": "Q"}, **_fx_promote)
             raise SystemExit("selfcheck FAIL: repromotion not refused")
         except PermissionError:
             pass
@@ -1015,7 +1065,14 @@ def prepare_arm(lane, family, task, arm, capdir, wire, run_id,
 def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     opts = opts or {}
     wire = opts.get("wire", True)
-    promote_dir = opts.get("promote_dir")
+    if opts.get("promote_dir"):
+        # P0-3: belt-and-braces behind the CLI refusal — the runner never
+        # promotes. Sole route: harness/promotion.py (A12.1 order-authorized
+        # promotion controller).
+        raise SystemExit(
+            "PROMOTE-REFUSED: run_arm_h1.py does not promote; promotion is "
+            "the sole route of the A12.1 order-authorized promotion "
+            "controller harness/promotion.py")
     dev_out = opts.get("dev_unwired_outdir")
     ensure_roots()
     if not wire:
@@ -1070,8 +1127,31 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     # A11.6: progress is VALIDATED cell state (manifest + chain + identity +
     # normalized usage + admissibility), never raw manifest presence.
     done_cells = order_completed_cells(BASE, expansion=expansion)
-    cell, order_findings = order_authorize(
-        expansion, block, family, task, lane, arm, done_cells)
+    # A12.0: an ACQUISITION cell (T0/T1) is authorized through the event path
+    # — it has no consumer arm and no capability_id, so the downstream
+    # authorize() path would refuse it (and must: a capability arm cannot run
+    # before PROMOTION). The operator names the EVENT and its universe; the
+    # frozen expansion decides which cell that is.
+    acq_event = opts.get("acquisition_event")
+    acq_universe = opts.get("acquisition_universe")
+    if bool(acq_event) != bool(acq_universe):
+        raise SystemExit(
+            "ACQUISITION-ARGS-DENY: --acquisition-event T0|T1 and "
+            "--acquisition-universe A|C are a mandated pair")
+    if acq_event:
+        if task != acq_event:
+            raise SystemExit(
+                f"ACQUISITION-DENY: --acquisition-event {acq_event} requires "
+                f"task {acq_event}; got {task}")
+        if arm != "acquisition":
+            raise SystemExit(
+                "ACQUISITION-DENY: an acquisition cell's arm is "
+                "'acquisition'; a capability arm cannot run before PROMOTION")
+        cell, order_findings = order_authorize_event(
+            expansion, block, family, acq_event, acq_universe, done_cells)
+    else:
+        cell, order_findings = order_authorize(
+            expansion, block, family, task, lane, arm, done_cells)
     if order_findings:
         raise RuntimeError("ORDER-DENY refuse start: "
                            + " | ".join(order_findings))
@@ -1131,6 +1211,15 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     arrival, parse_mode = extract(raw)
     open(os.path.join(outdir, "arrival.json"), "w").write(
         json.dumps(arrival, indent=1))
+    # A12.0: no capability exists before PROMOTION, so the ONLY legal decision
+    # on an acquisition cell is fresh. This is belt-and-braces behind
+    # execute_arrival's arm gate (arm='acquisition' is not the capability
+    # arm), named for the acquisition surface specifically.
+    if acq_event and arrival.get("decision") != "fresh":
+        raise SystemExit(
+            "ACQUISITION-DECISION-DENY: no capability exists before "
+            f"PROMOTION; the only legal decision at {acq_event} is fresh, "
+            f"got {arrival.get('decision')!r}")
     # DockerSandbox stages its own private copy of `visible` and refuses on
     # drift; its task_snapshot must equal the hash the context was built
     # from (same staged bytes -> same hash), else refuse.
@@ -1147,27 +1236,71 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     output_sha = execr["output_sha256"]
 
     # ---- H2/H3 wiring (skipped only under the unwired dev escape) ----
+    # Reuse ledger: P0-2 — every lifecycle field is DERIVED from the actual
+    # decision/execution path of THIS run, never asserted from arm or
+    # capability presence. The record is written in every wired case:
+    #   use_capability   selected/loaded/invoked/consumed observed on path
+    #   fresh + K avail  capability_available, reuse_rejected, reason from
+    #                    the arrival's own recorded notes
+    #   fresh + no K     capability_available=False (e.g. disabled arm)
     reuse_path = None
-    if wire and cap_info:
-        # Reuse ledger: correct arm reused a previously locked capability.
-        reuse_path = reuse_write_record(
-            outdir, f"{family}-{task}", lane, arm,
-            reuse_policy="PREREG-frozen: single locked capability per "
-                         "(family, producer lane); consumer loads by locked hash",
-            capability_available=True,
-            capability_candidate_ids=[cap_info["capability_id"]],
-            capability_selected=True,
-            selected_capability_id=cap_info["capability_id"],
-            selected_capability_hash=cap_info["engine_sha256"],
-            capability_loaded=True, capability_invoked=True,
-            capability_output_consumed=True,
-            capability_materially_contributed=False,
-            contribution_evidence={"mechanism": "none",
-                                   "reason": "consumed but not proven "
-                                             "contributed: no ablation or "
-                                             "downstream-node hash-linkage "
-                                             "in this cell"},
-            reuse_rejected=False, reuse_rejection_reason=None)
+    if wire:
+        _decision = execr["decision"]
+        _cap_available = cap_info is not None
+        _selected = _cap_available and _decision == "use_capability"
+        # loaded: the locked engine was verified and staged into the jail
+        # (execute_arrival raises CONTRACT-ENGINE-DENY otherwise); invoked:
+        # the engine process actually executed; output_consumed: the engine's
+        # OUTPUT.json existed and the host-side checker consumed it.
+        _invoked = _selected and execr["execution_mode"] == "engine"
+        _consumed = bool(_invoked and execr["output_sha256"] is not None
+                         and execr["checker_returncode"] is not None)
+        _rejected = _cap_available and not _selected
+        _policy = ("PREREG-frozen: single locked capability per "
+                   "(family, producer lane); consumer loads by locked hash")
+        if _cap_available:
+            reuse_path = reuse_write_record(
+                outdir, f"{family}-{task}", lane, arm,
+                reuse_policy=_policy,
+                capability_available=True,
+                capability_candidate_ids=[cap_info["capability_id"]],
+                capability_selected=_selected,
+                selected_capability_id=(cap_info["capability_id"]
+                                        if _selected else None),
+                selected_capability_hash=(cap_info["engine_sha256"]
+                                          if _selected else None),
+                capability_loaded=_selected,
+                capability_invoked=_invoked,
+                capability_output_consumed=_consumed,
+                capability_materially_contributed=False,
+                contribution_evidence=(None if _rejected else
+                                       {"mechanism": "none",
+                                        "reason": "consumed but not proven "
+                                                  "contributed: no ablation or "
+                                                  "downstream-node hash-linkage "
+                                                  "in this cell"}),
+                reuse_rejected=_rejected,
+                reuse_rejection_reason=(arrival["notes"] if _rejected
+                                        else None))
+        else:
+            # fresh with no capability available (disabled arm, or correct
+            # arm whose registry namespace does not resolve): the ledger
+            # records the absence — it never fabricates a reuse event.
+            reuse_path = reuse_write_record(
+                outdir, f"{family}-{task}", lane, arm,
+                reuse_policy=_policy,
+                capability_available=False,
+                capability_candidate_ids=[],
+                capability_selected=False,
+                selected_capability_id=None,
+                selected_capability_hash=None,
+                capability_loaded=False,
+                capability_invoked=False,
+                capability_output_consumed=False,
+                capability_materially_contributed=False,
+                contribution_evidence=None,
+                reuse_rejected=False,
+                reuse_rejection_reason=None)
 
     manifest = {"lane": lane, "family": family, "task": task, "arm": arm,
                 "parse_mode": parse_mode, "lane_receipt": receipt,
@@ -1189,6 +1322,22 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                 "cell_kind": cell["kind"],
                 "capability_id": cell["capability_id"],
                 "cell_lane_key": cell["lane_key"],
+                # A12.0 acquisition surface: an acquisition cell has no
+                # capability block in its prompt (none exists yet) and no
+                # capability binding; the fields are stamped so the evidence
+                # itself states the surface, not the operator's intent.
+                "acquisition_event": acq_event,
+                "acquisition_universe": acq_universe,
+                # Derived by the production stripper, never by a substring
+                # guess: a capability-access block is present iff removing it
+                # changes the bytes. An acquisition cell must record False
+                # (no capability exists before PROMOTION); non-acquisition
+                # cells record None for the acquisition-specific field.
+                "prompt_has_capability_block": bool(
+                    strip_capability_block(prompt) != prompt),
+                "acquisition_prompt_has_capability_block": (
+                    bool(strip_capability_block(prompt) != prompt)
+                    if acq_event else None),
                 "order_sha256": expansion["order_sha256"],
                 "instance_freeze_commit": instance_freeze_commit,
                 "instance_freeze_tree": instance_freeze_tree,
@@ -1218,37 +1367,22 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                                if cap_info and k in cap_info} or None,
                 "capability_lock": None}
 
-    # Promotion: a capability ships only on a ship verdict under an explicit
-    # --promote (writes once; repromotion refused fail-closed). The lock
-    # embeds this final manifest as its manifest_sha binding.
-    promote_info = None
-    if wire and promote_dir and verdict == "ship" and cap_info:
-        arts = [cap_info["verified"][n] for n in
-                ("engine.py", "manifest.json", "adapter_notes.md")
-                if n in cap_info["verified"]]
-        lock_path = lock_promote(
-            promote_dir, cap_info["capability_id"],
-            cap_info.get("capability_version") or "v1", arts, manifest,
-            [receipt], {"lane": lane, "family": family, "task": task,
-                        "arm": arm, "frozen_commit": frozen,
-                        "run_outdir": outdir})
-        promote_info = {"capability_id": cap_info["capability_id"],
-                        "lock_path": lock_path,
-                        "lock_sha256": h(lock_path),
-                        "builder": {"lane": lane, "family": family,
-                                    "task": task}}
-        manifest["capability_lock"] = os.path.basename(lock_path)
+    # P0-3: the runner NEVER writes a promotion lock into an operator dir.
+    # Promotion is the sole province of the A12.1 order-authorized promotion
+    # controller (harness/promotion.py); --promote is refused hard at the CLI
+    # before main() runs, and main() also guards a poisoned opts dict.
 
     # Manifest is final NOW: write it once, then genesis binds this object.
     json.dump(manifest, open(os.path.join(outdir, "H1-RUN-MANIFEST.json"), "w"), indent=1)
 
     if wire:
-        checker_sha = h(checker) if os.path.exists(checker) else None
-        truth = os.path.join(taskdir, "..", "truth.json")
-        truth_sha = h(truth) if os.path.exists(truth) else None
+        # P0-1: consume the path + sha256 values execute_arrival bound for
+        # THIS run; evidence is never recomputed over a different path here.
+        checker_sha = execr["checker_sha256"]
+        truth_sha = execr["truth_sha256"]
         _wire_chain(outdir, frozen, manifest, receipt, nu_path, id_path,
                     identity_family, cap_info, reuse_path, checker_sha,
-                    truth_sha, verdict, output_sha, promote_info)
+                    truth_sha, verdict, output_sha, None)
         # H1-RUN-MANIFEST.json must NOT be rewritten after _wire_chain:
         # genesis binds its hash and any rewrite would break the chain.
     print(f"{lane}/{family}/{task}/{arm}: {verdict} ({parse_mode}, "
@@ -1264,6 +1398,24 @@ if __name__ == "__main__":
         i = argv.index("--block")
         opts["block"] = argv[i + 1].upper()
         del argv[i:i + 2]
+    if "--promote" in argv:
+        # P0-3: hard refuse — this runner is the execution path, not the
+        # promotion controller. A capability lock may only be minted by the
+        # A12.1 order-authorized promotion controller (harness/promotion.py);
+        # the runner never writes into an operator capability store.
+        raise SystemExit(
+            "PROMOTE-REFUSED: run_arm_h1.py does not promote. Promotion is "
+            "the sole route of the A12.1 order-authorized promotion "
+            "controller harness/promotion.py (ORDER-PROMOTE); a lock minted "
+            "by the runner is not an authorized order outcome. Run the "
+            "controller there instead.")
+    if "--selfcheck" in argv:
+        # Full offline battery: wiring selfcheck then the prompt selfcheck.
+        # Exit non-zero on either failure (fails closed).
+        rc = selfcheck_wire()
+        if rc != 0:
+            sys.exit(rc)
+        sys.exit(selfcheck_prompt())
     if "--selfcheck-wire" in argv:
         sys.exit(selfcheck_wire())
     if "--selfcheck-prompt" in argv:
@@ -1279,9 +1431,22 @@ if __name__ == "__main__":
         opts["wire"] = False
         opts["dev_unwired_outdir"] = argv[i + 1]
         del argv[i:i + 2]
-    if "--promote" in argv:
-        i = argv.index("--promote")
-        opts["promote_dir"] = argv[i + 1]
+    # A12.0: the production ACQUISITION executor. Before this, no production
+    # code path could produce cell 0 (T0) — the experiment was mechanically
+    # deadlocked at the first cell. The event and its universe are a mandated
+    # pair: a half-specified acquisition is not an authorized cell, and the
+    # operator never names a cell id, a chain tip or a run directory.
+    if ("--acquisition-event" in argv) != ("--acquisition-universe" in argv):
+        raise SystemExit(
+            "ACQUISITION-ARGS-DENY: --acquisition-event T0|T1 and "
+            "--acquisition-universe A|C are a mandated pair; a "
+            "half-specified acquisition is not an authorized cell")
+    if "--acquisition-event" in argv:
+        i = argv.index("--acquisition-event")
+        opts["acquisition_event"] = argv[i + 1].upper()
+        del argv[i:i + 2]
+        i = argv.index("--acquisition-universe")
+        opts["acquisition_universe"] = argv[i + 1].upper()
         del argv[i:i + 2]
     main(argv[0], argv[1], argv[2], argv[3], argv[4],
          argv[5] if len(argv) > 5 else None, opts)

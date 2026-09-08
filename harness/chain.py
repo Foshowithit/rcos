@@ -87,25 +87,54 @@ class Chain:
         return rec["link_hash"]
 
     def audit(self, frozen_commit, run_manifest, expected_grading_rule=None):
-        """expected_grading_rule: frozen {"hash":..., "version":...}.
-        When provided, the terminal grade's rule hash/version must EQUAL
+        """Re-verify the whole chain; returns list of findings
+        (empty = intact). Link-0 genesis is verified on its own terms:
+        kind, prev == GENESIS-ROOT, recomputed link_hash, bound frozen
+        commit + run manifest (deep equality), and run_manifest_hash
+        against the canonical expected manifest. Downstream linkage
+        continues from the recomputed genesis hash, never from a stored
+        value. expected_grading_rule: frozen {"hash":..., "version":...};
+        when provided the terminal grade's rule hash/version must EQUAL
         it (mere presence is insufficient)."""
-        """Re-verify the whole chain. Returns list of findings
-        (empty = intact). Checks: genesis binding, hash linkage order,
-        no gaps, no duplicate link hashes (reorder/substitution),
-        payload presence per kind."""
         findings = []
         # Link 0 must be the genesis record itself, bound to the frozen
-        # commit and run manifest the audit was invoked with.
-        if not self.links or self.links[0].get("kind") != "genesis":
-            findings.append("missing genesis link 0")
+        # commit and run manifest the audit was invoked with. A12.0-c:
+        # genesis link 0 is never trusted from the stored record — kind,
+        # root prev, hash recompute, frozen commit, manifest deep
+        # equality and the canonical manifest hash are all re-checked.
+        if not self.links:
+            findings.append("GENESIS link 0 missing: chain has no links")
             return findings
-        g0 = self.links[0]["payload"]
-        if g0.get("frozen_commit") != frozen_commit:
-            findings.append("genesis frozen-commit mismatch")
-        if g0.get("run_manifest") != run_manifest:
-            findings.append("genesis run-manifest mismatch")
-        expect_prev = self.links[0].get("link_hash")
+        g0 = self.links[0]
+        if g0.get("kind") != "genesis":
+            findings.append(
+                f"GENESIS link 0 kind: expected 'genesis', got "
+                f"{g0.get('kind')!r}")
+            return findings
+        if g0.get("prev") != self.GENESIS_PREV:
+            findings.append(
+                f"GENESIS link 0 prev: {g0.get('prev')!r} != "
+                f"{self.GENESIS_PREV}")
+        recomputed_g0 = _h({k: v for k, v in g0.items()
+                            if k != "link_hash"})
+        if recomputed_g0 != g0.get("link_hash"):
+            findings.append(
+                "GENESIS link 0 link_hash: recomputed != stored "
+                "(content altered post-write)")
+        payload = g0.get("payload")
+        if not isinstance(payload, dict):
+            findings.append("GENESIS link 0 payload: missing")
+            payload = {}
+        if payload.get("frozen_commit") != frozen_commit:
+            findings.append("GENESIS payload frozen_commit: mismatch")
+        if payload.get("run_manifest") != run_manifest:
+            findings.append("GENESIS payload run_manifest: mismatch")
+        if payload.get("run_manifest_hash") != _h(run_manifest):
+            findings.append(
+                "GENESIS payload run_manifest_hash: != sha256 of "
+                "canonical expected manifest")
+        # Normal linkage starts from the VERIFIED genesis hash.
+        expect_prev = recomputed_g0
         seen = {expect_prev}
         for i, rec in enumerate(self.links[1:], start=1):
             if rec.get("prev") != expect_prev:

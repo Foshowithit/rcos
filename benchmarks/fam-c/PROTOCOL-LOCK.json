@@ -73,6 +73,38 @@
    "reason": "A11b integration verification block (448/448, V1/V2/V3 0/0/0) + H12 count",
    "base": "a11b",
    "slice": "a11b.integration"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "b732647f61f35808e0e07cb4221998e75c2851180fd44070e4b25ee5851437c6",
+   "to_sha": "cdf77e7c747f3e9745473b28a4fbe84b322a08fdc85e02f54e7359ab1994e07b",
+   "reason": "A12 promotion protocol frozen: acquisition path via authorize_event, T0-derived candidate, T1 read-only rule, capability-lock-v2, reuse ledger is evidence not a claim, TCB statement",
+   "base": "a12",
+   "slice": "a12.prereg"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "382a75fc356ef571b6f27caecafb1c2cb210202f0c556568e6ecf54e67953533",
+   "to_sha": "9caf3d4fdd33da0a45ed5bf87d79fce3627439d0d543de9934414901ebdc1a91",
+   "reason": "A12 round-2 close: A12.0 acquisition executor + A12.1 promotion controller + A12.2 estimand lock + A12.3 decision-driven ledger",
+   "base": "a11b-integration",
+   "slice": "a12"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "9caf3d4fdd33da0a45ed5bf87d79fce3627439d0d543de9934414901ebdc1a91",
+   "to_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
+   "reason": "A12 integration hardening: lock provenance re-derivation, derived t4_ratified, presence-not-truthiness, verbatim semantic core, V3 package-root closure, production-shaped fixture",
+   "base": "a12",
+   "slice": "a12"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "b86a25e40616db4bb85ef11b0b58d8e3199b59fd1405ddfcddc6b39bee0179d9",
+   "to_sha": "17860f35215d3b255cbb5a5ac12a5396d21a176a5f47ecee5e902b6930b2dac5",
+   "reason": "A12 item-7 closure: V3 must cover the whole harness package root (harness/promotion.py mints locks and was unlisted)",
+   "base": "a12",
+   "slice": "a12"
   }
  ]
 }

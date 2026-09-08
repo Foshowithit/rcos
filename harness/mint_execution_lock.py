@@ -57,6 +57,18 @@ def main():
             if rel not in files:
                 files[rel] = _sha(rel)
                 changed[rel] = {"from_sha": None, "to_sha": files[rel]}
+    # Package-root closure (V3 item 7): every harness/*.py is inside the
+    # execution authority, so a governance module the runner never imports
+    # (harness/promotion.py) cannot ride outside it.
+    hdir = os.path.join(ROOT, "harness")
+    if os.path.isdir(hdir):
+        for name in sorted(os.listdir(hdir)):
+            if not name.endswith(".py"):
+                continue
+            rel = f"harness/{name}"
+            if rel not in files:
+                files[rel] = _sha(rel)
+                changed[rel] = {"from_sha": None, "to_sha": files[rel]}
     for rel in list(files):
         want = _sha(rel)
         if want != files[rel]:

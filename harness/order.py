@@ -474,10 +474,15 @@ def _read_json(fp):
 MODEL_RUN_KINDS = ("acquisition-solve", "model-call")
 
 
-def cell_state(fam_c_dir, cell, freeze_commit=None):
+def cell_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
     """Validate ONE cell's completion. Returns
-    {"status": "COMPLETE"|"INCOMPLETE"|"INADMISSIBLE", "reasons": [...]},
-    dispatched by cell kind (A11.5):
+    {"status": "COMPLETE"|"INCOMPLETE"|"INADMISSIBLE", "reasons": [...]}.
+
+    A12.1 (audit round-2 #11): completion is ALSO order-admissible — a cell
+    whose artifacts validate is still NOT COMPLETE if any earlier cell in the
+    frozen expansion is not COMPLETE, so a preplanted future promotion/lock
+    (or another family's governance artifact minted out of turn) can never
+    satisfy state. `_local_state()` holds the kind dispatch below.
 
       acquisition-solve / model-call -> _model_run_state(): a REAL model
           run — derived run dir, H1-RUN-MANIFEST.json with EXACT equality
@@ -500,6 +505,36 @@ def cell_state(fam_c_dir, cell, freeze_commit=None):
     Any failure => not complete. INADMISSIBLE is used when the artifacts
     exist but fail validation (a distinction the retry machine needs).
     """
+    st = _local_state(fam_c_dir, cell, freeze_commit)
+    if st["status"] != "COMPLETE":
+        return st
+    try:
+        exp = _exp if _exp is not None else load_expansion(fam_c_dir)
+    except (ValueError, OSError) as e:
+        return _result(cell, [f"ORDER-DENY expansion unreadable: {e}"], True)
+    blockers = []
+    for c in exp["cells"]:
+        if c["index"] >= cell["index"]:
+            break
+        if c["cell_id"] == cell["cell_id"]:
+            continue
+        earlier = _local_state(fam_c_dir, c, freeze_commit)
+        if earlier["status"] != "COMPLETE":
+            blockers.append(f"{c['cell_id']} "
+                            f"({c['block']}/{c['family']}/{c['event']}/"
+                            f"{c['universe']})={earlier['status']}")
+    if blockers:
+        return _result(cell, [
+            "ORDER-INADMISSIBLE: cell " + cell["cell_id"] + " validates "
+            "locally but cannot be COMPLETE while " + str(len(blockers))
+            + " earlier cell(s) are not: " + "; ".join(blockers[:3])], True)
+    return st
+
+
+def _local_state(fam_c_dir, cell, freeze_commit=None):
+    """Kind-dispatched validation of ONE cell, WITHOUT the order guard.
+    Governance validators (promotion/lock) use this for their T0/T1 source
+    cells so order recursion terminates."""
     kind = cell.get("kind")
     event = cell.get("event")
     # A11.6 defense in depth (TOCTOU): the runner derives paths through
@@ -533,6 +568,108 @@ def _result(cell, reasons, artifact_present):
 def _sha256_file(path):
     with open(path, "rb") as f:
         return hashlib.sha256(f.read()).hexdigest()
+
+
+def _reuse_ledger_reasons(run_dir, m, fam_c_dir=None, cell=None):
+    """A12.3 (audit round-2 #13): the reuse ledger is EVIDENCE, not a claim.
+
+    A wired run's reuse record must exist and agree with the arrival's own
+    `decision` and with the path the runtime actually executed. A record
+    that reports reuse when the arrival chose fresh (or fresh when it chose
+    the capability) is refused; a fresh decision made WITH a capability
+    available must be recorded as an explicit REJECT with a reason.
+
+    Grade-aware consumption (A12.2): a lock minted at `estimand` grade may
+    only be consumed by a run that itself declares estimand grade. H1
+    harness-validation runs are never estimand data, so an estimand-grade
+    lock is not consumable on the current surface (estimand runs = 0)."""
+    out = []
+    ap = os.path.join(run_dir, "arrival.json")
+    try:
+        arrival = _read_json(ap)
+    except (ValueError, OSError) as e:
+        return [f"reuse-ledger: arrival unreadable: {e}"]
+    decision = arrival.get("decision")
+    if decision not in ("use_capability", "fresh"):
+        return [f"reuse-ledger: arrival decision {decision!r} is not a "
+                "contract decision; no ledger semantics derivable"]
+    name = m.get("reuse_record")
+    if not isinstance(name, str) or not name:
+        return [f"reuse-ledger: wired run with decision {decision!r} has no "
+                "reuse_record; every wired cell must record its decision"]
+    p = os.path.join(run_dir, os.path.basename(name))
+    if os.path.islink(p) or not os.path.isfile(p):
+        return [f"reuse-ledger: record {name} absent at {p}"]
+    try:
+        r = _read_json(p)
+    except ValueError as e:
+        return [f"reuse-ledger: record unparsable: {e}"]
+    missing = [f for f in ("capability_available", "capability_selected",
+                           "capability_loaded", "capability_invoked",
+                           "capability_output_consumed", "reuse_rejected")
+               if f not in r]
+    if missing:
+        return ["reuse-ledger: record missing field(s): "
+                + ", ".join(missing)]
+    if decision == "use_capability":
+        if r.get("capability_selected") is not True:
+            out.append("reuse-ledger: arrival chose use_capability but the "
+                       "record reports capability_selected=false (ledger "
+                       "contradicts the executed path)")
+        for f in ("capability_available", "capability_loaded",
+                  "capability_invoked", "capability_output_consumed"):
+            if r.get(f) is not True:
+                out.append(f"reuse-ledger: use_capability requires {f}=true")
+        if r.get("reuse_rejected") is True:
+            out.append("reuse-ledger: use_capability cannot be "
+                       "reuse_rejected")
+        want_id = m.get("capability_id")
+        if r.get("selected_capability_id") != want_id:
+            out.append("reuse-ledger: selected_capability_id "
+                       f"{r.get('selected_capability_id')!r} != the cell's "
+                       f"capability {want_id!r}")
+        cap = m.get("capability") or {}
+        if cap.get("engine_sha256") and \
+                r.get("selected_capability_hash") != cap["engine_sha256"]:
+            out.append("reuse-ledger: selected_capability_hash "
+                       f"{r.get('selected_capability_hash')!r} != the locked "
+                       f"engine hash {cap['engine_sha256']!r} the run consumed")
+    else:  # fresh
+        if (r.get("capability_selected") is True
+                or r.get("capability_loaded") is True
+                or r.get("capability_invoked") is True
+                or r.get("capability_output_consumed") is True):
+            out.append("reuse-ledger: arrival chose fresh but the record "
+                       "reports the capability was selected/loaded/invoked/"
+                       "consumed (ledger contradicts the executed path)")
+        if r.get("capability_available") is True:
+            if r.get("reuse_rejected") is not True:
+                out.append("reuse-ledger: a fresh decision with a capability "
+                           "available must be recorded as reuse_rejected "
+                           "(the REJECT path, never a silent fresh)")
+            elif not (isinstance(r.get("reuse_rejection_reason"), str)
+                      and r["reuse_rejection_reason"].strip()):
+                out.append("reuse-ledger: reuse_rejected requires a recorded "
+                           "rejection reason")
+        elif r.get("reuse_rejected") is True:
+            out.append("reuse-ledger: no capability was available, so the run "
+                       "cannot be reuse_rejected")
+    if fam_c_dir is not None and cell is not None and \
+            r.get("capability_output_consumed") is True:
+        lp = os.path.join(capability_dir(fam_c_dir, cell["block"],
+                                         cell["universe"], cell["family"]),
+                          "CAPABILITY_LOCK.json")
+        try:
+            grade = _read_json(lp).get("evidence_grade")
+        except (ValueError, OSError):
+            grade = None
+        if grade == "estimand" and m.get("evidence_grade") != "estimand":
+            out.append(
+                "reuse-ledger: capability consumed from an estimand-grade "
+                "lock by a run that does not declare estimand grade "
+                f"({m.get('evidence_grade', 'harness-validation')}); H1 runs "
+                "are harness-validation evidence, never estimand data")
+    return out
 
 
 def _model_run_state(fam_c_dir, cell, freeze_commit=None):
@@ -603,6 +740,10 @@ def _model_run_state(fam_c_dir, cell, freeze_commit=None):
             reasons.append(f"admissibility {status}: {why}")
     except Exception as e:                                # noqa: BLE001
         reasons.append(f"admissibility check failed: {e}")
+    # A12.3: the reuse ledger must agree with the arrival's executed decision
+    # (and A12.2 grade-aware consumption: an estimand-grade lock is not
+    # consumable by a harness-validation run).
+    reasons.extend(_reuse_ledger_reasons(d, m, fam_c_dir=fam_c_dir, cell=cell))
     return _result(cell, reasons, True)
 
 
@@ -637,12 +778,17 @@ def _chain_tip(chain_path):
 
 
 def _promotion_state(fam_c_dir, cell, freeze_commit=None):
-    """A11.5: completion of ONE PROMOTION harness-event cell. A promotion
-    is COMPLETE only when — with no fabricated model-run record — the two
-    REAL acquisition runs of the SAME (block, family, universe) (its T0
-    and T1, each validated COMPLETE by the model-run contract) produced
-    exactly the chain tips the promotion receipt binds to the authorized
-    per-universe capability id. See cell_state() for the full contract."""
+    """A12.1: completion of ONE PROMOTION harness-event cell.
+
+    COMPLETE only when — with no fabricated model-run record — the two REAL
+    acquisition runs of the SAME (block, family, universe) (its T0 and T1,
+    each validated COMPLETE by the model-run contract) produced exactly the
+    chain tips the receipt binds, AND the receipt carries full causal
+    provenance: the candidate sha256 is RE-DERIVED here from the T0 run's own
+    arrival payload, the receipt-named artifact hashes verify on disk, the
+    semantic core / contract / lock SHAs / source cells / authorization
+    record are all cross-checked against the frozen instance. See
+    cell_state() for the full contract."""
     reasons = []
     d = run_dir(fam_c_dir, cell)
     if os.path.islink(d) or not os.path.isdir(d):
@@ -674,7 +820,7 @@ def _promotion_state(fam_c_dir, cell, freeze_commit=None):
     # rule compliance: the acquisition runs of THIS universe must be
     # genuinely complete, and the receipt must bind their REAL chain tips
     # in the right places (T0 under T0, T1 under T1 — never swapped).
-    tips = {}
+    tips, runs = {}, {}
     for ev in ("T0", "T1"):
         acq = _cell_for_event(fam_c_dir, cell, ev)
         if acq is None:
@@ -682,14 +828,15 @@ def _promotion_state(fam_c_dir, cell, freeze_commit=None):
                            f"{cell['block']}/{cell['family']}/"
                            f"{cell['universe']}")
             continue
-        st = cell_state(fam_c_dir, acq, freeze_commit)
+        st = _local_state(fam_c_dir, acq, freeze_commit)
         if st["status"] != "COMPLETE":
             reasons.append(f"promotion rule: {ev} acquisition cell "
                            f"{acq['cell_id']} not validated COMPLETE "
                            f"({st['status']}: {st['reasons'][:1]})")
             continue
+        runs[ev] = run_dir(fam_c_dir, acq)
         try:
-            tips[ev] = _chain_tip(os.path.join(run_dir(fam_c_dir, acq),
+            tips[ev] = _chain_tip(os.path.join(runs[ev],
                                                "EVIDENCE-CHAIN.jsonl"))
         except (ValueError, OSError, json.JSONDecodeError) as e:
             reasons.append(f"promotion rule: {ev} chain tip unreadable: {e}")
@@ -704,18 +851,171 @@ def _promotion_state(fam_c_dir, cell, freeze_commit=None):
     if tips.get("T0") == tips.get("T1") and tips.get("T0"):
         reasons.append("promotion rule: T0 and T1 must be distinct runs "
                        "(identical chain tips)")
+    reasons.extend(_promotion_provenance_reasons(fam_c_dir, cell, r, runs))
     return _result(cell, reasons, True)
 
 
+def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
+    """A12.1 causal-provenance gate. Everything the lock will later bind is
+    re-derived HERE from committed evidence; a receipt that merely asserts
+    provenance (or names artifacts copied in from elsewhere) is refused."""
+    out = []
+    src = r.get("source_cells")
+    if not isinstance(src, dict) or set(src) != {"T0", "T1"}:
+        out.append("promotion provenance: receipt names no T0/T1 source cells")
+    else:
+        for ev in ("T0", "T1"):
+            if ev in runs and src.get(ev) != os.path.basename(runs[ev]):
+                out.append(f"promotion provenance: source_cells[{ev}] "
+                           f"{src.get(ev)!r} != the validated {ev} run "
+                           f"{os.path.basename(runs[ev])!r}")
+    cand = r.get("candidate") or {}
+    want_sha = None
+    if "T0" in runs:
+        try:
+            arrival = _read_json(os.path.join(runs["T0"], "arrival.json"))
+            payload = arrival.get("execution_payload") or {}
+            s = payload.get("solver_py")
+            if not isinstance(s, str) or not s.strip():
+                out.append("promotion provenance: T0 arrival carries no "
+                           "execution_payload.solver_py candidate")
+            else:
+                want_sha = hashlib.sha256(s.encode()).hexdigest()
+                if arrival.get("decision") != "fresh":
+                    out.append("promotion provenance: T0 decision "
+                               f"{arrival.get('decision')!r} != 'fresh'")
+                if cand.get("arrival_sha256") != _sha256_file(
+                        os.path.join(runs["T0"], "arrival.json")):
+                    out.append("promotion provenance: candidate "
+                               "arrival_sha256 does not match the T0 "
+                               "arrival artifact")
+        except (ValueError, OSError) as e:
+            out.append(f"promotion provenance: T0 arrival unreadable: {e}")
+    if want_sha is not None and cand.get("sha256") != want_sha:
+        out.append("promotion provenance: receipt candidate "
+                   f"{str(cand.get('sha256'))[:12]} != the sha256 of the T0 "
+                   f"arrival payload {want_sha[:12]} (candidate must be "
+                   "causally rooted in this universe's own acquisition)")
+    if want_sha is None and not out:
+        out.append("promotion provenance: candidate sha256 not derivable")
+    # semantic core must be the FROZEN family contract, not a receipt claim
+    kp = os.path.join(fam_c_dir, "families", cell["family"], "K.md")
+    sc = r.get("semantic_core")
+    if os.path.isfile(kp):
+        if not isinstance(sc, str) or not sc.strip():
+            out.append("promotion provenance: receipt has no semantic_core")
+        elif sc not in open(kp).read():
+            out.append("promotion provenance: semantic_core is not the "
+                       "frozen families/%s/K.md contract text"
+                       % cell["family"])
+    if isinstance(sc, str) and r.get("semantic_core_sha256") != \
+            hashlib.sha256(sc.encode()).hexdigest():
+        out.append("promotion provenance: semantic_core_sha256 mismatch")
+    for f in ("preconditions", "limitations"):
+        if not isinstance(r.get(f), list) or not all(
+                isinstance(x, str) for x in r[f]):
+            out.append(f"promotion provenance: {f} must be a list of strings")
+    if r.get("evidence_grade") not in ("estimand", "harness-validation"):
+        out.append("promotion provenance: evidence_grade "
+                   f"{r.get('evidence_grade')!r} invalid")
+    if r.get("evidence_grade") == "estimand" and r.get("t4_ratified") is not True:
+        out.append("promotion provenance: estimand promotion requires a "
+                   "RATIFIED auditor T4 semantic id")
+    if not (isinstance(r.get("t4_semantic_id"), str)
+            and r["t4_semantic_id"].strip()):
+        out.append("promotion provenance: t4_semantic_id missing")
+    # t4_ratified is DERIVED from the frozen auditor registry, never asserted:
+    # flipping the flag on an unratified id must not upgrade the receipt.
+    reg_id = None
+    reg_p = os.path.join(fam_c_dir, "T4-SEMANTIC-IDS.json")
+    if os.path.isfile(reg_p):
+        try:
+            entry = ((_read_json(reg_p).get("capabilities") or {})
+                     .get(cell["capability_id"]) or {})
+            if isinstance(entry, dict):
+                reg_id = entry.get("t4_semantic_id")
+        except (ValueError, AttributeError, TypeError):
+            reg_id = None
+    if r.get("t4_ratified") not in (True, False):
+        out.append("promotion provenance: t4_ratified must be a boolean")
+    elif r["t4_ratified"]:
+        if not reg_id or r.get("t4_semantic_id") != reg_id:
+            out.append("promotion provenance: t4_ratified claims a RATIFIED "
+                       "auditor T4 semantic id but none is registered for "
+                       f"{cell['capability_id']} in T4-SEMANTIC-IDS.json")
+    elif isinstance(r.get("t4_semantic_id"), str) and \
+            not r["t4_semantic_id"].startswith("T4-UNRATIFIED-"):
+        out.append("promotion provenance: t4_ratified is false but "
+                   f"t4_semantic_id {r['t4_semantic_id']!r} is not marked "
+                   "T4-UNRATIFIED-")
+    # frozen lock SHAs must be the locks actually on disk
+    for key, name in (("protocol_lock_sha256", "PROTOCOL-LOCK.json"),
+                      ("execution_lock_sha256", "EXECUTION-LOCK.json")):
+        p = os.path.join(fam_c_dir, name)
+        if not os.path.isfile(p):
+            out.append(f"promotion provenance: frozen {name} absent")
+        elif r.get(key) != _sha256_file(p):
+            out.append(f"promotion provenance: {key} does not match the "
+                       f"on-disk {name}")
+    # the receipt's artifact map must verify against the capability dir
+    arts = r.get("artifacts")
+    capdir = capability_dir(fam_c_dir, cell["block"], cell["universe"],
+                            cell["family"])
+    if not isinstance(arts, dict) or not arts:
+        out.append("promotion provenance: receipt names no artifacts")
+    else:
+        for name, sha in sorted(arts.items()):
+            if os.path.basename(name) != name:
+                out.append(f"promotion provenance: artifact {name!r} is not a "
+                           f"bare filename")
+                continue
+            p = os.path.join(capdir, name)
+            if os.path.islink(p) or not os.path.isfile(p):
+                out.append(f"promotion provenance: receipt names {name} but "
+                           f"it is absent from the capability dir")
+            elif _sha256_file(p) != sha:
+                out.append(f"promotion provenance: artifact {name} hash "
+                           f"{str(sha)[:12]} != present "
+                           f"{_sha256_file(p)[:12]}")
+    # the authorization record: this receipt was emitted at the frozen event
+    # index for this cell (a preplanted future receipt names another index)
+    auth = r.get("authorization")
+    if not isinstance(auth, dict):
+        out.append("promotion provenance: no authorization record")
+    else:
+        if auth.get("event_index") != cell["index"]:
+            out.append("promotion provenance: authorization event_index "
+                       f"{auth.get('event_index')!r} != this cell's frozen "
+                       f"index {cell['index']!r}")
+        try:
+            exp_sha = _sha256_file(os.path.join(fam_c_dir,
+                                                "ORDER-EXPANSION.json"))
+            if auth.get("order_sha256") != exp_sha:
+                out.append("promotion provenance: authorization order_sha256 "
+                           "does not match the frozen expansion")
+        except OSError as e:
+            out.append(f"promotion provenance: expansion unreadable: {e}")
+        done = auth.get("done_cells_at_emit")
+        if not isinstance(done, list) or cell["cell_id"] in done:
+            out.append("promotion provenance: authorization "
+                       "done_cells_at_emit malformed (or already contains "
+                       "this cell)")
+    return out
+
+
 def _lock_state(fam_c_dir, cell, freeze_commit=None):
-    """A11.5: completion of ONE CAPABILITY_LOCK harness-event cell. The
-    lock cell is COMPLETE only when the immutable CAPABILITY_LOCK.json in
-    the derived capability dir names the authorized per-universe capability
-    id, every locked artifact hash verifies against the file present in
-    that capability dir, and the lock binds the PROMOTION receipt of the
-    SAME (block, family, universe) — promotion + locked reuse under
-    workflow control; never a fabricated model-run record. See
-    cell_state() for the full contract."""
+    """A12.2: completion of ONE CAPABILITY_LOCK harness-event cell.
+
+    COMPLETE only when the immutable CAPABILITY_LOCK.json passes the FULL
+    estimand-aware contract (lock.verify_lock: block/universe/family,
+    capability id/version, T0+T1 chain tips, source cells, producer
+    identity, protocol/execution lock SHAs, artifact hashes,
+    semantic_core/preconditions/limitations, auditor T4 semantic id,
+    evidence grade, candidate root + provenance sha) — a legacy lock is
+    LOCK-INADMISSIBLE, never silently reusable — AND the lock binds the
+    PROMOTION receipt of the SAME universe with an artifact map IDENTICAL to
+    the receipt's (the lock writer may only lock hashes the validated
+    promotion named)."""
     reasons = []
     capdir = capability_dir(fam_c_dir, cell["block"], cell["universe"],
                             cell["family"])
@@ -731,38 +1031,74 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
         lock = _read_json(lp)
     except ValueError as e:
         return _result(cell, [f"capability lock unparsable: {e}"], True)
-    if lock.get("capability_id") != cell["capability_id"]:
-        reasons.append(f"capability lock capability_id "
-                       f"{lock.get('capability_id')!r} != authorized "
-                       f"{cell['capability_id']!r}")
+    rec, want_sha = None, None
     prom = _cell_for_event(fam_c_dir, cell, "PROMOTION")
     if prom is None:
         reasons.append("no PROMOTION cell in the order for "
                        f"{cell['block']}/{cell['family']}/"
                        f"{cell['universe']}")
     else:
-        pst = cell_state(fam_c_dir, prom, freeze_commit)
+        pst = _local_state(fam_c_dir, prom, freeze_commit)
         if pst["status"] != "COMPLETE":
             reasons.append("lock rule: PROMOTION cell not validated "
                            f"COMPLETE ({pst['status']}: "
                            f"{pst['reasons'][:1]})")
         else:
-            want_sha = _sha256_file(os.path.join(run_dir(fam_c_dir, prom),
-                                                 "PROMOTION-RECEIPT.json"))
-            got_sha = lock.get("promotion_receipt_sha256")
-            if not isinstance(got_sha, str) or got_sha != want_sha:
-                reasons.append("capability lock does not bind the promotion "
-                               f"receipt (promotion_receipt_sha256 "
-                               f"{got_sha!r} != {want_sha!r})")
+            rp = os.path.join(run_dir(fam_c_dir, prom),
+                              "PROMOTION-RECEIPT.json")
+            want_sha = _sha256_file(rp)
+            try:
+                rec = _read_json(rp)
+            except ValueError as e:
+                reasons.append(f"lock rule: promotion receipt unreadable: {e}")
+    expect = {"capability_id": cell["capability_id"],
+              "block": cell["block"], "universe": cell["universe"],
+              "family": cell["family"]}
+    if want_sha:
+        expect["promotion_receipt_sha256"] = want_sha
+    if isinstance(rec, dict):
+        cand = (rec.get("candidate") or {}).get("sha256")
+        if isinstance(cand, str):
+            expect["candidate_sha256"] = cand
+            if lock.get("candidate_provenance_sha256") != want_sha:
+                reasons.append("lock rule: candidate_provenance_sha256 "
+                               f"{lock.get('candidate_provenance_sha256')!r} "
+                               f"!= the promotion receipt sha {want_sha!r}")
+        for key in ("protocol_lock_sha256", "execution_lock_sha256",
+                    "evidence_grade", "semantic_core", "t4_semantic_id"):
+            if key in rec:
+                expect[key] = rec[key]
+        for key in ("acquisition_chain_tips", "source_cells"):
+            if key in rec:
+                expect[key] = rec[key]
+        if lock.get("preconditions") != rec.get("preconditions") or \
+                lock.get("limitations") != rec.get("limitations"):
+            reasons.append("lock rule: preconditions/limitations differ from "
+                           "the validated promotion receipt")
+        rec_arts = rec.get("artifacts") or {}
+        lock_arts = lock.get("artifacts") or {}
+        if set(rec_arts) != set(lock_arts):
+            reasons.append("lock rule: locked artifact set "
+                           f"{sorted(lock_arts)} != receipt-named set "
+                           f"{sorted(rec_arts)} (a lock may only lock hashes "
+                           "the validated promotion named)")
+        else:
+            for name in sorted(rec_arts):
+                if lock_arts.get(name) != rec_arts.get(name):
+                    reasons.append(f"lock rule: artifact {name} hash differs "
+                                   "from the receipt")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from lock import verify_lock as _verify_lock
+    reasons.extend(_verify_lock(lock, expect=expect))
     # the immutable lock: every locked artifact hash verifies against the
     # bytes present in that capability dir.
-    for name, want_sha in sorted((lock.get("artifacts") or {}).items()):
+    for name, want in sorted((lock.get("artifacts") or {}).items()):
         ap = os.path.join(capdir, name)
         if os.path.islink(ap) or not os.path.isfile(ap):
             reasons.append(f"locked artifact missing at {ap}")
-        elif _sha256_file(ap) != want_sha:
+        elif _sha256_file(ap) != want:
             reasons.append(f"locked artifact {name} hash mismatch: locked "
-                           f"{want_sha[:12]} vs present "
+                           f"{str(want)[:12]} vs present "
                            f"{_sha256_file(ap)[:12]}")
     return _result(cell, reasons, True)
 
@@ -775,14 +1111,21 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
 # ---------------------------------------------------------------------------
 
 def emit_promotion_receipt(fam_c_dir, cell, t0_tip, t1_tip,
-                           builder_identity=None):
+                           builder_identity=None, provenance=None):
     """Record the promotion of (block, universe, family)'s capability after
     its T0 and T1 acquisition runs validated COMPLETE. `t0_tip`/`t1_tip`
     are the REAL link_hash tips of those two evidence chains, taken from
     the validated runs; the receipt binds them so the validator can
     re-derive the same tips from the on-disk chains. Writes once: a second
     promotion of the same cell refuses (promotion + locked reuse under
-    workflow control, never a re-promotion). Returns the receipt path."""
+    workflow control, never a re-promotion). Returns the receipt path.
+
+    A12.1: the writer itself calls authorize_event() with the REAL
+    completed-cell set, so a governance artifact can never be minted out of
+    frozen order (audit round-2 #11). `provenance` is the controller-derived
+    causal record (candidate root, artifact hashes, contract, lock SHAs,
+    authorization); without it the receipt is a bare tip binding and the
+    promotion validator will refuse it."""
     for tag, tip in (("T0", t0_tip), ("T1", t1_tip)):
         if not isinstance(tip, str) or len(tip) != 64:
             raise ValueError(f"PROMOTION-DENY {tag} chain tip must be a "
@@ -791,6 +1134,22 @@ def emit_promotion_receipt(fam_c_dir, cell, t0_tip, t1_tip,
     if cell["capability_id"] != want:
         raise ValueError(f"PROMOTION-DENY cell capability_id "
                          f"{cell['capability_id']!r} != derived {want!r}")
+    if cell.get("event") != "PROMOTION":
+        raise ValueError(f"PROMOTION-DENY cell event {cell.get('event')!r} "
+                         "is not PROMOTION")
+    try:
+        exp = load_expansion(fam_c_dir)
+        done = completed_cells(fam_c_dir, None, exp)
+        auth_cell, reasons = authorize_event(
+            exp, cell["block"], cell["family"], "PROMOTION",
+            cell["universe"], done)
+    except (ValueError, OSError) as e:
+        raise PermissionError(f"PROMOTION-DENY authorization unreadable: {e}")
+    if reasons:
+        raise PermissionError(reasons[0])
+    if auth_cell is None or auth_cell["cell_id"] != cell["cell_id"]:
+        raise PermissionError("PROMOTION-DENY authorize_event resolved a "
+                              "different cell")
     d = ensure_namespace(fam_c_dir, cell["block"], cell["universe"],
                          cell["family"],
                          tail=("runs", cell["cell_id"]))
@@ -807,6 +1166,12 @@ def emit_promotion_receipt(fam_c_dir, cell, t0_tip, t1_tip,
                                           time.gmtime())}
     if builder_identity:
         receipt["builder_identity"] = dict(builder_identity)
+    if provenance:
+        for k, v in provenance.items():
+            if k in ("event", "cell_id", "block", "family", "universe",
+                     "capability_id", "acquisition_chain_tips"):
+                continue  # never let provenance overwrite the bound fields
+            receipt[k] = v
     with open(rp, "w") as f:
         json.dump(receipt, f, indent=1)
     return rp
@@ -814,37 +1179,119 @@ def emit_promotion_receipt(fam_c_dir, cell, t0_tip, t1_tip,
 
 def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),
                          version="1.0.0", manifest_obj=None,
-                         training_receipts=(), builder_identity=None):
+                         training_receipts=(), builder_identity=None,
+                         receipt=None, receipt_path=None):
     """Seal (block, universe, family)'s capability: write the immutable
-    CAPABILITY_LOCK.json in the derived capability dir, binding every
-    artifact's exact hash, the capability manifest, and the sha256 of the
-    PROMOTION receipt of the SAME universe (promotion + locked reuse under
-    workflow control). `artifact_paths` are the capability files already
-    present in the capability dir. Delegates to lock.promote (production
-    machinery); refuses once the lock exists. Returns the lock path."""
+    estimand-aware CAPABILITY_LOCK.json in the derived capability dir.
+
+    A12.2: every lock field is taken from the VALIDATED PROMOTION receipt
+    (`receipt`/`receipt_path`) — block/universe/family, capability id,
+    acquisition chain tips, source cells, producer identity, protocol and
+    execution lock SHAs, semantic core / preconditions / limitations, the
+    auditor T4 semantic id, evidence grade, candidate root and the
+    provenance sha — and `artifact_paths` must name exactly the artifacts
+    that receipt names. The operator cannot widen the lock: a file merely
+    present in the capability dir is not lockable. Refuses once the lock
+    exists. Returns the lock path."""
     want = capability_id(cell["block"], cell["universe"], cell["family"])
     if cell["capability_id"] != want:
         raise ValueError(f"LOCK-DENY cell capability_id "
                          f"{cell['capability_id']!r} != derived {want!r}")
+    if receipt is None:
+        prom = _cell_for_event(fam_c_dir, cell, "PROMOTION")
+        if prom is None:
+            raise ValueError("LOCK-DENY no PROMOTION cell in the order for "
+                             f"{cell['block']}/{cell['universe']}/"
+                             f"{cell['family']}")
+        rp = receipt_path or os.path.join(run_dir(fam_c_dir, prom),
+                                          "PROMOTION-RECEIPT.json")
+        if os.path.islink(rp) or not os.path.isfile(rp):
+            raise PermissionError(f"LOCK-DENY no promotion receipt at {rp} "
+                                  "(promote the universe before locking it)")
+        receipt, receipt_path = _read_json(rp), rp
+    # A12.1: the lock may only be minted from a receipt whose provenance
+    # RE-VALIDATES here. Without this gate, a receipt forged for this cell
+    # plus artifact bytes copied in from another universe (hash-matching, so
+    # the artifact check below cannot tell) would mint a lock.
+    prom_cell = _cell_for_event(fam_c_dir, cell, "PROMOTION")
+    if prom_cell is not None:
+        runs = {}
+        for ev in ("T0", "T1"):
+            acq = _cell_for_event(fam_c_dir, cell, ev)
+            if acq is None:
+                continue
+            if _local_state(fam_c_dir, acq, None)["status"] == "COMPLETE":
+                runs[ev] = run_dir(fam_c_dir, acq)
+        prov = _promotion_provenance_reasons(fam_c_dir, prom_cell, receipt, runs)
+        if prov:
+            raise PermissionError("LOCK-INADMISSIBLE: promotion receipt "
+                                  "provenance does not re-validate: "
+                                  + " | ".join(prov[:3]))
+    # Presence is not truthiness: a frozen contract may legitimately declare
+    # NO limitations (fam05's K.md does not), so an empty list is a real
+    # value. The fields that must carry content are checked separately, so
+    # an empty provenance map can never pass as "present".
+    need = ("acquisition_chain_tips", "source_cells", "candidate",
+            "artifacts", "semantic_core", "preconditions", "limitations",
+            "t4_semantic_id", "evidence_grade", "producer_identity",
+            "protocol_lock_sha256", "execution_lock_sha256")
+    missing = [k for k in need if k not in receipt or receipt[k] is None]
+    empty = [k for k in need if k not in ("preconditions", "limitations")
+             and not receipt.get(k)]
+    if missing or empty:
+        raise PermissionError("LOCK-INADMISSIBLE: promotion receipt lacks "
+                              "estimand provenance field(s): "
+                              + ", ".join(missing or empty))
     capdir = ensure_namespace(fam_c_dir, cell["block"], cell["universe"],
                               cell["family"], tail=("capability",))
-    prom = _cell_for_event(fam_c_dir, cell, "PROMOTION")
-    if prom is None:
-        raise ValueError("LOCK-DENY no PROMOTION cell in the order for "
-                         f"{cell['block']}/{cell['universe']}/"
-                         f"{cell['family']}")
-    prp = os.path.join(run_dir(fam_c_dir, prom), "PROMOTION-RECEIPT.json")
-    if os.path.islink(prp) or not os.path.isfile(prp):
-        raise PermissionError(f"LOCK-DENY no promotion receipt at {prp} "
-                              "(promote the universe before locking it)")
-    arts = [os.path.join(capdir, os.path.basename(p)) for p in artifact_paths]
+    named = receipt["artifacts"]
+    if artifact_paths:
+        given = {os.path.basename(p) for p in artifact_paths}
+        if given != set(named):
+            raise PermissionError(
+                "LOCK-DENY artifact set differs from the receipt-named set "
+                f"({sorted(given)} != {sorted(named)}); a lock may only lock "
+                "hashes the validated promotion named")
+    arts = []
+    for name, want_sha in sorted(named.items()):
+        if os.path.basename(name) != name:
+            raise PermissionError(f"LOCK-DENY artifact name {name!r} is not a "
+                                  "bare filename")
+        p = os.path.join(capdir, name)
+        if os.path.islink(p) or not os.path.isfile(p):
+            raise PermissionError(f"LOCK-DENY receipt-named artifact {name} "
+                                  f"absent from {capdir}")
+        if _sha256_file(p) != want_sha:
+            raise PermissionError(f"LOCK-DENY receipt-named artifact {name} "
+                                  f"hash {want_sha[:12]} != present "
+                                  f"{_sha256_file(p)[:12]}")
+        arts.append(p)
+    if receipt_path is None:
+        prom = _cell_for_event(fam_c_dir, cell, "PROMOTION")
+        receipt_path = os.path.join(run_dir(fam_c_dir, prom),
+                                    "PROMOTION-RECEIPT.json")
+    receipt_sha = _sha256_file(receipt_path)
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from lock import promote as _lock_promote
     return _lock_promote(
         capdir, cell["capability_id"], version, arts,
         manifest_obj if manifest_obj is not None else {},
         training_receipts or [], builder_identity or {},
-        promotion_receipt_sha256=_sha256_file(prp))
+        promotion_receipt_sha256=receipt_sha,
+        block=cell["block"], universe=cell["universe"],
+        family=cell["family"],
+        acquisition_chain_tips=receipt["acquisition_chain_tips"],
+        source_cells=receipt["source_cells"],
+        producer_identity=receipt["producer_identity"],
+        protocol_lock_sha256=receipt["protocol_lock_sha256"],
+        execution_lock_sha256=receipt["execution_lock_sha256"],
+        semantic_core=receipt["semantic_core"],
+        preconditions=receipt["preconditions"],
+        limitations=receipt["limitations"],
+        t4_semantic_id=receipt["t4_semantic_id"],
+        evidence_grade=receipt["evidence_grade"],
+        candidate_sha256=receipt["candidate"]["sha256"],
+        candidate_provenance_sha256=receipt_sha)
 
 
 def completed_cells(fam_c_dir, freeze_commit=None, expansion=None):
@@ -857,10 +1304,17 @@ def completed_cells(fam_c_dir, freeze_commit=None, expansion=None):
     """
     exp = expansion if expansion is not None else load_expansion(fam_c_dir)
     done = {}
+    prefix_ok = True
     for c in exp["cells"]:
-        st = cell_state(fam_c_dir, c, freeze_commit)
-        if st["status"] == "COMPLETE":
+        # A12.1: completion is order-admissible, so ONE local validation per
+        # cell plus a prefix walk gives the same answer as calling the
+        # order-aware cell_state() per cell — without the quadratic blow-up
+        # of re-validating every earlier cell on every call.
+        st = _local_state(fam_c_dir, c, freeze_commit)
+        if prefix_ok and st["status"] == "COMPLETE":
             done[c["cell_id"]] = os.path.basename(run_dir(fam_c_dir, c))
+        else:
+            prefix_ok = False
     return done
 
 

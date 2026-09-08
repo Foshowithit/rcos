@@ -441,6 +441,115 @@ independent falsification probe 23/23. The EXECUTION-LOCK was re-minted as a
 listed amendment over the five changed modules and the PROTOCOL-LOCK carries
 a listed forward amendment for these bytes — no unlisted drift anywhere.
 
+## A12 — audit round-2 findings (promotion, estimand locks, decision-driven reuse)
+
+Round 2 returned three implementation units (A12.1 promotion controller,
+A12.2 estimand-aware CAPABILITY_LOCK, A12.3 USE/REJECT/fresh lifecycle) plus
+one shared-contract wording defect. All are closed in production code with
+executable proofs; this slice spends no provider call and executes no
+estimand cell.
+
+```text
+A12.1 promotion controller  harness/promotion.py is the ONLY route that may
+                           mint a capability lock. The operator names an
+                           AUTHORIZED EVENT, never a chain tip, a cell id or
+                           an output directory: advance() derives the next
+                           event from the frozen ORDER-EXPANSION and refuses
+                           out of order (ACQUISITION-REQUIRED /
+                           PROMOTION-DENY). The candidate is causally rooted
+                           in THIS universe's own acquisition evidence — the
+                           T0 arrival payload re-derived on disk — and T1 must
+                           declare and use that same candidate sha256. The
+                           promotion receipt names exactly the three
+                           capability artifacts and binds candidate +
+                           provenance + the authorization cell index; a lock
+                           may only lock hashes the validated receipt named.
+                                                              → smoke_h13
+A12.2 estimand-aware lock   CAPABILITY_LOCK schema v2 carries the estimand
+                           provenance set (block/universe/family,
+                           acquisition_chain_tips, source_cells,
+                           producer_identity, protocol_lock_sha256,
+                           execution_lock_sha256, semantic_core,
+                           preconditions, limitations, t4_semantic_id,
+                           evidence_grade, candidate_sha256,
+                           candidate_provenance_sha256). verify_lock() is the
+                           single validator; a pre-A12 lock is
+                           LOCK-INADMISSIBLE; an estimand-grade lock without
+                           a RATIFIED auditor T4 semantic id is refused; a
+                           capability consumed from an estimand-grade lock by
+                           a run that does not declare estimand grade is
+                           inadmissible (H1 runs are harness-validation
+                           evidence, never estimand data).      → smoke_h3 82/82
+A12.3 USE/REJECT/fresh      the ARRIVAL DECISION drives the reuse ledger: the
+                           runner writes the record in every wired case from
+                           the observed path (use_capability → selected /
+                           loaded / invoked / consumed true; fresh with a
+                           capability available → reuse_rejected true with the
+                           arrival's own recorded reason; fresh with none →
+                           capability_available false), and order.cell_state()
+                           validates that ledger against the manifest, the
+                           arrival and the family's lock grade. A T4 cell that
+                           rejects K is a legal COMPLETE outcome. The legacy
+                           runner `--promote` flag is retired (hard refusal at
+                           the CLI and in main()).               → smoke_h16 27/27
+neutral decision line      one sentence, byte-identical in BOTH arms, in the
+                           shared output contract: choose use_capability only
+                           when a capability-access block is present and
+                           applicable; otherwise choose fresh.
+                                                              → smoke_h16 tail identity
+production acquisition     the experiment is no longer deadlocked at cell 0:
+                           run_arm_h1.py takes the mandated pair
+                           --acquisition-event T0|T1 --acquisition-universe
+                           A|C, authorizes the cell through
+                           order.authorize_event (never the downstream
+                           authorize path), stamps arm=acquisition, builds
+                           the prompt with NO capability-access block, refuses
+                           any non-fresh decision on an acquisition cell, and
+                           writes the same evidence set (chain, identity,
+                           normalized usage, reuse ledger) as any other wired
+                           cell.                                    → smoke_h14
+```
+
+Additional round-2 closures carried in this slice: a model run with zero
+primary work (or a wired run with no usage receipt) is inadmissible
+(ZERO-WORK); production `main()` no longer dies on undefined checker/truth
+names (it consumes the path+sha values execute_arrival bound for THIS run);
+`chain.audit()` verifies the genesis link on its own terms instead of
+trusting it; and `cell_state()` can no longer report a locally-valid cell
+COMPLETE while an earlier cell of the frozen order is not complete.
+
+Hardening added while integrating the above (each with a failing probe first):
+
+- **Provenance is re-derived at the lock, not trusted from the receipt.**
+  `emit_capability_lock()` re-runs the full A12.1 provenance gate on the
+  receipt before minting. Without it, a receipt forged for this cell plus
+  artifact bytes copied in from another universe (hash-matching, so the
+  artifact check alone cannot tell) minted a lock; `smoke_h13` now refuses it.
+- **`t4_ratified` is derived from the frozen auditor registry, never
+  asserted.** Flipping the boolean on an unratified id no longer upgrades a
+  receipt; the id must equal the `T4-SEMANTIC-IDS.json` entry for that
+  capability (`smoke_h13`).
+- **Presence is not truthiness.** A frozen contract may legitimately declare
+  no limitations (fam05's `K.md` does not), so an empty `limitations` list is
+  a real value; the fields that must carry content are checked separately so
+  an empty provenance map can never pass as "present".
+- **The semantic core keeps the contract's own line structure** — the
+  validator requires `semantic_core` to appear verbatim in the frozen `K.md`,
+  so a normalized single-space join would have made every receipt
+  inadmissible.
+- **V3 closes over the whole harness package root**, not just the runner's
+  import graph: `harness/promotion.py` mints locks and promotion receipts, so
+  it must sit inside the execution authority. `mint_execution_lock.py` adds
+  every `harness/*.py` it finds unlisted (tests are never candidates — the
+  closure maps a module name to `harness/<name>.py`).
+- **`harness/tests/fixture_modelrun.py`** builds a genuinely ELIGIBLE
+  hermetic run through the real writers only (receipt, normalized artifact,
+  identity binding, chain, arrival, reuse record). Fixtures the production
+  classifier rejects cannot prove anything about the production classifier:
+  `smoke_h3`'s estimand-eligible fixture and `smoke_h12`'s cell fixtures now
+  use it, and H12 drives the real C-universe cells (global order) before A's
+  downstream T2.
+
 ## Status
 
 - [ ] H1 specified (this document) — implementation open

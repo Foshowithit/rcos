@@ -36,6 +36,8 @@ os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 import order as ORD
 import chain as CH
+import promotion
+from fixture_modelrun import build_model_run
 
 BASE = "/tmp/h12-smoke"
 results = []
@@ -61,18 +63,31 @@ os.makedirs(state_root)
 os.chmod(state_root, 0o755)
 shutil.copy2(os.path.join(FAMC, "ORDER.md"),
              os.path.join(state_root, "ORDER.md"))
+# A12.1: promotion derives the semantic contract from the FROZEN family
+# contract, so the throwaway instance needs the real families/ tree.
+fams = os.path.join(state_root, "families")
+os.makedirs(fams)
+os.chmod(fams, 0o755)
+for f in ("fam05", "fam03"):
+    shutil.copytree(os.path.join(FAMC, "families", f),
+                    os.path.join(fams, f))
+    os.chmod(os.path.join(fams, f), 0o755)
+# A12.1/A12.2: the promotion receipt binds the frozen lock SHAs, so the
+# throwaway instance carries the real locks.
+for f in ("PROTOCOL-LOCK.json", "EXECUTION-LOCK.json"):
+    shutil.copy2(os.path.join(FAMC, f), os.path.join(state_root, f))
 EXPANSION = json.load(open(os.path.join(FAMC, "ORDER-EXPANSION.json")))
 json.dump(EXPANSION, open(os.path.join(state_root,
                                        "ORDER-EXPANSION.json"), "w"))
 ORDER_SHA = ORD.load_expansion(state_root)["order_sha256"]
 
 
-def cell(event):
+def cell(event, universe="A"):
     for c in EXPANSION["cells"]:
-        if (c["block"] == "PQ" and c["universe"] == "A"
+        if (c["block"] == "PQ" and c["universe"] == universe
                 and c["family"] == "fam05" and c["event"] == event):
             return c
-    raise SystemExit(f"no PQ/A/fam05 cell for event {event}")
+    raise SystemExit(f"no PQ/{universe}/fam05 cell for event {event}")
 
 
 T0, T1, PROM, LOCK, T2 = (cell("T0"), cell("T1"), cell("PROMOTION"),
@@ -125,19 +140,16 @@ def tip_of(c):
     return tip
 
 
-def complete_model_cell(c):
-    """A hermetic, genuinely ELIGIBLE model-run cell: production manifest,
-    real evidence chain, identity.json present, no usage receipts (the real
-    classifier skips the receipt loops by its own contract)."""
-    d = run_dir_of(c)
-    m = manifest_for(c)
-    json.dump(m, open(os.path.join(d, "H1-RUN-MANIFEST.json"), "w"))
-    json.dump({"endpoint": "https://api.router9.com/v1",
-               "model_requested": "minimax-m3",
-               "model_returned": "minimax-m3"},
-              open(os.path.join(d, "identity.json"), "w"))
-    write_chain(c, m)
-    return d, m
+def complete_model_cell(c, capability=None, decision="fresh"):
+    """A hermetic, genuinely ELIGIBLE model-run cell built by the shared
+    fixture: production manifest + real usage receipt/normalized artifact +
+    identity binding + real evidence chain + arrival + reuse record. A
+    fixture the production classifier rejects would prove nothing about the
+    production classifier (audit round 2: ZERO-WORK and unwired ledgers are
+    INADMISSIBLE)."""
+    d = build_model_run(state_root, cell=c, freeze_commit=FREEZE_COMMIT,
+                        capability=capability, decision=decision)
+    return d, json.load(open(os.path.join(d, "H1-RUN-MANIFEST.json")))
 
 
 def st(c):
@@ -155,11 +167,14 @@ check("T0 acquisition cell validated COMPLETE (manifest+chain+admissibility)",
       a0["status"] == "COMPLETE", str(a0))
 check("T1 acquisition cell validated COMPLETE (manifest+chain+admissibility)",
       a1["status"] == "COMPLETE", str(a1))
+FIXM = {c["cell_id"]: json.load(open(os.path.join(run_dir_of(c),
+                                                 "H1-RUN-MANIFEST.json")))
+        for c in (T0, T1)}
 check("T0 manifest carries the 13 production order-bound fields",
-      set(manifest_for(T0)) >= {"cell_id", "cell_index", "block", "family",
-                                "task", "cell_event", "cell_kind",
-                                "cell_universe", "cell_letter", "lane",
-                                "arm", "capability_id", "order_sha256"})
+      set(FIXM[T0["cell_id"]]) >= {"cell_id", "cell_index", "block", "family",
+                                   "task", "cell_event", "cell_kind",
+                                   "cell_universe", "cell_letter", "lane",
+                                   "arm", "capability_id", "order_sha256"})
 from admissibility import classify_run_dir, ELIGIBLE
 adm_status, adm_why = classify_run_dir(run_dir_of(T0), FREEZE_COMMIT)
 check("fixture is ELIGIBLE under the REAL admissibility classifier (no stub)",
@@ -171,7 +186,7 @@ check("progress ledger counts exactly the two validated acquisition cells",
 # mutation: a manifest field that disagrees with the authorized cell
 d0 = run_dir_of(T0)
 mf0 = os.path.join(d0, "H1-RUN-MANIFEST.json")
-good0 = manifest_for(T0)
+good0 = FIXM[T0["cell_id"]]
 json.dump(dict(good0, cell_index=good0["cell_index"] + 1), open(mf0, "w"))
 bad = st(T0)
 check("manifest cell_index mutation refused",
@@ -228,11 +243,21 @@ check("T0 and T1 chains have distinct real tips",
       t0_tip != t1_tip and len(t0_tip) == 64 and len(t1_tip) == 64,
       f"{t0_tip} {t1_tip}")
 
-rp = ORD.emit_promotion_receipt(state_root, PROM, t0_tip, t1_tip,
-                                builder_identity={"builder": "h12-smoke"})
-check("emit_promotion_receipt writes the receipt in the derived run dir",
+# A12.1: the promotion is executed by the CONTROLLER (it derives the event,
+# the candidate root and the artifact provenance). The raw writer is still
+# exercised for its once-only rule below.
+res = promotion.promote_universe(state_root, PROM["block"], PROM["family"],
+                                 PROM["universe"], FREEZE_COMMIT,
+                                 "harness-validation",
+                                 builder_identity={"builder": "h12-smoke"})
+rp = res["receipt"]
+GOOD_RECEIPT = json.load(open(rp))
+check("promotion controller writes the receipt in the derived run dir",
       os.path.isfile(rp)
       and os.path.dirname(rp) == run_dir_of(PROM), rp)
+check("receipt binds the real acquisition tips",
+      GOOD_RECEIPT["acquisition_chain_tips"] == {"T0": t0_tip,
+                                                 "T1": t1_tip})
 p1 = st(PROM)
 check("PROMOTION cell validated COMPLETE from the real acquisition tips",
       p1["status"] == "COMPLETE", str(p1))
@@ -261,7 +286,7 @@ check("fabricated model-run manifest in a PROMOTION cell refused",
 os.unlink(fm)
 
 # receipt binds a tip the validated chain does not end at
-json.dump(dict(json.load(open(rp)),
+json.dump(dict(GOOD_RECEIPT,
                acquisition_chain_tips={"T0": "a" * 64, "T1": t1_tip}),
           open(rp, "w"))
 bad = st(PROM)
@@ -270,7 +295,7 @@ check("promotion receipt binding a bogus T0 tip refused",
       and any("binds T0 tip" in r for r in bad["reasons"]), str(bad))
 
 # swapped tips (T0 under T1) must also be refused
-json.dump(dict(json.load(open(rp)),
+json.dump(dict(GOOD_RECEIPT,
                acquisition_chain_tips={"T0": t1_tip, "T1": t0_tip}),
           open(rp, "w"))
 bad = st(PROM)
@@ -280,9 +305,7 @@ check("promotion receipt with swapped T0/T1 tips refused",
       and any("binds T1 tip" in r for r in bad["reasons"]), str(bad))
 
 # receipt naming another universe
-json.dump(dict(json.load(open(rp)), universe="C",
-               acquisition_chain_tips={"T0": t0_tip, "T1": t1_tip}),
-          open(rp, "w"))
+json.dump(dict(GOOD_RECEIPT, universe="C"), open(rp, "w"))
 bad = st(PROM)
 check("promotion receipt for another universe refused",
       bad["status"] == "INADMISSIBLE"
@@ -290,24 +313,16 @@ check("promotion receipt for another universe refused",
       str(bad))
 
 # missing receipt
-json.dump(dict(json.load(open(rp)), universe="A",
-               acquisition_chain_tips={"T0": t0_tip, "T1": t1_tip}),
-          open(rp, "w"))
+json.dump(GOOD_RECEIPT, open(rp, "w"))
 os.unlink(rp)
 bad = st(PROM)
 check("missing promotion receipt refuses the PROMOTION cell",
       bad["status"] == "INCOMPLETE"
       and any("no promotion receipt" in r for r in bad["reasons"]), str(bad))
 
-# rewrite the receipt directly: the receipt file was deleted above, so the
-# writer's once-only rule is satisfied; this is the same content the writer
-# produced (the restore path must be exercised without a second promotion.
-json.dump({"event": "PROMOTION", "cell_id": PROM["cell_id"],
-           "block": PROM["block"], "family": PROM["family"],
-           "universe": PROM["universe"],
-           "capability_id": PROM["capability_id"],
-           "acquisition_chain_tips": {"T0": t0_tip, "T1": t1_tip},
-           "timestamp": "2026-09-08T00:00:00Z"}, open(rp, "w"))
+# restore the controller's exact receipt bytes: the file was deleted above,
+# so the writer's once-only rule is satisfied and no second promotion runs.
+json.dump(GOOD_RECEIPT, open(rp, "w"))
 check("PROMOTION cell COMPLETE again after restore",
       st(PROM)["status"] == "COMPLETE", str(st(PROM)))
 
@@ -327,13 +342,12 @@ check("PROMOTION cell COMPLETE after the T1 chain is restored",
 # ---------------------------------------------------------------------------
 capdir = ORD.ensure_namespace(state_root, LOCK["block"], LOCK["universe"],
                               LOCK["family"], tail=("capability",))
-art = {}
-for name, body in (("engine.py", "def run(fm, rec, out):\n    pass\n"),
-                   ("manifest.json", '{"capability_id": "fam05-PQ-A-K"}\n'),
-                   ("adapter_notes.md", "h12 fixture\n")):
-    p = os.path.join(capdir, name)
-    open(p, "w").write(body)
-    art[name] = p
+# The artifacts are the ones the promotion controller MINTED: the lock may
+# only name the receipt's artifacts, and overwriting them here would (rightly)
+# void the promotion receipt's provenance.
+art = {n: os.path.join(capdir, n) for n in promotion.ARTIFACT_NAMES}
+check("the controller minted all three capability artifacts",
+      all(os.path.isfile(p) for p in art.values()), sorted(art))
 
 c0 = st(LOCK)
 check("CAPABILITY_LOCK cell INCOMPLETE before the lock exists",
@@ -377,7 +391,7 @@ json.dump(dict(lock_obj, promotion_receipt_sha256="b" * 64), open(lp, "w"))
 bad = st(LOCK)
 check("lock whose promotion_receipt_sha256 does not match refused",
       bad["status"] == "INADMISSIBLE"
-      and any("does not bind the promotion receipt" in r
+      and any("promotion_receipt_sha256" in r and "LOCK-INADMISSIBLE" in r
               for r in bad["reasons"]), str(bad))
 
 # lock naming another universe's capability
@@ -385,7 +399,8 @@ json.dump(dict(lock_obj, capability_id="fam05-PQ-C-K"), open(lp, "w"))
 bad = st(LOCK)
 check("lock naming another universe's capability refused",
       bad["status"] == "INADMISSIBLE"
-      and any("capability lock capability_id" in r for r in bad["reasons"]),
+      and any("capability_id 'fam05-PQ-C-K'" in r
+              and "LOCK-INADMISSIBLE" in r for r in bad["reasons"]),
       str(bad))
 
 json.dump(lock_obj, open(lp, "w"))
@@ -406,10 +421,34 @@ shutil.move(os.path.join(capdir, "adapter_notes.md.bak"),
 # ---------------------------------------------------------------------------
 # D. downstream acquisition after promotion + locked capability
 # ---------------------------------------------------------------------------
-complete_model_cell(T2)
+# The order is GLOBAL: the C universe's four fam05 cells (indices 4..7) run
+# before A's T2 (index 8), so they must be genuinely complete first.
+for ev in ("T0", "T1"):
+    complete_model_cell(cell(ev, "C"))
+promotion.promote_universe(state_root, "PQ", "fam05", "C", FREEZE_COMMIT,
+                           "harness-validation")
+promotion.lock_universe(state_root, "PQ", "fam05", "C", FREEZE_COMMIT,
+                        "harness-validation")
+ccapdir = ORD.capability_dir(state_root, "PQ", "C", "fam05")
+check("the C universe is promoted and locked before A's T2",
+      os.path.isfile(os.path.join(ccapdir, "CAPABILITY_LOCK.json"))
+      and all(st(cell(ev, "C"))["status"] == "COMPLETE"
+              for ev in ("T0", "T1", "PROMOTION", "CAPABILITY_LOCK")))
+
+# A's T2 is a DOWNSTREAM cell with a locked capability available: the fixture
+# chooses fresh, which the ledger must record as an explicit REJECT (A12.3).
+LOCKED = {"capability_id": "fam05-PQ-A-K",
+          "engine_sha256": ORD._sha256_file(os.path.join(capdir, "engine.py"))}
+complete_model_cell(T2, capability=LOCKED, decision="fresh")
 t2 = st(T2)
 check("T2 acquisition cell validated COMPLETE once the capability is locked",
       t2["status"] == "COMPLETE", str(t2))
+T2M = json.load(open(os.path.join(run_dir_of(T2), "H1-RUN-MANIFEST.json")))
+T2REC = json.load(open(os.path.join(run_dir_of(T2), T2M["reuse_record"])))
+check("a fresh decision with a capability available is recorded as REJECT",
+      T2REC["capability_available"] is True
+      and T2REC["reuse_rejected"] is True
+      and bool(T2REC["reuse_rejection_reason"]), str(T2REC))
 done = ORD.completed_cells(state_root, expansion=EXPANSION)
 check("progress ledger counts all five validated events of this universe",
       {T0["cell_id"], T1["cell_id"], PROM["cell_id"], LOCK["cell_id"],
@@ -430,7 +469,7 @@ check("T2 COMPLETE again after the namespace mode is repaired",
 
 uni = os.path.join(state_root, "state", "PQ", "A")
 shadow = os.path.join(state_root, "state", "PQ", "C")
-os.makedirs(shadow)
+os.makedirs(shadow, exist_ok=True)
 os.chmod(shadow, 0o755)
 shutil.move(uni, uni + ".real")
 os.symlink(shadow, uni)

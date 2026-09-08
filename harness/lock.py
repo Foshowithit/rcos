@@ -1,12 +1,51 @@
 #!/usr/bin/env python3
 """H3 CAPABILITY_LOCK enforcement: promotion writes once, downstream is
 read-only. The loader resolves by exact hash, verifies bytes
-pre-execution, and refuses on any mismatch. Stdlib only.
+pre-execution, and refuses on any mismatch.
+
+A12.2 (audit round-2 #12/#14) — the lock is now ESTIMAND-AWARE. A lock that
+does not carry the full estimand field set is not merely incomplete, it is
+INADMISSIBLE: `verify_lock()` returns a named reason for every missing or
+malformed field and every caller refuses. Legacy locks (the pre-A12 shape,
+which recorded only artifacts + a promotion receipt sha) are therefore
+LOCK-INADMISSIBLE by construction: they can never be silently treated as a
+frozen capability again. Stdlib only.
 """
 import hashlib
 import json
 import os
+import re
 import time
+
+LOCK_SCHEMA_VERSION = "capability-lock-v2"
+
+# The complete estimand-aware field set (audit round-2 item #9). Every field
+# must be present AND carry the right shape; a lock missing any of them is
+# inadmissible. Additions require a schema-version bump + re-freeze.
+LOCK_REQUIRED_FIELDS = (
+    "schema_version",            # == LOCK_SCHEMA_VERSION
+    "block", "universe", "family",
+    "capability_id", "version",
+    "acquisition_chain_tips",    # {"T0": 64hex, "T1": 64hex} distinct
+    "source_cells",              # {"T0": cell_id, "T1": cell_id}
+    "producer_identity",         # dict (builder/lane/model evidence)
+    "protocol_lock_sha256",      # 64hex, matches the frozen protocol lock
+    "execution_lock_sha256",     # 64hex, matches the frozen execution lock
+    "artifacts",                 # {name: 64hex} exactly the promoted set
+    "semantic_core",             # nonempty str
+    "preconditions",             # list[str] (may be empty)
+    "limitations",               # list[str] (may be empty)
+    "t4_semantic_id",            # auditor-side conformance id (nonempty str)
+    "evidence_grade",            # "estimand" | "harness-validation"
+    "candidate_sha256",          # 64hex: causal root of the capability
+    "candidate_provenance_sha256",  # 64hex: sha256 of the promotion receipt
+    "promotion_receipt_sha256",
+    "manifest", "manifest_sha256",
+    "locked_at",
+)
+
+_HEX64 = re.compile(r"^[0-9a-f]{64}$")
+_GRADES = ("estimand", "harness-validation")
 
 
 def _sha(path):
@@ -14,15 +53,135 @@ def _sha(path):
         return hashlib.sha256(f.read()).hexdigest()
 
 
+def verify_lock(lock, expect=None):
+    """Return a list of refusal reasons; empty means the lock is admissible.
+
+    `expect` may pin {"capability_id", "block", "universe", "family",
+    "protocol_lock_sha256", "execution_lock_sha256", "candidate_sha256",
+    "promotion_receipt_sha256", "evidence_grade"}; every pinned value must
+    match exactly. Legacy / malformed locks produce a `LOCK-INADMISSIBLE`
+    reason naming the exact field, never a silent pass.
+    """
+    out = []
+    if not isinstance(lock, dict):
+        return ["LOCK-INADMISSIBLE: lock is not a JSON object"]
+    sv = lock.get("schema_version")
+    if sv is None:
+        out.append("LOCK-INADMISSIBLE: legacy lock (no schema_version; "
+                   "pre-A12 locks carry no estimand fields and may not be "
+                   "reused)")
+    elif sv != LOCK_SCHEMA_VERSION:
+        out.append(f"LOCK-INADMISSIBLE: schema_version {sv!r} != "
+                   f"{LOCK_SCHEMA_VERSION!r}")
+    missing = [f for f in LOCK_REQUIRED_FIELDS
+               if f not in lock or lock.get(f) is None]
+    if missing:
+        out.append("LOCK-INADMISSIBLE: missing required field(s): "
+                   + ", ".join(sorted(missing)))
+    for f in ("protocol_lock_sha256", "execution_lock_sha256",
+              "candidate_sha256", "candidate_provenance_sha256",
+              "promotion_receipt_sha256", "manifest_sha256"):
+        v = lock.get(f)
+        if v is not None and not (isinstance(v, str) and _HEX64.match(v)):
+            out.append(f"LOCK-INADMISSIBLE: {f} must be 64-hex, got {v!r}")
+    tips = lock.get("acquisition_chain_tips")
+    if tips is not None:
+        if not isinstance(tips, dict) or set(tips) != {"T0", "T1"}:
+            out.append("LOCK-INADMISSIBLE: acquisition_chain_tips must name "
+                       f"exactly T0 and T1, got {tips!r}")
+        else:
+            for ev in ("T0", "T1"):
+                if not _HEX64.match(str(tips[ev])):
+                    out.append(f"LOCK-INADMISSIBLE: acquisition_chain_tips"
+                               f"[{ev}] must be 64-hex, got {tips[ev]!r}")
+            if tips.get("T0") == tips.get("T1"):
+                out.append("LOCK-INADMISSIBLE: T0 and T1 tips are identical "
+                           "(promotion requires two distinct runs)")
+    cells = lock.get("source_cells")
+    if cells is not None:
+        if not isinstance(cells, dict) or set(cells) != {"T0", "T1"} \
+                or not all(isinstance(v, str) and v for v in cells.values()):
+            out.append("LOCK-INADMISSIBLE: source_cells must name exactly "
+                       f"the T0 and T1 cell ids, got {cells!r}")
+        elif cells.get("T0") == cells.get("T1"):
+            out.append("LOCK-INADMISSIBLE: T0 and T1 source cells identical")
+    arts = lock.get("artifacts")
+    if arts is not None:
+        if not isinstance(arts, dict) or not arts:
+            out.append("LOCK-INADMISSIBLE: artifacts must be a nonempty "
+                       f"object, got {arts!r}")
+        else:
+            for name, sha in sorted(arts.items()):
+                if not (isinstance(name, str) and name
+                        and os.path.basename(name) == name):
+                    out.append(f"LOCK-INADMISSIBLE: artifact name {name!r} "
+                               "must be a bare filename")
+                if not (isinstance(sha, str) and _HEX64.match(sha)):
+                    out.append(f"LOCK-INADMISSIBLE: artifact {name} hash "
+                               f"{sha!r} is not 64-hex")
+    sc = lock.get("semantic_core")
+    if sc is not None and not (isinstance(sc, str) and sc.strip()):
+        out.append("LOCK-INADMISSIBLE: semantic_core must be a nonempty "
+                   f"string, got {sc!r}")
+    for f in ("preconditions", "limitations"):
+        v = lock.get(f)
+        if v is not None and (not isinstance(v, list)
+                              or not all(isinstance(x, str) for x in v)):
+            out.append(f"LOCK-INADMISSIBLE: {f} must be a list of strings, "
+                       f"got {v!r}")
+    tid = lock.get("t4_semantic_id")
+    if tid is not None and not (isinstance(tid, str) and tid.strip()):
+        out.append("LOCK-INADMISSIBLE: t4_semantic_id must be a nonempty "
+                   f"string, got {tid!r}")
+    grade = lock.get("evidence_grade")
+    if grade is not None and grade not in _GRADES:
+        out.append(f"LOCK-INADMISSIBLE: evidence_grade {grade!r} not in "
+                   f"{list(_GRADES)}")
+    pid = lock.get("producer_identity")
+    if pid is not None and not isinstance(pid, dict):
+        out.append(f"LOCK-INADMISSIBLE: producer_identity must be an object, "
+                   f"got {type(pid).__name__}")
+    if expect:
+        for k, want in sorted(expect.items()):
+            got = lock.get(k)
+            if got != want:
+                out.append(f"LOCK-INADMISSIBLE: {k} {got!r} != expected "
+                           f"{want!r}")
+    return out
+
+
 def promote(out_dir, capability_id, version, artifact_paths,
             manifest_obj, training_receipts, builder_identity,
-            promotion_receipt_sha256=None):
-    """Write an immutable CAPABILITY_LOCK. Returns path. Fails if the
-    lock file already exists (promotion writes once; no repromotion).
-    `promotion_receipt_sha256` (optional, additive) records the sha256 of
-    the PROMOTION receipt of the same (block, universe, family), binding
-    the lock to its promotion — promotion + locked reuse under workflow
-    control."""
+            promotion_receipt_sha256=None, *, block=None, universe=None,
+            family=None, acquisition_chain_tips=None, source_cells=None,
+            producer_identity=None, protocol_lock_sha256=None,
+            execution_lock_sha256=None, semantic_core=None, preconditions=None,
+            limitations=None, t4_semantic_id=None, evidence_grade=None,
+            candidate_sha256=None, candidate_provenance_sha256=None):
+    """Write an immutable, estimand-aware CAPABILITY_LOCK. Returns path.
+
+    Fails if the lock file already exists (promotion writes once; no
+    repromotion) and fails closed if ANY estimand field is absent: a lock
+    may only be minted from a validated promotion, never from whatever
+    artifacts happen to sit in a directory (audit round-2 #11). The
+    caller-supplied `artifact_paths` are hashed as the lock's artifact map,
+    so the production writer passes EXACTLY the paths named by the
+    validated promotion receipt.
+    """
+    missing = [n for n, v in (
+        ("block", block), ("universe", universe), ("family", family),
+        ("acquisition_chain_tips", acquisition_chain_tips),
+        ("source_cells", source_cells), ("producer_identity", producer_identity),
+        ("protocol_lock_sha256", protocol_lock_sha256),
+        ("execution_lock_sha256", execution_lock_sha256),
+        ("semantic_core", semantic_core), ("preconditions", preconditions),
+        ("limitations", limitations), ("t4_semantic_id", t4_semantic_id),
+        ("evidence_grade", evidence_grade), ("candidate_sha256", candidate_sha256),
+        ("candidate_provenance_sha256", candidate_provenance_sha256),
+        ("promotion_receipt_sha256", promotion_receipt_sha256)) if v is None]
+    if missing:
+        raise ValueError("LOCK-INADMISSIBLE: refuse to mint a lock missing "
+                         "estimand field(s): " + ", ".join(missing))
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "CAPABILITY_LOCK.json")
     if os.path.exists(path):
@@ -30,8 +189,22 @@ def promote(out_dir, capability_id, version, artifact_paths,
     art = {}
     for p in sorted(artifact_paths):
         art[os.path.basename(p)] = _sha(p)
-    lock = {"capability_id": capability_id, "version": version,
+    lock = {"schema_version": LOCK_SCHEMA_VERSION,
+            "block": block, "universe": universe, "family": family,
+            "capability_id": capability_id, "version": version,
+            "acquisition_chain_tips": dict(acquisition_chain_tips),
+            "source_cells": dict(source_cells),
+            "producer_identity": dict(producer_identity),
+            "protocol_lock_sha256": protocol_lock_sha256,
+            "execution_lock_sha256": execution_lock_sha256,
             "artifacts": art,
+            "semantic_core": semantic_core,
+            "preconditions": list(preconditions),
+            "limitations": list(limitations),
+            "t4_semantic_id": t4_semantic_id,
+            "evidence_grade": evidence_grade,
+            "candidate_sha256": candidate_sha256,
+            "candidate_provenance_sha256": candidate_provenance_sha256,
             "promotion_receipt_sha256": promotion_receipt_sha256,
             "manifest_sha256": hashlib.sha256(
                 json.dumps(manifest_obj, sort_keys=True).encode()).hexdigest(),
@@ -39,6 +212,10 @@ def promote(out_dir, capability_id, version, artifact_paths,
             "training_receipts": list(training_receipts),
             "builder_identity": dict(builder_identity),
             "locked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+    reasons = verify_lock(lock)
+    if reasons:
+        raise ValueError("LOCK-INADMISSIBLE: refusing to write a lock that "
+                         "fails its own contract: " + "; ".join(reasons))
     with open(path, "w") as f:
         json.dump(lock, f, indent=1)
     return path
@@ -47,10 +224,14 @@ def promote(out_dir, capability_id, version, artifact_paths,
 def load_artifact(lock_path, artifact_name, dest_dir):
     """Resolve ONE artifact by exact locked hash from a source tree.
     `dest_dir` must contain a same-named file whose bytes hash to the
-    locked value; returns the verified path. Refuses otherwise.
+    locked value; returns the verified path. Refuses otherwise — including
+    when the lock itself is legacy/inadmissible (A12.2).
     (The source tree is the harness-controlled capability store —
     callers never supply artifact bytes directly.)"""
     lock = json.load(open(lock_path))
+    reasons = verify_lock(lock)
+    if reasons:
+        raise PermissionError("LOCK-INADMISSIBLE: " + "; ".join(reasons))
     want = lock["artifacts"].get(artifact_name)
     if want is None:
         raise PermissionError(

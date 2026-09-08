@@ -78,8 +78,10 @@ frozen invalid-run taxonomy. No relabeling by behavior is allowed.
   instance subtree is byte-identical to `FREEZE-HASHES.sha256`
   (`verify_instance_frozen`, fail-closed on drift/extras). Correct-arm loads
   go through `lock.load_artifact()` (locked-hash verified pre-execution) and
-  write a `reuse_log` record; promotion via `lock.promote()` fires only on a
-  ship verdict with an explicit `--promote`. Offline wiring compose-check:
+  every wired run writes a decision-driven `reuse_log` record; promotion is
+  the sole route of the A12.1 order-authorized promotion controller
+  (`harness/promotion.py`) — the runner's legacy `--promote` flag is retired
+  by a hard refusal. Offline wiring compose-check:
   `run_arm_h1.py --selfcheck-wire` = ok (fixture, not a run).
 - First frozen-order wired run: `H1-P-fam05-T0` = ship (json-envelope,
   container rc0; manifest verdict `ship`; chain audit intact).
@@ -185,3 +187,73 @@ manifest in the tree is the H1-P-fam05-T0 harness-validation fixture (harness
 validation, never estimand data). The real P/Q calibration pair remains
 time-gated (Q free-tier quota resets 00:00 UTC). Execution stays STOPPED for
 estimand-grade runs pending the auditor's next review.
+
+## Round-2 audit close (A12) — 2026-09-08
+
+The round-2 review accepted the request/identity binding, the prompt byte
+symmetry, the single parser/runtime primitive and the namespace isolation
+under the TCB, and returned three implementation units plus one shared
+contract defect. All are closed in production code, verified offline (no
+provider call, no estimand cell):
+
+- A12.1 promotion controller (`harness/promotion.py`): the sole route that
+  may mint a capability lock. It takes an AUTHORIZED EVENT, never an operator
+  chain tip / cell id / output directory; it derives the candidate from this
+  universe's own T0 arrival payload, requires T1 to declare and use the same
+  candidate sha256, names exactly the three capability artifacts in the
+  promotion receipt, and refuses out-of-order governance
+  (ACQUISITION-REQUIRED / PROMOTION-DENY);
+- A12.2 estimand-aware CAPABILITY_LOCK (`capability-lock-v2`): artifact
+  provenance, semantic_core, preconditions, limitations, auditor T4 semantic
+  id, promotion/evidence hashes and the producer/acquisition bindings are
+  required fields; `verify_lock()` is the single validator; a pre-A12 lock is
+  LOCK-INADMISSIBLE; an estimand-grade lock without a ratified T4 id is
+  refused; consuming an estimand-grade lock without declaring estimand grade
+  is inadmissible;
+- A12.3 USE/REJECT/fresh: the arrival decision drives the reuse ledger in
+  every wired case (use_capability → selected/loaded/invoked/consumed; fresh
+  with a capability available → reuse_rejected with the arrival's recorded
+  reason; fresh with none → capability_available false), the T4 rejection
+  path is a legal COMPLETE outcome, and the legacy runner `--promote` flag is
+  retired by a hard refusal;
+- shared output contract: one neutral line, byte-identical in both arms —
+  choose use_capability only when a capability-access block is present and
+  applicable; otherwise choose fresh.
+
+Also closed in this slice: the production acquisition executor (the
+experiment is no longer mechanically deadlocked at cell 0), the production
+`main()` undefined-name defect, genesis-link verification, and the
+execution-order leakage in `cell_state()`.
+
+Integration hardening found by our own probes while landing the above (each
+had a failing probe before the fix, all in production code):
+
+- `emit_capability_lock()` re-runs the full A12.1 provenance gate on the
+  receipt before minting — a receipt forged for this cell plus artifact bytes
+  copied in from another universe (hash-matching, so the artifact check alone
+  cannot tell) previously minted a lock;
+- `t4_ratified` is DERIVED from the frozen `T4-SEMANTIC-IDS.json`, so flipping
+  the boolean on an unratified id no longer upgrades a receipt;
+- presence is not truthiness: a frozen contract may declare no limitations
+  (fam05's `K.md` does not), so an empty list is a real value while the
+  content-bearing provenance fields stay required;
+- `semantic_core` preserves the contract's own line structure, because the
+  validator requires it verbatim in the frozen `K.md`;
+- V3 closes over the WHOLE `harness/` package root, not just the runner's
+  import graph — `harness/promotion.py` mints locks, so it must sit inside the
+  execution authority;
+- `harness/tests/fixture_modelrun.py` builds a genuinely ELIGIBLE hermetic run
+  through the real writers only; a fixture the production classifier rejects
+  cannot prove anything about the production classifier.
+
+## Non-production entry points (never estimand evidence)
+
+`harness-run/run_arm.py` and `harness-run/p_call.py` are DEVELOPMENT ESCAPES
+from the pre-A11 harness: they call a lane without the wired evidence path
+(no order authorization, no chain, no identity/normalized-usage binding, and
+`p_call.py` still names the superseded `openai-chat-total-input-v1`
+normalizer). They are not production entry points and can never produce
+estimand evidence. The only production execution entry point is
+`harness-run/run_arm_h1.py` with `--block`, the scheduler-derived wired paths,
+and the frozen-order cell authorization.
+

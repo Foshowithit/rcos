@@ -310,8 +310,28 @@ manifest = {"wired": True, "dev_mode": False,
             "order_sha256": good["order_sha256"],
             "instance_freeze_commit": FREEZE_COMMIT}
 mf = os.path.join(rdir, "H1-RUN-MANIFEST.json")
-json.dump(manifest, open(mf, "w"))
 CHAIN_PATH = os.path.join(rdir, "EVIDENCE-CHAIN.jsonl")
+
+# A12.3: a wired run carries the unified arrival decision AND the reuse
+# ledger record DERIVED from it. This T2 fixture chose fresh WITH the
+# capability available => the REJECT path, written by the production writer.
+json.dump({"decision": "fresh",
+           "execution_payload": {"solver_py": "print('h7 fixture')\n"},
+           "notes": "h7 smoke: fresh with capability available"},
+          open(os.path.join(rdir, "arrival.json"), "w"))
+import reuse_log as RL                                        # noqa: E402
+REUSE_NAME = os.path.basename(RL.write_record(
+    rdir, tcell["task"], tcell["lane"], tcell["arm"],
+    reuse_policy="capability-first", capability_available=True,
+    capability_candidate_ids=[tcell["capability_id"]],
+    capability_selected=False, selected_capability_id=None,
+    selected_capability_hash=None, capability_loaded=False,
+    capability_invoked=False, capability_output_consumed=False,
+    capability_materially_contributed=False, contribution_evidence=None,
+    reuse_rejected=True,
+    reuse_rejection_reason="fresh: solver-only run (h7 fixture)"))
+manifest["reuse_record"] = REUSE_NAME
+json.dump(manifest, open(mf, "w"))
 
 
 def build_real_chain(manifest_obj):
@@ -341,12 +361,44 @@ stub_adm.EXCLUDED = "EXCLUDED"
 stub_adm.classify_run_dir = lambda d, fc=None: ("ELIGIBLE", "ok")
 sys.modules["admissibility"] = stub_adm
 try:
+    # A12.1 two-level contract: `_local_state` is the LOCAL evidence gate;
+    # order-aware `cell_state` additionally requires every EARLIER cell of
+    # the frozen expansion to be COMPLETE. This fixture tree holds exactly
+    # one T2 cell, so the local gate is COMPLETE while the order-aware state
+    # must be INADMISSIBLE with the named ORDER-INADMISSIBLE reason.
+    stl = ORD._local_state(state_root, tcell)
+    check("local evidence gate COMPLETE with manifest+chain+admissibility",
+          stl["status"] == "COMPLETE", str(stl))
     st = ORD.cell_state(state_root, tcell)
-    check("validated state COMPLETE only with manifest+chain+admissibility",
-          st["status"] == "COMPLETE", str(st))
+    check("order guard: T2 cannot be COMPLETE while 8 earlier cells are not",
+          st["status"] != "COMPLETE"
+          and any("ORDER-INADMISSIBLE" in r for r in st["reasons"]), str(st))
     done = ORD.completed_cells(state_root, expansion=good)
-    check("progress ledger consumes validated cell state",
-          done == {tcell["cell_id"]: tcell["cell_id"]}, str(done))
+    check("progress ledger consumes validated cell state (prefix rule)",
+          done == {}, str(done))
+
+    # A12.3 ledger-vs-decision: a record that contradicts the arrival's own
+    # executed decision must be refused, and a fresh decision made WITH a
+    # capability available must be recorded as an explicit REJECT.
+    rp = os.path.join(rdir, REUSE_NAME)
+    good_rec = json.load(open(rp))
+    json.dump(dict(good_rec, capability_selected=True, capability_loaded=True,
+                   capability_invoked=True, capability_output_consumed=True,
+                   reuse_rejected=False), open(rp, "w"))
+    stl2 = ORD._local_state(state_root, tcell)
+    check("ledger claiming reuse while the arrival chose fresh is refused",
+          stl2["status"] != "COMPLETE"
+          and any("reuse-ledger" in r for r in stl2["reasons"]),
+          str(stl2["reasons"][:1]))
+    json.dump(dict(good_rec, reuse_rejected=False), open(rp, "w"))
+    stl3 = ORD._local_state(state_root, tcell)
+    check("fresh with a capability available must be recorded as REJECT",
+          stl3["status"] != "COMPLETE"
+          and any("reuse_rejected" in r for r in stl3["reasons"]),
+          str(stl3["reasons"][:1]))
+    json.dump(good_rec, open(rp, "w"))
+    check("ledger restored -> local gate COMPLETE again",
+          ORD._local_state(state_root, tcell)["status"] == "COMPLETE")
 
     stub_adm.classify_run_dir = lambda d, fc=None: ("EXCLUDED", "no identity")
     st2 = ORD.cell_state(state_root, tcell)

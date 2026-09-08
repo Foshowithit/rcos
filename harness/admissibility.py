@@ -86,9 +86,17 @@ def classify_run_dir(run_dir, freeze_commit):
     elif not os.path.exists(os.path.join(run_dir, "identity.json")):
         reason = "no provider identity.json (echoed model id never recorded)"
     else:
-        missing = [r for r in (m.get("usage_receipts") or [])
+        # A12.0 (audit round 2): ZERO-WORK is not evidence. A wired run that
+        # lists no usage receipt never spent model work, and a receipt whose
+        # normalized primary_work (uncached input + output tokens) is zero or
+        # absent records a run that produced no model work. Both are EXCLUDED
+        # — never raised, so a bad run cannot abort a sweep.
+        receipts = m.get("usage_receipts") or []
+        missing = [r for r in receipts
                    if not os.path.exists(os.path.join(run_dir, r))]
-        if missing:
+        if not receipts:
+            reason = "ZERO-WORK: wired run lists no usage receipt"
+        elif missing:
             reason = "usage receipts missing: " + ", ".join(missing)
         elif not os.path.exists(os.path.join(run_dir, "EVIDENCE-CHAIN.jsonl")):
             reason = "no EVIDENCE-CHAIN.jsonl"
@@ -110,6 +118,23 @@ def classify_run_dir(run_dir, freeze_commit):
                     verify_normalized_usage(nu)
                 except ValueError as e:
                     reason = f"normalized usage invalid for {r}: {e}"
+                    break
+                # A12.0 ZERO-WORK: the artifact verified, but a verified
+                # artifact may still record no primary work. A model run that
+                # spent no model work is not admissible evidence (bool is not
+                # an int here: True would otherwise read as 1).
+                try:
+                    obj = json.load(open(nu))
+                except (OSError, ValueError) as e:
+                    reason = f"normalized usage unreadable for {r}: {e}"
+                    break
+                pw = obj.get("primary_work")
+                if isinstance(pw, bool) or not isinstance(pw, int) or pw <= 0:
+                    reason = (
+                        f"ZERO-WORK: {r} records no primary work "
+                        f"(uncached_input + output_tokens == {pw!r}); a model "
+                        "run that spent no model work is not admissible "
+                        "evidence")
                     break
             # A11.2: the declared adapter must be the LANE's adapter for the
             # endpoint/model on the receipt, and the persisted request bytes

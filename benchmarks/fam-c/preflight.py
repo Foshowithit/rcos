@@ -251,6 +251,23 @@ def validate_execution(fam_c_dir):
                 out.append(f"V3 EXECUTION-LOCK: unlisted harness module in "
                            f"the runner's import closure: {rel} (add it to "
                            "the lock via an explicit amendment)")
+    # Item-7 closure, package-wide: the trust boundary is the harness package
+    # ROOT, not just the runner's import graph. A governance module that the
+    # runner does not import (harness/promotion.py mints locks and promotion
+    # receipts) would otherwise execute outside the execution authority.
+    # harness/tests/** stays out: the closure rule maps a module name to
+    # harness/<name>.py, so test modules are never candidates.
+    hdir = os.path.join(root, "harness")
+    if os.path.isdir(hdir):
+        for name in sorted(os.listdir(hdir)):
+            if not name.endswith(".py"):
+                continue
+            rel = f"harness/{name}"
+            if rel not in listed:
+                out.append(f"V3 EXECUTION-LOCK: harness module not listed in "
+                           f"the execution lock: {rel} (the lock must cover "
+                           "the whole harness package root; re-mint via an "
+                           "explicit amendment)")
     return out
 
 
