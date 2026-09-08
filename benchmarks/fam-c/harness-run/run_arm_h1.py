@@ -147,11 +147,19 @@ _CAP_FMT = ("\n" + _CAP_BEGIN + "\nCAPABILITY MANIFEST:\n__MANIFEST__\n"
             "ADAPTER NOTES:\n__NOTES__\nENGINE SOURCE (frozen, do not "
             "modify):\n__ENGINE__\n" + _CAP_END + "\n")
 _PRE = ("You are solving the task below.\n\n")
-# ONE arm-independent output contract. A treatment-only schema
-# ({"records","field_map"} vs {"solver_py"}) is a second hint channel: the
-# shape alone reveals which arm produced the prompt. Identical bytes.
-_OUT = ('\nOutput one JSON object with the keys "result" (your solution '
-        'payload) and "notes" (one line). No explanations, no code fences.')
+# ONE arm-independent output contract (A11b.2). Both arms share byte-
+# identical prompt tails and must answer ONE schema whose "decision" value
+# alone selects the execution path. A treatment-only schema or arm-picked
+# output keys would be a second hint channel (the shape alone would reveal
+# which arm produced the prompt), so the payload keys of BOTH paths are
+# described to BOTH arms. Identical bytes.
+_OUT = ('\nOutput one JSON object with the keys "decision", '
+        '"execution_payload", "notes". "decision" is exactly '
+        '"use_capability" or "fresh". When "decision" is "use_capability", '
+        '"execution_payload" is {"field_map": <object>, "records": <object>}. '
+        'When "decision" is "fresh", "execution_payload" is '
+        '{"solver_py": <python source string of a self-contained solver>}. '
+        '"notes" is one line. No explanations, no code fences.')
 CORRECT = _PRE + _ENVELOPE_FMT + _CAP_FMT + _OUT
 DISABLED = _PRE + _ENVELOPE_FMT + _OUT
 # Counterfactual capability content (disabled-arm runs): builds the
@@ -288,14 +296,159 @@ def h(path):
         return hashlib.sha256(f.read()).hexdigest()
 
 
-def extract(raw, arm):
-    i = raw.find('{"records"' if arm == "correct" else '{"solver_py"')
-    if i >= 0:
-        return json.JSONDecoder().raw_decode(raw[i:])[0], "json-envelope"
-    m = re.search(r"```(?:json|python)?\s*(.*?)\s*```", raw, re.S)
-    if arm == "disabled" and m:
-        return {"solver_py": m.group(1), "notes": "fenced arrival"}, "fence-fallback"
-    raise ValueError("arrival has no parseable envelope")
+_ARRIVAL_KEYS = ("decision", "execution_payload", "notes")
+
+
+def _validate_arrival(obj):
+    """A11b.2 shared-contract gate (fail closed, named errors, no assert).
+
+    One JSON object with the three contract keys, a legal decision, and an
+    execution_payload matching the decision's declared shape. The parser is
+    arm-independent, so arm legality of a decision is checked later at
+    execution (CONTRACT-DECISION-DENY), never here."""
+    if not isinstance(obj, dict):
+        raise ValueError("CONTRACT-PARSE-DENY: arrival is not a JSON object")
+    for key in _ARRIVAL_KEYS:
+        if key not in obj:
+            raise ValueError("CONTRACT-PARSE-DENY: missing key " + repr(key))
+    decision = obj["decision"]
+    if decision not in ("use_capability", "fresh"):
+        raise ValueError("CONTRACT-DECISION-DENY: unknown decision "
+                         + repr(decision))
+    payload = obj["execution_payload"]
+    if not isinstance(payload, dict):
+        raise ValueError("CONTRACT-PARSE-DENY: execution_payload is not a "
+                         "JSON object")
+    if decision == "use_capability":
+        for key in ("field_map", "records"):
+            if key not in payload:
+                raise ValueError("CONTRACT-PARSE-DENY: use_capability "
+                                 "payload missing key " + repr(key))
+    else:  # fresh
+        if "solver_py" not in payload:
+            raise ValueError("CONTRACT-PARSE-DENY: fresh payload missing "
+                             "key 'solver_py'")
+        if not isinstance(payload["solver_py"], str):
+            raise ValueError("CONTRACT-PARSE-DENY: fresh solver_py is not a "
+                             "python source string")
+    return obj
+
+
+def extract(raw):
+    """Parse ONE arm-independent arrival from a model response (A11b.2).
+
+    No arm parameter, no substring search for arm payload keys, no
+    arm-specific branch: a single decoder finds one
+    JSON object and validates it against the shared contract. parse_mode
+    contract preserved: "json-envelope" (whole response or inline object)
+    or "fence-fallback" (object recovered from a fenced code block, parsed
+    to the SAME object shape for every decision). Named CONTRACT-* errors
+    raise on any violation; never assert (-O safe)."""
+    text = (raw or "").strip()
+    if not text:
+        raise ValueError("CONTRACT-PARSE-DENY: empty arrival")
+    try:
+        obj = json.loads(text)
+    except ValueError:
+        pass
+    else:
+        if isinstance(obj, dict):
+            # Whole-response object: validate once, fail closed immediately
+            # with its named error (never fall through to heuristics).
+            return _validate_arrival(obj), "json-envelope"
+    m = re.search(r"```(?:json|python)?\s*(.*?)\s*```", text, re.S)
+    if m:
+        try:
+            obj = json.loads(m.group(1))
+        except ValueError as e:
+            raise ValueError("CONTRACT-PARSE-DENY: fenced arrival is not "
+                             "JSON: " + str(e)) from None
+        if isinstance(obj, dict):
+            return _validate_arrival(obj), "fence-fallback"
+    # Inline JSON object anywhere in prose (generic envelope scan).
+    dec = json.JSONDecoder()
+    i = text.find("{")
+    last_err = None
+    while i >= 0:
+        try:
+            obj, _ = dec.raw_decode(text, i)
+        except ValueError:
+            i = text.find("{", i + 1)
+            continue
+        if isinstance(obj, dict):
+            try:
+                return _validate_arrival(obj), "json-envelope"
+            except ValueError as e:
+                last_err = e
+        i = text.find("{", i + 1)
+    if last_err is not None:
+        raise last_err
+    raise ValueError("CONTRACT-PARSE-DENY: arrival has no parseable envelope")
+
+
+def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
+    """Run one validated A11b.2 arrival through the ONE H1 runtime path.
+
+    The arrival's OWN "decision" selects the path (use_capability -> the
+    locked capability engine; fresh -> a solver); the arm never branches
+    the parser and only gates decision legality. Host-side frozen checker
+    and verdict mapping unchanged (rc 0 -> ship, 1 -> fix, else blocked);
+    truth/checker never enter the jail. Fail closed with named errors
+    (assert-free, -O safe):
+      CONTRACT-DECISION-DENY  decision illegal for the arm (e.g. a disabled
+                              arm returning "use_capability")
+      CONTRACT-ENGINE-DENY    use_capability without a capability engine
+    Returns {"verdict", "checker_returncode", "checker_output",
+             "output_sha256", "decision", "execution_mode",
+             "container_returncode"}."""
+    decision = arrival["decision"]
+    execution_mode = None
+    if decision == "use_capability":
+        if arm != "correct":
+            raise RuntimeError("CONTRACT-DECISION-DENY: decision "
+                               "'use_capability' is legal only on the "
+                               "capability arm, not arm=" + repr(arm))
+        if not cap_engine or not os.path.exists(cap_engine):
+            raise RuntimeError("CONTRACT-ENGINE-DENY: decision "
+                               "'use_capability' without a locked "
+                               "capability engine")
+        shutil.copy2(cap_engine, os.path.join(work, "engine.py"))
+        payload = arrival["execution_payload"]
+        json.dump(payload["records"],
+                  open(os.path.join(work, "records.json"), "w"))
+        json.dump(payload["field_map"],
+                  open(os.path.join(work, "field_map.json"), "w"))
+        command = ["python3", "/work/engine.py", "/work/field_map.json",
+                   "/work/records.json", "/work/OUTPUT.json"]
+        execution_mode = "engine"
+    else:  # fresh — the only legal decision on the disabled arm
+        open(os.path.join(work, "solver.py"), "w").write(
+            arrival["execution_payload"]["solver_py"])
+        command = ["python3", "/work/solver.py", "/task", "/work/OUTPUT.json"]
+        execution_mode = "solver"
+    p = sb.run(command, timeout=120)
+    out = os.path.join(work, "OUTPUT.json")
+    # Copy artifacts back to the committed outdir for auditability.
+    if os.path.exists(out):
+        shutil.copy2(out, os.path.join(outdir, "OUTPUT.json"))
+    # Host-side evaluator only after container; truth/checker never entered jail.
+    checker = os.path.join(taskdir, "..", "check.py")
+    chk = None
+    if os.path.exists(out):
+        chk = subprocess.run([sys.executable, checker,
+                              os.path.basename(taskdir),
+                              os.path.join(outdir, "OUTPUT.json")],
+                             capture_output=True, text=True)
+    verdict = ("ship" if chk and chk.returncode == 0 else
+               "fix" if chk and chk.returncode == 1 else "blocked")
+    return {"verdict": verdict,
+            "checker_returncode": chk.returncode if chk else None,
+            "checker_output": ((chk.stdout or "") + (chk.stderr or ""))[:500]
+                              if chk else "missing output",
+            "output_sha256": h(out) if os.path.exists(out) else None,
+            "decision": decision,
+            "execution_mode": execution_mode,
+            "container_returncode": p.returncode}
 
 
 def call(lane, prompt, outdir, tag):
@@ -965,8 +1118,9 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     open(os.path.join(outdir, "prompt.txt"), "w").write(prompt)
     raw, receipt, nu_path, id_path, identity_family = call(
         lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
-    arrival, parse_mode = extract(raw, arm)
-    open(os.path.join(outdir, "arrival.json"), "w").write(json.dumps(arrival, indent=1))
+    arrival, parse_mode = extract(raw)
+    open(os.path.join(outdir, "arrival.json"), "w").write(
+        json.dumps(arrival, indent=1))
     # DockerSandbox stages its own private copy of `visible` and refuses on
     # drift; its task_snapshot must equal the hash the context was built
     # from (same staged bytes -> same hash), else refuse.
@@ -974,31 +1128,13 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     if sb.task_snapshot != staged_tree:
         raise RuntimeError("CONTEXT-SNAPSHOT-DENY sandbox task_snapshot != "
                            "context_task_snapshot_hash source")
-    # Execute arrival inside H1 jail. No evaluator/truth/checker is mounted.
-    command = None
-    if arm == "correct":
-        shutil.copy2(cap_engine, os.path.join(work, "engine.py"))
-        json.dump(arrival["records"], open(os.path.join(work, "records.json"), "w"))
-        json.dump(arrival["field_map"], open(os.path.join(work, "field_map.json"), "w"))
-        command = ["python3", "/work/engine.py", "/work/field_map.json",
-                   "/work/records.json", "/work/OUTPUT.json"]
-    elif arm == "disabled":
-        open(os.path.join(work, "solver.py"), "w").write(arrival["solver_py"])
-        command = ["python3", "/work/solver.py", "/task", "/work/OUTPUT.json"]
-    else:
-        raise ValueError("unknown arm")
-    p = sb.run(command, timeout=120)
-    out = os.path.join(work, "OUTPUT.json")
-    # Copy artifacts back to the committed outdir for auditability.
-    shutil.copy2(out, os.path.join(outdir, "OUTPUT.json")) if os.path.exists(out) else None
-    # Host-side evaluator only after container; truth/checker never entered jail.
-    checker = os.path.join(taskdir, "..", "check.py")
-    chk = subprocess.run([sys.executable, checker, task,
-                          os.path.join(outdir, "OUTPUT.json")],
-                         capture_output=True, text=True) if os.path.exists(out) else None
-    verdict = ("ship" if chk and chk.returncode == 0 else
-               "fix" if chk and chk.returncode == 1 else "blocked")
-    output_sha = h(out) if os.path.exists(out) else None
+    # Execute the arrival through the ONE runtime path (A11b.2): the
+    # arrival's own decision picks engine vs solver; the arm only gates
+    # decision legality. No evaluator/truth/checker is mounted.
+    execr = execute_arrival(arm, arrival, work, outdir, taskdir,
+                            cap_engine, sb)
+    verdict = execr["verdict"]
+    output_sha = execr["output_sha256"]
 
     # ---- H2/H3 wiring (skipped only under the unwired dev escape) ----
     reuse_path = None
@@ -1026,9 +1162,9 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     manifest = {"lane": lane, "family": family, "task": task, "arm": arm,
                 "parse_mode": parse_mode, "lane_receipt": receipt,
                 "sandbox": sb.manifest(), "task_snapshot": sb.task_snapshot,
-                "container_returncode": p.returncode,
-                "checker_returncode": chk.returncode if chk else None,
-                "checker_output": (chk.stdout + chk.stderr)[:500] if chk else "missing output",
+                "container_returncode": execr["container_returncode"],
+                "checker_returncode": execr["checker_returncode"],
+                "checker_output": execr["checker_output"],
                 "verdict": verdict, "output_sha256": output_sha,
                 "wired": bool(wire),
                 "frozen_commit": frozen,
@@ -1105,7 +1241,9 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                     truth_sha, verdict, output_sha, promote_info)
         # H1-RUN-MANIFEST.json must NOT be rewritten after _wire_chain:
         # genesis binds its hash and any rewrite would break the chain.
-    print(f"{lane}/{family}/{task}/{arm}: {verdict} ({parse_mode}, container rc {p.returncode})")
+    print(f"{lane}/{family}/{task}/{arm}: {verdict} ({parse_mode}, "
+          f"decision {execr['decision']}, container rc "
+          f"{execr['container_returncode']})")
     return 0 if verdict in ("ship", "fix") else 1
 
 
