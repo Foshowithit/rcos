@@ -1,5 +1,5 @@
 {
- "freeze_commit": "5fbea251c5d7a3a88063f3301b8afb9bbc6453bb",
+ "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "freeze_tree": "c20cd08669a1b794d03cdd884b9f198e6f76e1fd",
- "note": "content-bound freeze v2: root-resolved top-anchored diff; tamper-evidence proven on scratch branches"
+ "note": "advanced post HARNESS-READINESS addition and preflight scoping; experimental inputs unchanged since prior pin except documented freeze evolution"
 }
