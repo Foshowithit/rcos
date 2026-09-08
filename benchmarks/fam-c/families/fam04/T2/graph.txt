@@ -1,0 +1,4 @@
+# edges as pairs, one per line; lines starting with # are comments
+m -> n
+n -> p
+m -> p

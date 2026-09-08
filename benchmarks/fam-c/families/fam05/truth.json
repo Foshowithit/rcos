@@ -1,0 +1,7 @@
+{
+  "T0": {"ok": ["alpha.txt", "beta.txt"], "bad": []},
+  "T1": {"ok": ["a.txt", "b.txt"], "bad": []},
+  "T2": {"ok": ["a.txt", "b.txt"], "bad": []},
+  "T3": {"ok": ["a.txt", "b.txt"], "bad": []},
+  "T4": {"ok": ["alpha.txt"], "bad": [{"path": "beta.txt", "reason_includes": "size"}]}
+}
