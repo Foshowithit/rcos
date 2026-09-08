@@ -282,26 +282,46 @@ json.dump(good, open(os.path.join(state_root, "ORDER-EXPANSION.json"), "w"))
 tcell = cell("PQ", "fam05", "T2", "A")
 rdir = ORD.run_dir(state_root, tcell)
 os.makedirs(rdir)
-manifest = {"wired": True, "dev_mode": False, "cell_id": tcell["cell_id"],
+FREEZE_COMMIT = "f" * 40
+manifest = {"wired": True, "dev_mode": False,
+            "cell_id": tcell["cell_id"], "cell_index": tcell["index"],
             "block": tcell["block"], "family": tcell["family"],
-            "task": tcell["event"], "kind": tcell["kind"],
-            "universe": tcell["universe"],
-            "instance_freeze_commit": "f" * 40}
+            "task": tcell["task"], "cell_event": tcell["event"],
+            "cell_kind": tcell["kind"], "cell_universe": tcell["universe"],
+            "cell_letter": tcell["letter"], "lane": tcell["lane"],
+            "arm": tcell["arm"], "capability_id": tcell["capability_id"],
+            "order_sha256": good["order_sha256"],
+            "instance_freeze_commit": FREEZE_COMMIT}
 mf = os.path.join(rdir, "H1-RUN-MANIFEST.json")
 json.dump(manifest, open(mf, "w"))
-open(os.path.join(rdir, "EVIDENCE-CHAIN.jsonl"), "w").write("")
+CHAIN_PATH = os.path.join(rdir, "EVIDENCE-CHAIN.jsonl")
 
-# inject a stub chain/admissibility authority: the real ones are exercised
-# by H4/H3; here the question is whether order progress consumes them.
-real_chain = sys.modules.get("chain")
+
+def build_real_chain(manifest_obj):
+    """Write a REAL evidence chain (genesis + evaluator + terminal grade)
+    through the production Chain authority. A11b.5: H7 exercises the REAL
+    module-level verify_chain(); no stub may hide it."""
+    if os.path.exists(CHAIN_PATH):
+        os.unlink(CHAIN_PATH)
+    import chain as CH
+    c = CH.Chain(CHAIN_PATH, FREEZE_COMMIT, manifest_obj)
+    ev = c.append("evaluator", {"evaluator": "h7-smoke", "verdict": "ship"})
+    c.append("grade", {"evaluator_link_hash": ev,
+                       "grading_rule_hash": "0" * 64,
+                       "grading_rule_version": "h7-smoke-1"})
+    return c
+
+
+build_real_chain(manifest)
+
+# Only the admissibility classifier is stubbed (a different authority, and
+# H4/H3 exercise the real one end-to-end); the chain verifier is REAL here,
+# so a stubbed chain can no longer make a fabricated manifest look valid.
 real_adm = sys.modules.get("admissibility")
-stub_chain = types.ModuleType("chain")
-stub_chain.verify_chain = lambda p: None
 stub_adm = types.ModuleType("admissibility")
 stub_adm.ELIGIBLE = "ELIGIBLE"
 stub_adm.EXCLUDED = "EXCLUDED"
 stub_adm.classify_run_dir = lambda d, fc=None: ("ELIGIBLE", "ok")
-sys.modules["chain"] = stub_chain
 sys.modules["admissibility"] = stub_adm
 try:
     st = ORD.cell_state(state_root, tcell)
@@ -321,14 +341,19 @@ try:
           ORD.completed_cells(state_root, expansion=good) == {})
 
     stub_adm.classify_run_dir = lambda d, fc=None: ("ELIGIBLE", "ok")
-    stub_chain.verify_chain = lambda p: (_ for _ in ()).throw(
-        ValueError("broken link"))
+    # Real chain tampering: alter a written link's payload. The REAL
+    # verifier must detect the post-write content change.
+    lines = open(CHAIN_PATH).read().splitlines()
+    rec = json.loads(lines[-1])
+    rec["payload"]["verdict"] = "forged"
+    lines[-1] = json.dumps(rec, sort_keys=True)
+    open(CHAIN_PATH, "w").write("\n".join(lines) + "\n")
     st3 = ORD.cell_state(state_root, tcell)
     check("broken evidence chain does not count as complete",
           st3["status"] != "COMPLETE"
           and any("evidence chain invalid" in r for r in st3["reasons"]),
           str(st3))
-    stub_chain.verify_chain = lambda p: None
+    build_real_chain(manifest)
 
     manifest_bad = dict(manifest, cell_id="0000deadbeef0000")
     json.dump(manifest_bad, open(mf, "w"))
@@ -343,10 +368,6 @@ try:
           st5["status"] != "COMPLETE", str(st5))
     json.dump(manifest, open(mf, "w"))
 finally:
-    if real_chain is None:
-        sys.modules.pop("chain", None)
-    else:
-        sys.modules["chain"] = real_chain
     if real_adm is None:
         sys.modules.pop("admissibility", None)
     else:
