@@ -74,7 +74,8 @@ sys.path.insert(0, HARNESS)
 from dockersandbox import DockerSandbox, ensure_roots, _hash_tree
 from seal import build_visible_root
 from usage import (recorded_call, write_normalized_usage,
-                   verify_normalized_usage)
+                   verify_normalized_usage, verify_request_binding,
+                   verify_adapter_binding)
 from identity import (record_identity, check_against_prereg,
                       verify_identity_binding)
 from chain import Chain
@@ -303,9 +304,15 @@ def call(lane, prompt, outdir, tag):
     # Item-3 hardening: ONE explicit generation-param set, defined once and
     # sent AND recorded identically — never two literals that can drift.
     extra_body = {"max_tokens": 9000}
+    # A11b.1 (production request binding): the messages object is built
+    # EXACTLY ONCE and that SAME object is handed to the wire call AND to
+    # the identity record — so identity.messages_sha256 always binds the
+    # bytes actually sent (never a second literal that can drift), and
+    # verify_request_binding() passes on a real run instead of failing
+    # closed on a missing messages hash.
+    messages = [{"role": "user", "content": prompt}]
     reply, receipt, resp = recorded_call(
-        cfg["base"], cfg["keyfile"], key, cfg["model"],
-        [{"role": "user", "content": prompt}], outdir,
+        cfg["base"], cfg["keyfile"], key, cfg["model"], messages, outdir,
         extra_body=extra_body, timeout=300, tag=tag,
         normalizer_id=cfg["normalizer"], return_response=True)
     # A1 (audit round 2 item 1): normalization is part of CALL CAPTURE — the
@@ -325,7 +332,8 @@ def call(lane, prompt, outdir, tag):
     body_sha = json.load(open(receipt)).get("request_body_sha256")
     id_path = record_identity(outdir, cfg["base"], cfg["model"], resp,
                               extra_params=dict(extra_body), tag=tag,
-                              request_body_sha256=body_sha)
+                              request_body_sha256=body_sha,
+                              messages=messages)
     identity_family = check_against_prereg(id_path, {
         "endpoint": cfg["base"], "requested_id": cfg["model"],
         "acceptable_echoed_ids": cfg["echo_acceptable"],
@@ -439,6 +447,21 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
     Genesis binds `manifest`; the on-disk H1-RUN-MANIFEST.json must never be
     rewritten after this call (rewriting would break genesis hash equality)."""
     chain_path = os.path.join(outdir, CHAIN_FILE)
+    # A11b.1 pre-link gate: the request-byte binding AND the adapter-lane
+    # binding are verified HERE, before any chain link is emitted — a call
+    # whose persisted request bytes, identity messages hash, or adapter lane
+    # do not verify is refused at the door (fail closed), instead of being
+    # admitted now and rejected only later by admissibility after the run
+    # artifacts are already written. The request bytes are mutation-evident
+    # and execution-bound under the frozen harness trust boundary.
+    try:
+        with open(receipt) as _f:
+            _rc0 = json.load(_f)
+        verify_request_binding(receipt, identity_path)
+        verify_adapter_binding(_rc0.get("normalizer_id"),
+                               lane=manifest.get("lane"), receipt=_rc0)
+    except (OSError, ValueError) as e:
+        raise RuntimeError(f"CHAIN-BINDING-GATE-FAIL: {e}")
     c = Chain(chain_path, frozen, manifest, arm=manifest.get("arm"))
     # model-call link(s): every persisted H2 usage receipt binds here,
     # alongside the provider-identity receipt (echoed model + response id)
@@ -542,8 +565,12 @@ def selfcheck_wire():
         # A11.2: a v2 adapter id IS a lane binding, so a synthetic fixture
         # must either use the lane's real bound endpoint/model or a v1
         # adapter. The fixture mirrors the kenari lane's bound values and
-        # persists its request bytes like every real receipt.
-        fx_body = {"model": "agnes-2-0-flash:free",
+        # persists its request bytes like every real receipt (P1 ordering:
+        # the SAME dict that is written below is hashed, and its generation
+        # fields must equal the identity record's extra_params, exactly as
+        # recorded_call + record_identity produce on a real call).
+        fx_body = {"max_tokens": 9000,
+                   "model": "agnes-2-0-flash:free",
                    "messages": [{"role": "user", "content": "selfcheck"}]}
         fx_req = os.path.join(tmp, "call-fixture.request.json")
         with open(fx_req, "wb") as f:
@@ -569,7 +596,10 @@ def selfcheck_wire():
         assert nu["raw_receipt_sha256"] == hashlib.sha256(
             open(receipt, "rb").read()).hexdigest()
         verify_normalized_usage(nu_path)  # raises on any mismatch
-        manifest = {"lane": "P", "family": "famXX", "task": "T0", "arm": "correct",
+        # Fixture lane is Q: the receipt/identity above bind kenari values
+        # (lane Q) exactly as a real call would, and the pre-link gate below
+        # verifies manifest lane == adapter bound lane.
+        manifest = {"lane": "Q", "family": "famXX", "task": "T0", "arm": "correct",
                     "wired": True, "frozen_commit": "deadbeef" * 5,
                     "usage_receipts": [os.path.basename(receipt)],
                     "usage_normalized": [os.path.basename(nu_path)],
@@ -583,14 +613,14 @@ def selfcheck_wire():
              os.path.join(capdir, "manifest.json"),
              os.path.join(capdir, "adapter_notes.md")],
             manifest, [receipt],
-            {"lane": "P", "builder": "selfcheck"})
+            {"lane": "Q", "builder": "selfcheck"})
         assert os.path.exists(lock_path), "promote did not write lock"
         v = load_artifact(lock_path, "engine.py", capdir)
         assert v.endswith("engine.py"), "load_artifact wrong path"
         cap = _verify_capability(capdir)
         assert cap["engine_sha256"] == h(os.path.join(capdir, "engine.py"))
         reuse = reuse_write_record(
-            tmp, "famXX-T0", "P", "correct",
+            tmp, "famXX-T0", "Q", "correct",
             reuse_policy="prereg-frozen", capability_available=True,
             capability_candidate_ids=[cap["capability_id"]],
             capability_selected=True,
@@ -687,7 +717,7 @@ def selfcheck_wire():
         try:
             lock_promote(capdir, "famXX-fixture", "v2",
                          [os.path.join(capdir, "engine.py")], manifest,
-                         [receipt], {"lane": "P"})
+                         [receipt], {"lane": "Q"})
             raise SystemExit("selfcheck FAIL: repromotion not refused")
         except PermissionError:
             pass
