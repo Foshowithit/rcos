@@ -657,22 +657,36 @@ Requires all narrow PASS requirements plus:
 
 ## PASS — compounding claim
 
-Requires cross-cognition PASS plus:
+Requires cross-cognition PASS plus the numeric compounding rule above
+(cumulative delta < 0 at every reuse index k ≥ 1, final negative in
+≥4/6 families, leave-one-family-out holds). No qualitative substitute.
 
-* multiple genuine reuse events per capability;
-* cumulative advantage grows as reusable-capability exposure increases;
-* result is not dependent on a single family/outlier.
+## Invalid-run taxonomy and replacement rule (frozen)
+
+Infrastructure-invalid ONLY if a preregistered machine, provider, or
+harness failure prevents the experimental agent from receiving or
+executing the task. The following are EXPERIMENTAL OUTCOMES, never
+invalid: model reasoning failure, tool misuse, agent timeout caused by
+its own behavior, bad generated code, failure to invoke the capability,
+evaluator failure due to malformed output.
+
+If one member of a paired comparison is genuinely infrastructure-invalid:
+rerun the entire pair once under identical frozen settings; preserve the
+originals and link the replacement. If the replacement is also
+infrastructure-invalid: the pair counts as missing evidence →
+INCONCLUSIVE under the frozen precedence above.
 
 ## INCONCLUSIVE
 
-Use INCONCLUSIVE if:
-
-* correctness holds but efficiency delta is negligible;
-* sample/family effects are mixed;
-* reuse occurs too rarely to estimate benefit;
-* savings are within measurement noise.
+Use INCONCLUSIVE ONLY for: insufficient evaluable evidence (missing
+metrics, infrastructure-invalid pairs per the taxonomy above) or
+insufficient genuine reuse exposure.
 
 "Inconclusive" is not "falsified."
+
+The frozen precedence, numeric compounding, genuine-reuse, and
+invalidation rules above are CONTROLLING. No qualitative language
+anywhere in this section may override them.
 
 ## FALSIFIED for the tested regime
 
