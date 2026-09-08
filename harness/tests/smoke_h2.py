@@ -82,9 +82,9 @@ check("provenance fields present",
       r0.get("usage_raw_sha256") and r0.get("normalizer_version") == NORMALIZER_VERSION,
       str({k: r0.get(k) for k in ("usage_raw_sha256", "normalizer_version")}))
 check("normalize_usage primary work exact",
-      __import__("usage").normalize_usage(r0)["primary_work"] == 15)
+      __import__("usage").normalize_usage(r0, "openai-chat-total-input-v1")["primary_work"] == 13)
 check("derived metrics exact",
-      s == {"model_calls": 2, "input_tokens_uncached": 20,
+      s == {"model_calls": 2, "input_tokens_uncached": 16,
             "output_tokens": 10, "cached_tokens": 4,
             "cached_detail_per_call": [2, 2]}, str(s))
 _, p3 = call("c", mode="no-usage")
@@ -210,15 +210,16 @@ _ma = os.path.join(BASE, "man-a.json")
 _t = {"input_snapshot_hash": "in1", "context_hash": "cx", "model_identity": "m",
       "generation_params": {"t": 0}, "tool_policy_hash": "tp",
       "initial_workdir_hash": "wd", "capability_step_hash": "capA",
+      "capability_access": "present",
       "evaluator_verdict": "ship", "evaluator_evidence_hash": "ev-ship"}
-_a = dict(_t, capability_step_hash="ABSENT", evaluator_verdict="fix",
-          evaluator_evidence_hash="ev-fix")
+_a = dict(_t, capability_step_hash="ABSENT", capability_access="absent",
+          evaluator_verdict="fix", evaluator_evidence_hash="ev-fix")
 json.dump(_t, open(_mt, "w"))
 json.dump(_a, open(_ma, "w"))
 ok, der = check_ablation(_mt, _ma)
 check("derived ablation passes (differing verdicts)",
       ok and der["outcome_changed"] is True, str(der))
-_a2 = dict(_t, capability_step_hash="ABSENT",
+_a2 = dict(_t, capability_step_hash="ABSENT", capability_access="absent",
            evaluator_verdict="ship", evaluator_evidence_hash="ev-ship")
 json.dump(_a2, open(_ma, "w"))
 ok2, der2 = check_ablation(_mt, _ma)
@@ -227,6 +228,38 @@ _t3 = dict(_t, context_hash="DIFFERENT")
 json.dump(_t3, open(_mt, "w"))
 ok3, der3 = check_ablation(_mt, _ma)
 check("differing-context ablation fails", not ok3)
+# NEW: ignored extra execution field must FAIL (closed schema)
+_t4 = dict(_t, capability_step_hash="ABSENT", capability_access="absent",
+           evaluator_verdict="fix", evaluator_evidence_hash="ev-fix",
+           system_prompt_override="solve using algorithm X")
+json.dump(_t4, open(_mt, "w"))
+ok4, der4 = check_ablation(_mt, _ma)
+check("extra execution field fails closed schema", not ok4, str(der4))
+# NEW: tampered usage_raw must FAIL hash check
+import copy
+r1 = json.load(open(p1))
+r1["usage_raw"] = dict(r1["usage_raw"], input_tokens=9999)
+try:
+    __import__("usage").normalize_usage(r1, "openai-chat-total-input-v1")
+    check("tampered usage_raw rejected", False)
+except ValueError:
+    check("tampered usage_raw rejected", True)
+# NEW: cached > total must FAIL
+r2 = json.load(open(p1))
+r2["usage_raw"] = dict(r2["usage_raw"], cached_tokens=500)
+r2["usage_raw_sha256"] = __import__("hashlib").sha256(
+    json.dumps(r2["usage_raw"], sort_keys=True).encode()).hexdigest()
+try:
+    __import__("usage").normalize_usage(r2, "openai-chat-total-input-v1")
+    check("cached>total rejected", False)
+except ValueError:
+    check("cached>total rejected", True)
+# NEW: unknown normalizer must FAIL
+try:
+    __import__("usage").normalize_usage(r0, "nope-v9")
+    check("unknown normalizer rejected", False)
+except ValueError:
+    check("unknown normalizer rejected", True)
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH2 smoke: {len(results) - len(bad)}/{len(results)} closed")
 srv.shutdown()

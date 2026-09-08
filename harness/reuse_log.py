@@ -26,6 +26,27 @@ def _sha(path):
         return hashlib.sha256(f.read()).hexdigest()
 
 
+
+# CLOSED execution-manifest schema. Every execution-relevant field must
+# appear here; anything else in a manifest FAILS validation. Additions
+# require a schema-version bump + re-freeze (they cannot silently widen
+# the ablation comparison).
+EXEC_MANIFEST_SCHEMA_VERSION = "exec-manifest-v1"
+EXEC_MANIFEST_FIELDS = frozenset({
+    "input_snapshot_hash", "context_hash", "model_identity",
+    "generation_params", "tool_policy_hash", "initial_workdir_hash",
+    "capability_access", "capability_step_hash",
+    "evaluator_verdict", "evaluator_evidence_hash",
+})
+# The ONLY permitted treatment-vs-ablation differences: the capability
+# step itself plus the outcome it produces. Evidence hashes ride with
+# their verdict (a changed verdict necessarily changes evidence).
+ALLOWED_ABLATION_DIFFS = frozenset({
+    "capability_access", "capability_step_hash",
+    "evaluator_verdict", "evaluator_evidence_hash",
+})
+
+
 def check_hash_linkage(capability_output_path, downstream_inputs):
     """Predicate (a): True iff the capability's output bytes appear among
     the downstream node's declared inputs (compared by sha256)."""
@@ -39,40 +60,43 @@ def check_hash_linkage(capability_output_path, downstream_inputs):
 
 
 def check_ablation(treatment_manifest_path, ablation_manifest_path):
-    """Predicate (b): DERIVED, never asserted. Both manifests must carry:
-    input_snapshot_hash, context_hash, model_identity (endpoint + echoed
-    id), generation_params, tool_policy_hash, initial_workdir_hash,
-    capability_step_hash (or the literal string "ABSENT"), and
-    evaluator verdict + evidence hash. The validator derives:
-      identical_except_capability = all shared fields equal AND exactly
-        the capability step differs (present vs ABSENT)
-      outcome_changed = evaluator verdicts differ
-    No boolean in either manifest is trusted; both conditions are
-    recomputed from hashes. Returns (ok, derived_dict)."""
+    """Predicate (b): DERIVED, never asserted. Both manifests must obey
+    the CLOSED execution-manifest schema below; unknown execution fields
+    FAIL rather than being ignored. The validator computes the FULL
+    difference set between the two manifests and requires it to equal
+    EXACTLY the frozen allowlist (capability-access/step fields only).
+    Outcome change = preregistered outcome variable (evaluator verdict)
+    changing — differing evidence bytes alone do NOT count."""
     t = json.load(open(treatment_manifest_path))
     a = json.load(open(ablation_manifest_path))
-    shared = ("input_snapshot_hash", "context_hash", "model_identity",
-              "generation_params", "tool_policy_hash",
-              "initial_workdir_hash")
-    missing = [k for k in shared if k not in t or k not in a]
-    if missing:
+    for name, m in (("treatment", t), ("ablation", a)):
+        unknown = set(m) - set(EXEC_MANIFEST_FIELDS)
+        if unknown:
+            return False, {"mechanism": "ablation-derived",
+                           "reason": f"unknown execution fields in {name}: "
+                                     f"{sorted(unknown)} (schema closed)"}
+    diffs = {k for k in set(t) | set(a) if t.get(k) != a.get(k)}
+    if not diffs <= ALLOWED_ABLATION_DIFFS:
         return False, {"mechanism": "ablation-derived",
-                       "reason": f"missing shared fields: {missing}"}
-    same = all(t[k] == a[k] for k in shared)
-    cap_differs = (t.get("capability_step_hash") not in (None, "ABSENT")
-                   and a.get("capability_step_hash") == "ABSENT")
-    identical_except = bool(same and cap_differs)
-    tv, av = (t.get("evaluator_verdict"), t.get("evaluator_evidence_hash")), \
-             (a.get("evaluator_verdict"), a.get("evaluator_evidence_hash"))
-    if None in (tv[0], tv[1], av[0], av[1]):
+                       "reason": f"non-allowlisted differences: "
+                                 f"{sorted(diffs - ALLOWED_ABLATION_DIFFS)}"}
+    cap_ok = (t.get("capability_step_hash") not in (None, "ABSENT")
+              and a.get("capability_step_hash") == "ABSENT")
+    if not cap_ok:
         return False, {"mechanism": "ablation-derived",
-                       "reason": "evaluator verdict/evidence missing"}
+                       "reason": "capability step not PRESENT->ABSENT"}
+    tv, av = t.get("evaluator_verdict"), a.get("evaluator_verdict")
+    if tv is None or av is None:
+        return False, {"mechanism": "ablation-derived",
+                       "reason": "evaluator verdict missing"}
     changed = tv != av
-    ok = bool(identical_except and changed)
+    # Verdict change is REQUIRED (evidence-bytes-only differences prove
+    # nothing about material contribution).
+    ok = bool(changed and diffs)
     return ok, {"mechanism": "ablation-derived",
-                "identical_except_capability": identical_except,
+                "differences": sorted(diffs),
                 "outcome_changed": changed,
-                "treatment_verdict": tv[0], "ablation_verdict": av[0]}
+                "treatment_verdict": tv, "ablation_verdict": av}
 
 
 def write_record(out_dir, task_id, lane, arm, **fields):
