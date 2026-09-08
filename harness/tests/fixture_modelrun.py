@@ -41,7 +41,6 @@ sys.path.insert(0, os.path.join(FAMC, "harness-run"))
 import chain as CH            # noqa: E402
 import identity as ID         # noqa: E402
 import order                  # noqa: E402
-import promotion as PROM      # noqa: E402
 import reuse_log as RL        # noqa: E402
 import usage as UG            # noqa: E402
 from run_arm_h1 import LANES  # noqa: E402
@@ -148,6 +147,56 @@ def _clean_run_dir(d):
             os.unlink(p)
 
 
+def _read_frozen_contract(fam_c_dir, family):
+    """Producer-stand-in frozen-text reader (test support ONLY, NOT
+    evidence). The offline fixture cannot have a real model author a
+    contract, so the stand-in declares the frozen K.md text VERBATIM —
+    which is exactly what the auditor-side governance cross-check
+    (order.py: receipt text must occur in K.md) demands. This reader lives
+    HERE, in test support: the production controller (harness/promotion.py)
+    has no hidden-contract parser by design (A12b.1/AC6b). Returns
+    (semantic_core, preconditions, limitations)."""
+    import re as _re
+    p = os.path.join(fam_c_dir, "families", family, "K.md")
+    if not os.path.isfile(p):
+        raise PermissionError(f"fixture needs frozen K.md at {p}")
+    text = open(p).read()
+    core = []
+    pre, lim, cur = [], [], None
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        low = line.strip().lower()
+        if low.startswith("reusable core:"):
+            core.append(line.split(":", 1)[1].strip())
+            cur = "core"
+            continue
+        if low.startswith("preconditions"):
+            cur = "pre"
+            continue
+        if low.startswith("limitations"):
+            cur = "lim"
+            continue
+        if not line.strip():
+            cur = None if cur != "core" else cur
+            continue
+        if cur == "core":
+            core.append(line.strip())
+        elif cur == "pre":
+            m = _re.match(r"^\s*\d+[.)]\s*(.+)$", line)
+            if m:
+                pre.append(m.group(1).strip())
+        elif cur == "lim":
+            m = _re.match(r"^\s*[-*\d.)]+\s*(.+)$", line)
+            if m:
+                lim.append(m.group(1).strip())
+    semantic_core = "\n".join(x for x in core if x).strip()
+    if not semantic_core:
+        raise PermissionError("fixture: frozen K.md has no 'Reusable core:'")
+    if not pre:
+        raise PermissionError("fixture: frozen K.md has no PRECONDITIONS")
+    return semantic_core, pre, lim
+
+
 def _fixture_evidence_sha(role, cell_id):
     """Deterministic fixture evaluator-evidence sha: namespaced by role and
     cell so T0/T1 links differ and identical acquisitions reproduce. These
@@ -183,8 +232,7 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
         # governance cross-check passes). The promotion controller sources
         # the receipt/lock contract SOLELY from this declaration — never by
         # parsing hidden K.md itself.
-        _core, _pre, _lim, _csha = PROM.capability_contract(
-            root, cell["family"])
+        _core, _pre, _lim = _read_frozen_contract(root, cell["family"])
         payload["capability_contract"] = {"semantic_core": _core,
                                           "preconditions": _pre,
                                           "limitations": _lim}

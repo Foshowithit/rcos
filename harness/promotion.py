@@ -26,7 +26,6 @@ Stdlib only.
 import hashlib
 import json
 import os
-import re
 import sys
 import time
 
@@ -145,74 +144,23 @@ def _read_json(p):
 # producer-declared capability contract (A12b.1/AC6b: the producer's own
 # arrival payload is the ONLY source of the promoted contract)
 # ---------------------------------------------------------------------------
+#
+# NOTE: there is deliberately NO hidden-contract parser in this module.
+# A prior revision derived the receipt/lock contract by parsing the
+# frozen families/<family>/K.md here; that synthesis path is DELETED.
+# Hidden K.md is read ONLY auditor-side (order.py governance cross-checks
+# and the CAPABILITY_LOCK conformance verdict) — never in this controller,
+# never into consumer artifacts. Test-support producer stand-ins carry
+# their own local frozen-text reader (harness/tests/fixture_modelrun.py).
 
-def capability_contract(fam_c_dir, family):
-    """Parse the FROZEN families/<family>/K.md into machine-readable form.
-    Returns (semantic_core, preconditions, limitations, contract_sha256).
-
-    A12b.1: the promotion controller NO LONGER calls this to author the
-    receipt/lock contract — the producer's own arrival declaration is the
-    sole source there (see _producer_contract). This parser is retained
-    for test-support producer stand-ins (which must declare the frozen
-    text verbatim so the governance cross-check passes) and for
-    downstream actual-contract conformance work. It is never a source of
-    consumer-visible bytes."""
-    p = os.path.join(fam_c_dir, "families", family, "K.md")
-    if not os.path.isfile(p):
-        raise PermissionError(f"PROMOTION-DENY no frozen capability contract "
-                              f"at {p}")
-    text = open(p).read()
-    core = []
-    pre, lim, cur = [], [], None
-    for raw in text.splitlines():
-        line = raw.rstrip()
-        low = line.strip().lower()
-        if low.startswith("reusable core:"):
-            core.append(line.split(":", 1)[1].strip())
-            cur = "core"
-            continue
-        if low.startswith("preconditions"):
-            cur = "pre"
-            continue
-        if low.startswith("limitations"):
-            cur = "lim"
-            continue
-        if not line.strip():
-            cur = None if cur != "core" else cur
-            continue
-        if cur == "core":
-            core.append(line.strip())
-        elif cur == "pre":
-            m = re.match(r"^\s*\d+[.)]\s*(.+)$", line)
-            if m:
-                pre.append(m.group(1).strip())
-        elif cur == "lim":
-            m = re.match(r"^\s*[-*\d.)]+\s*(.+)$", line)
-            if m:
-                lim.append(m.group(1).strip())
-    # The core keeps its ORIGINAL line structure: the validator requires
-    # semantic_core to appear verbatim in the frozen K.md (a normalized
-    # single-space join is not a substring of the contract and would make
-    # every receipt inadmissible).
-    semantic_core = "\n".join(x for x in core if x).strip()
-    if not semantic_core:
-        raise PermissionError("PROMOTION-DENY frozen capability contract has "
-                              "no 'Reusable core:' section")
-    if not pre:
-        raise PermissionError("PROMOTION-DENY frozen capability contract has "
-                              "no PRECONDITIONS")
-    return semantic_core, pre, lim, _sha_file(p)
-
-
-def _producer_contract(t0_run_dir, fam_c_dir, family):
+def _producer_contract(t0_run_dir):
     """Read the PRODUCER-declared capability contract from the T0 arrival's
     own `execution_payload.capability_contract` ({semantic_core,
     preconditions, limitations}) — the SOLE source of the promoted
-    contract text (A12b.1/AC6b). Fail closed when absent or malformed; the
-    frozen K.md file is only hash-bound as operative-auditor metadata.
-    Returns (semantic_core, preconditions, limitations, contract_sha256)
-    with the declaration bytes copied exactly (no normalization: the
-    governance validator compares them verbatim)."""
+    contract text (A12b.1/AC6b). Fail closed when absent or malformed.
+    Returns (semantic_core, preconditions, limitations) with the
+    declaration bytes copied exactly (no normalization: the governance
+    validator compares them verbatim). This function never touches K.md."""
     try:
         arrival = _read_json(os.path.join(t0_run_dir, "arrival.json"))
     except (ValueError, OSError) as e:
@@ -243,11 +191,7 @@ def _producer_contract(t0_run_dir, fam_c_dir, family):
         raise PermissionError(
             "PROMOTION-DENY producer capability contract limitations must "
             "be a list of strings")
-    kp = os.path.join(fam_c_dir, "families", family, "K.md")
-    if not os.path.isfile(kp):
-        raise PermissionError(f"PROMOTION-DENY no frozen capability contract "
-                              f"at {kp}")
-    return core, list(pre), list(lim), _sha_file(kp)
+    return core, list(pre), list(lim)
 
 
 def t4_semantic_id(fam_c_dir, capability_id, semantic_core_sha256,
@@ -599,7 +543,7 @@ def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
     # — never into manifest.json, adapter_notes.md, engine.py, or any model
     # prompt. `contract`, `t4_id` and `t4_ratified` are therefore accepted
     # here for signature stability but are NOT written to these artifacts.
-    _core, _pre, _lim, _contract_sha = contract
+    _core, _pre, _lim = contract
     _auditor = (t4_id, t4_ratified)
     engine = (ENGINE_TEMPLATE
               .replace("__CANDIDATE_SHA256__", cand["sha256"])
@@ -710,7 +654,7 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     # is read from the T0 arrival's own `capability_contract` declaration,
     # never synthesized from hidden K.md. The K.md file sha still binds
     # which hidden contract was operative (auditor metadata only).
-    contract = _producer_contract(t0_ev["run_dir"], fam_c_dir, family)
+    contract = _producer_contract(t0_ev["run_dir"])
     core_sha = _sha_bytes(contract[0].encode())
     t4_id, t4_ratified = t4_semantic_id(fam_c_dir, cell["capability_id"],
                                         core_sha, evidence_grade)
@@ -740,7 +684,6 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
         "semantic_core": contract[0],
         "semantic_core_sha256": core_sha,
         "preconditions": contract[1], "limitations": contract[2],
-        "contract_sha256": contract[3],
         "t4_semantic_id": t4_id, "t4_ratified": t4_ratified,
         "evidence_grade": evidence_grade,
         "producer_identity": producer_identity,
