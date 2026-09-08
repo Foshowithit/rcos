@@ -45,13 +45,33 @@ frozen invalid-run taxonomy. No relabeling by behavior is allowed.
   First validation run `H1-P-fam01-T0` = ship (json-envelope, container rc0).
 - P/Q lane identity re-probed live and confirmed distinct: P=`MiniMax-M3`
   (router9/v1), Q=`agnes-2-0-flash:free` (kenari.id/v1). Both reachable.
-- REMAINING (to lock the estimand): attach H2 usage records + H3 Chain/
-  CAPABILITY_LOCK/ledger per run, then the frozen sequence re-runs from the
-  next family (new runs only via run_arm_h1.py; prior ad-hoc runs stay
-  quarantined).
+- DONE: H2/H3 wiring attached to `run_arm_h1.py` (wired by default; `--no-wire`
+  is the escape hatch). Every model call passes through `usage.recorded_call()`
+  (usage receipts land in the run dir); every completed run emits
+  `EVIDENCE-CHAIN.jsonl` (genesis binds frozen commit + run manifest →
+  model-call → capability-event → evaluator → terminal grade) and re-audits
+  clean before returning. Correct-arm loads go through
+  `lock.load_artifact()` (locked-hash verified pre-execution) and write a
+  `reuse_log` record; promotion via `lock.promote()` fires only on a ship
+  verdict with an explicit `--promote`. Offline wiring compose-check:
+  `run_arm_h1.py --selfcheck-wire` = ok (fixture, not a run).
+- First frozen-order wired run: `H1-P-fam05-T0` = ship (json-envelope,
+  container rc0; manifest verdict `ship`; chain audit intact).
+  `H1-Q-fam05-T0` blocked externally: kenari free-model daily quota exhausted
+  (`429 free_quota_daily`, resets 00:00 UTC) — endpoint reachable, lane has no
+  completions budget today. Correct-arm CAPABILITY_LOCK/ledger path is
+  implemented + offline-proven but has no real locked capability yet (prior
+  fam02/fam06 promotion attempts returned `fix`), so no correct-arm run is
+  claim-grade until a real lock exists.
+- REMAINING (to resume): re-run the frozen sequence from the next family cell
+  (new runs only via `run_arm_h1.py`; prior ad-hoc runs stay quarantined);
+  retry lane Q after the kenari daily-quota reset (00:00 UTC).
 
 ## Verdict
 
-`BLOCKED` until every new run emits an H2+H3-linked manifest through
-`run_arm_h1.py`; the isolation boundary itself is now in place and validated
-on one run. The frozen instance package is unaffected.
+`IN-PROGRESS — estimand lock proven on lane P`: new runs emit H2+H3-linked
+manifests and audit-intact chains through `run_arm_h1.py` (validated on
+`H1-P-fam05-T0` = ship); lane Q of that cell is externally blocked by the
+provider's free-model daily quota, not by the harness. Correct-arm capability
+runs await a real locked capability from a successful promotion. The frozen
+instance package is unaffected.

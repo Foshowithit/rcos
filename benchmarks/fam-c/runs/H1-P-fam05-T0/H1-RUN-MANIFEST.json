@@ -1,0 +1,50 @@
+{
+ "lane": "P",
+ "family": "fam05",
+ "task": "T0",
+ "arm": "disabled",
+ "parse_mode": "json-envelope",
+ "lane_receipt": "benchmarks/fam-c/runs/H1-P-fam05-T0/call-d7e697251423173c.json",
+ "sandbox": {
+  "sandbox": "rcos-cc23b5ceeded4f19b8f89322ad9f1343",
+  "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+  "task_snapshot": {
+   "file|MANIFEST": "791e6b14431c2dc8e4a4cb751d4048da36d59c1681d160000e27a370a426482e",
+   "file|alpha.txt": "84d89877f0d4041efb6bf91a16f0248f2fd573e6af05c19f96bedb9f882f7882",
+   "file|beta.txt": "4e76ad8354461437c04ef9b9b242540b6406d782ff2c3fb28afdab5b423f88fe",
+   "file|prompt.md": "fc20b8c75cca204ec0f140e3ef2426946ae73d8996ce6e04bb2c0267f2643451"
+  },
+  "mounts": [
+   {
+    "host": "/tmp/rcos-runs/famc-cc8b76c264ad",
+    "container": "/work",
+    "mode": "rw"
+   },
+   {
+    "host": "/tmp/rcos-runs/.stage-rcos-cc23b5ceeded4f19b8f89322ad9f1343",
+    "container": "/task",
+    "mode": "ro"
+   }
+  ]
+ },
+ "task_snapshot": {
+  "file|MANIFEST": "791e6b14431c2dc8e4a4cb751d4048da36d59c1681d160000e27a370a426482e",
+  "file|alpha.txt": "84d89877f0d4041efb6bf91a16f0248f2fd573e6af05c19f96bedb9f882f7882",
+  "file|beta.txt": "4e76ad8354461437c04ef9b9b242540b6406d782ff2c3fb28afdab5b423f88fe",
+  "file|prompt.md": "fc20b8c75cca204ec0f140e3ef2426946ae73d8996ce6e04bb2c0267f2643451"
+ },
+ "container_returncode": 0,
+ "checker_returncode": 0,
+ "checker_output": "SHIP T0: verification report exact\n",
+ "verdict": "ship",
+ "output_sha256": "83dd98a6f5272a73d6ae9156232c40e3af25d9e5a39fef38da5d237f0036b902",
+ "wired": true,
+ "frozen_commit": "cd991739790581d86c955e6a691b030173967da8",
+ "usage_receipts": [
+  "call-d7e697251423173c.json"
+ ],
+ "chain": "EVIDENCE-CHAIN.jsonl",
+ "reuse_record": null,
+ "capability": null,
+ "capability_lock": null
+}
