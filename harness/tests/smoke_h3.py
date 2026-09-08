@@ -137,10 +137,34 @@ _settings = led.state["pairs"]["p3"]["settings_hash"]
 _snap = led.state["pairs"]["p3"]["task_snapshot_hash"]
 def _gen(arm):
     return _hlo.sha256("|".join(["p3", arm, _authz, _snap]).encode()).hexdigest()
+def _chain_for(arm):
+    from chain import Chain as _Chain
+    _cp = os.path.join(BASE, f"chain-{arm}.jsonl")
+    if os.path.exists(_cp):
+        os.unlink(_cp)
+    return _Chain(_cp, "FREEZE-abc", {"run": "r1", "lane": "p3"},
+                  pair_id="p3", arm=arm, authorization_hash=_authz,
+                  task_snapshot_hash=_snap)
+
+
+def _genesis_hash(chain_path):
+    with open(chain_path, "rb") as _f:
+        return _hlx.sha256(_f.readline()).hexdigest()
+
+
+from chain import Chain as _Chain0
 def _mkv2(path, pair, arm, epoch, repl_of_hash, run, extra=None):
     _ex = os.path.join(BASE, f"exec-{arm}.json")
     with open(_ex, "rb") as _f:
         _exh = _hlx.sha256(_f.read()).hexdigest()
+    _cp = os.path.join(BASE, f"chain-{arm}.jsonl")
+    if os.path.exists(_cp):
+        os.unlink(_cp)
+    _Chain0(_cp, "FREEZE-abc", {"run": "r1", "lane": "p3"},
+            pair_id="p3", arm=arm, authorization_hash=_authz,
+            task_snapshot_hash=_snap)
+    with open(_cp, "rb") as _f:
+        _gh = _hlx.sha256(_f.readline()).hexdigest()
     m = {"schema_version": "replacement-manifest-v1",
          "run_id": run, "pair_id": pair, "arm": arm,
          "replacement_epoch": epoch,
@@ -149,11 +173,17 @@ def _mkv2(path, pair, arm, epoch, repl_of_hash, run, extra=None):
          "task_snapshot_hash": _snap,
          "execution_manifest_hash": _exh,
          "execution_manifest_path": _ex,
-         "evidence_genesis_hash": _gen(arm)}
+         "evidence_chain_path": os.path.join(BASE, f"chain-{arm}.jsonl"),
+         "evidence_genesis_hash": _genesis_hash(
+             os.path.join(BASE, f"chain-{arm}.jsonl"))}
     if extra:
         m.update(extra)
     open(path, "w").write(json.dumps(m, sort_keys=True))
     return path
+
+
+for _arm in ("A", "B"):
+    _chain_for(_arm)
 _mA = _mkv2(os.path.join(BASE, "repl-A.json"), "p3", "A", 1, _omAh, "run-new-A")
 _mB = _mkv2(os.path.join(BASE, "repl-B.json"), "p3", "B", 1, _omBh, "run-new-B")
 check("grading gate closed before completion",
@@ -185,7 +215,7 @@ try:
     check("wrong-epoch manifest refused", False)
 except ValueError:
     check("wrong-epoch manifest refused", True)
-# cross-arm parent swap + fabricated parent (fresh ledger)
+# cross-arm parent swap + fabricated parent (fresh ledger, own chains)
 led2 = PairLedger(os.path.join(BASE, "ledger2.json"))
 led2.record_run("q1", "A", "blocked", failure_kind="provider-outage",
                 task_snapshot={"t": 1},
@@ -197,20 +227,38 @@ led2.request_replacement("q1", "provider-outage", "settings-v1")
 _a2 = led2.state["pairs"]["q1"]["authorization_hash"]
 _s2 = led2.state["pairs"]["q1"]["settings_hash"]
 _n2 = led2.state["pairs"]["q1"]["task_snapshot_hash"]
+from chain import Chain as _Chain2
+def _qchain(arm):
+    _cp = os.path.join(BASE, f"chain-q1-{arm}.jsonl")
+    if os.path.exists(_cp):
+        os.unlink(_cp)
+    return _Chain2(_cp, "FREEZE-abc", {"run": "r1", "lane": "q1"},
+                   pair_id="q1", arm=arm, authorization_hash=_a2,
+                   task_snapshot_hash=_n2)
+def _qgen(arm):
+    with open(os.path.join(BASE, f"chain-q1-{arm}.jsonl"), "rb") as _f:
+        return _hlx.sha256(_f.readline()).hexdigest()
 def _mkq(path, pair, arm, epoch, repl_of_hash, run, authz=None):
     az = authz or _a2
+    _ex = os.path.join(BASE, f"exec-q1-{arm}.json")
+    open(_ex, "w").write(json.dumps(
+        {"pair_id": pair, "arm": arm, "steps": []}, sort_keys=True))
+    with open(_ex, "rb") as _f:
+        _exh = _hlx.sha256(_f.read()).hexdigest()
     m = {"schema_version": "replacement-manifest-v1",
          "run_id": run, "pair_id": pair, "arm": arm,
          "replacement_epoch": epoch,
          "replaces_original_manifest_hash": repl_of_hash,
          "authorization_hash": az, "frozen_settings_hash": _s2,
          "task_snapshot_hash": _n2,
-         "execution_manifest_hash": "exec-" + arm,
-         "execution_manifest_path": os.path.join(BASE, f"exec-{arm}.json"),
-         "evidence_genesis_hash": _hlo.sha256(
-             "|".join([pair, arm, az, _n2]).encode()).hexdigest()}
+         "execution_manifest_hash": _exh,
+         "execution_manifest_path": _ex,
+         "evidence_chain_path": os.path.join(BASE, f"chain-q1-{arm}.jsonl"),
+         "evidence_genesis_hash": _qgen(arm)}
     open(path, "w").write(json.dumps(m, sort_keys=True))
     return path
+for _arm in ("A", "B"):
+    _qchain(_arm)
 _mS2 = _mkq(os.path.join(BASE, "repl-S2.json"), "q1", "A", 1,
             "totally-made-up-hash", "run-evil")
 try:
@@ -224,14 +272,26 @@ _mS3 = _mkq(os.path.join(BASE, "repl-S3.json"), "q1", "A", 1, None,
 _d3 = json.load(open(_mS3))
 _d3["replaces_original_manifest_hash"] = _hlo.sha256(
     open(_omB, "rb").read()).hexdigest()
-_d3["evidence_genesis_hash"] = _hlo.sha256(
-    "|".join(["q1", "A", _a2, _n2]).encode()).hexdigest()
 open(_mS3, "w").write(json.dumps(_d3, sort_keys=True))
 try:
     led2.complete_replacement("q1", _mS3)
     check("cross-arm parent swap refused", False)
 except ValueError:
     check("cross-arm parent swap refused", True)
+# swapped-chain attack: A manifest bound to B's chain genesis
+_mS4 = _mkq(os.path.join(BASE, "repl-S4.json"), "q1", "A", 1, None,
+            "run-evil-S4")
+_d4 = json.load(open(_mS4))
+_d4["replaces_original_manifest_hash"] = _hlo.sha256(
+    open(_omA, "rb").read()).hexdigest()
+_d4["evidence_chain_path"] = os.path.join(BASE, "chain-q1-B.jsonl")
+_d4["evidence_genesis_hash"] = _qgen("B")
+open(_mS4, "w").write(json.dumps(_d4, sort_keys=True))
+try:
+    led2.complete_replacement("q1", _mS4)
+    check("swapped-chain genesis refused", False)
+except ValueError:
+    check("swapped-chain genesis refused", True)
 
 # --- chain: intact, deletion, reorder, substitution, tamper ---
 ch = Chain(os.path.join(BASE, "chain.jsonl"), "FREEZE-abc",

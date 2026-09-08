@@ -19,20 +19,52 @@ def _h(obj):
 
 
 class Chain:
-    def __init__(self, path, frozen_commit, run_manifest):
+    GENESIS_PREV = "GENESIS-ROOT"
+
+    def __init__(self, path, frozen_commit, run_manifest, pair_id=None,
+                 arm=None, authorization_hash=None,
+                 task_snapshot_hash=None):
         self.path = path
-        self.tip = _h({"genesis": GENESIS_NOTE,
-                       "frozen_commit": frozen_commit,
-                       "run_manifest": run_manifest,
-                       "run_manifest_hash": _h(run_manifest)})
+        genesis = {"genesis": GENESIS_NOTE,
+                   "frozen_commit": frozen_commit,
+                   "run_manifest": run_manifest,
+                   "run_manifest_hash": _h(run_manifest)}
+        # Genesis binds the pair/arm/authorization/task when provided;
+        # replacement manifests verify against these exact values.
+        for k, v in (("pair_id", pair_id), ("arm", arm),
+                     ("authorization_hash", authorization_hash),
+                     ("task_snapshot_hash", task_snapshot_hash)):
+            if v is not None:
+                genesis[k] = v
+        self._genesis = genesis
         self.links = []
         if os.path.exists(path):
             for line in open(path):
                 line = line.strip()
                 if line:
                     self.links.append(json.loads(line))
-            if self.links:
-                self.tip = self.links[-1]["link_hash"]
+        if not self.links:
+            # Genesis is link 0, persisted: the chain file always opens
+            # with its own verifiable root.
+            rec = {"prev": self.GENESIS_PREV, "kind": "genesis",
+                   "payload": dict(genesis),
+                   "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+            rec["link_hash"] = _h({k: v for k, v in rec.items()
+                                   if k != "link_hash"})
+            with open(path, "w") as f:
+                f.write(json.dumps(rec, sort_keys=True) + "\n")
+            self.links.append(rec)
+        self.tip = self.links[-1]["link_hash"]
+
+    @staticmethod
+    def genesis_record(path):
+        """Return the persisted link-0 genesis payload of a chain file."""
+        with open(path) as f:
+            first = json.loads(f.readline())
+        if first.get("kind") != "genesis" or first.get("prev") != \
+                Chain.GENESIS_PREV:
+            raise ValueError("not a rooted evidence chain")
+        return first["payload"]
 
     def append(self, kind, payload):
         if self.links and self.links[-1].get("kind") == "grade":
@@ -63,12 +95,19 @@ class Chain:
         no gaps, no duplicate link hashes (reorder/substitution),
         payload presence per kind."""
         findings = []
-        expect_prev = _h({"genesis": GENESIS_NOTE,
-                          "frozen_commit": frozen_commit,
-                          "run_manifest": run_manifest,
-                          "run_manifest_hash": _h(run_manifest)})
-        seen = set()
-        for i, rec in enumerate(self.links):
+        # Link 0 must be the genesis record itself, bound to the frozen
+        # commit and run manifest the audit was invoked with.
+        if not self.links or self.links[0].get("kind") != "genesis":
+            findings.append("missing genesis link 0")
+            return findings
+        g0 = self.links[0]["payload"]
+        if g0.get("frozen_commit") != frozen_commit:
+            findings.append("genesis frozen-commit mismatch")
+        if g0.get("run_manifest") != run_manifest:
+            findings.append("genesis run-manifest mismatch")
+        expect_prev = self.links[0].get("link_hash")
+        seen = {expect_prev}
+        for i, rec in enumerate(self.links[1:], start=1):
             if rec.get("prev") != expect_prev:
                 findings.append(f"link {i}: broken predecessor linkage")
             if rec.get("link_hash") in seen:

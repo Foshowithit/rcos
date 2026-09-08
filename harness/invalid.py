@@ -40,7 +40,8 @@ REPLACEMENT_MANIFEST_FIELDS = frozenset({
     "replacement_epoch", "replaces_original_manifest_hash",
     "authorization_hash", "frozen_settings_hash",
     "task_snapshot_hash", "execution_manifest_hash",
-    "execution_manifest_path", "evidence_genesis_hash",
+    "execution_manifest_path", "evidence_chain_path",
+    "evidence_genesis_hash",
 })
 
 
@@ -180,14 +181,40 @@ class PairLedger:
             if _hlm.sha256(f.read()).hexdigest() != exm:
                 raise ValueError("execution manifest hash mismatch")
         ex = json.load(open(exmp))
-        if ex.get("pair_id", pair_id) != pair_id or ex.get("arm", arm) != arm:
-            raise ValueError("execution manifest names another pair/arm")
-        # Evidence-genesis binding: recomputed, never trusted.
-        expect_gen = _hlm.sha256("|".join(
-            [pair_id, arm, runs["authorization_hash"],
-             runs["task_snapshot_hash"]]).encode()).hexdigest()
-        if m.get("evidence_genesis_hash") != expect_gen:
-            raise ValueError("evidence genesis mismatch")
+        if ex.get("pair_id") != pair_id or ex.get("arm") != arm:
+            raise ValueError("execution manifest names another pair/arm "
+                             "(exact match required; absence fails)")
+        # Evidence-genesis binding against the ACTUAL evidence chain:
+        # the manifest must name its chain file, whose persisted link-0
+        # genesis record must carry this pair/arm/authorization/task.
+        # The recorded evidence_genesis_hash must equal that link-0
+        # record's hash — recomputed here, never trusted.
+        ch_path = m.get("evidence_chain_path")
+        if not ch_path or not os.path.exists(ch_path):
+            raise ValueError("evidence chain file missing")
+        with open(ch_path, "rb") as _cf:
+            _raw0 = _cf.readline()
+        try:
+            _rec0 = json.loads(_raw0.decode("utf-8"))
+        except ValueError:
+            raise ValueError("evidence chain link 0 unreadable")
+        if _rec0.get("kind") != "genesis":
+            raise ValueError("evidence chain does not open with a genesis record")
+        _g = _rec0.get("payload", {})
+        for _k, _want in (("pair_id", pair_id), ("arm", arm),
+                          ("authorization_hash",
+                           runs["authorization_hash"]),
+                          ("task_snapshot_hash",
+                           runs["task_snapshot_hash"])):
+            if _g.get(_k) != _want:
+                raise ValueError(
+                    f"evidence chain genesis mismatch on {_k}: chain "
+                    f"does not belong to this pair/arm/authorization")
+        import hashlib as _hlg
+        _gen_hash = _hlg.sha256(
+            json.dumps(_rec0, sort_keys=True).encode()).hexdigest()
+        if m.get("evidence_genesis_hash") != _gen_hash:
+            raise ValueError("evidence genesis hash != actual chain link 0")
         done = runs.setdefault("replacement_runs", {})
         if arm in done:
             raise ValueError(f"arm {arm} already recorded for replacement")
