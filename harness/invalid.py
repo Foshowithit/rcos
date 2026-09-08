@@ -184,6 +184,10 @@ class PairLedger:
         if ex.get("pair_id") != pair_id or ex.get("arm") != arm:
             raise ValueError("execution manifest names another pair/arm "
                              "(exact match required; absence fails)")
+        if ex.get("run_id") != m.get("run_id"):
+            raise ValueError("execution manifest run_id != replacement "
+                             "run_id (run identity must match the executed "
+                             "record; absence fails)")
         # Evidence-genesis binding against the ACTUAL evidence chain:
         # the manifest must name its chain file, whose persisted link-0
         # genesis record must carry this pair/arm/authorization/task.
@@ -216,6 +220,13 @@ class PairLedger:
         _gen_hash = _hlg.sha256(_raw0).hexdigest()
         if m.get("evidence_genesis_hash") != _gen_hash:
             raise ValueError("evidence genesis hash != actual chain link 0")
+        seen_ids = {r.get("run_id") for r in runs.get("runs", [])}
+        seen_ids |= {v.get("run_id") for v in
+                     runs.get("replacement_runs", {}).values()}
+        if m.get("run_id") in seen_ids:
+            raise ValueError("run_id already used in this pair "
+                             "(original or replacement): replays, cross-arm "
+                             "swaps, and duplicates refused")
         done = runs.setdefault("replacement_runs", {})
         if arm in done:
             raise ValueError(f"arm {arm} already recorded for replacement")

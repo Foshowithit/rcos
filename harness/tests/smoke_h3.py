@@ -119,9 +119,10 @@ def _rman_orig(path, pair, arm, run):
     d["arm"] = arm
     open(path, "w").write(json.dumps(d, sort_keys=True))
     return path
-def _exec_manifest(path, pair, arm):
+def _exec_manifest(path, pair, arm, run):
     open(path, "w").write(json.dumps(
-        {"pair_id": pair, "arm": arm, "steps": []}, sort_keys=True))
+        {"pair_id": pair, "arm": arm, "run_id": run,
+         "steps": []}, sort_keys=True))
     return path
 # NOTE: old-schema _rman block removed; new-schema flow below replaces it.
 import hashlib as _hlo
@@ -129,7 +130,8 @@ def _oh(p):
     return _hlo.sha256(open(p, "rb").read()).hexdigest()
 _omAh, _omBh = _oh(_omA), _oh(_omB)
 for _arm, _orig in (("A", _omA), ("B", _omB)):
-    _exec_manifest(os.path.join(BASE, f"exec-{_arm}.json"), "p3", _arm)
+    _exec_manifest(os.path.join(BASE, f"exec-{_arm}.json"), "p3", _arm,
+                   "run-new-" + _arm)
 ok, _ = led.request_replacement("p3", "provider-outage", "settings-v1")
 check("p3 replacement authorized", ok)
 _authz = led.state["pairs"]["p3"]["authorization_hash"]
@@ -242,7 +244,8 @@ def _mkq(path, pair, arm, epoch, repl_of_hash, run, authz=None):
     az = authz or _a2
     _ex = os.path.join(BASE, f"exec-q1-{arm}.json")
     open(_ex, "w").write(json.dumps(
-        {"pair_id": pair, "arm": arm, "steps": []}, sort_keys=True))
+        {"pair_id": pair, "arm": arm, "run_id": run,
+         "steps": []}, sort_keys=True))
     with open(_ex, "rb") as _f:
         _exh = _hlx.sha256(_f.read()).hexdigest()
     m = {"schema_version": "replacement-manifest-v1",
@@ -292,6 +295,83 @@ try:
     check("swapped-chain genesis refused", False)
 except ValueError:
     check("swapped-chain genesis refused", True)
+# run_id attacks: manifest run_id must equal exec run_id; run ids must
+# be unique per pair across originals and replacements
+_mR1 = _mkq(os.path.join(BASE, "repl-R1.json"), "q1", "A", 1, None,
+            "run-evil-R1")
+_dR = json.load(open(_mR1))
+_dR["replaces_original_manifest_hash"] = _hlo.sha256(
+    open(_omA, "rb").read()).hexdigest()
+open(_mR1, "w").write(json.dumps(_dR, sort_keys=True))
+try:
+    # exec manifest still carries run-evil from _mkq default? No: _mkq
+    # writes run_id into exec too, so craft mismatch explicitly:
+    _exA = os.path.join(BASE, "exec-q1-A.json")
+    _ed = json.load(open(_exA))
+    _ed["run_id"] = "DIFFERENT-RUN"
+    open(_exA, "w").write(json.dumps(_ed, sort_keys=True))
+    led2.complete_replacement("q1", _mR1)
+    check("exec/run_id mismatch refused", False)
+except ValueError:
+    check("exec/run_id mismatch refused", True)
+# duplicate run_id across arms + original-reuse (fresh ledger)
+led3 = PairLedger(os.path.join(BASE, "ledger3.json"))
+led3.record_run("r1", "A", "blocked", failure_kind="provider-outage",
+                task_snapshot={"t": 1},
+                run_manifest_path=_omA)
+led3.record_run("r1", "B", "blocked", failure_kind="provider-outage",
+                task_snapshot={"t": 1},
+                run_manifest_path=_omB)
+led3.request_replacement("r1", "provider-outage", "settings-v1")
+_a3 = led3.state["pairs"]["r1"]["authorization_hash"]
+_s3 = led3.state["pairs"]["r1"]["settings_hash"]
+_n3 = led3.state["pairs"]["r1"]["task_snapshot_hash"]
+def _wexec(_arm, _run):
+    _ex = os.path.join(BASE, f"exec-r1-{_arm}.json")
+    open(_ex, "w").write(json.dumps(
+        {"pair_id": "r1", "arm": _arm, "run_id": _run,
+         "steps": []}, sort_keys=True))
+    return _ex
+for _arm in ("A", "B"):
+    _wexec(_arm, "run-SAME")
+    _cp = os.path.join(BASE, f"chain-r1-{_arm}.jsonl")
+    if os.path.exists(_cp):
+        os.unlink(_cp)
+    from chain import Chain as _Chain3
+    _Chain3(_cp, "FREEZE-x", {"run": "r1"},
+            pair_id="r1", arm=_arm, authorization_hash=_a3,
+            task_snapshot_hash=_n3)
+
+
+def _mk3(path, arm, run):
+    _wexec(arm, run)
+    with open(os.path.join(BASE, f"exec-r1-{arm}.json"), "rb") as _f:
+        _exh = _hlx.sha256(_f.read()).hexdigest()
+    with open(os.path.join(BASE, f"chain-r1-{arm}.jsonl"), "rb") as _f:
+        _gh = _hlx.sha256(_f.readline()).hexdigest()
+    m = {"schema_version": "replacement-manifest-v1",
+         "run_id": run, "pair_id": "r1", "arm": arm,
+         "replacement_epoch": 1,
+         "replaces_original_manifest_hash": _hlo.sha256(
+             open(_omA if arm == "A" else _omB, "rb").read()).hexdigest(),
+         "authorization_hash": _a3, "frozen_settings_hash": _s3,
+         "task_snapshot_hash": _n3,
+         "execution_manifest_hash": _exh,
+         "execution_manifest_path": os.path.join(BASE, f"exec-r1-{arm}.json"),
+         "evidence_chain_path": os.path.join(BASE, f"chain-r1-{arm}.jsonl"),
+         "evidence_genesis_hash": _gh}
+    open(path, "w").write(json.dumps(m, sort_keys=True))
+    return path
+
+
+_mD1 = _mk3(os.path.join(BASE, "repl-D1.json"), "A", "run-SAME")
+led3.complete_replacement("r1", _mD1)
+_mD2 = _mk3(os.path.join(BASE, "repl-D2.json"), "B", "run-SAME")
+try:
+    led3.complete_replacement("r1", _mD2)
+    check("duplicate run_id across arms refused", False)
+except ValueError:
+    check("duplicate run_id across arms refused", True)
 
 # --- chain: intact, deletion, reorder, substitution, tamper ---
 ch = Chain(os.path.join(BASE, "chain.jsonl"), "FREEZE-abc",
