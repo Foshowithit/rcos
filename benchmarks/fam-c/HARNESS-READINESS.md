@@ -136,6 +136,17 @@ IS a lane binding, and v1 ids are historical unbound adapters that may only
 appear where no lane/model claim is made. Admissibility enforces both
 before the identity-binding gate.
 
+A11b-P1 (audit round 3b, wording — the auditor's own correction, adopted):
+**primary_work = uncached_input_tokens + output_tokens.** Input tokens are
+NOT inherently uncached: only the *cached fraction* of the input is served
+from cache, and the cached fraction is recorded separately (never merged
+into, never subtracted from, never relabeled as uncached). The primary
+metric therefore counts exactly the input tokens the provider reports as
+uncached, plus output tokens; any run whose raw usage block cannot
+distinguish cached from uncached input is INVALID (missing evidence), not
+estimated. `usage.py` records both fields from the raw provider block and
+`normalized.json` re-derivation fails if either is absent or merged.
+
 ### H-ID-006 — provider/model identity capture
 
 Requirement: every model call logs provider endpoint, requested model
@@ -371,6 +382,55 @@ second replacement attempted          → FAIL (H-INV-009)
   smoke + attack.
 - Slice H3 (§§H-LOCK-008…H-MAN-010): spec above + implementation +
   full 14-line smoke + attack.
+
+## A11b — audit round 3b findings (P0-1…P0-6 + P1)
+
+The auditor's round-3b review accepted A11.1/A11.3 and found six P0
+implementation gaps plus one wording defect. Each is closed below with
+production code (no fixture-only paths) and an executable proof.
+
+```text
+P0-1 request binding       request bytes persisted + hashed BEFORE the POST,
+                           digest bound into the chain link and re-read by
+                           verify_request_binding()               → smoke_h9 18/18
+P0-2 common output contract ONE arm-independent contract
+                           {"decision","execution_payload","notes"} with a
+                           named fail-closed validator and a single
+                           arm-independent extract()                 → smoke_h11 24/24
+P0-3 production manifest    cell_state() demands EXACT equality over the 13
+                           production manifest fields (cell_id, cell_index,
+                           block, family, task, cell_event, cell_kind,
+                           cell_universe, cell_letter, lane, arm,
+                           capability_id, order_sha256) + real verify_chain()
+                           + admissibility ELIGIBLE            → smoke_h7 67/67
+P0-4 governance cells       cell_state() dispatches by cell kind: model-run
+                           cells need manifest+chain+admissibility,
+                           PROMOTION cells need the receipt + both
+                           acquisition chain tips re-derived, CAPABILITY_LOCK
+                           cells need the lock bound to the promotion receipt
+                           hash; no fabricated model-run manifest   → smoke_h12
+P0-5 A→C order as protocol  the A→C acquisition ordering is protocol, not
+                           merely executable behaviour: the exact
+                           ORDER-EXPANSION.json SHA256 is pinned in
+                           PROTOCOL-LOCK at PROTOCOL FINAL (open until then)
+P0-6 namespace ancestry     every component from state/ downward is lstat-
+                           checked (directory, not symlink, harness-owned,
+                           not group/world writable) on the WRITE path
+                           (derive_paths/check_namespace) AND re-checked on
+                           the READ path (cell_state); the harness creates
+                           the tree itself component-wise at 0755 with
+                           ensure_namespace() so a umask of 002 can no longer
+                           leave 0775 intermediates that the rule refuses
+                                                              → smoke_h10 20/20
+P1   accounting wording    primary_work = uncached_input + output_tokens;
+                           input tokens are not inherently uncached   → §H-USE-005
+```
+
+Real-run status unchanged: no calibration call and no Fam-C estimand cell
+has been executed (`estimand-grade wired manifests: 0`; the only wired
+manifest in the tree is the H1-P-fam05-T0 harness-validation fixture, which
+is harness validation and never estimand data). The `--offline` calibration
+transport seam proves the code path without spending a provider call.
 
 ## Status
 

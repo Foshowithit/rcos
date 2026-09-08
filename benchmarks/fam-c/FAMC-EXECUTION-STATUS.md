@@ -140,3 +140,48 @@ H5 15, H6 33, H7 67, H8 48), `calibrate --offline` 2/2 lanes green, runner
 UNCHANGED: the real P/Q calibration pair is still time-gated (Q free-tier
 quota resets 00:00 UTC) and no estimand cell has been run. Execution stays
 STOPPED for estimand-grade runs pending the auditor's next review.
+
+## Round-3b audit close (A11b) — 2026-09-08
+
+The round-3b review returned six P0 implementation findings + one wording
+defect (P0-1…P0-6, P1). All are closed in production code, verified offline
+(no real P/Q call, no network in this slice):
+
+- P0-1 request binding: the exact request BYTES are staged, persisted and
+  hashed BEFORE the POST; the digest is bound into the chain link and
+  re-read from disk by `verify_request_binding()`, so a mutated
+  temperature/max_tokens/model/messages in ANY representation fails;
+- P0-2 common output contract: ONE arm-independent contract
+  `{"decision": use_capability|fresh, "execution_payload", "notes"}` with a
+  named fail-closed validator and a single arm-independent `extract()`;
+- P0-3 production manifest: `cell_state()` requires EXACT equality over the
+  13 production manifest fields, a REAL `verify_chain()` (the smoke's stub
+  chain injection was deleted) and admissibility ELIGIBLE;
+- P0-4 governance cells: `cell_state()` dispatches by cell kind —
+  model-run cells need manifest+chain+admissibility, PROMOTION cells need
+  the receipt plus both acquisition chain tips re-derived on disk, and
+  CAPABILITY_LOCK cells need the lock bound to the promotion receipt hash;
+  governance cells need no fabricated model-run manifest;
+- P0-5 (protocol, open): the A→C acquisition order is pinned as protocol by
+  the exact ORDER-EXPANSION.json SHA256 in PROTOCOL-LOCK at PROTOCOL FINAL;
+- P0-6 namespace ancestry: every component from `state/` downward is
+  lstat-verified (directory, not symlink, harness-owned, not group/world
+  writable) on the WRITE path and re-verified on the READ path
+  (`cell_state`), and the harness now creates its own tree component-wise at
+  0755 via `ensure_namespace()` so umask 002 cannot leave 0775
+  intermediates that the rule refuses;
+- P1 accounting wording: `primary_work = uncached_input + output_tokens` —
+  input tokens are NOT inherently uncached; only the cached fraction is,
+  and it is recorded separately and never merged or relabeled.
+
+Verification for this slice: preflight V1/V2 = 0/0 findings; harness smokes
+394/404 closed with the only 10 failures being EXECUTION-LOCK staleness from
+this slice's module edits (re-minted at integration), i.e. graph 12, H1 12,
+H1-docker 33, H2 33, H3 59, H4 30, H5 13/15, H6 33, H7 59/67, H8 48, H9 18,
+H10 20, H11 24; both runner selfchecks green; `calibrate --offline` 2/2 lanes
+green; general-seat independent falsification probe 23/23. `estimand-grade = 0`
+is UNCHANGED — the only wired manifest in the tree is the H1-P-fam05-T0
+harness-validation fixture (harness validation, never estimand data). The real
+P/Q calibration pair remains time-gated (Q free-tier quota resets 00:00 UTC).
+Execution stays STOPPED for estimand-grade runs pending the auditor's next
+review.

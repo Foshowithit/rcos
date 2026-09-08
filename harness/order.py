@@ -408,6 +408,11 @@ def ensure_namespace(fam_c_dir, block, universe, family, tail=()):
     if denial:
         raise PermissionError(denial)
     p = os.path.join(fam_c_dir, "state")
+    if not os.path.lexists(p):
+        os.mkdir(p, 0o755)          # fam_c_dir itself must already exist
+    elif not stat.S_ISDIR(os.lstat(p).st_mode):
+        raise PermissionError(f"NAMESPACE-TYPE-DENY: {p} exists but is not "
+                              f"a directory")
     for comp in (block, universe, family) + tuple(tail):
         p = os.path.join(p, comp)
         if not os.path.lexists(p):
