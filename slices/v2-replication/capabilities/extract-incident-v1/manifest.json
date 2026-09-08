@@ -1,0 +1,15 @@
+{
+  "id": "extract-incident-v1",
+  "version": 1,
+  "status": "promoted",
+  "applicability": {
+    "description": "Incident extraction: group service events, fold severity, normalize message signatures, shape canonical incident. Operates over already-parsed event records — per-format parsing is composed adapter work.",
+    "requires_markers": ["error", "warn", "info", "timeout", "started", "service", "level"],
+    "claims": ["severity folding", "signature normalization", "canonical incident"]
+  },
+  "lineage": {"derived_from": ["runs/l1 (l1-app ship)", "runs/l2 (l2-jsonl ship)"]},
+  "evals": [
+    {"task_id": "l1-app", "verdict": "ship", "run_id": "l1"},
+    {"task_id": "l2-jsonl", "verdict": "ship", "run_id": "l2"}
+  ]
+}

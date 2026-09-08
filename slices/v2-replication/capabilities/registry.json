@@ -1,0 +1,9 @@
+{
+  "capabilities": [
+    {"id": "extract-incident-v1", "version": 1, "status": "promoted",
+     "path": "capabilities/extract-incident-v1"},
+    {"id": "normalize-config-v1", "version": 1, "status": "promoted-elsewhere",
+     "path": "../v1-portable-reuse/capabilities/normalize-config-v1",
+     "role_in_slice": "FORCED-WRONG arm: plausible (both are normalizers), wrong domain. Must execute and be MEASURED failing."}
+  ]
+}
