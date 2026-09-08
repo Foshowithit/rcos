@@ -207,6 +207,27 @@ REJECT; attempt a second replacement on one pair → REJECT; attempt a
 single-arm replacement → REJECT; valid infra failure → exactly one
 linked whole-pair replacement ALLOWED.
 
+### H-ORD-011 — execution order is enumerated and enforced
+
+Requirement: the frozen ORDER.md sequence is the only authorized execution
+order; a run that is not the next authorized cell cannot start.
+Implementation (round-2 item 7): `harness/order.py` parses ORDER.md
+mechanically (family order, block order PQ→QP, per-family task order and
+letter permutation, seed) and expands it into 144 cells, each with a stable
+`cell_id`; the committed `ORDER-EXPANSION.json` is that expansion and is
+never hand-edited (preflight V2 re-derives it from ORDER.md and fails on
+any drift). Before any model call the runner requires `--block PQ|QP`,
+resolves the requested (block, family, task, lane, arm) to its cell, and
+refuses on: a cell outside the frozen universe, an unknown block/lane/arm,
+a duplicate already-completed cell, or ANY earlier cell still incomplete
+(covers fam01 before fam05, QP before PQ completes, and wrong arm order
+within a family). The completion ledger counts only wired, non-dev
+manifests carrying a `cell_id`. Capability dirs outside the Fam-C registry
+surface are refused (FOREIGN-REGISTRY-DENY). The manifest stamps
+block/cell_id/cell_index/cell_letter/order_sha256 for the run.
+Test: `harness/tests/smoke_h7_order.py` (adversarial refusals + real
+runner subprocess refusals, no model call).
+
 ### H-MAN-010 — evidence/manifest chain
 
 Requirement: every run is auditable afterward as an unbroken hash chain:

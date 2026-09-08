@@ -106,8 +106,14 @@ lock["amendments"] = [{"file": "ORDER.md", "from_sha": FROZEN_ORDER,
                        "reason": "test amendment", "base": FC2[:7],
                        "slice": "test"}]
 open(os.path.join(v2, "PROTOCOL-LOCK.json"), "w").write(json.dumps(lock))
-f_v2b = [f for f in PF.validate_protocol(v2, FC2) if "ORDER.md" in f]
+# precise predicate: ORDER-EXPANSION findings also mention ORDER.md by name
+f_v2b = [f for f in PF.validate_protocol(v2, FC2)
+         if f.startswith("V2 PROTOCOL-LOCK: ORDER.md ")]
 check("V2 listed amendment passes", f_v2b == [], str(f_v2b))
+# item-7 positive control: a fam-c dir with no derived expansion is a V2 finding
+f_exp = PF.validate_protocol(v2, FC2)
+check("V2 flags a missing ORDER-EXPANSION.json",
+      any("ORDER-EXPANSION.json missing" in f for f in f_exp), str(f_exp))
 lock["amendments"][0]["from_sha"] = "ff" * 32
 open(os.path.join(v2, "PROTOCOL-LOCK.json"), "w").write(json.dumps(lock))
 check("V2 amendment not chained to frozen bytes fails",

@@ -31,6 +31,10 @@ Wiring (ON by default; unwired execution is a dev escape only — see usage):
 
 Usage: run_arm_h1.py [--promote <capstore_dir>] \\
     <lane P|Q> <family> <task> <correct|disabled> <outdir> [capdir]
+      --block PQ|QP  REQUIRED: the reciprocal block this invocation belongs
+                     to (item 7). The runner refuses to start unless the
+                     requested cell is the next authorized cell of the
+                     frozen ORDER.md sequence (ORDER-EXPANSION.json).
       --promote DIR  on a ship verdict, write CAPABILITY_LOCK.json into DIR
                      for the capability consumed by this run (writes once).
       --dev-unwired-outdir DIR  dev escape: UNWIRED run writing to DIR, which
@@ -77,6 +81,11 @@ from chain import Chain
 from lock import promote as lock_promote, load_artifact
 from reuse_log import write_record as reuse_write_record
 from admissibility import verify_instance_frozen, verify_freeze_tree
+# Item-7: the frozen ORDER.md expansion + pre-call cell authorization.
+from order import (verify_expansion as order_verify_expansion,
+                   load_expansion as order_load_expansion,
+                   completed_cells as order_completed_cells,
+                   authorize as order_authorize)
 # Item-4: three-authority preflight is importable (validate_all runs the
 # V1/V2/V3 validators without exiting); BASE on the path only exposes the
 # fam-c operational root (preflight import; no stdlib shadowing — no
@@ -341,6 +350,15 @@ def harness_manifest_sha():
 def _verify_capability(capdir):
     """H-LOCK-008: resolve the capability ONLY by exact locked hash.
     Returns lock info dict; raises PermissionError on any mismatch."""
+    # Item-7 foreign-registry refusal: the capability registry surface is the
+    # frozen Fam-C tree (capabilities/ or a run dir inside it). A capability
+    # dir outside it is a foreign registry and never enters a measured cell.
+    r_cap = os.path.realpath(capdir)
+    r_base = os.path.realpath(BASE)
+    if not (r_cap == r_base or r_cap.startswith(r_base + os.sep)):
+        raise PermissionError(
+            "FOREIGN-REGISTRY-DENY capability dir outside the Fam-C "
+            f"registry surface: {capdir}")
     lock_path = os.path.join(capdir, "CAPABILITY_LOCK.json")
     if not os.path.exists(lock_path):
         raise PermissionError("LOCK-DENY correct arm has no CAPABILITY_LOCK.json "
@@ -453,7 +471,10 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
 def selfcheck_wire():
     """Offline fixture compose-test of the wiring (no model call, no docker,
     no run, no claim-grade artifact). Returns 0 when green."""
-    tmp = tempfile.mkdtemp(prefix="rcos-wire-selfcheck-")
+    # Fixture lives INSIDE the Fam-C registry surface: the item-7
+    # foreign-registry refusal is absolute, so the offline selfcheck must
+    # exercise the real path rather than an exempt temp dir.
+    tmp = tempfile.mkdtemp(prefix=".selfcheck-wire-", dir=BASE)
     try:
         capdir = os.path.join(tmp, "capstore")
         os.makedirs(capdir)
@@ -773,6 +794,28 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     if lock_findings:
         raise RuntimeError("PREFLIGHT-LOCK-FAIL refuse start: "
                            + " | ".join(lock_findings)[:800])
+    # Item-7 refuse-START: the requested invocation must be the NEXT
+    # authorized cell of the frozen ORDER.md sequence, mechanically expanded
+    # into ORDER-EXPANSION.json. Wrong universe, unknown block, a duplicate
+    # cell, or any earlier cell still incomplete (fam01 before fam05, QP
+    # before PQ completes, wrong arm order within a family) refuses BEFORE
+    # any token is spent.
+    block = opts.get("block")
+    if not block:
+        raise ValueError(
+            "ORDER-DENY: --block PQ|QP is required; a run without a block is "
+            "not an authorized cell of the frozen order")
+    exp_findings = order_verify_expansion(BASE)
+    if exp_findings:
+        raise RuntimeError("ORDER-DENY refuse start: "
+                           + " | ".join(exp_findings))
+    expansion = order_load_expansion(BASE)
+    done_cells = order_completed_cells(os.path.join(BASE, "runs"))
+    cell, order_findings = order_authorize(
+        expansion, block, family, task, lane, arm, done_cells)
+    if order_findings:
+        raise RuntimeError("ORDER-DENY refuse start: "
+                           + " | ".join(order_findings))
     # Refuse-START: the executed instance subtree must be byte-identical to
     # the frozen package BEFORE any model token is spent. Item-5: the
     # manifest is resolved from the freeze commit via git (the working-tree
@@ -865,6 +908,14 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                 "verdict": verdict, "output_sha256": output_sha,
                 "wired": bool(wire),
                 "frozen_commit": frozen,
+                # Item-7 order binding: this manifest is the completion
+                # record for exactly one authorized cell.
+                "block": block,
+                "cell_id": cell["cell_id"],
+                "cell_index": cell["index"],
+                "cell_letter": cell["letter"],
+                "cell_lane_key": cell["lane_key"],
+                "order_sha256": expansion["order_sha256"],
                 "instance_freeze_commit": instance_freeze_commit,
                 "instance_freeze_tree": instance_freeze_tree,
                 "execution_harness_commit": execution_harness_commit,
@@ -932,11 +983,15 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
 
 if __name__ == "__main__":
     argv = sys.argv[1:]
+    opts = {}
+    if "--block" in argv:
+        i = argv.index("--block")
+        opts["block"] = argv[i + 1].upper()
+        del argv[i:i + 2]
     if "--selfcheck-wire" in argv:
         sys.exit(selfcheck_wire())
     if "--selfcheck-prompt" in argv:
         sys.exit(selfcheck_prompt())
-    opts = {}
     if "--no-wire" in argv:
         # Audit P0 #19: --no-wire is banned on the estimand surface. Dev
         # unwired runs must opt into the escape flag below instead.

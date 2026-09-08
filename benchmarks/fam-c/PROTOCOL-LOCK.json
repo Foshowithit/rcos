@@ -21,16 +21,16 @@
   {
    "file": "HARNESS-READINESS.md",
    "from_sha": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
-   "to_sha": "86a3c0471e7df8a585bc14cb565d2e38e3080d151789b581f001fed9ac8d1398",
-   "reason": "A1 H-USE-005 implementation note; item-3 H-ID-006 note (audit round 2); authority-locks section (item 4); item-6 single-snapshot + envelope symmetry implementation note",
+   "to_sha": "7af4b78e018c3cb918f81848bd4e646ee616f51d1e0341b3ff7cd6c74ccf3e13",
+   "reason": "A1 H-USE-005 implementation note; item-3 H-ID-006 note (audit round 2); authority-locks section (item 4); item-6 single-snapshot + envelope symmetry implementation note; H-ORD-011 execution-order enforcement (item 7)",
    "base": "fca3df0",
    "slice": "a4/a5/a7-item-1+3+5"
   },
   {
    "file": "preflight.py",
    "from_sha": "dd07af5de705ac3ad943f37152f0e3d45439c345f8266dd1a17fd8a494617af0",
-   "to_sha": "c9676065d149dd06bd8149d96ff652e1b6e497131dd05bc11119039bd48601e0",
-   "reason": "item-4 three-authority re-scope (audit round 2): V1 instance / V2 protocol / V3 execution validators replace whole-tree diff",
+   "to_sha": "974ce924d019200508d7a00895c76e0441a28f31b151255dc526b563fb98f1ec",
+   "reason": "item-4 three-authority re-scope (audit round 2): V1 instance / V2 protocol / V3 execution validators replace whole-tree diff; item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
    "base": "fca3df0",
    "slice": "a7-item-4"
   }

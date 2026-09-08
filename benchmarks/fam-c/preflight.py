@@ -26,6 +26,7 @@ FAMC-EXECUTION-STATUS.md, ORDER-EXPANSION.json) are pinned by git history
 capabilities/, harness-run/) hold evidence/artifacts/tooling, never
 freeze inputs.
 """
+import ast
 import hashlib
 import json
 import os
@@ -36,6 +37,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), os.pardir, "harness"))
 from admissibility import (frozen_manifest_bytes, verify_freeze_tree,
                            load_freeze)
+from order import verify_expansion as order_verify_expansion
 
 FREEZE_COMMIT = "d1292434a261f44ad910c556e18624cef1676f37"
 
@@ -174,7 +176,42 @@ def validate_protocol(fam_c_dir, freeze_commit):
             out.append(f"V2 PROTOCOL-LOCK: {fn} drifted with no listed "
                        f"forward amendment (disk {disk[:12]} not in "
                        f"{{frozen,{len(acceptable) - 1} amendment(s)}})")
+    # Item-7: the enumerated execution order is DERIVED from ORDER.md, so a
+    # hand-edited or stale expansion is protocol drift by construction.
+    for f in order_verify_expansion(fam_c_dir):
+        out.append("V2 PROTOCOL-LOCK: " + f)
     return out
+
+
+def _harness_closure(root, entry_rel):
+    """Harness modules reachable from the runner by import (repo-relative).
+    Only harness/*.py candidates count; governed/operational paths are
+    owned by their own authority."""
+    seen, todo = set(), [entry_rel]
+    while todo:
+        rel = todo.pop()
+        if rel in seen:
+            continue
+        seen.add(rel)
+        fp = os.path.join(root, rel)
+        if not os.path.exists(fp):
+            continue
+        try:
+            tree = ast.parse(open(fp).read())
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module:
+                mods = [node.module]
+            elif isinstance(node, ast.Import):
+                mods = [a.name for a in node.names]
+            else:
+                continue
+            for m in mods:
+                cand = f"harness/{m.split('.')[0]}.py"
+                if os.path.exists(os.path.join(root, cand)):
+                    todo.append(cand)
+    return seen
 
 
 def validate_execution(fam_c_dir):
@@ -201,6 +238,18 @@ def validate_execution(fam_c_dir):
                        "(re-mint via explicit amendment commit)")
     if not lock.get("harness_files"):
         out.append("V3 EXECUTION-LOCK: lock lists no harness files")
+    # Item-7 completeness: the lock must cover every harness module the
+    # runner actually executes (import closure), so a new/smuggled module
+    # cannot ride outside the execution authority.
+    listed = set(lock.get("harness_files", {}))
+    entry = next((r for r in listed if r.startswith("benchmarks/fam-c/"
+                                                   "harness-run/")), None)
+    if entry:
+        for rel in sorted(_harness_closure(root, entry)):
+            if rel not in listed:
+                out.append(f"V3 EXECUTION-LOCK: unlisted harness module in "
+                           f"the runner's import closure: {rel} (add it to "
+                           "the lock via an explicit amendment)")
     return out
 
 
