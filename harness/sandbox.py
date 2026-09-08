@@ -21,6 +21,8 @@ import subprocess
 import sys
 
 SITECUSTOMIZE = '''
+# SUPERSEDED by dockersandbox.py (kernel-boundary enforcement).
+# Kept for reference only; do NOT use for Fam-C runs.
 # Injected into EVERY agent process. Default-deny outbound network;
 # allowlist is provider/tool hosts declared per run in SANDBOX_ALLOW_HOSTS.
 import os, socket as _s
