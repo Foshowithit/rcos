@@ -1,0 +1,22 @@
+<think>The task is to count lines in events.txt. Each line is a distinct event, including retries of identical lines. I need to emit OUTPUT.json with total, unique, and removed counts.
+
+The events.txt contains:
+1. order-7 CREATED
+2. order-7 CREATED
+3. order-7 PAID
+4. order-8 CREATED
+5. order-8 PAID
+
+So total = 5, unique = 4 (order-7 CREATED appears twice, so 4 unique lines), removed = 1.
+
+The capability interface says I need to provide field_map and records to the engine. The identity rule for full-line dedup is "line".
+
+For full-line identity:
+- field_map: {"identity": "line"}
+- records: {"events": ["order-7 CREATED", "order-7 CREATED", "order-7 PAID", "order-8 CREATED", "order-8 PAID"]}
+
+The engine will compute total=5, unique=4, removed=1.
+
+Let me output the JSON object with the proper structure.</think>
+
+{"records": {"events": ["order-7 CREATED", "order-7 CREATED", "order-7 PAID", "order-8 CREATED", "order-8 PAID"]}, "field_map": {"identity": "line"}, "notes": "Full-line identity over 5 lines yields total=5, unique=4, removed=1."}

@@ -1,0 +1,67 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T2):
+```
+# fam03-T2 — dedup JSON envelope by kind+target
+Count events in `batch.json` (array under `events`). Identity =
+(kind,target) pair. Emit `OUTPUT.json`: `{total, unique, removed}`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, batch.json, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- batch.json (493 bytes) ---
+{
+ "batch": "t2",
+ "events": [
+  {
+   "kind": "open",
+   "target": "A"
+  },
+  {
+   "kind": "login",
+   "target": "B"
+  },
+  {
+   "kind": "open",
+   "target": "A"
+  },
+  {
+   "kind": "render",
+   "target": "C"
+  },
+  {
+   "kind": "login",
+   "target": "B"
+  },
+  {
+   "kind": "flush",
+   "target": "D"
+  },
+  {
+   "kind": "open",
+   "target": "A"
+  },
+  {
+   "kind": "login",
+   "target": "B"
+  },
+  {
+   "kind": "render",
+   "target": "C"
+  },
+  {
+   "kind": "flush",
+   "target": "D"
+  }
+ ]
+}
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

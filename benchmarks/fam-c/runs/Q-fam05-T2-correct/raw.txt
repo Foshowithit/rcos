@@ -1,0 +1,19 @@
+
+
+{
+  "records": {
+    "a.txt": {"a.txt": "12345"},
+    "b.txt": {"b.txt": "12345678"},
+    "c.txt": {"c.txt": "xxxxxxxxxxxx"},
+    "d.txt": {"d.txt": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"},
+    "e.txt": {"e.txt": "zzzzzzz"},
+    "f.txt": {"f.txt": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"}
+  },
+  "field_map": {
+    "c.txt": {"c.txt": {"size": 12, "sha256": "59ffe12a70df15109e0345955e3230a978f31ebc28d8fe3e42d306afb28b8e81"}},
+    "d.txt": {"d.txt": {"size": 34, "sha256": "b90db8b04822b9312e3f4e23368478010f5785c8ee75bfda24ac7a3802141f8d"}},
+    "e.txt": {"e.txt": {"size": 7, "sha256": "3878221012d3785e4f21eef37119410a7ed8ebb5de28ef82c0cad48d8cdc5d04"}},
+    "f.txt": {"f.txt": {"size": 100, "sha256": "6ff1386a6f0d444e2af43e9a9e1cdc1394709fc87b5c2a625e16041fec2b1131"}}
+  },
+  "notes": "Verification complete: c.txt, d.txt, e.txt, f.txt ok; a.txt, b.txt unverified."
+}

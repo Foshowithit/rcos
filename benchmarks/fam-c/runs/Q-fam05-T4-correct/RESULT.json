@@ -1,0 +1,1 @@
+{"task": "fam05/T4", "lane": "Q", "arm": "correct", "verdict": "fix", "detail": "hallucinated local alpha/beta from s3 URI basenames; engine flagged bad"}

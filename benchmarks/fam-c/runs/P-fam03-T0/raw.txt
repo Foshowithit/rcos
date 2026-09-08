@@ -1,0 +1,111 @@
+<think>The task is to count events in `events.txt`, treating each line as the identity, and emit `OUTPUT.json` with `{total, unique, removed}` where `removed = total - unique`.
+
+Let me write a Python script that:
+1. Reads `src_dir/events.txt`
+2. Counts total lines and unique lines
+3. Writes `{total, unique, removed}` to `dst_path/OUTPUT.json`
+
+The script should read from `src_dir` and write to `dst_path` as specified in the response format.
+
+Let me think about edge cases:
+- Empty lines: should they be counted? The task says "Identity = the full line", so each line including empty ones would count. But typically in such tasks, we read lines and count non-empty ones or count all lines read.
+- Looking at the fixture, there are 6 lines, all non-empty. Let me assume we count all lines as they appear (including potentially empty trailing newline).
+
+I'll use `read().splitlines()` or read line by line. Let me use a simple approach that reads all lines and counts them.
+
+Actually, let me think more carefully. The fixture shows 6 lines of content. If I read with `read().splitlines()`, I'll get 6 lines. If I read with `readlines()`, I might get 6 lines but with potential trailing newline considerations.
+
+Let me use `splitlines()` to be safe, or just iterate over the file object.
+
+Here's the script:
+
+```python
+import json
+import sys
+import os
+
+def main():
+    src_dir = sys.argv[1]
+    dst_path = sys.argv[2]
+    
+    with open(os.path.join(src_dir, 'events.txt'), 'r') as f:
+        lines = f.read().splitlines()
+    
+    total = len(lines)
+    unique = len(set(lines))
+    removed = total - unique
+    
+    output = {
+        "total": total,
+        "unique": unique,
+        "unique_list": sorted(set(lines)),  # Not requested, but might be useful
+        "removed": removed
+    }
+    
+    # Actually, just emit what's requested
+    output = {
+        "total": total,
+        "unique": unique,
+        "removed": removed
+    }
+    
+    os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+    with open(dst_path, 'w') as f:
+        json.dump(output, f)
+
+if __name__ == '__main__':
+    main()
+```
+
+Wait, the task says "emit `OUTPUT.json`" - so the filename should be OUTPUT.json. The dst_path is likely the full path including filename. Let me check the response format: "writing the output contract described in the task definition". The contract is `OUTPUT.json`. So I should write to `dst_path` which should be the path to OUTPUT.json.
+
+Actually, looking at the format more carefully: `dst_path` is the destination path. The task says emit OUTPUT.json. So dst_path probably points to OUTPUT.json directly.
+
+Let me simplify:
+
+```python
+import json
+import sys
+import os
+
+def main():
+    src_dir = sys.argv[1]
+    dst_path = sys.argv[2]
+    
+    with open(os.path.join(src_dir, 'events.txt'), 'r') as f:
+        lines = f.read().splitlines()
+    
+    total = len(lines)
+    unique = len(set(lines))
+    removed = total - unique
+    
+    output = {
+        "total": total,
+        "unique": unique,
+        "removed": removed
+    }
+    
+    os.makedirs(os.path.dirname(os.path.abspath(dst_path)), exist_ok=True)
+    with open(dst_path, 'w') as f:
+        json.dump(output, f)
+
+if __name__ == '__main__':
+    main()
+```
+
+For the given fixture:
+- Total: 6
+- Unique: 4 (evt-open A, user-login B, dash-render C, cache-fill D)
+- Removed: 2
+
+This seems correct.
+
+Wait, I need to be careful about whether to include empty lines. If the file has a trailing newline, `splitlines()` will not produce an extra empty line. But if there are blank lines in the middle, they would be counted. The task says "Identity = the full line", so I think we count all lines as they appear.
+
+Actually, let me reconsider: should I strip whitespace? The task says "exact line identity", so no stripping. I'll keep it as is.
+
+One more thing: should the script handle the case where dst_path is a directory and we need to write OUTPUT.json inside it? The task says "emit `OUTPUT.json`", so dst_path might be the directory or the file. Looking at typical task runner patterns, `dst_path` is usually the full path to the output file. I'll assume dst_path is the path to OUTPUT.json.
+
+Let me finalize the script.</think>
+
+{"solver_py": "import json\nimport sys\nimport os\n\ndef main():\n    src_dir = sys.argv[1]\n    dst_path = sys.argv[2]\n    \n    with open(os.path.join(src_dir, 'events.txt'), 'r') as f:\n        lines = f.read().splitlines()\n    \n    total = len(lines)\n    unique = len(set(lines))\n    removed = total - unique\n    \n    output = {\n        \"total\": total,\n        \"unique\": unique,\n        \"removed\": removed\n    }\n    \n    os.makedirs(os.path.dirname(os.path.abspath(dst_path)), exist_ok=True)\n    with open(dst_path, 'w') as f:\n        json.dump(output, f)\n\nif __name__ == '__main__':\n    main()\n", "notes": "Reads events.txt, counts total lines and unique lines (set-based), writes {total, unique, removed} to OUTPUT.json."}

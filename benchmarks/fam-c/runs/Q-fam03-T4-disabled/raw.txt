@@ -1,0 +1,3 @@
+
+
+{"solver_py": "import json, pathlib\np = pathlib.Path('events.txt')\nlines = p.read_text().splitlines()\ntotal = len(lines)\nunique = len(set(lines))\nremoved = total - unique\n(pathlib.Path('OUTPUT.json').write_text(json.dumps({'total': total, 'unique': unique, 'removed': removed})))", "notes": "5 lines, 4 unique, 1 removed (duplicate order-7 CREATED)"}

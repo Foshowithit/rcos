@@ -1,0 +1,29 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T1):
+```
+# fam03-T1 — dedup by action+target identity
+Count data rows in `events.csv` (skip header). Identity = (action,target)
+pair. Emit `OUTPUT.json`: `{total, unique, removed}`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, events.csv, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- events.csv (66 bytes) ---
+id,action,target
+1,open,A
+2,login,B
+3,open,A
+4,render,C
+5,login,B
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

@@ -1,0 +1,162 @@
+<think>The user wants me to author a reusable capability specification based on two manifest-verification tasks I solved. The output should be a single JSON object with three keys: `engine_py`, `manifest`, and `adapter_notes`.
+
+Let me think about what the two tasks shared:
+1. Colon format (key: value)
+2. JSON format with a tampered entry
+
+Both involved:
+- Reading a field map (expected fields and their constraints, including sizes and sha256 hashes)
+- Reading pre-parsed records (flat dict)
+- Validating sizes where expected sizes were present
+- Validating sha256 hashes where expected hashes were present
+- Outputting ok, bad, and unverified lists
+- Bad entries have path and reason
+- Unverified entries are those without expected values
+
+The engine should:
+- Take argv: field_map_path, records_path, out_path
+- Read field map (could be JSON)
+- Read records (pre-parsed flat dict - so this is JSON)
+- Write output JSON with ok, bad, unverified
+- Exit 0 on success, 1 on crash only
+
+Let me write the Python script. It should be stdlib only, complete, and handle the core verification logic.
+
+For the manifest, I need to describe:
+- What it applies to
+- Required markers (what tells us this is a manifest verification task)
+- Claims (what we can verify)
+- Limitations (what we can't)
+
+Adapter notes explain how to convert various formats into flat records.
+
+Let me write this concisely under 100 lines.
+
+```python
+#!/usr/bin/env python3
+import sys, json, hashlib
+
+def sha256_hex(data):
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    return hashlib.sha256(data).hexdigest()
+
+def main():
+    try:
+        if len(sys.argv) != 4:
+            print("usage: engine.py field_map records out", file=sys.stderr)
+            return 1
+        
+        field_map_path, records_path, out_path = sys.argv[1], sys.argv[2], sys.argv[3]
+        
+        with open(field_map_path, 'r') as f:
+            field_map = json.load(f)
+        
+        with open(records_path, 'r') as f:
+            records = json.load(f)
+        
+        ok = []
+        bad = []
+        unverified = []
+        
+        for path, record in records.items():
+            if not isinstance(record, dict):
+                bad.append({"path": path, "reason": f"not a dict: {type(record).__name__}"})
+                continue
+            
+            spec = field_map.get(path)
+            if spec is None:
+                # No spec means we can't verify, or could be unverified
+                unverified.append(path)
+                continue
+            
+            entry_ok = True
+            reasons = []
+            
+            for field, value in record.items():
+                expected = spec.get(field, {})
+                
+                # Size check
+                exp_size = expected.get('size')
+                if exp_size is not None:
+                    actual_size = len(value) if isinstance(value, (str, bytes)) else len(str(value).encode('utf-8'))
+                    if actual_size != exp_size:
+                        entry_ok = False
+                        reasons.append(f"{field}: size {actual_size} != expected {exp_size}")
+                
+                # sha256 check
+                exp_sha = expected.get('sha256')
+                if exp_sha is not None:
+                    actual_sha = sha256_hex(value)
+                    if actual_sha != exp_sha:
+                        entry_ok = False
+                        reasons.append(f"{field}: sha256 mismatch")
+            
+            # Check required fields present
+            for field, expected in spec.items():
+                if expected.get('required', False) and field not in record:
+                    entry_ok = False
+                    reasons.append(f"missing required field: {field}")
+            
+            if not entry_ok:
+                bad.append({"path": path, "reason": "; ".join(reasons)})
+            else:
+                # Check if any field had no expected values -> unverified
+                has_unverified = False
+                for field, value in record.items():
+                    expected = spec.get(field, {})
+                    if 'size' not in expected and 'sha256' not in expected:
+                        has_unverified = True
+                        break
+                if has_unverified:
+                    unverified.append(path)
+                else:
+                    ok.append(path)
+        
+        with open(out_path, 'w') as f:
+            json.dump({"ok": ok, "bad": bad, "unverified": unverified}, f, indent=2)
+        
+        return 0
+    except Exception as e:
+        print(f"crash: {e}", file=sys.stderr)
+        return 1
+
+if __name__ == '__main__':
+    sys.exit(main())
+```
+
+Let me count lines... that's around 70 lines. Good.
+
+Now the manifest. I should describe what this capability handles based on T0/T1 demos:
+- applicability: any task where there's a manifest with field-level constraints (size, sha256) and records to verify
+- requires_markers: presence of expected sizes and/or sha256 hashes
+- claims: can verify byte-exact integrity, detect mismatches
+- limitations: only checks what's specified, semantic content verification not done
+
+Adapter notes: how to flatten different formats into path->dict mapping.
+
+Let me finalize the JSON. I need to make sure the engine_py is a string containing the Python code. Let me be careful with escaping.
+
+Actually, the field map format isn't strictly defined - in T0 it was colon format, in T1 it was JSON. The engine takes a pre-parsed field_map. So the field map should be JSON for the engine, and the adapter converts.
+
+Wait, re-reading: "reads a field map + pre-parsed flat file-record dict". So both inputs are pre-parsed. The adapter does the parsing. So both field_map and records are JSON files.
+
+Let me refine: field_map is a dict mapping path -> {field_name: {size: N, sha256: "..."}}. Records is a dict mapping path -> {field_name: value}.
+
+Actually, looking at this more carefully - I think the field_map might be simpler. Let me think about what T0 and T1 actually had:
+
+T0 (colon format): Had entries like "field: value" and a manifest with "field: expected_size, expected_sha256"
+T1 (JSON format): Same structure but JSON
+
+The engine should verify:
+- If size is expected and present, check it
+- If sha256 is expected and present, check it
+- Anything else is unverified
+
+Let me make sure my implementation matches this. I think it's reasonable.
+
+Let me finalize the JSON output. I need to escape the Python code properly inside the JSON string.
+
+I'll write it out now.</think>
+
+{"engine_py": "#!/usr/bin/env python3\nimport sys, json, hashlib\n\ndef sha256_hex(data):\n    if isinstance(data, str):\n        data = data.encode('utf-8')\n    return hashlib.sha256(data).hexdigest()\n\ndef main():\n    try:\n        if len(sys.argv) != 4:\n            print(\"usage: engine.py field_map_path records_path out_path\", file=sys.stderr)\n            return 1\n\n        field_map_path, records_path, out_path = sys.argv[1], sys.argv[2], sys.argv[3]\n\n        with open(field_map_path, 'r') as f:\n            field_map = json.load(f)\n        with open(records_path, 'r') as f:\n            records = json.load(f)\n\n        ok, bad, unverified = [], [], []\n\n        for path, record in records.items():\n            if not isinstance(record, dict):\n                bad.append({\"path\": path, \"reason\": f\"not a dict: {type(record).__name__}\"})\n                continue\n\n            spec = field_map.get(path)\n            if spec is None:\n                unverified.append(path)\n                continue\n\n            reasons = []\n            has_any_check = False\n            all_checks_passed = True\n\n            for field, value in record.items():\n                expected = spec.get(field)\n                if not isinstance(expected, dict):\n                    continue\n\n                exp_size = expected.get('size')\n                exp_sha = expected.get('sha256')\n\n                if exp_size is not None:\n                    has_any_check = True\n                    if isinstance(value, str):\n                        actual_size = len(value.encode('utf-8'))\n                    elif isinstance(value, (bytes, bytearray)):\n                        actual_size = len(value)\n                    else:\n                        actual_size = len(str(value).encode('utf-8'))\n                    if actual_size != exp_size:\n                        all_checks_passed = False\n                        reasons.append(f\"{field}: size {actual_size} != {exp_size}\")\n\n                if exp_sha is not None:\n                    has_any_check = True\n                    if sha256_hex(value) != exp_sha:\n                        all_checks_passed = False\n                        reasons.append(f\"{field}: sha256 mismatch\")\n\n            if not all_checks_passed:\n                bad.append({\"path\": path, \"reason\": \"; \".join(reasons)})\n            elif not has_any_check:\n                unverified.append(path)\n            else:\n                ok.append(path)\n\n        with open(out_path, 'w') as f:\n            json.dump({\"ok\": ok, \"bad\": bad, \"unverified\": unverified}, f, indent=2)\n        return 0\n    except Exception as e:\n        print(f\"crash: {e}\", file=sys.stderr)\n        return 1\n\nif __name__ == '__main__':\n    sys.exit(main())\n", "manifest": {"id": "manifest-verify-v1", "version": 1, "applicability": {"description": "Verify a set of flat file-records against a manifest specifying per-field size and/or sha256 constraints. Used when a manifest enumerates fields with expected byte counts or content hashes.", "requires_markers": ["manifest contains 'size' or 'sha256' expectations per field", "records are flat dicts mapping field name to value", "a field-map maps record path -> field -> constraint dict"], "claims": ["byte-length of string/bytes fields matches expected size when specified", "sha256 of field content matches expected digest when specified", "mismatches are reported with path + per-field reason", "fields without any constraint contribute to 'unverified' status"]}, "limitations": ["does not interpret semantic meaning of fields", "does not handle nested record structures beyond flat dicts", "does not verify ordering, absence-of-fields, or cross-field consistency", "non-string/non-bytes values are stringified before hashing, which may not match the source encoding", "size for non-bytes values is measured on UTF-8 bytes of str(value)"]}, "adapter_notes": "The adapter converts a NEW manifest+raw-files pair into the two JSON inputs the engine consumes. Steps: (1) Parse the native manifest format into field_map: { record_path: { field_name: { 'size': N?, 'sha256': 'hex'? } } }. For colon manifests split on ':', for JSON traverse nested layouts flattening dot-paths, for env-style (KEY=VAL or KEY VAL) split on first delimiter and treat keys as fields, using the record's overall path as the record_path key. (2) Parse raw files into records: { record_path: { field_name: raw_value } }, preserving original byte/str form so sha256 hashing in the engine matches. (3) Write both as JSON to disk and invoke: python3 engine.py <field_map.json> <records.json> <out.json>. The engine returns 0 on success; the adapter reads out.json to populate ok/bad/unverified for the solver."}

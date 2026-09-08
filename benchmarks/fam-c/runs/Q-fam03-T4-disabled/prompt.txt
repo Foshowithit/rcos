@@ -1,0 +1,29 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T4):
+```
+# fam03-T4 — count order events
+Count lines in `events.txt`. Each line is a distinct event, including
+retries of identical lines. Emit `OUTPUT.json`:
+`{total, unique, removed}` counting every line.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, events.txt, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- events.txt (74 bytes) ---
+order-7 CREATED
+order-7 CREATED
+order-7 PAID
+order-8 CREATED
+order-8 PAID
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

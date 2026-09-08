@@ -1,0 +1,6 @@
+id,action,target
+1,open,A
+2,login,B
+3,open,A
+4,render,C
+5,login,B

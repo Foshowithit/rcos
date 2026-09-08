@@ -1,0 +1,1 @@
+{"task": "fam05/T2", "lane": "Q", "arm": "disabled", "verdict": "ship", "note": "fresh solver ships; hardcodes relative paths (runs in task dir)"}

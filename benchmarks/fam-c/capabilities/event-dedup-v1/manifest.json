@@ -1,0 +1,25 @@
+{
+ "id": "event-dedup-v1",
+ "version": 1,
+ "applicability": {
+  "description": "Count and deduplicate pre-parsed events under an explicitly supplied identity rule: either the complete line/string or a tuple of named event fields.",
+  "requires_markers": [
+   "a field map with identity set to line or a list of field names",
+   "records with an events array",
+   "parseable JSON input and output"
+  ],
+  "claims": [
+   "Reports total event count, unique identity count, and removed duplicate count",
+   "Treats full line/string identity exactly",
+   "Composes any explicitly named event fields into one identity",
+   "Preserves the first-seen semantic values of fields while ignoring duplicate occurrence order",
+   "Accepts an optional service tag in the field map without changing the identity rule"
+  ]
+ },
+ "limitations": [
+  "Input records must already be parsed; source-format parsing is adapter work",
+  "No case folding, normalization, fuzzy matching, time windows, or service-based grouping is performed",
+  "A composite identity follows the listed field names; omitted fields and explicit null values are not distinguished",
+  "Identity ordering is not semantically significant for equality"
+ ]
+}

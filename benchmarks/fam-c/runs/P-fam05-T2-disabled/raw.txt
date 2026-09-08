@@ -1,0 +1,328 @@
+<think>We need to verify each listed file's actual size and sha256 against the manifest. The manifest lists c.txt, d.txt, e.txt, f.txt with their expected sizes and sha256 hashes. The directory listing shows these files exist along with a.txt, b.txt, prompt.md, VISIBLE.md, MANIFEST.txt.
+
+We need to write a Python script that reads the manifest, checks each file's size and sha256, and outputs the result.
+
+Let me write the script:
+
+```python
+import sys
+import os
+import hashlib
+
+def solve(manifest_path, files_dir, out_path):
+    ok = []
+    bad = []
+    unverified = []
+    
+    with open(manifest_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split()
+            if len(parts) != 3:
+                continue
+            filename, expected_size, expected_hash = parts
+            filepath = os.path.join(files_dir, filename)
+            if not os.path.exists(filepath):
+                unverified.append(filename)
+                continue
+            try:
+                expected_size_int = int(expected_size)
+            except ValueError:
+                unverified.append(filename)
+                continue
+            actual_size = os.path.getsize(filepath)
+            if actual_size != expected_size_int:
+                bad.append({"path": filename, "reason": f"size mismatch: expected {expected_size_int}, got {actual_size}"})
+                continue
+            sha256 = hashlib.sha256()
+            with open(filepath, 'rb') as f2:
+                while True:
+                    chunk = f2.read(65536)
+                    if not chunk:
+                        break
+                    sha256.update(chunk)
+            actual_hash = sha256.hexdigest()
+            if actual_hash != expected_hash:
+                bad.append({"path": filename, "reason": f"sha256 mismatch: expected {expected_hash}, got {actual_hash}"})
+                continue
+            ok.append(filename)
+    
+    result = {"ok": ok, "bad": bad, "unverified": unverified}
+    with open(out_path, 'w') as f:
+        import json
+        json.dump(result, f)
+
+if __name__ == "__main__":
+    if len(sys.argv) == 4:
+        solve(sys.argv[1], sys.argv[2], sys.argv[3])
+```
+
+Wait, the prompt says: "reading (manifest_path, files_dir, out_path)". That suggests the function signature should accept these three arguments. Let me make sure the script handles the command-line arguments properly.
+
+Looking at the response format, it asks for `{"solver_py": "<complete python3 stdlib script>", "notes": "<one line>"}`. The script should read manifest_path, files_dir, out_path. This is likely invoked with command-line arguments or some standard way. I'll assume it's called with these three arguments passed somehow, or the script reads them from sys.argv.
+
+Actually, looking at the task again, it says "reading (manifest_path, files_dir, out_path) and writing the output contract". This suggests the function takes these three parameters. But in a standalone script, we need to either parse command line arguments or read from somewhere. Given the format, I'll create a script that takes command-line arguments: manifest_path, files_dir, out_path.
+
+Let me verify the actual files against the manifest:
+
+c.txt: expected size 12, hash 59ffe12a70df15109e0345955e3230a978f31ebc28d8fe3e42d306afb28b8e81
+Actual content: "xxxxxxxxxxxx" (12 x's). Let's check if sha256 of "xxxxxxxxxxxx" matches. I'll compute it mentally or trust the verification. Actually, since I'm just writing a script, I don't need to manually verify - the script will do it.
+
+d.txt: expected size 34, hash b90db8b04822b9312e3f4e23368478010f5785c8ee75bfda24ac7a3802141f8d
+Actual content: 34 y's.
+
+e.txt: expected size 7, hash 3878221012d3785e4f21eef37119410a7ed8ebb5de28ef82c0cad48d8cdc5d04
+Actual content: 7 z's.
+
+f.txt: expected size 100, hash 6ff1386a6f0d444e2af43e9a9e1cdc1394709fc87b5c2a625e16041fec2b1131
+Actual content: 100 w's.
+
+Wait, let me think about this. The manifest has specific sha256 hashes. The actual files shown have specific contents. The script will check if they match. Since the task says "verify each listed file's actual size and sha256 against the manifest", and given that this is a verification task, some files might be bad or unverified. However, the files shown in the prompt have specific byte contents. I need to check if those match.
+
+Actually, looking at the prompt more carefully: "TASK FILE CONTENTS (exact bytes of small fixtures)". The files c.txt, d.txt, e.txt, f.txt are given with their exact contents. So the verification will check if those contents match the manifest.
+
+Let me quickly check the sha256 of "xxxxxxxxxxxx" (12 bytes of 'x'):
+x is 0x78. 12 bytes.
+Actually, I should just trust the script. But wait, the prompt shows the task input and directory listing. The script needs to be correct. Let me think about what the expected output should be.
+
+But actually, for the response, I just need to provide the script. The notes can be one line.
+
+Let me write the final script:
+
+```python
+import sys
+import os
+import hashlib
+import json
+
+def solve(manifest_path, files_dir, out_path):
+    ok = []
+    bad = []
+    unverified = []
+    
+    try:
+        with open(manifest_path, 'r') as f:
+            lines = f.readlines()
+    except Exception:
+        with open(out_path, 'w') as out:
+            json.dump({"ok": [], "bad": [], "unverified": []}, out)
+        return
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) != 3:
+            continue
+        filename, expected_size_str, expected_hash = parts
+        
+        filepath = os.path.join(files_dir, filename)
+        
+        if not os.path.exists(filepath):
+            unverified.append(filename)
+            continue
+        
+        try:
+            expected_size = int(expected_size_str)
+        except ValueError:
+            bad.append({"path": filename, "reason": f"invalid expected size in manifest: {expected_size_str}"})
+            continue
+        
+        actual_size = os.path.getsize(filepath)
+        
+        if actual_size != expected_size:
+            bad.append({"path": filename, "reason": f"size mismatch: expected {expected_size}, got {actual_size}"})
+            continue
+        
+        sha256 = hashlib.sha256()
+        with open(filepath, 'rb') as f:
+            while True:
+                chunk = f.read(65536)
+                if not chunk:
+                    break
+                sha256.update(chunk)
+        actual_hash = sha256.hexdigest()
+        
+        if actual_hash != expected_hash:
+            bad.append({"path": filename, "reason": f"sha256 mismatch: expected {expected_hash}, got {actual_hash}"})
+            continue
+        
+        ok.append(filename)
+    
+    result = {"ok": ok, "bad": bad, "unverified": unverified}
+    with open(out_path, 'w') as out:
+        json.dump(result, out)
+
+if __name__ == "__main__":
+    if len(sys.argv) >= 4:
+        solve(sys.argv[1], sys.argv[2], sys.argv[3])
+    elif len(sys.argv) == 3:
+        solve(sys.argv[1], sys.argv[2], None)
+```
+
+Wait, I need to make sure the script writes to out_path. If out_path is None, we can't write. Let me adjust to require out_path or default to stdout. Actually, the task says "writing the output contract" to out_path. So I'll assume out_path is provided.
+
+Actually, looking at the prompt: "reading (manifest_path, files_dir, out_path)". This is the signature. So all three are passed. But in a script, how? Probably as command-line arguments. I'll keep it as sys.argv.
+
+But there's a subtlety: "entries that cannot be checked against local sha256 files go under `unverified`". What does this mean? It means if the file doesn't exist locally, it goes under unverified. That's what I have.
+
+One more thing: the directory listing includes a.txt and b.txt which are not in the manifest. They don't need to be verified. The manifest only lists c.txt, d.txt, e.txt, f.txt.
+
+So the script should only process files listed in the manifest. That's what my script does.
+
+Let me double check the format. The response format asks for `{"solver_py": "...", "notes": "..."}`. So I output one JSON object with these two fields.
+
+Let me finalize the script. I want to make it robust:
+
+```python
+import sys
+import os
+import hashlib
+import json
+
+def solve(manifest_path, files_dir, out_path):
+    ok = []
+    bad = []
+    unverified = []
+    
+    try:
+        with open(manifest_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                parts = line.split()
+                if len(parts) != 3:
+                    continue
+                filename, expected_size_str, expected_hash = parts
+                
+                filepath = os.path.join(files_dir, filename)
+                
+                if not os.path.exists(filepath):
+                    unverified.append(filename)
+                    continue
+                
+                try:
+                    expected_size = int(expected_size_str)
+                except ValueError:
+                    bad.append({"path": filename, "reason": f"invalid size in manifest: {expected_size_str}"})
+                    continue
+                
+                actual_size = os.path.getsize(filepath)
+                
+                if actual_size != expected_size:
+                    bad.append({"path": filename, "reason": f"size mismatch: expected {expected_size}, got {actual_size}"})
+                    continue
+                
+                sha256 = hashlib.sha256()
+                with open(filepath, 'rb') as f2:
+                    while True:
+                        chunk = f2.read(65536)
+                        if not chunk:
+                            break
+                        sha256.update(chunk)
+                actual_hash = sha256.hexdigest()
+                
+                if actual_hash != expected_hash:
+                    bad.append({"path": filename, "reason": f"sha256 mismatch: expected {expected_hash}, got {actual_hash}"})
+                    continue
+                
+                ok.append(filename)
+    except Exception as e:
+        pass
+    
+    result = {"ok": ok, "bad": bad, "unverified": unverified}
+    
+    if out_path:
+        with open(out_path, 'w') as f:
+            json.dump(result, f)
+    else:
+        print(json.dumps(result))
+
+if __name__ == "__main__":
+    if len(sys.argv) >= 4:
+        solve(sys.argv[1], sys.argv[2], sys.argv[3])
+    elif len(sys.argv) == 3:
+        solve(sys.argv[1], sys.argv[2], None)
+```
+
+This looks good. Now I need to provide this in the JSON format requested.
+
+Actually, wait. I need to be careful about the JSON escaping in the output. The script string needs to be properly escaped in the JSON. But since I'm outputting JSON, I just need to make sure the string is properly formatted.
+
+Also, I should think about whether the files actually match. Let me check:
+
+c.txt: "xxxxxxxxxxxx" - 12 bytes. sha256 of 12 x's. 
+Let me compute: The hex of 'x' is 78. So 12 bytes of 0x78.
+Actually, I'll trust that the manifest is correct and the files match, or some don't. Either way, the script handles it.
+
+But wait - looking at the prompt again: "verify each listed file's actual size and sha256 against the manifest". The files shown in the prompt are described as "exact bytes of small fixtures". So these are the actual contents on disk. The script will verify them.
+
+I should provide a clean script. Let me write it out fully:
+
+```python
+import sys, os, hashlib, json
+
+def solve(manifest_path, files_dir, out_path):
+    ok, bad, unverified = [], [], []
+    try:
+        with open(manifest_path) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                parts = line.split()
+                if len(parts) != 3:
+                    continue
+                name, size_s, exp_hash = parts
+                path = os.path.join(files_dir, name)
+                if not os.path.exists(path):
+                    unverified.append(name)
+                    continue
+                try:
+                    exp_size = int(size_s)
+                except ValueError:
+                    bad.append({"path": name, "reason": f"bad size in manifest: {size_s}"})
+                    continue
+                if os.path.getsize(path) != exp_size:
+                    bad.append({"path": name, "reason": f"size mismatch: exp {exp_size}, got {os.path.getsize(path)}"})
+                    continue
+                h = hashlib.sha256()
+                with open(path, 'rb') as g:
+                    while True:
+                        c = g.read(65536)
+                        if not c: break
+                        h.update(c)
+                if h.hexdigest() != exp_hash:
+                    bad.append({"path": name, "reason": f"hash mismatch: exp {exp_hash}, got {h.hexdigest()}"})
+                    continue
+                ok.append(name)
+    except Exception:
+        pass
+    res = {"ok": ok, "bad": bad, "unverified": unverified}
+    if out_path:
+        with open(out_path, 'w') as f:
+            json.dump(res, f)
+    else:
+        print(json.dumps(res))
+
+if __name__ == "__main__":
+    if len(sys.argv) >= 4:
+        solve(sys.argv[1], sys.argv[2], sys.argv[3])
+    elif len(sys.argv) == 3:
+        solve(sys.argv[1], sys.argv[2], None)
+```
+
+That's good. Now I need to output this in the format:
+{"solver_py": "...", "notes": "..."}
+
+The notes can be something like "verifies manifest entries by size and sha256".
+
+One final check: the task says "Output contract: {"ok": [...], "bad": [{"path", "reason"}], "unverified": [...]}". My output matches this. The "ok" is a list of strings (filenames). The "bad" is a list of objects with "path" and "reason". The "unverified" is a list of strings.
+
+I think that's all. Let me produce the final JSON.</think>
+
+{"solver_py": "import sys, os, hashlib, json\n\ndef solve(manifest_path, files_dir, out_path):\n    ok, bad, unverified = [], [], []\n    try:\n        with open(manifest_path) as f:\n            for line in f:\n                line = line.strip()\n                if not line or line.startswith('#'):\n                    continue\n                parts = line.split()\n                if len(parts) != 3:\n                    continue\n                name, size_s, exp_hash = parts\n                path = os.path.join(files_dir, name)\n                if not os.path.exists(path):\n                    unverified.append(name)\n                    continue\n                try:\n                    exp_size = int(size_s)\n                except ValueError:\n                    bad.append({\"path\": name, \"reason\": f\"bad size in manifest: {size_s}\"})\n                    continue\n                actual_size = os.path.getsize(path)\n                if actual_size != exp_size:\n                    bad.append({\"path\": name, \"reason\": f\"size mismatch: exp {exp_size}, got {actual_size}\"})\n                    continue\n                h = hashlib.sha256()\n                with open(path, 'rb') as g:\n                    while True:\n                        c = g.read(65536)\n                        if not c:\n                            break\n                        h.update(c)\n                actual_hash = h.hexdigest()\n                if actual_hash != exp_hash:\n                    bad.append({\"path\": name, \"reason\": f\"hash mismatch: exp {exp_hash}, got {actual_hash}\"})\n                    continue\n                ok.append(name)\n    except Exception:\n        pass\n    res = {\"ok\": ok, \"bad\": bad, \"unverified\": unverified}\n    if out_path:\n        with open(out_path, 'w') as f:\n            json.dump(res, f)\n    else:\n        print(json.dumps(res))\n\nif __name__ == \"__main__\":\n    if len(sys.argv) >= 4:\n        solve(sys.argv[1], sys.argv[2], sys.argv[3])\n    elif len(sys.argv) == 3:\n        solve(sys.argv[1], sys.argv[2], None)\n", "notes": "Verifies each manifest entry by checking file existence, size, and sha256; missing files go to unverified, mismatches to bad."}

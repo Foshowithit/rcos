@@ -1,0 +1,30 @@
+<think>The task is to verify files against a manifest. The manifest is in env-style format with FILES, SIZES, SHAS fields. I need to build a field_map and records dict for the engine.
+
+Let me parse:
+- FILES=sub/n1.txt,sub/n2.txt,top.txt
+- SIZES=45,9,63
+- SHAS=52789e...,a08d...,93378...
+
+So each file is a record. The engine expects flat records. The manifest is env-style, so per adapter notes: "for env-style (KEY=VAL or KEY VAL) split on first delimiter and treat keys as fields, using the record's overall path as the record_path key."
+
+So the records would be: { "sub/n1.txt": {"FILES": "sub/n1.txt", "SIZES": 45, "SHAS": "52789..."}, ... }
+
+And field_map would be: { "sub/n1.txt": {"SIZES": {"size": 45}, "SHAS": {"sha256": "52789..."}}, ... }
+
+Wait, the engine iterates over record items and checks field_map spec. Each field in the record maps to a constraint. So FILES would have no constraint (it's just the path identifier), but SIZES and SHAS would have constraints.
+
+Let me construct the records:
+- sub/n1.txt: {"FILES": "sub/n1.txt", "SIZES": 45, "SHAS": "52789e3423b72beeb898456a4f49662e46b0cbb960784c5ef4b1399d327e7c27"}
+- sub/n2.txt: {"FILES": "sub/n2.txt", "SIZES": 9, "SHAS": "a08d116c20341f0aadbacaedfae937da31006e7eb7bd4c6e723449776a1c13ba"}
+- top.txt: {"FILES": "top.txt", "SIZES": 63, "SHAS": "93378fdea13e1d912d953fedf1155adf0c184626216bf333f9b4f50b704bff63"}
+
+field_map:
+- sub/n1.txt: {"SIZES": {"size": 45}, "SHAS": {"sha256": "52789e3423b72beeb898456a4f49662e46b0cbb960784c5ef4b1399d327e7c27"}}
+- sub/n2.txt: {"SIZES": {"size": 9}, "SHAS": {"sha256": "a08d116c20341f0aadbacaedfae937da31006e7eb7bd4c6e723449776a1c13ba"}}
+- top.txt: {"SIZES": {"size": 63}, "SHAS": {"sha256": "93378fdea13e1d912d953fedf1155adf0c184626216bf333f9b4f50b704bff63"}}
+
+Note: FILES field has no constraint in the field_map, so it won't contribute to verification.
+
+This is the adapter's job — the task says I supply engine inputs. The output contract is what I should produce (records, field_map, notes).</think>
+
+{"records": {"sub/n1.txt": {"FILES": "sub/n1.txt", "SIZES": 45, "SHAS": "52789e3423b72beeb898456a4f49662e46b0cbb960784c5ef4b1399d327e7c27"}, "sub/n2.txt": {"FILES": "sub/n2.txt", "SIZES": 9, "SHAS": "a08d116c20341f0aadbacaedfae937da31006e7eb7bd4c6e723449776a1c13ba"}, "top.txt": {"FILES": "top.txt", "SIZES": 63, "SHAS": "93378fdea13e1d912d953fedf1155adf0c184626216bf333f9b4f50b704bff63"}}, "field_map": {"sub/n1.txt": {"SIZES": {"size": 45}, "SHAS": {"sha256": "52789e3423b72beeb898456a4f49662e46b0cbb960784c5ef4b1399d327e7c27"}}, "sub/n2.txt": {"SIZES": {"size": 9}, "SHAS": {"sha256": "a08d116c20341f0aadbacaedfae937da31006e7eb7bd4c6e723449776a1c13ba"}}, "top.txt": {"SIZES": {"size": 63}, "SHAS": {"sha256": "93378fdea13e1d912d953fedf1155adf0c184626216bf333f9b4f50b704bff63"}}}, "notes": "env-style manifest parsed into per-file records with SIZES+SHAS constraints; FILES is identifier-only"}

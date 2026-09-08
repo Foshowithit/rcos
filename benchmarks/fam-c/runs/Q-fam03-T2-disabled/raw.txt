@@ -1,0 +1,8 @@
+
+
+```json
+{
+  "solver_py": "import json\nfrom collections import Counter\n\nsrc_dir = '.'\ndst_path = 'OUTPUT.json'\n\nwith open(f'{src_dir}/batch.json', 'r') as f:\n    data = json.load(f)\n\nevents = data.get('events', [])\ntotal = len(events)\n\nseen = set()\nfor event in events:\n    key = (event['kind'], event['target'])\n    seen.add(key)\nunique = len(seen)\nremoved = total - unique\n\noutput = {'total': total, 'unique': unique, 'removed': removed}\nwith open(dst_path, 'w') as f:\n    json.dump(output, f)",
+  "notes": "Counts events, deduplicates by (kind,target) pair, outputs total/unique/removed."
+}
+```

@@ -1,0 +1,1 @@
+{"task": "fam03/T4", "lane": "Q", "arm": "correct", "verdict": "fix", "detail": "invoked dedup K on transitions -> 5/4/1 vs required 5/5/0; null gate working"}

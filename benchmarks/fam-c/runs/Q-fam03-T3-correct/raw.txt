@@ -1,0 +1,3 @@
+
+
+{"records": {"events": [{"ev": "open", "t": "A"}, {"ev": "login", "t": "B"}, {"ev": "open", "t": "A"}, {"ev": "sync", "t": "C"}, {"ev": "login", "t": "B"}, {"ev": "open", "t": "A"}, {"ev": "close", "t": "C"}, {"ev": "sync", "t": "C"}]}, "field_map": {"identity": ["ev", "t"]}, "notes": "Deduplicate by (ev,t) identity tuple from parsed JSON-lines."}

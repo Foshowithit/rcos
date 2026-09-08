@@ -1,0 +1,5 @@
+<think>We need to read batch.json, count events, identify duplicates by (kind, target) pair. Output total, unique, removed.
+
+Total events = 10. Unique pairs: open/A, login/B, render/C, flush/D = 4 unique. Removed = 10 - 4 = 6.</think>
+
+{"solver_py": "import json, os, sys\n\nsrc_dir, dst_path = sys.argv[1], sys.argv[2]\nwith open(os.path.join(src_dir, 'batch.json')) as f:\n    data = json.load(f)\n\nevents = data['events']\ntotal = len(events)\nseen = set()\nfor e in events:\n    seen.add((e['kind'], e['target']))\nunique = len(seen)\nremoved = total - unique\n\nwith open(dst_path, 'w') as f:\n    json.dump({'total': total, 'unique': unique, 'removed': removed}, f)\n", "notes": "Counts total events, unique (kind,target) pairs, and computes removed = total - unique."}

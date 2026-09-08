@@ -1,0 +1,153 @@
+You are solving a file-verification task using a PROVIDED capability. You have never seen its acquisition, no transcripts, no prior tasks. Output ONLY one JSON object, no other text.
+
+TASK INPUT, file MANIFEST.txt:
+```
+c.txt 12 59ffe12a70df15109e0345955e3230a978f31ebc28d8fe3e42d306afb28b8e81
+d.txt 34 b90db8b04822b9312e3f4e23368478010f5785c8ee75bfda24ac7a3802141f8d
+e.txt 7 3878221012d3785e4f21eef37119410a7ed8ebb5de28ef82c0cad48d8cdc5d04
+f.txt 100 6ff1386a6f0d444e2af43e9a9e1cdc1394709fc87b5c2a625e16041fec2b1131
+
+```
+TASK DIRECTORY LISTING: MANIFEST.txt, VISIBLE.md, a.txt, b.txt, c.txt, d.txt, e.txt, f.txt, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- MANIFEST.txt (296 bytes) ---
+c.txt 12 59ffe12a70df15109e0345955e3230a978f31ebc28d8fe3e42d306afb28b8e81
+d.txt 34 b90db8b04822b9312e3f4e23368478010f5785c8ee75bfda24ac7a3802141f8d
+e.txt 7 3878221012d3785e4f21eef37119410a7ed8ebb5de28ef82c0cad48d8cdc5d04
+f.txt 100 6ff1386a6f0d444e2af43e9a9e1cdc1394709fc87b5c2a625e16041fec2b1131
+
+--- a.txt (5 bytes) ---
+12345
+--- b.txt (8 bytes) ---
+12345678
+--- c.txt (12 bytes) ---
+xxxxxxxxxxxx
+--- d.txt (34 bytes) ---
+yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+--- e.txt (7 bytes) ---
+zzzzzzz
+--- f.txt (100 bytes) ---
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+```
+
+PROMOTED CAPABILITY INTERFACE (only procedural knowledge you receive):
+manifest: {
+ "id": "manifest-verify-v1",
+ "version": 1,
+ "applicability": {
+  "description": "Verify a set of flat file-records against a manifest specifying per-field size and/or sha256 constraints. Used when a manifest enumerates fields with expected byte counts or content hashes.",
+  "requires_markers": [
+   "manifest contains 'size' or 'sha256' expectations per field",
+   "records are flat dicts mapping field name to value",
+   "a field-map maps record path -> field -> constraint dict"
+  ],
+  "claims": [
+   "byte-length of string/bytes fields matches expected size when specified",
+   "sha256 of field content matches expected digest when specified",
+   "mismatches are reported with path + per-field reason",
+   "fields without any constraint contribute to 'unverified' status"
+  ]
+ },
+ "limitations": [
+  "does not interpret semantic meaning of fields",
+  "does not handle nested record structures beyond flat dicts",
+  "does not verify ordering, absence-of-fields, or cross-field consistency",
+  "non-string/non-bytes values are stringified before hashing, which may not match the source encoding",
+  "size for non-bytes values is measured on UTF-8 bytes of str(value)"
+ ]
+}
+
+ADAPTER NOTES:
+The adapter converts a NEW manifest+raw-files pair into the two JSON inputs the engine consumes. Steps: (1) Parse the native manifest format into field_map: { record_path: { field_name: { 'size': N?, 'sha256': 'hex'? } } }. For colon manifests split on ':', for JSON traverse nested layouts flattening dot-paths, for env-style (KEY=VAL or KEY VAL) split on first delimiter and treat keys as fields, using the record's overall path as the record_path key. (2) Parse raw files into records: { record_path: { field_name: raw_value } }, preserving original byte/str form so sha256 hashing in the engine matches. (3) Write both as JSON to disk and invoke: python3 engine.py <field_map.json> <records.json> <out.json>. The engine returns 0 on success; the adapter reads out.json to populate ok/bad/unverified for the solver.
+
+ENGINE SOURCE (frozen artifact; you do not modify it, you supply its inputs):
+```python
+#!/usr/bin/env python3
+import sys, json, hashlib
+
+def sha256_hex(data):
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    return hashlib.sha256(data).hexdigest()
+
+def main():
+    try:
+        if len(sys.argv) != 4:
+            print("usage: engine.py field_map_path records_path out_path", file=sys.stderr)
+            return 1
+
+        field_map_path, records_path, out_path = sys.argv[1], sys.argv[2], sys.argv[3]
+
+        with open(field_map_path, 'r') as f:
+            field_map = json.load(f)
+        with open(records_path, 'r') as f:
+            records = json.load(f)
+
+        ok, bad, unverified = [], [], []
+
+        for path, record in records.items():
+            if not isinstance(record, dict):
+                bad.append({"path": path, "reason": f"not a dict: {type(record).__name__}"})
+                continue
+
+            spec = field_map.get(path)
+            if spec is None:
+                unverified.append(path)
+                continue
+
+            reasons = []
+            has_any_check = False
+            all_checks_passed = True
+
+            for field, value in record.items():
+                expected = spec.get(field)
+                if not isinstance(expected, dict):
+                    continue
+
+                exp_size = expected.get('size')
+                exp_sha = expected.get('sha256')
+
+                if exp_size is not None:
+                    has_any_check = True
+                    if isinstance(value, str):
+                        actual_size = len(value.encode('utf-8'))
+                    elif isinstance(value, (bytes, bytearray)):
+                        actual_size = len(value)
+                    else:
+                        actual_size = len(str(value).encode('utf-8'))
+                    if actual_size != exp_size:
+                        all_checks_passed = False
+                        reasons.append(f"{field}: size {actual_size} != {exp_size}")
+
+                if exp_sha is not None:
+                    has_any_check = True
+                    if sha256_hex(value) != exp_sha:
+                        all_checks_passed = False
+                        reasons.append(f"{field}: sha256 mismatch")
+
+            if not all_checks_passed:
+                bad.append({"path": path, "reason": "; ".join(reasons)})
+            elif not has_any_check:
+                unverified.append(path)
+            else:
+                ok.append(path)
+
+        with open(out_path, 'w') as f:
+            json.dump({"ok": ok, "bad": bad, "unverified": unverified}, f, indent=2)
+        return 0
+    except Exception as e:
+        print(f"crash: {e}", file=sys.stderr)
+        return 1
+
+if __name__ == '__main__':
+    sys.exit(main())
+
+```
+
+GOAL: verify each listed file's actual size and sha256 against the manifest. Output contract: {"ok": [...], "bad": [{"path", "reason"}], "unverified": [...]}.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"records": {<flat records dict for the engine>}, "field_map": {<map per interface convention>}, "notes": "<one line>"}
+No explanations; output the object only.

@@ -1,0 +1,21 @@
+{
+ "call_id": "0a84632ac6fea456",
+ "tag": "P-fam05-T1",
+ "endpoint": "https://api.router9.com/v1",
+ "model_requested": "minimax-m3",
+ "wall_s": 13.93,
+ "timestamp": "2026-09-08T05:58:13Z",
+ "usage_raw": {
+  "total_tokens": 1803,
+  "total_characters": 0,
+  "prompt_tokens": 493,
+  "completion_tokens": 1310,
+  "prompt_tokens_details": {
+   "cached_tokens": 114
+  }
+ },
+ "usage_raw_sha256": "8bbbd4f1ee319dcac465e670de31d884b75110c666ea6967c959db7015c77700",
+ "normalizer_id": "openai-chat-total-input-v1",
+ "normalizer_version": "usage-norm-v1",
+ "normalizer_rule": "primary_work = input_tokens_uncached + output_tokens; cached tokens retained separately, never zeroed, never mixed into uncached"
+}
