@@ -29,14 +29,13 @@ pointing at the invoice outputs. Tally above counts only corrected rows.
   formats with no transcripts; router-equivalent selection was mechanical.
 - **Prereg-first history**, sealed truth, fresh workdirs throughout.
 
-## What this does NOT prove (the honest headline)
+## What this does NOT prove (the honest headline, audit-corrected)
 
-**No benefit-over-fresh-solving delta at this scale**: disabled ships 9/9
-too. Script-scale tasks with a competent operator are too easy for success
-rate to separate arms — exactly the limitation the audit predicted ("no
-registry arm also ships"). The experiment measured specificity + reuse
-mechanics correctly and found no compounding signal, because none could
-appear here: single-look tasks, millisecond costs, same operator.
+**No success-rate benefit was observable at script scale** (correct 9/9,
+disabled 9/9). The preregistered token/call efficiency endpoint became
+**unevaluable** after the lane-collapse replacement execution, because
+per-arm model usage was not preserved — marked unavailable, not zero.
+The benefit hypothesis is therefore INCONCLUSIVE, not falsified.
 
 ## Consequences (binding on next work)
 
@@ -50,3 +49,34 @@ appear here: single-look tasks, millisecond costs, same operator.
 3. Do not run Slice 4 as another deterministic slice. Next: EITHER live
    cross-model lanes with model-cognition tasks, OR Fam-C longitudinal
    with cost curves. More script slices add no information.
+
+## Audit findings adopted (no rerun)
+
+- **B→C freeze not publicly proven**: capability, promotion, and C results
+  share one execution commit, so history cannot exclude post-hoc fitting.
+  Disclosed as part of the same-operator limitation. Fam-C rule: commit
+  `B_ARTIFACT_LOCK.json` (id, version, impl+manifest SHAs, training
+  receipts, builder identity) and PUSH before any held-out execution.
+- **Adapters own most semantics here**: the generic map is near-identity
+  and per-task adapters do parsing, discovery, and restructuring before
+  the engine executes. Accurate claim: task-specific adapters composed
+  with the frozen capability on nine unseen formats. Fam-C adapter
+  boundary: adapters MAY parse syntax; adapters MAY NOT rename fields
+  into canonical semantics, choose mappings, implement rules, or validate
+  — that work belongs to the capability under test.
+- **Weak null (schema-level failure)**: the incident engine fails at the
+  output-schema level, showing domain specificity but not
+  procedure-minus-procedure advantage. Fam-C null must be
+  interface-compatible and same-domain with a wrong procedure (units,
+  optionals, grouping, policy).
+- **Lifecycle source of truth**: manifests now carry artifact facts only;
+  `registry.json` owns lifecycle status (this manifest's stale
+  `status: candidate` removed; registry already records promoted).
+- **Reuse-field convention (adopted for Fam-C)**: `capability_selected`,
+  `capability_executed`, `capability_consumed`, `reuse_validated`,
+  `outcome`. Reuse attempt = consumed; successful reuse = consumed +
+  SHIP; negative transfer = consumed + worse-than-control. Slice-3 trace
+  rows predate this split and are read accordingly (forced rows:
+  executed + consumed + FIX).
+- **h05 vindication accepted**: generator-deterministic, hash-matched —
+  a gitignore artifact, not a seal failure. Noted, no action.
