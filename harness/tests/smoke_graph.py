@@ -47,9 +47,9 @@ def _orig(path, pair, arm, run):
     return path
 
 
-def _exec(path, pair, arm):
+def _exec(path, pair, arm, run_id):
     open(path, "w").write(json.dumps(
-        {"pair_id": pair, "arm": arm, "steps": []}, sort_keys=True))
+        {"pair_id": pair, "arm": arm, "run_id": run_id, "steps": []}, sort_keys=True))
     return path
 
 
@@ -79,7 +79,7 @@ def _repl(path, pair, arm, epoch, repl_of, run, authz=None,
           settings=None, snap=None, extra=None):
     az, st, sn = authz or _authz, settings or _settings, snap or _snap
     _ex = os.path.join(BASE, f"exec-{arm}.json")
-    _exec(_ex, pair, arm)
+    _exec(_ex, pair, arm, run)
     _cp = os.path.join(BASE, f"chain-{arm}.jsonl")
     if os.path.exists(_cp):
         os.unlink(_cp)
