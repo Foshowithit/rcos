@@ -1,5 +1,5 @@
 {
- "freeze_commit": "bf3c89efcf42c1f7885fce0ccc5454c51aaa0af1",
+ "freeze_commit": "5fbea251c5d7a3a88063f3301b8afb9bbc6453bb",
  "freeze_tree": "c20cd08669a1b794d03cdd884b9f198e6f76e1fd",
- "note": "content-bound freeze: preflight diffs this commit for experimental equality + manifest for working tree; tamper-evidence proven pre-commit"
+ "note": "content-bound freeze v2: root-resolved top-anchored diff; tamper-evidence proven on scratch branches"
 }
