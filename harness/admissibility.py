@@ -13,6 +13,9 @@ Round-2 audit). A run dir is ESTIMAND-ELIGIBLE only when ALL hold:
     (the instance anchor, never an execution HEAD masquerading as the freeze)
   - identity.json present (provider-side identity recorded per call)
   - every manifest.usage_receipts file present
+  - every usage receipt has its immutable normalized-usage artifact present
+    AND verifying (A1: artifact self-sha + raw-receipt file binding + metric
+    re-derivation; tampering raw OR normalized excludes the run)
   - EVIDENCE-CHAIN.jsonl present
 Anything else is EXCLUDED with a one-line reason.
 
@@ -27,6 +30,8 @@ import hashlib
 import json
 import os
 import sys
+
+from usage import verify_normalized_usage
 
 EXCLUDED = "EXCLUDED"
 ELIGIBLE = "ESTIMAND-ELIGIBLE"
@@ -75,6 +80,25 @@ def classify_run_dir(run_dir, freeze_commit):
             reason = "usage receipts missing: " + ", ".join(missing)
         elif not os.path.exists(os.path.join(run_dir, "EVIDENCE-CHAIN.jsonl")):
             reason = "no EVIDENCE-CHAIN.jsonl"
+        else:
+            # A1 (audit round 2 item 1): every wired receipt must have its
+            # immutable normalized-usage artifact, and it must VERIFY — the
+            # artifact self-sha, the raw-receipt file binding, and metric
+            # re-derivation are all recomputed. Tampering the RAW receipt or
+            # the NORMALIZED artifact flips the run EXCLUDED (fail closed).
+            for r in (m.get("usage_receipts") or []):
+                if not r.endswith(".json"):
+                    reason = f"usage receipt name invalid for {r}"
+                    break
+                nu = os.path.join(run_dir, r[:-5] + ".normalized.json")
+                if not os.path.exists(nu):
+                    reason = f"normalized usage artifact missing for {r}"
+                    break
+                try:
+                    verify_normalized_usage(nu)
+                except ValueError as e:
+                    reason = f"normalized usage invalid for {r}: {e}"
+                    break
     if reason:
         return EXCLUDED, reason
     return ELIGIBLE, "full evidence gate satisfied"

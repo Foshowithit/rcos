@@ -61,7 +61,8 @@ ROOT = os.path.abspath(os.path.join(BASE, os.pardir, os.pardir))
 sys.path.insert(0, HARNESS)
 from dockersandbox import DockerSandbox, ensure_roots
 from seal import build_visible_root
-from usage import recorded_call
+from usage import (recorded_call, write_normalized_usage,
+                   verify_normalized_usage)
 from identity import record_identity, check_against_prereg
 from chain import Chain
 from lock import promote as lock_promote, load_artifact
@@ -83,13 +84,16 @@ GRADING_RULE_NOTE = ("mechanical grade = frozen checker returncode mapping "
 # live echo outside these patterns triggers a prereg-amendment commit
 # (tighten loop), never a silent substitution.
 LANES = {
+    # normalizer: A1 provider-bound v2 adapter id (usage.py PROVIDER_NORMALIZERS)
+    # preregistered for THIS lane's gateway + model family. New calls MUST
+    # declare the v2 id; historical receipts stay on the superseded v1 id.
     "P": {"keyfile": "/home/chow/.agent-vault/keys/router9.key",
           "base": "https://api.router9.com/v1", "model": "minimax-m3",
-          "family": "MiniMax", "normalizer": "openai-chat-total-input-v1",
+          "family": "MiniMax", "normalizer": "router9-openai-chat-v2",
           "echo_acceptable": ["minimax-m3"]},
     "Q": {"keyfile": "/home/chow/.agent-vault/keys/kenari.key",
           "base": "https://kenari.id/v1", "model": "agnes-2-0-flash:free",
-          "family": "Kenari-Agnes", "normalizer": "openai-chat-total-input-v1",
+          "family": "Kenari-Agnes", "normalizer": "kenari-openai-chat-v2",
           "echo_acceptable": ["agnes-2-0-flash:free", "agnes-2-0-flash"]},
 }
 
@@ -145,6 +149,12 @@ def call(lane, prompt, outdir, tag):
         [{"role": "user", "content": prompt}], outdir,
         extra_body={"max_tokens": 9000}, timeout=300, tag=tag,
         normalizer_id=cfg["normalizer"], return_response=True)
+    # A1 (audit round 2 item 1): normalization is part of CALL CAPTURE — the
+    # immutable normalized-usage artifact is written IMMEDIATELY after every
+    # recorded_call, never as a post-hoc step. expect_normalizer_id pins the
+    # lane's preregistered v2 adapter id; a mismatch fails closed.
+    nu_path = write_normalized_usage(receipt,
+                                     expect_normalizer_id=cfg["normalizer"])
     # H2 identity (LANES.md): provider-side evidence — echoed model id +
     # provider response id recorded from the REAL response object, never
     # from reply-text self-report. record_identity raises when the
@@ -157,7 +167,7 @@ def call(lane, prompt, outdir, tag):
         "acceptable_echoed_ids": cfg["echo_acceptable"],
         "family": cfg["family"]})
     open(os.path.join(outdir, "raw.txt"), "w").write(reply)
-    return reply, receipt, id_path, identity_family
+    return reply, receipt, nu_path, id_path, identity_family
 
 
 def exec_commit():
@@ -231,7 +241,7 @@ def _verify_capability(capdir):
             "engine_sha256": lock["artifacts"]["engine.py"]}
 
 
-def _wire_chain(outdir, frozen, manifest, receipt, identity_path,
+def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
                 identity_family, cap_info, reuse_path, checker_sha, truth_sha,
                 verdict, output_sha, promote_info):
     """Emit the H3 evidence chain for one completed run (fail closed).
@@ -240,18 +250,32 @@ def _wire_chain(outdir, frozen, manifest, receipt, identity_path,
     chain_path = os.path.join(outdir, CHAIN_FILE)
     c = Chain(chain_path, frozen, manifest, arm=manifest.get("arm"))
     # model-call link(s): every persisted H2 usage receipt binds here,
-    # alongside the provider-identity receipt (echoed model + response id).
+    # alongside the provider-identity receipt (echoed model + response id)
+    # and the A1 immutable normalized-usage artifact (file hash + derived
+    # metric fields ride the chain with the raw receipt).
     try:
         rc = json.load(open(receipt))
     except (OSError, ValueError) as e:
         raise RuntimeError(f"CHAIN-RECEIPT-UNREADABLE {receipt}: {e}")
+    if not os.path.exists(nu_path):
+        raise RuntimeError(f"CHAIN-NORMALIZED-MISSING {nu_path}")
+    # Fail closed on tampering of the RAW receipt OR the NORMALIZED artifact:
+    # verify recomputes self-sha, raw-file binding, and metric re-derivation.
+    nu = verify_normalized_usage(nu_path)
     mc = {
         "call_id": rc.get("call_id"), "tag": rc.get("tag"),
         "model_requested": rc.get("model_requested"),
         "endpoint": rc.get("endpoint"),
         "receipt_file": os.path.basename(receipt),
         "receipt_sha256": h(receipt),
-        "usage_raw_sha256": rc.get("usage_raw_sha256")}
+        "usage_raw_sha256": rc.get("usage_raw_sha256"),
+        "normalized_file": os.path.basename(nu_path),
+        "normalized_sha256": h(nu_path),
+        "primary_work": nu["primary_work"],
+        "input_tokens_uncached": nu["input_tokens_uncached"],
+        "output_tokens": nu["output_tokens"],
+        "cached_tokens": nu["cached_tokens"],
+        "call_count": 1}
     if identity_path is not None:
         if not os.path.exists(identity_path):
             raise RuntimeError(f"CHAIN-IDENTITY-MISSING {identity_path}")
@@ -308,12 +332,32 @@ def selfcheck_wire():
             json.dumps({"capability": "fixture"}))
         open(os.path.join(capdir, "adapter_notes.md"), "w").write("fixture")
         receipt = os.path.join(tmp, "call-fixture.json")
-        json.dump({"call_id": "fx-1", "tag": "selfcheck", "model_requested": "fx",
-                   "endpoint": "https://fx/v1", "usage_raw_sha256": "fx"},
+        raw_usage = {"prompt_tokens": 10, "completion_tokens": 5,
+                     "total_tokens": 15,
+                     "prompt_tokens_details": {"cached_tokens": 2}}
+        raw_usage_sha = hashlib.sha256(
+            json.dumps(raw_usage, sort_keys=True).encode()).hexdigest()
+        json.dump({"call_id": "fx-1", "tag": "selfcheck",
+                   "model_requested": "fx", "endpoint": "https://fx/v1",
+                   "request_body_sha256": "fx-req-body",
+                   "usage_raw": raw_usage, "usage_raw_sha256": raw_usage_sha,
+                   "normalizer_id": "kenari-openai-chat-v2",
+                   "normalizer_version": "usage-norm-v1",
+                   "normalizer_rule": "selfcheck fixture"},
                   open(receipt, "w"))
+        # A1: immediate immutable normalization (kenari shape: 10 total
+        # prompt, 2 cached -> 8 uncached; 5 output -> primary_work 13).
+        nu_path = write_normalized_usage(receipt)
+        assert os.path.exists(nu_path), "normalized artifact not written"
+        nu = json.load(open(nu_path))
+        assert nu["primary_work"] == 13, "fixture primary_work != 13"
+        assert nu["raw_receipt_sha256"] == hashlib.sha256(
+            open(receipt, "rb").read()).hexdigest()
+        verify_normalized_usage(nu_path)  # raises on any mismatch
         manifest = {"lane": "P", "family": "famXX", "task": "T0", "arm": "correct",
                     "wired": True, "frozen_commit": "deadbeef" * 5,
                     "usage_receipts": [os.path.basename(receipt)],
+                    "usage_normalized": [os.path.basename(nu_path)],
                     "checker_returncode": 0, "output_sha256": "fx",
                     "verdict": "ship"}
         # promote composes (writes once) and load_artifact verifies by hash.
@@ -358,10 +402,25 @@ def selfcheck_wire():
         except ValueError:
             pass  # IDENTITY-INCOMPLETE: echoed model id missing -> fail closed
         tip = _wire_chain(tmp, manifest["frozen_commit"], manifest, receipt,
-                          idp, "famXX-fixture", cap, reuse,
+                          nu_path, idp, "famXX-fixture", cap, reuse,
                           h(os.path.join(capdir, "engine.py")), None, "ship",
                           "fx", None)
         assert isinstance(tip, str) and len(tip) == 64, "bad chain tip"
+        # A1: the model-call link must carry the normalized artifact hash +
+        # derived metric fields (primary_work / uncached / output / cached /
+        # call count) bound beside the raw receipt hash.
+        links = [json.loads(l) for l in open(os.path.join(tmp, CHAIN_FILE))
+                 if l.strip()]
+        mc_payload = next(l["payload"] for l in links
+                          if l.get("kind") == "model-call")
+        assert mc_payload.get("normalized_file") == os.path.basename(nu_path)
+        assert mc_payload.get("normalized_sha256") == h(nu_path), \
+            "chain lacks/alters normalized artifact sha"
+        assert mc_payload.get("primary_work") == 13, "chain primary_work != 13"
+        assert mc_payload.get("input_tokens_uncached") == 8
+        assert mc_payload.get("output_tokens") == 5
+        assert mc_payload.get("cached_tokens") == 2
+        assert mc_payload.get("call_count") == 1
         # repromotion refused (H-LOCK-008 writes-once).
         try:
             lock_promote(capdir, "famXX-fixture", "v2",
@@ -445,7 +504,7 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
         prompt = DISABLED.replace("__TASKDEF__", taskdef).replace(
             "__LISTING__", listing).replace("__BLOBS__", block)
     open(os.path.join(outdir, "prompt.txt"), "w").write(prompt)
-    raw, receipt, id_path, identity_family = call(
+    raw, receipt, nu_path, id_path, identity_family = call(
         lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
     arrival, parse_mode = extract(raw, arm)
     open(os.path.join(outdir, "arrival.json"), "w").write(json.dumps(arrival, indent=1))
@@ -520,6 +579,7 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                 "execution_harness_manifest_sha256": execution_harness_manifest_sha,
                 "dev_mode": bool(not wire),
                 "usage_receipts": [os.path.basename(receipt)] if wire else [],
+                "usage_normalized": [os.path.basename(nu_path)] if wire else [],
                 "identity_file": (os.path.basename(id_path) if wire
                                   else None),
                 "identity_prereg_family": (identity_family if wire
@@ -560,7 +620,7 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
         checker_sha = h(checker) if os.path.exists(checker) else None
         truth = os.path.join(taskdir, "..", "truth.json")
         truth_sha = h(truth) if os.path.exists(truth) else None
-        _wire_chain(outdir, frozen, manifest, receipt, id_path,
+        _wire_chain(outdir, frozen, manifest, receipt, nu_path, id_path,
                     identity_family, cap_info, reuse_path, checker_sha,
                     truth_sha, verdict, output_sha, promote_info)
         # H1-RUN-MANIFEST.json must NOT be rewritten after _wire_chain:

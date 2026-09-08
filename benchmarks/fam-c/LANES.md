@@ -31,4 +31,18 @@ prereg-amendment commit (tighten loop) — never a silent substitution.
 | P    | https://api.router9.com/v1 | minimax-m3 | MiniMax | minimax-m3 |
 | Q    | https://kenari.id/v1 | agnes-2-0-flash:free | Kenari-Agnes | agnes-2-0-flash:free, agnes-2-0-flash |
 
+## Usage adapter prereg (per lane; frozen — see usage.py PROVIDER_NORMALIZERS)
+
+Normalization is part of call capture: every recorded call declares the
+lane's provider-bound v2 adapter id below, the runner writes the immutable
+`call-<id>.normalized.json` artifact immediately, and the model-call chain
+link binds its hash + derived metrics. Historical H1 harness-validation
+receipts stay on the superseded v1 id (`openai-chat-total-input-v1`); new
+calls MUST declare the v2 id — a mismatch fails closed.
+
+| lane | normalizer_id | bound gateway model | supersedes |
+|------|---------------|---------------------|------------|
+| P    | router9-openai-chat-v2 | minimax-m3 (MiniMax via router9) | openai-chat-total-input-v1 |
+| Q    | kenari-openai-chat-v2 | agnes-2-0-flash:free (Kenari-Agnes via kenari) | openai-chat-total-input-v1 |
+
 Auditor lane: session lane (muse-spark), read-only verification.

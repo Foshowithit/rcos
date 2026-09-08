@@ -86,6 +86,17 @@ Failure: run invalid (missing evidence), not estimated.
 Test: fixture call with usage stripped → accounting checker FAILs;
 fixture with cached tokens relabeled uncached → FAILs.
 
+A1 implementation (audit round 2 item 1): provider-bound v2 adapters
+(`router9-openai-chat-v2` for lane P, `kenari-openai-chat-v2` for lane Q;
+see LANES.md + usage.py PROVIDER_NORMALIZERS). The runner writes the
+immutable `call-<id>.normalized.json` artifact IMMEDIATELY after every
+recorded call (never post-hoc), binds its hash + derived metrics
+(primary_work / uncached / output / cached / call count) into the
+model-call chain link, and admissibility re-verifies every artifact
+(self-sha + raw-file binding + metric re-derivation) — tampering the raw
+receipt OR the normalized artifact excludes the run. New receipts also
+carry `request_body_sha256` over the exact bytes POSTed.
+
 ### H-ID-006 — provider/model identity capture
 
 Requirement: every model call logs provider endpoint, requested model
