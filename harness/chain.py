@@ -148,3 +148,44 @@ class Chain:
                         "grade does not bind the immediately preceding "
                         "admissible evaluator state")
         return findings
+
+
+def verify_chain(path, frozen_commit=None, run_manifest=None,
+                 expected_grading_rule=None):
+    """Module-level evidence-chain verifier (A11b.3). Re-verifies ONE
+    persisted chain file with the SAME authority as Chain.audit() — it
+    constructs Chain(path, frozen_commit, run_manifest) and runs .audit();
+    never a second independent implementation.
+
+    Defaults: run_manifest = the H1-RUN-MANIFEST.json beside the chain
+    file; frozen_commit = run_manifest["instance_freeze_commit"]. A chain
+    is verified WITHOUT ever writing to the file (genesis is written by
+    the runner at capture time, never by a verifier): an absent, dangling
+    or empty chain file is invalid, not genesis-seeded here.
+
+    Returns [] when the chain is intact; raises
+    ValueError("CHAIN-INVALID: ...") on any finding."""
+    if os.path.islink(path) or not os.path.isfile(path):
+        raise ValueError(f"CHAIN-INVALID: no chain file at {path}")
+    if run_manifest is None:
+        mfp = os.path.join(os.path.dirname(os.path.abspath(path)),
+                           "H1-RUN-MANIFEST.json")
+        if os.path.islink(mfp) or not os.path.isfile(mfp):
+            raise ValueError(f"CHAIN-INVALID: no H1-RUN-MANIFEST.json "
+                             f"beside {path} (pass run_manifest= to verify "
+                             "a bare chain)")
+        run_manifest = json.load(open(mfp))
+    if frozen_commit is None:
+        frozen_commit = run_manifest.get("instance_freeze_commit")
+        if not isinstance(frozen_commit, str) or not frozen_commit:
+            raise ValueError("CHAIN-INVALID: run manifest carries no "
+                             "instance_freeze_commit")
+    lines = [ln for ln in open(path) if ln.strip()]
+    if not lines:
+        raise ValueError("CHAIN-INVALID: chain file is empty")
+    chain = Chain(path, frozen_commit, run_manifest)
+    findings = chain.audit(frozen_commit, run_manifest,
+                           expected_grading_rule=expected_grading_rule)
+    if findings:
+        raise ValueError("CHAIN-INVALID: " + "; ".join(findings))
+    return []
