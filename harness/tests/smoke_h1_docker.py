@@ -204,6 +204,42 @@ check("run manifest carries pinned digest",
       m["image"].startswith("python:3.12-slim@sha256:") and len(m["image"]) > 80,
       m["image"][:50])
 
+# (stability refusal evaluated at end of file, after def)
+bad = [n for n, ok_ in results if not ok_]
+print(f"\nH1-docker smoke (pre-stability): {len(results) - len(bad)}/{len(results)} closed")
+if bad:
+    sys.exit(1)
+
+# --- source-stability: live mutation during staging must REFUSE ---
+def _stability_attack():
+    import threading
+    src = "/tmp/rcos-visible/mut-src"
+    os.makedirs(src, exist_ok=True)
+    for i in range(1500):
+        open(os.path.join(src, f"f{i:04d}.txt"), "w").write("v0\n")
+    stop = []
+    def churn():
+        k = 0
+        while not stop:
+            k += 1
+            open(os.path.join(src, "f030.txt"), "w").write(f"v{k}\n")
+    th = threading.Thread(target=churn, daemon=True)
+    th.start()
+    refused = False
+    os.makedirs(os.path.join(WBASE, "stab", "work"), exist_ok=True)
+    try:
+        try:
+            DockerSandbox(os.path.join(WBASE, "stab", "work"), src)
+        except PermissionError as e:
+            refused = "STABILITY-DENY" in str(e)
+    finally:
+        stop.append(True)
+        th.join(timeout=5)
+    return refused
+
+
+check("concurrent source mutation refused", _stability_attack())
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH1-docker smoke: {len(results) - len(bad)}/{len(results)} closed")
 sys.exit(1 if bad else 0)
+

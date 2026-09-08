@@ -77,15 +77,24 @@ def ensure_roots():
 
 
 def _hash_tree(top):
-    """Deterministic {relpath: sha256} snapshot of a source tree."""
+    """Canonical stability manifest: sorted `type|relpath|sha256` lines.
+    Directories are represented (type=dir, sha of empty string) so
+    structural changes register; file types/metadata beyond
+    regular-file-ness are out of scope and documented as such."""
     import hashlib
     out = {}
-    for base, _dirs, files in os.walk(top):
+    if os.path.isfile(top):
+        with open(top, "rb") as f:
+            return {"file|.": hashlib.sha256(f.read()).hexdigest()}
+    for base, dirs, files in os.walk(top):
+        for d in sorted(dirs):
+            rel = os.path.relpath(os.path.join(base, d), top)
+            out["dir|" + rel] = hashlib.sha256(b"").hexdigest()
         for fn in sorted(files):
             p = os.path.join(base, fn)
             rel = os.path.relpath(p, top)
             with open(p, "rb") as f:
-                out[rel] = hashlib.sha256(f.read()).hexdigest()
+                out["file|" + rel] = hashlib.sha256(f.read()).hexdigest()
     return out
 
 
@@ -147,12 +156,16 @@ class DockerSandbox:
         vis = _check_source(visible_root, "task")
         if work == vis:
             raise PermissionError("MOUNT-POLICY-DENY work == visible")
+        # Source-stability binding: the staged copy must equal ONE stable
+        # source state. Hash before, copy, hash after; refuse on any drift.
+        # Concurrent source mutation becomes fail-closed, never a hybrid.
+        source_before = _hash_tree(vis)
         os.makedirs(work, exist_ok=True)
         os.chmod(work, 0o700)
         # TOCTOU closure: stage a private copy of the visible source NOW
         # (fail-closed fresh dir), hash it, and mount ONLY the copy.
         # Later mutations of the caller's source cannot reach the jail.
-        self.name = "rcos-" + uuid.uuid4().hex[:12]
+        self.name = "rcos-" + uuid.uuid4().hex
         self.staged = os.path.join(WORK_ROOT, ".stage-" + self.name)
         if os.path.isdir(vis):
             _copy_tree(vis, self.staged)
@@ -162,7 +175,17 @@ class DockerSandbox:
             shutil.copy2(vis, os.path.join(
                 self.staged, os.path.basename(vis)))
         os.chmod(self.staged, 0o700)
+        if _hash_tree(vis) != source_before:
+            import shutil as _sh
+            _sh.rmtree(self.staged, ignore_errors=True)
+            raise PermissionError(
+                "STABILITY-DENY source mutated during staging; refused")
         self.task_snapshot = _hash_tree(self.staged)
+        if self.task_snapshot != source_before:
+            import shutil as _sh2
+            _sh2.rmtree(self.staged, ignore_errors=True)
+            raise PermissionError(
+                "STABILITY-DENY staged copy differs from stable source")
         self.mounts = [(work, "/work", "rw"), (self.staged, "/task", "ro")]
         self.image = IMAGE
         self._base = [
@@ -194,10 +217,12 @@ class DockerSandbox:
         bytes validated are the bytes consumed. Raises on mismatch."""
         code = ("import hashlib,os;"
                 "d={}\n"
-                "for b,_,fs in os.walk('/task'):\n"
+                "for b,ds,fs in os.walk('/task'):\n"
+                " for x in sorted(ds):\n"
+                "  d['dir|'+os.path.relpath(os.path.join(b,x),'/task')]=hashlib.sha256(b'').hexdigest()\n"
                 " for fn in sorted(fs):\n"
                 "  p=os.path.join(b,fn)\n"
-                "  d[os.path.relpath(p,'/task')]=hashlib.sha256(open(p,'rb').read()).hexdigest()\n"
+                "  d['file|'+os.path.relpath(p,'/task')]=hashlib.sha256(open(p,'rb').read()).hexdigest()\n"
                 "import json;print(json.dumps(d,sort_keys=True))")
         p = self._run_raw(["python3", "-c", code])
         if p.returncode != 0:
