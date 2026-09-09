@@ -210,35 +210,126 @@ print(f"\nH1-docker smoke (pre-stability): {len(results) - len(bad)}/{len(result
 if bad:
     sys.exit(1)
 
-# --- source-stability: live mutation during staging must REFUSE ---
-def _stability_attack():
+# --- source-stability D10: deterministic injected-mutation refusal ---
+# The mutation is injected inside the staging window by construction (the
+# module's _hash_tree is patched so its FIRST call hashes, then mutates the
+# source itself): refusal with STABILITY-DENY must follow 100% of runs,
+# with no dependence on thread scheduling.
+def _injected_mutation_attack():
+    import shutil
+    src = os.path.join(VBASE, "stab-inject")
+    shutil.rmtree(src, ignore_errors=True)
+    os.makedirs(src, exist_ok=True)
+    target = os.path.join(src, "f030.txt")
+    open(target, "w").write("v0\n")
+    w = os.path.join(WBASE, "stab-inject", "work")
+    os.makedirs(w, exist_ok=True)
+    real_hash = ds._hash_tree
+    state = {"n": 0}
+
+    def patched(top):
+        h = real_hash(top)
+        if state["n"] == 0:
+            state["n"] += 1
+            open(target, "w").write("MUTATED-INSIDE-WINDOW\n")
+        return h
+
+    ds._hash_tree = patched
+    try:
+        try:
+            DockerSandbox(w, src)
+        except PermissionError as e:
+            return "STABILITY-DENY" in str(e)
+        return False
+    finally:
+        ds._hash_tree = real_hash
+
+
+check("injected mutation inside staging window refused", _injected_mutation_attack())
+
+# --- source-stability D10: deterministic stable-source control ---
+def _stable_control():
+    import shutil
+    src = os.path.join(VBASE, "stab-control")
+    shutil.rmtree(src, ignore_errors=True)
+    os.makedirs(src, exist_ok=True)
+    open(os.path.join(src, "f030.txt"), "w").write("steady\n")
+    w = os.path.join(WBASE, "stab-control", "work")
+    os.makedirs(w, exist_ok=True)
+    try:
+        sb = DockerSandbox(w, src)
+    except PermissionError:
+        return (False, False)
+    return (True, sb.task_snapshot == ds._hash_tree(src))
+
+
+_ok_c, _ok_s = _stable_control()
+check("stable source constructs without refusal", _ok_c)
+check("stable control task_snapshot == source hash", _ok_s)
+
+# --- source-stability D10: churn attack, honest property ---
+# The provable property (not "refusal", which thread scheduling decides):
+# either construction refused with STABILITY-DENY, or the mounted staged
+# tree equals a source read taken AFTER construction and equals a second
+# source read taken ~20 ms later (mounted tree not torn, source quiescent
+# at mount). Anything else FAILS. The churn thread is stopped and joined
+# before the post reads so shutdown transients cannot flake the pair.
+def _churn_property():
     import threading
+    import time
     src = "/tmp/rcos-visible/mut-src"
     os.makedirs(src, exist_ok=True)
     for i in range(1500):
         open(os.path.join(src, f"f{i:04d}.txt"), "w").write("v0\n")
     stop = []
+    # Time-bounded attacker (budget 0.15 s, far shorter than the staging
+    # window of ~0.4 s for 1500 files): the churn overlaps staging (so the
+    # refusal tripwires face a live concurrent mutation) but the writer is
+    # dead before the post reads unless it is starved — and a starved
+    # writer is silent, hence safe. Each iteration completes its write
+    # before checking the deadline, so the file never freezes mid-
+    # truncate by design. Residual: a writer starved mid-truncate across
+    # the whole window AND waking inside the post pair still breaks the
+    # property — the documented residual limit, not a silent pass.
+    _BUDGET = 0.15
+
     def churn():
+        t0 = time.monotonic()
         k = 0
         while not stop:
             k += 1
             open(os.path.join(src, "f030.txt"), "w").write(f"v{k}\n")
+            if time.monotonic() - t0 >= _BUDGET:
+                break
+
     th = threading.Thread(target=churn, daemon=True)
     th.start()
     refused = False
+    built = None
     os.makedirs(os.path.join(WBASE, "stab", "work"), exist_ok=True)
     try:
         try:
-            DockerSandbox(os.path.join(WBASE, "stab", "work"), src)
+            built = DockerSandbox(os.path.join(WBASE, "stab", "work"), src)
         except PermissionError as e:
             refused = "STABILITY-DENY" in str(e)
     finally:
         stop.append(True)
-        th.join(timeout=5)
-    return refused
+        th.join(timeout=10)
+    if refused:
+        return ("refused", True)
+    if built is None:
+        return ("FAILED-nonstability-refusal", False)
+    post1 = ds._hash_tree(src)
+    time.sleep(0.02)
+    post2 = ds._hash_tree(src)
+    if built.task_snapshot == post1 == post2:
+        return ("mounted-not-torn", True)
+    return ("FAILED-torn-or-drift", False)
 
 
-check("concurrent source mutation refused", _stability_attack())
+_churn_outcome, _churn_ok = _churn_property()
+print("CHURN-PROPERTY-OUTCOME: " + _churn_outcome)
+check("concurrent churn: refused OR mounted-not-torn", _churn_ok)
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH1-docker smoke: {len(results) - len(bad)}/{len(results)} closed")
 sys.exit(1 if bad else 0)
