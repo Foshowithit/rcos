@@ -47,6 +47,7 @@ Stdlib only.
 import hashlib
 import json
 import os
+import re
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -209,7 +210,10 @@ def _read_json(p):
 # own independently written contract text
 # (harness/tests/fixture_modelrun.py).
 
-def _producer_contract(t0_run_dir):
+_ATOMIC_RE = re.compile(r"^[a-z0-9_.-]+$")
+
+
+def _producer_contract(t0_run_dir, vocabulary=None):
     """Read the PRODUCER-declared capability contract from the T0 arrival's
     own `execution_payload.capability_contract` ({semantic_core,
     preconditions, limitations}) — the SOLE source of the promoted
@@ -218,18 +222,21 @@ def _producer_contract(t0_run_dir):
     declaration bytes copied exactly (no normalization: the governance
     validator compares them verbatim). This function never touches K.md.
 
-    A12d slice D2 (auditor A12d.4 + A12d.3): the v2 shape is
+    A12d slice D5 (auditor D4-post P0): the v4 shape is
     `{"semantic_core": <nonempty str>,
-      "preconditions": [{"requires": <nonempty str>}, ...],  # MAY be []
-      "limitations": [<str>, ...]}`.                         # MAY be []
-    All three keys must be PRESENT; both lists may be empty (an empty
+      "preconditions": [{"requires_all": [<atomic tokens>]}, ...],
+      "limitations": [<str>, ...]}`.  Both lists MAY be empty (an empty
     `preconditions` list means "no declared applicability requirement"
     and is non-discriminating, never malformed). Each precondition must
-    be an object with exactly the key `requires` carrying a
-    non-blank string; a bare-string precondition, an object with any
-    other key, or a blank `requires` is refused with a named
-    PROMOTION-DENY (backward compatibility is NOT offered: no live
-    promotion exists yet, and the failure is explicit, never silent).
+    be an object with EXACTLY the key `requires_all` carrying a list of
+    >=1 atomic tokens (`^[a-z0-9_.-]+$`, no duplicates, every token in
+    the frozen `atomic_vocabulary`); a bare-string precondition, the
+    retired `requires` key, an object with any other key, an empty
+    list, a non-atomic token, an out-of-vocabulary token, or a
+    duplicate is refused with a named PROMOTION-DENY under the
+    atomic-conjunction-v4 shape (backward compatibility is NOT
+    offered: no live promotion exists yet, and the failure is
+    explicit, never silent).
     """
     try:
         arrival = _read_json(os.path.join(t0_run_dir, "arrival.json"))
@@ -249,13 +256,13 @@ def _producer_contract(t0_run_dir):
     if "preconditions" not in declared:
         raise PermissionError(
             "PROMOTION-DENY producer capability contract declares no "
-            "preconditions list (the v2 shape requires the "
+            "preconditions list (the v4 shape requires the "
             "preconditions, limitations, and semantic_core keys to be "
             "present; preconditions may be an empty list)")
     if "limitations" not in declared:
         raise PermissionError(
             "PROMOTION-DENY producer capability contract declares no "
-            "limitations list (the v2 shape requires the preconditions, "
+            "limitations list (the v4 shape requires the preconditions, "
             "limitations, and semantic_core keys to be present; "
             "limitations may be an empty list)")
     pre = declared.get("preconditions")
@@ -267,31 +274,56 @@ def _producer_contract(t0_run_dir):
     if not isinstance(pre, list):
         raise PermissionError(
             "PROMOTION-DENY producer capability contract preconditions "
-            "must be a v2-shape list of {\"requires\": str} objects "
+            "must be an atomic-conjunction-v4 shape list of "
+            "{\"requires_all\": [atomic tokens]} objects "
             "(possibly empty)")
+    _vocab = set(vocabulary) if vocabulary is not None else None
     for entry in pre:
         if isinstance(entry, str):
             raise PermissionError(
                 "PROMOTION-DENY producer capability contract carries a "
                 "bare-string precondition "
-                f"{entry[:60]!r}: the v2 shape requires "
-                "{\"requires\": <nonempty str>} objects (a bare string "
-                "cannot carry polarity, so the conformance bridge "
-                "cannot tell an applicability requirement from a "
-                "negated limitation)")
-        if not isinstance(entry, dict) or set(entry) != {"requires"}:
+                f"{entry[:60]!r}: the atomic-conjunction-v4 shape "
+                "requires {\"requires_all\": [atomic tokens]} objects "
+                "(a bare string cannot carry the structural "
+                "conjunction, so a conditional clause could smuggle a "
+                "branching claim past conformance)")
+        if not isinstance(entry, dict) or set(entry) != {"requires_all"}:
             raise PermissionError(
                 "PROMOTION-DENY producer capability contract carries a "
-                f"malformed precondition {str(entry)[:80]!r}: the v2 "
-                "shape is exactly {\"requires\": <nonempty str>} "
-                "(unknown keys are refused)")
-        if not isinstance(entry.get("requires"), str) or not \
-                entry["requires"].strip():
+                f"malformed precondition {str(entry)[:80]!r}: the "
+                "atomic-conjunction-v4 shape is exactly "
+                "{\"requires_all\": [atomic tokens]} (the retired "
+                "\"requires\" key and every unknown key are refused)")
+        _toks = entry.get("requires_all")
+        if not isinstance(_toks, list) or not _toks:
             raise PermissionError(
                 "PROMOTION-DENY producer capability contract carries a "
-                "precondition with an empty requires text (each "
-                "{\"requires\": str} must name a non-blank applicability "
-                "requirement)")
+                "precondition with an empty requires_all list (each "
+                "{\"requires_all\": [tokens]} must name >=1 atomic "
+                "applicability token)")
+        for _tok in _toks:
+            if not isinstance(_tok, str) or not _ATOMIC_RE.match(_tok):
+                raise PermissionError(
+                    "PROMOTION-DENY producer capability contract "
+                    "carries a non-atomic requires_all token "
+                    f"{_tok!r}: the atomic-conjunction-v4 shape admits "
+                    "only ^[a-z0-9_.-]+$ tokens (a conditional clause "
+                    "is structurally unrepresentable as conformance "
+                    "evidence)")
+            if _vocab is not None and _tok not in _vocab:
+                raise PermissionError(
+                    "PROMOTION-DENY producer capability contract "
+                    "carries an out-of-vocabulary requires_all token "
+                    f"{_tok!r}: the atomic-conjunction-v4 shape admits "
+                    "only frozen atomic_vocabulary tokens")
+        if len(set(_toks)) != len(_toks):
+            _dup = next(t for t in _toks if _toks.count(t) > 1)
+            raise PermissionError(
+                "PROMOTION-DENY producer capability contract carries "
+                "a duplicate requires_all token "
+                f"{_dup!r}: the atomic-conjunction-v4 shape admits no "
+                "duplicates")
     if not isinstance(lim, list) or not all(isinstance(x, str) for x in lim):
         raise PermissionError(
             "PROMOTION-DENY producer capability contract limitations must "
@@ -790,10 +822,11 @@ def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
                       core,
                       ""]
     contract_lines.append("preconditions:")
-    # A12d slice D2: preconditions are v2 {"requires": str} objects —
-    # the notes render the producer's requires text (never the dict
-    # repr), exactly as the v1 notes rendered the bare strings.
-    contract_lines.extend(f"- {p['requires']}" for p in pre)
+    # A12d slice D5: preconditions are v4 {"requires_all": [tokens]}
+    # objects — the notes render the producer's token list joined by
+    # spaces (never the dict repr), exactly as earlier notes rendered
+    # the requires text.
+    contract_lines.extend(f"- {' '.join(p['requires_all'])}" for p in pre)
     contract_lines.append("limitations:"
                           if lim else "limitations: none declared")
     contract_lines.extend(f"- {x}" for x in lim)
@@ -944,24 +977,35 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     core_sha = _sha_bytes(contract[0].encode())
     t4_id, t4_ratified = t4_semantic_id(fam_c_dir, cell["family"],
                                         core_sha, evidence_grade)
-    # A12c slice C2 (auditor P0 #6), A12d slice D2 (auditor A12d.3): the
-    # frozen requires->T4-id conformance bridge. The lock records the
-    # producer's ACTUAL contract plus the derived verdict — derived HERE
-    # mechanically from the producer-declared contract through the SINGLE
-    # governed implementation (harness/conformance.py over the frozen
+    # A12c slice C2 (auditor P0 #6), A12d slice D5 (auditor D4-post
+    # P0): the frozen structural requires_all->T4-id conformance
+    # bridge. The lock records the producer's ACTUAL contract plus the
+    # derived verdict — derived HERE mechanically from the
+    # producer-declared contract through the SINGLE governed
+    # implementation (harness/conformance.py over the frozen
     # T4-CONFORMANCE.json map, never by copying hidden K.md text: this
     # controller has no hidden-contract reader by design, and the
     # conformance check reads the lock only). Conformance consults ONLY
-    # the affirmative preconditions[*].requires claims: an unrelated
-    # requires text (e.g. 'requires Python 3') — and every limitation,
-    # always — leaves the T4 non-discriminating, because only a requires
-    # claim naming the T4's applicability condition (a frozen predicate
-    # match over admissible, non-negated text) supports the id.
-    limitation_present = bool(contract[2])
+    # the structural preconditions[*].requires_all token lists: an
+    # unrelated token list (e.g. ['python', '3']) — and every
+    # limitation, always — leaves the T4 non-discriminating, because
+    # only a requires_all list naming the T4's applicability condition
+    # (a frozen predicate match over an admissible atomic token list)
+    # supports the id.
+    declared_limitations_present = bool(contract[2])
     cmap = _conformance.load(fam_c_dir)
+    _vocab = set(cmap.get("atomic_vocabulary") or [])
+    for _p in contract[1]:
+        for _tok in _p["requires_all"]:
+            if _tok not in _vocab:
+                raise PermissionError(
+                    "PROMOTION-DENY producer capability contract "
+                    "carries an out-of-vocabulary requires_all token "
+                    f"{_tok!r}: the atomic-conjunction-v4 shape admits "
+                    "only frozen atomic_vocabulary tokens)")
     cverdict = _conformance.verdict(
         cell["family"],
-        [p["requires"] for p in contract[1]], cmap,
+        [p["requires_all"] for p in contract[1]], cmap,
         limitations=contract[2])
     non_discriminating = cverdict["non_discriminating"]
     conformance_cause = cverdict["conformance_cause"]
@@ -994,7 +1038,7 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
         "semantic_core": contract[0],
         "semantic_core_sha256": core_sha,
         "preconditions": contract[1], "limitations": contract[2],
-        "limitation_present": limitation_present,
+        "declared_limitations_present": declared_limitations_present,
         "non_discriminating": non_discriminating,
         "conformance_cause": conformance_cause,
         "supported_t4_ids": supported_t4_ids,

@@ -3,27 +3,27 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "b1bd47b6cd4652412d1cc99445e2c24b6347e0158bc8878d88944c86efa79d56",
+ "harness_manifest_sha256": "1baf02485b8f86ea0a49e025dabc144d47a47c99a2896baa05164ec6f4c95801",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
   "harness/chain.py": "cd5ba7b92c889e239d2513276a53483fd6007d3f147809cab583d039850a3df5",
-  "harness/lock.py": "dc600e7a510fbd0bb396af74d669294e017ff28b5d68ce549bb17ae584af0608",
+  "harness/lock.py": "0213e6a5b128d9f0e4f8d239bc65c4bca667e9ae5400ee1283e99e5b13a16cd1",
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "d56742951341b88ae5070812b6380221d43ad53f0e37940db0bc85525e9d838c",
-  "harness/order.py": "e40710d5fea5d09c8e41492a3c2a5c6bbceed64ec4974b6d6f08f1946b8c7149",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "6e54869b74f47638a795f81ab1bddedcb1823b5d2e90d2c0a678c8f7021a1971",
+  "harness/order.py": "0aa5757b970d9b3881ab70f92a8093040f403e838c44fc0b83853071553920b5",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "7bc2cae79e1fce911db154f797a13d89214a55b7cdad108d0528b83e0917e582",
+  "harness/promotion.py": "7c992cf4b2043c3f842b91c6b775b1e793fb7fbcb94c05cee89c08c91759dd47",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
   "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
-  "harness/specificity.py": "4390b76f1dd1013a4e7c7050c0de97113abfd4185195f0391caf42efcda8a1ea",
-  "harness/conformance.py": "10ada2c99ed7f17514b6d22152d28f93cd3178db05ccf2740435bd119e252480"
+  "harness/specificity.py": "166ee886f77f07c37302891277b0832616a608548fbf0ac9042d24bfec9690b7",
+  "harness/conformance.py": "957ed96249001f16462a4a664a10c8678ce80267dc5002b2521dea1d85c719b1"
  },
  "amendments": [
   {
@@ -606,6 +606,39 @@
    },
    "reason": "A12d slice D4 (auditor D3-post P0/P1): atomic-requirement grammar v3 (t4-conformance-v3, disjunction_markers [either,or] + structural_separators [/,comma], disjunctive requires INADMISSIBLE) + capability-lock-v3 schema bump + stray-symlink closure in _stray_capability_dirs; new H26 acceptance suite, H22/H3/H16/H24 synced",
    "slice": "a12d-slice-d4",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "b1bd47b6cd4652412d1cc99445e2c24b6347e0158bc8878d88944c86efa79d56",
+   "to_manifest": "1baf02485b8f86ea0a49e025dabc144d47a47c99a2896baa05164ec6f4c95801",
+   "files": {
+    "harness/lock.py": {
+     "from_sha": "dc600e7a510fbd0bb396af74d669294e017ff28b5d68ce549bb17ae584af0608",
+     "to_sha": "0213e6a5b128d9f0e4f8d239bc65c4bca667e9ae5400ee1283e99e5b13a16cd1"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "d56742951341b88ae5070812b6380221d43ad53f0e37940db0bc85525e9d838c",
+     "to_sha": "6e54869b74f47638a795f81ab1bddedcb1823b5d2e90d2c0a678c8f7021a1971"
+    },
+    "harness/order.py": {
+     "from_sha": "e40710d5fea5d09c8e41492a3c2a5c6bbceed64ec4974b6d6f08f1946b8c7149",
+     "to_sha": "0aa5757b970d9b3881ab70f92a8093040f403e838c44fc0b83853071553920b5"
+    },
+    "harness/promotion.py": {
+     "from_sha": "7bc2cae79e1fce911db154f797a13d89214a55b7cdad108d0528b83e0917e582",
+     "to_sha": "7c992cf4b2043c3f842b91c6b775b1e793fb7fbcb94c05cee89c08c91759dd47"
+    },
+    "harness/specificity.py": {
+     "from_sha": "4390b76f1dd1013a4e7c7050c0de97113abfd4185195f0391caf42efcda8a1ea",
+     "to_sha": "166ee886f77f07c37302891277b0832616a608548fbf0ac9042d24bfec9690b7"
+    },
+    "harness/conformance.py": {
+     "from_sha": "10ada2c99ed7f17514b6d22152d28f93cd3178db05ccf2740435bd119e252480",
+     "to_sha": "957ed96249001f16462a4a664a10c8678ce80267dc5002b2521dea1d85c719b1"
+    }
+   },
+   "reason": "A12d slice D5 (auditor D4-post P0/P1): structural atomic-conjunction grammar v4 (t4-conformance-v4, atomic_vocabulary 23-token derived list, requires_all-only conformance, conditional clauses unrepresentable) + stray-symlink closure (any unexpected symlink beneath state/ fails) + capability-lock-v4 schema bump (declared_limitations_present rename, specificity never consults it); T0 producer prompt teaches the v4 contract shape; new H27 acceptance suite, H3/H13/H16/H17/H18/H20/H21/H22/H24/H25/H26 synced",
+   "slice": "a12d-slice-d5",
    "status_after": "open-round2"
   }
  ],

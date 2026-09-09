@@ -17,7 +17,7 @@ import os
 import re
 import time
 
-LOCK_SCHEMA_VERSION = "capability-lock-v3"
+LOCK_SCHEMA_VERSION = "capability-lock-v4"
 
 # The complete estimand-aware field set (audit round-2 item #9). Every field
 # must be present AND carry the right shape; a lock missing any of them is
@@ -33,24 +33,21 @@ LOCK_REQUIRED_FIELDS = (
     "execution_lock_sha256",     # 64hex, matches the frozen execution lock
     "artifacts",                 # {name: 64hex} exactly the promoted set
     "semantic_core",             # nonempty str
-    # A12d slice D2 (auditor A12d.3/A12d.4): producer applicability
-    # requirements in the structurally positive v2 form.
-    # A12d slice D4 (auditor D3-post P1): the lock schema is v3. The v2
-    # identifier predates `preconditions` becoming
-    # `list[{"requires": ...}]` and no longer uniquely describes the
-    # shape, so the bump is the explicit freeze: v2 meant the
-    # pre-`list[{"requires": ...}]` shape (the D2
-    # interpret-with-v2-shape note is superseded by this bump). The
-    # producer-contract shape itself stays v2; only the lock schema
-    # version moves.
-    "preconditions",             # list[{"requires": nonempty str}]
+    # A12d slice D5 (auditor D4-post P0/P1): producer applicability
+    # requirements in the structural atomic-conjunction v4 form, and
+    # the lock schema is v4. The v3 identifier predates `preconditions`
+    # becoming `list[{"requires_all": ...}]` and no longer uniquely
+    # describes the shape, so the bump is the explicit freeze; the bump
+    # also absorbs the stale-field cleanup (the v3 presence field
+    # is renamed to `declared_limitations_present`).
+    "preconditions",             # list[{"requires_all": [tokens]}]
                                  # (may be empty: no declared
                                  # applicability requirement)
     "limitations",               # list[str] (may be empty; free prose)
     # A12b.6 actual-contract conformance (auditor rule: the lock records
     # the contract the producer ACTUALLY shipped, and conformance is
     # checked against that contract):
-    "limitation_present",        # bool: the locked contract carries a
+    "declared_limitations_present",        # bool: the locked contract carries a
                                  # limitation (== bool(limitations))
     "non_discriminating",        # bool: the family's T4 cannot
                                  # discriminate on this contract
@@ -154,19 +151,28 @@ def verify_lock(lock, expect=None, fam_c_dir=None):
     if sc is not None and not (isinstance(sc, str) and sc.strip()):
         out.append("LOCK-INADMISSIBLE: semantic_core must be a nonempty "
                    f"string, got {sc!r}")
+    # A12d slice D5: the retired v3 field must not survive on a v4
+    # lock - a stale lock carrying it is refused naming the field.
+    if "limitation_present" in lock:
+        out.append("LOCK-INADMISSIBLE: retired lock field "
+                   "limitation_present is present (renamed to "
+                   "declared_limitations_present in capability-lock-v4)")
     for f in ("preconditions", "limitations"):
         v = lock.get(f)
         if f == "preconditions":
             if v is not None and (not isinstance(v, list)
                                   or not all(
                                       isinstance(x, dict)
-                                      and set(x) == {"requires"}
-                                      and isinstance(x.get("requires"), str)
-                                      and x["requires"].strip()
+                                      and set(x) == {"requires_all"}
+                                      and isinstance(
+                                          x.get("requires_all"), list)
+                                      and x["requires_all"]
+                                      and all(isinstance(t, str) and t
+                                              for t in x["requires_all"])
                                       for x in v)):
                 out.append("LOCK-INADMISSIBLE: preconditions must be a "
-                           "list of {\"requires\": nonempty str} objects "
-                           "(v3 lock schema; v2 contract shape), "
+                           "list of {\"requires_all\": [nonempty str]} "
+                           "objects (v4 lock schema; v4 contract shape), "
                            f"got {v!r}")
         elif v is not None and (not isinstance(v, list)
                                 or not all(isinstance(x, str) for x in v)):
@@ -177,25 +183,25 @@ def verify_lock(lock, expect=None, fam_c_dir=None):
     # claim smuggled from hidden auditor text (the controller derives
     # these mechanically from the producer-declared contract; the
     # conformance check reads the lock only):
-    #   * limitation_present must be a bool and must equal
+    #   * declared_limitations_present must be a bool and must equal
     #     bool(limitations) — lying about presence voids the lock;
     #   * non_discriminating must be a bool;
     #   * conformance_cause must be a nonempty committed reason.
-    # A12d slice D2: discrimination rides the affirmative requires
-    # claims, never limitations — so no rule here may void a lock for
+    # A12d slice D5: discrimination rides the structural requires_all
+    # token lists, never limitations — so no rule here may void a lock for
     # carrying empty limitations alongside a discriminating verdict
     # (that is the legitimate C2 shape: limitations are free prose).
     # Discrimination is set membership, checked below.
     lim = lock.get("limitations")
-    lim_present = lock.get("limitation_present")
+    lim_present = lock.get("declared_limitations_present")
     non_disc = lock.get("non_discriminating")
     cause = lock.get("conformance_cause")
     if lim_present is not None and not isinstance(lim_present, bool):
-        out.append("LOCK-INADMISSIBLE: limitation_present must be a "
+        out.append("LOCK-INADMISSIBLE: declared_limitations_present must be a "
                    f"boolean, got {lim_present!r}")
     elif isinstance(lim, list) and isinstance(lim_present, bool) \
             and lim_present != bool(lim):
-        out.append("LOCK-INADMISSIBLE: limitation_present "
+        out.append("LOCK-INADMISSIBLE: declared_limitations_present "
                    f"{lim_present!r} != the locked limitations "
                    f"({'present' if lim else 'absent'})")
     if non_disc is not None and not isinstance(non_disc, bool):
@@ -284,7 +290,7 @@ def promote(out_dir, capability_id, version, artifact_paths,
             family=None, acquisition_chain_tips=None, source_cells=None,
             producer_identity=None, protocol_lock_sha256=None,
             execution_lock_sha256=None, semantic_core=None, preconditions=None,
-            limitations=None, limitation_present=None,
+            limitations=None, declared_limitations_present=None,
             non_discriminating=None, conformance_cause=None,
             supported_t4_ids=None, conformance_map_sha256=None,
             t4_semantic_id=None, evidence_grade=None,
@@ -307,7 +313,7 @@ def promote(out_dir, capability_id, version, artifact_paths,
         ("execution_lock_sha256", execution_lock_sha256),
         ("semantic_core", semantic_core), ("preconditions", preconditions),
         ("limitations", limitations),
-        ("limitation_present", limitation_present),
+        ("declared_limitations_present", declared_limitations_present),
         ("non_discriminating", non_discriminating),
         ("conformance_cause", conformance_cause),
         ("supported_t4_ids", supported_t4_ids),
@@ -338,7 +344,7 @@ def promote(out_dir, capability_id, version, artifact_paths,
             "semantic_core": semantic_core,
             "preconditions": list(preconditions),
             "limitations": list(limitations),
-            "limitation_present": limitation_present,
+            "declared_limitations_present": declared_limitations_present,
             "non_discriminating": non_discriminating,
             "conformance_cause": conformance_cause,
             "supported_t4_ids": list(supported_t4_ids),

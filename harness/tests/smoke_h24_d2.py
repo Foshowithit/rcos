@@ -3,18 +3,19 @@
 limitation->T4 bridge is polarity-blind) + A12d.4 (`preconditions: []`
 must be legal consistently).
 
-Producer contract schema v2 + conformance bridge v3 (rule
-atomic-requirement-grammar-v3 over the governed
-T4-CONFORMANCE.json v3 map), driven through the REAL production path
+Producer contract schema v4 + conformance bridge v4 (rule
+atomic-conjunction-grammar-v4 over the governed
+T4-CONFORMANCE.json v4 map), driven through the REAL production path
 (fixture T0/T1 builds -> promotion controller -> order provenance
 re-derivation -> CAPABILITY_LOCK), never a claim:
 
-  C1  the four auditor-quoted negated strings, each as the ONLY
-      precondition, yield EMPTY supported_t4_ids and
-      non_discriminating True for ALL six families — reported
-      INADMISSIBLE with a named reason, never silently ignored;
-  C2  three affirmative requires claims each support EXACTLY their
-      family's T4 and none of the other five;
+  C1  four negation-marker token lists, each as the ONLY precondition,
+      yield EMPTY supported_t4_ids and non_discriminating True for ALL
+      six families — reported INADMISSIBLE with a named reason — and
+      are PROMOTION-DENY as contract entries (a conditional clause is
+      structurally unrepresentable as conformance evidence);
+  C2  three affirmative requires_all token lists each support EXACTLY
+      their family's T4 and none of the other five;
   C3  a limitations-only text with preconditions [] yields EMPTY
       support (limitations never drive conformance) on an admissible
       lock;
@@ -22,10 +23,11 @@ re-derivation -> CAPABILITY_LOCK), never a claim:
       lists verbatim, stays non-discriminating, and names zero
       preconditions in the cause;
   C5  five malformed shapes (bare-string precondition; object with a
-      second key; blank requires; missing preconditions; missing
+      second key; non-atomic token; missing preconditions; missing
       limitations) are each refused with a named PROMOTION-DENY;
-  C6  polarity regression: adding a negated precondition for one
-      family never flips an affirmative claim for another;
+  C6  polarity regression: limitations prose carrying negated words
+      never flips an affirmative requires_all claim for another
+      family (and an inadmissible token list poisons its contract);
   C7  an old-map lock (conformance_map_sha256 = v1 map sha) is
       inadmissible at lock verify and at order, and the engine is
       unloadable from it (readiness FAILURE: nothing downstream may
@@ -94,9 +96,10 @@ def hermetic(tag):
     return root
 
 
-def v2_contract(pre_texts=None, lim_texts=None):
+def v4_contract(pre_lists=None, lim_texts=None):
     return {"semantic_core": CORE,
-            "preconditions": [{"requires": t} for t in (pre_texts or [])],
+            "preconditions": [{"requires_all": list(t)}
+                              for t in (pre_lists or [])],
             "limitations": list(lim_texts or [])}
 
 
@@ -143,12 +146,14 @@ def refuse_reason(tag, contract):
 
 cmap = CONF.load(FAMC)
 
-# --- C1: the four auditor-quoted negations are INADMISSIBLE -----------
+# --- C1: negation-marker token lists are INADMISSIBLE -----------------
+# D5: negation is structurally unrepresentable as conformance evidence —
+# a negation-marker / non-vocabulary token refuses the whole precondition.
 NEGATIVES = [
-    "not limited to local v1 sha256 manifests",
-    "DAG export is unsupported",
-    "does not require acyclic input",
-    "common unit basis is not required",
+    ["not", "local", "sha256"],
+    ["unsupported", "acyclic"],
+    ["without", "acyclic"],
+    ["absent", "unit", "basis"],
 ]
 for i, neg in enumerate(NEGATIVES):
     fam_ok = True
@@ -157,20 +162,19 @@ for i, neg in enumerate(NEGATIVES):
         fam_ok = fam_ok and v["supported_t4_ids"] == [] \
             and v["non_discriminating"] is True \
             and v["requires_inadmissible"] == 1
-    _root, _rec, _lock = mint(f"C1n{i}", v2_contract([neg]))
-    check(f"C1 negated requires #{i + 1} {neg[:44]!r} is INADMISSIBLE "
-          f"(empty support, all families non-discriminating)",
-          fam_ok and _lock.get("supported_t4_ids") == []
-          and _lock.get("non_discriminating") is True
-          and "inadmissible" in (_lock.get("conformance_cause") or ""),
-          f"lock sup={_lock.get('supported_t4_ids')} "
-          f"cause={str(_lock.get('conformance_cause'))[:120]!r}")
+    _reason = refuse_reason(f"C1n{i}", v4_contract([neg]))
+    check(f"C1 negated requires_all #{i + 1} {neg!r} is INADMISSIBLE "
+          f"(empty support, all families non-discriminating) and refused "
+          f"as a contract",
+          fam_ok and _reason is not None
+          and "PROMOTION-DENY" in _reason and neg[0] in _reason,
+          f"reason={str(_reason)[:140]!r}")
 
-# --- C2: affirmative requires support exactly one T4 -------------------
+# --- C2: affirmative requires_all lists support exactly one T4 -------
 POSITIVES = [
-    ("only local v1 sha256 manifests", "fam05.local_v1_sha256"),
-    ("the input must be acyclic", "fam04.promised_acyclic"),
-    ("pages must be disjoint", "fam02.pages_disjoint"),
+    (["local", "v1", "sha256"], "fam05.local_v1_sha256"),
+    (["acyclic"], "fam04.promised_acyclic"),
+    (["pages", "disjoint"], "fam02.pages_disjoint"),
 ]
 for pre, want in POSITIVES:
     want_fam = want.split(".")[0]
@@ -178,8 +182,8 @@ for pre, want in POSITIVES:
     # lock non-discriminating while no other family supports either.
     other_ok = all(CONF.verdict(f, [pre], cmap)["non_discriminating"]
                    is True for f in FAMILIES if f != want_fam)
-    _root, _rec, _lock = mint("C2-" + want_fam, v2_contract([pre]))
-    check(f"C2 affirmative {pre[:36]!r} supports exactly {want}",
+    _root, _rec, _lock = mint("C2-" + want_fam, v4_contract([pre]))
+    check(f"C2 affirmative {str(pre)[:36]!r} supports exactly {want}",
           _lock.get("supported_t4_ids") == [want]
           and _lock.get("non_discriminating") is (want_fam != "fam05")
           and other_ok,
@@ -188,18 +192,18 @@ for pre, want in POSITIVES:
 
 # --- C3: limitations never drive conformance ---------------------------
 _root3, _rec3, _lock3 = mint(
-    "C3", v2_contract([], ["local v1 sha256 manifests are required"]))
+    "C3", v4_contract([], ["local v1 sha256 manifests are required"]))
 check("C3 limitations-only text with preconditions [] yields EMPTY "
       "support (limitations never evidence), lock admissible",
       _lock3.get("supported_t4_ids") == []
       and _lock3.get("non_discriminating") is True
-      and _lock3.get("limitation_present") is True
+      and _lock3.get("declared_limitations_present") is True
       and LOCK_MOD.verify_lock(_lock3, fam_c_dir=_root3) == [],
       f"sup={_lock3.get('supported_t4_ids')} "
       f"reasons={LOCK_MOD.verify_lock(_lock3, fam_c_dir=_root3)[:1]}")
 
 # --- C4: both lists empty is legal -------------------------------------
-_root4, _rec4, _lock4 = mint("C4", v2_contract([], []))
+_root4, _rec4, _lock4 = mint("C4", v4_contract([], []))
 check("C4 preconditions [] + limitations [] promotes, locks the empty "
       "lists verbatim, stays non-discriminating, names zero "
       "preconditions",
@@ -216,14 +220,15 @@ BAD = [
     ({"semantic_core": CORE,
       "preconditions": ["local v1 sha256"],
       "limitations": []},
-     "bare-string precondition", "v2 shape"),
+     "bare-string precondition", "requires_all"),
     ({"semantic_core": CORE,
-      "preconditions": [{"requires": "x", "extra": 1}],
+      "preconditions": [{"requires_all": ["local"], "extra": 1}],
       "limitations": []},
      "precondition with a second key", "exactly"),
-    ({"semantic_core": CORE, "preconditions": [{"requires": "  "}],
+    ({"semantic_core": CORE,
+      "preconditions": [{"requires_all": ["local local"]}],
       "limitations": []},
-     "blank requires text", "requires"),
+     "non-atomic token", "local local"),
     ({"semantic_core": CORE, "limitations": []},
      "missing preconditions", "preconditions"),
     ({"semantic_core": CORE, "preconditions": []},
@@ -239,23 +244,23 @@ for bad, label, needle in BAD:
 
 # --- C6: polarity regression -------------------------------------------
 _root6a, _rec6a, _lock6a = mint(
-    "C6a", v2_contract(["the input must be acyclic",
-                        "not for local v1 sha256 manifests"]))
-check("C6 affirmative fam04 claim is not flipped by an added negated "
-      "fam05 precondition",
+    "C6a", v4_contract([["acyclic"]],
+                       ["not for local v1 sha256 manifests"]))
+check("C6 affirmative fam04 claim is not flipped by negated-words "
+      "limitations prose",
       _lock6a.get("supported_t4_ids") == ["fam04.promised_acyclic"],
       f"sup={_lock6a.get('supported_t4_ids')}")
 _root6b, _rec6b, _lock6b = mint(
-    "C6b", v2_contract(["only local v1 sha256 manifests",
-                        "never assume an acyclic input"]))
-check("C6 affirmative fam05 claim is not flipped by an added negated "
-      "fam04 precondition",
+    "C6b", v4_contract([["local", "v1", "sha256"]],
+                       ["never assume an acyclic input"]))
+check("C6 affirmative fam05 claim is not flipped by negated-words "
+      "limitations prose",
       _lock6b.get("supported_t4_ids") == ["fam05.local_v1_sha256"],
       f"sup={_lock6b.get('supported_t4_ids')}")
 
 # --- C7: old-map lock is inadmissible ----------------------------------
 _root7, _rec7, _lock7 = mint(
-    "C7", v2_contract(["only local v1 sha256 manifests"]))
+    "C7", v4_contract([["local", "v1", "sha256"]]))
 assert _lock7.get("non_discriminating") is False
 stale = dict(_lock7)
 stale["conformance_map_sha256"] = V1_MAP_SHA

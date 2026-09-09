@@ -6,7 +6,7 @@ Readiness is DERIVED from the order expansion (never from disk
 enumeration): exactly 24 CAPABILITY_LOCK cells {PQ,QP} x {A,C} x
 {fam01..fam06}, present ONLY via order.cell_state() == "COMPLETE"
 (the sole admissibility authority), each present lock bound to the
-live v2 conformance map sha with the v2 rule cause, and no stray
+live v4 conformance map sha with the v4 rule cause, and no stray
 capability dir outside the expansion. Verdicts: READY (exit 0) iff
 24/24 present, admissible, discriminating, no strays; INCOMPLETE
 (exit 1) for a partial set with every missing tuple listed; FAILURE
@@ -55,15 +55,15 @@ SOLVER = "import sys; sys.exit(0)\n"
 ADAPTER = "import sys; sys.exit(0)\n"
 SPEC_CLI = os.path.join(HARNESS, "specificity.py")
 V1_MAP_SHA = "05a8e094e437f320ed7e9521b483dd98f1febf0f31851992125ccb2f95dbda40"
-# Discriminating producer declarations (each requires text matches a
-# frozen v2 predicate for its own family only).
+# Discriminating producer declarations (each requires_all token list
+# matches a frozen v4 predicate for its own family only).
 CONTRACT = {
-    "fam01": {"requires": "each summary row is an aggregate record"},
-    "fam02": {"requires": "pages must be disjoint"},
-    "fam03": {"requires": "identical repeats are duplicates"},
-    "fam04": {"requires": "the input must be acyclic"},
-    "fam05": {"requires": "only local v1 sha256 manifests"},
-    "fam06": {"requires": "a common unit basis is required"},
+    "fam01": {"requires_all": ["summary", "row"]},
+    "fam02": {"requires_all": ["pages", "disjoint"]},
+    "fam03": {"requires_all": ["identical", "repeats"]},
+    "fam04": {"requires_all": ["acyclic"]},
+    "fam05": {"requires_all": ["local", "sha256"]},
+    "fam06": {"requires_all": ["common", "unit"]},
 }
 FAMILIES = tuple(f"fam0{i}" for i in range(1, 7))
 

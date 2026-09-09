@@ -72,7 +72,8 @@ FORBIDDEN_MANIFEST_KEYS = {"block", "universe", "source_cells",
                            "protocol_lock_sha256", "execution_lock_sha256",
                            "evidence_grade", "producer_identity",
                            "t4_semantic_id", "t4_ratified", "conformance_cause",
-                           "limitation_present", "non_discriminating",
+                           "declared_limitations_present",
+                           "non_discriminating",
                            "limitations", "preconditions", "semantic_core",
                            "locked_at", "created_at", "engine_interface",
                            "candidate_provenance_sha256",
@@ -92,8 +93,7 @@ T0_FORBIDDEN = ("K.md", "semantic_id", "semantic id", "conformance",
 # written text, namespace-token-free, byte-identical for both families.
 A5_CONTRACT = {
     "semantic_core": "Cross-family opacity probe: file listing audit.",
-    "preconditions": [{"requires": "only valid for local v1 sha256 "
-                                   "manifests"}],
+    "preconditions": [{"requires_all": ["local", "v1", "sha256"]}],
     "limitations": []}
 
 

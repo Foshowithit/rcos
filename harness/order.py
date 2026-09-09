@@ -1228,10 +1228,10 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     # hidden capability text. A receipt that rewrites the producer's declared text
     # is refused here, exactly as a non-frozen contract was before.
     # A12c slice C2 re-derives the conformance verdict from the same
-    # frozen declaration below (`_t0_pre_texts`); A12d slice D2 maps
-    # ONLY the affirmative preconditions[*].requires claims (never
-    # limitations).
-    _t0_pre_texts = None
+    # frozen declaration below (`_t0_pre_lists`); A12d slice D5 maps
+    # ONLY the structural preconditions[*].requires_all token lists
+    # (never limitations).
+    _t0_pre_lists = None
     sc = r.get("semantic_core")
     if not isinstance(sc, str) or not sc.strip():
         out.append("promotion provenance: receipt has no semantic_core")
@@ -1251,10 +1251,13 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
         if isinstance(_t0_declared, dict):
             _t0_pre = _t0_declared.get("preconditions")
             if isinstance(_t0_pre, list) and all(
-                    isinstance(p, dict) and set(p) == {"requires"}
-                    and isinstance(p.get("requires"), str)
+                    isinstance(p, dict) and set(p) == {"requires_all"}
+                    and isinstance(p.get("requires_all"), list)
+                    and p["requires_all"]
+                    and all(isinstance(t, str) for t in
+                            p["requires_all"])
                     for p in _t0_pre):
-                _t0_pre_texts = [p["requires"] for p in _t0_pre]
+                _t0_pre_lists = [list(p["requires_all"]) for p in _t0_pre]
             for _k in ("semantic_core", "preconditions", "limitations"):
                 if r.get(_k) != _t0_declared.get(_k):
                     out.append(f"promotion provenance: receipt {_k} is not "
@@ -1272,31 +1275,34 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
         if f == "preconditions":
             _pv = r.get(f)
             if not isinstance(_pv, list) or not all(
-                    isinstance(x, dict) and set(x) == {"requires"}
-                    and isinstance(x.get("requires"), str)
-                    and x["requires"].strip() for x in _pv):
+                    isinstance(x, dict) and set(x) == {"requires_all"}
+                    and isinstance(x.get("requires_all"), list)
+                    and x["requires_all"]
+                    and all(isinstance(t, str) and t
+                            for t in x["requires_all"])
+                    for x in _pv):
                 out.append("promotion provenance: preconditions must be "
-                           "a v2 list of {\"requires\": nonempty str} "
-                           "objects (possibly empty)")
+                           "a v4 list of {\"requires_all\": [nonempty "
+                           "str]} objects (possibly empty)")
         elif not isinstance(r.get(f), list) or not all(
                 isinstance(x, str) for x in r[f]):
             out.append(f"promotion provenance: {f} must be a list of strings")
     # A12b.6 actual-contract conformance: the receipt carries the
     # producer's ACTUAL contract plus the derived verdict (the lock
     # records exactly these; the conformance check reads the lock only,
-    # never hidden capability text). limitation_present must equal
-    # bool(limitations). A12d slice D2: discrimination rides the
-    # affirmative requires claims, never limitations — so an empty
-    # limitations list alongside a discriminating verdict is legitimate
-    # (limitations are free prose); only the re-derived set membership
-    # below judges the claim.
+    # never hidden capability text). declared_limitations_present must
+    # equal bool(limitations). A12d slice D5: discrimination rides the
+    # structural requires_all token lists, never limitations — so an
+    # empty limitations list alongside a discriminating verdict is
+    # legitimate (limitations are free prose); only the re-derived set
+    # membership below judges the claim.
     _lim = r.get("limitations")
-    _lp = r.get("limitation_present")
+    _lp = r.get("declared_limitations_present")
     _nd = r.get("non_discriminating")
     _cause = r.get("conformance_cause")
     if not isinstance(_lp, bool) or _lp != bool(_lim):
-        out.append("promotion provenance: limitation_present must be "
-                   "bool(limitations)")
+        out.append("promotion provenance: declared_limitations_present "
+                   "must be bool(limitations)")
     if not isinstance(_nd, bool):
         out.append("promotion provenance: non_discriminating must be a "
                    "boolean")
@@ -1321,13 +1327,13 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     if _cmap_err is not None:
         out.append("promotion provenance: governed T4-CONFORMANCE.json "
                    f"refuses: {_cmap_err}")
-    elif _t0_pre_texts is None:
-        out.append("promotion provenance: T0 arrival declares no v2 "
+    elif _t0_pre_lists is None:
+        out.append("promotion provenance: T0 arrival declares no v4 "
                    "preconditions list (conformance verdict not "
                    "re-derivable)")
     else:
         try:
-            _re = _conf_verdict(cell["family"], _t0_pre_texts, _cmap)
+            _re = _conf_verdict(cell["family"], _t0_pre_lists, _cmap)
             _re_err = None
         except Exception as e:                            # noqa: BLE001
             _re, _re_err = None, str(e)
@@ -1465,7 +1471,13 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
     reasons = []
     capdir = capability_dir(fam_c_dir, cell["block"], cell["universe"],
                             cell["family"])
-    if os.path.islink(capdir) or not os.path.isdir(capdir):
+    # A12d slice D5: a symlinked capability dir at this DERIVED (hence
+    # expected) path stays legal — the D1-era jail / named-volume seam.
+    # os.path.isdir follows the link, so a dangling symlink still reads
+    # as absent; an unexpected symlink anywhere beneath state/ is still
+    # a readiness FAILURE via the specificity stray walk (which never
+    # follows links).
+    if not os.path.isdir(capdir):
         return {"cell_id": cell["cell_id"], "status": "INCOMPLETE",
                 "reasons": [f"capability dir absent at the derived path "
                             f"{capdir}"]}
@@ -1510,9 +1522,13 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
                 reasons.append("lock rule: candidate_provenance_sha256 "
                                f"{lock.get('candidate_provenance_sha256')!r} "
                                f"!= the promotion receipt sha {want_sha!r}")
+        # A12d slice D5: the receipt<->lock binding never consults
+        # declared_limitations_present (observed specificity must not
+        # consult the field at all: a flipped bit with everything else
+        # valid leaves readiness unchanged).
         for key in ("protocol_lock_sha256", "execution_lock_sha256",
                     "evidence_grade", "semantic_core", "t4_semantic_id",
-                    "limitation_present", "non_discriminating",
+                    "non_discriminating",
                     "conformance_cause", "supported_t4_ids",
                     "conformance_map_sha256"):
             if key in rec:
@@ -1541,7 +1557,19 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
     # A12c slice C2: bind the lock's conformance verdict to the LIVE
     # governed map bytes (a map edited without re-minting the lock
     # refuses here, naming the sha mismatch).
-    reasons.extend(_verify_lock(lock, expect=expect, fam_c_dir=fam_c_dir))
+    # A12d slice D5: order-level state never consults
+    # declared_limitations_present (the decorative presence bit): it is
+    # masked to its consistent value before validation, so a flipped
+    # bit with everything else valid leaves the cell COMPLETE.
+    # lock.verify_lock itself still enforces the bit's hygiene
+    # directly (a lying lock is LOCK-INADMISSIBLE there).
+    _state_lock = dict(lock)
+    if "declared_limitations_present" in _state_lock and isinstance(
+            _state_lock.get("limitations"), list):
+        _state_lock["declared_limitations_present"] = bool(
+            _state_lock["limitations"])
+    reasons.extend(_verify_lock(_state_lock, expect=expect,
+                                fam_c_dir=fam_c_dir))
     # the immutable lock: every locked artifact hash verifies against the
     # bytes present in that capability dir.
     for name, want in sorted((lock.get("artifacts") or {}).items()):
@@ -1956,13 +1984,14 @@ def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),
     # an empty provenance map can never pass as "present".
     need = ("acquisition_chain_tips", "source_cells", "candidate",
             "artifacts", "semantic_core", "preconditions", "limitations",
-            "limitation_present", "non_discriminating", "conformance_cause",
+            "declared_limitations_present", "non_discriminating",
+            "conformance_cause",
             "supported_t4_ids", "conformance_map_sha256",
             "t4_semantic_id", "evidence_grade", "producer_identity",
             "protocol_lock_sha256", "execution_lock_sha256")
     missing = [k for k in need if k not in receipt or receipt[k] is None]
     empty = [k for k in need if k not in ("preconditions", "limitations",
-                                         "limitation_present",
+                                         "declared_limitations_present",
                                          "non_discriminating",
                                          "supported_t4_ids")
              and not receipt.get(k)]
@@ -2016,7 +2045,8 @@ def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),
         semantic_core=receipt["semantic_core"],
         preconditions=receipt["preconditions"],
         limitations=receipt["limitations"],
-        limitation_present=receipt["limitation_present"],
+        declared_limitations_present=receipt[
+            "declared_limitations_present"],
         non_discriminating=receipt["non_discriminating"],
         conformance_cause=receipt["conformance_cause"],
         supported_t4_ids=receipt["supported_t4_ids"],

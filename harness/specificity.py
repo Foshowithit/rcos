@@ -16,7 +16,7 @@ enumeration:
     for each present cell, the lock is loaded through the governed
     path and its conformance recomputed with conformance.verdict under
     the LIVE governed map: the lock's conformance_map_sha256 must
-    equal the live map sha and its cause must equal the recomputed v3
+    equal the live map sha and its cause must equal the recomputed v4
     rule cause (else FAILURE) ->
     additionally, STRAY lock directories under state/**/capability
     that are NOT in the expansion -> FAILURE naming each path (this
@@ -36,7 +36,7 @@ Verdicts and exit codes (frozen contract, slice D3 B5):
 
     contract-conformance-READY (exit 0) iff 24/24 present, every lock
     admissible through cell_state, every lock discriminating
-    (non_discriminating False under the live v3 map), no strays;
+    (non_discriminating False under the live v4 map), no strays;
 
     contract-conformance-INCOMPLETE (exit 1) iff present < 24 with no
     failure condition: reports present=<n> missing=<24-n> plus every
@@ -103,7 +103,7 @@ specificity, which requires post-T4 lifecycle/result evidence.
 
 Exit 0 with verdict contract-conformance-READY iff 24/24 capability
 locks are present, every lock is admissible through order.cell_state,
-every lock is discriminating under the live v3 conformance map, and
+every lock is discriminating under the live v4 conformance map, and
 no stray lock dirs exist; exit 1 with verdict
 contract-conformance-INCOMPLETE for a partial set (present=<n>
 missing=<24-n> plus every missing tuple); exit 2 with verdict
@@ -148,7 +148,7 @@ def _expected_lock_cells(fam_c_dir):
 
 
 def _live_conformance_map(fam_c_dir):
-    """Load the live governed v3 conformance map (fail closed)."""
+    """Load the live governed v4 conformance map (fail closed)."""
     try:
         return conformancemod.load(fam_c_dir), []
     except Exception as e:  # noqa: BLE001 — fail closed, never raise
@@ -188,9 +188,9 @@ def _lock_exists(fam_c_dir, block, universe, family):
 
 def _governed_lock_verdict(fam_c_dir, block, universe, family, livemap):
     """Load one present cell's lock through the governed path and
-    recompute its conformance under the LIVE v3 map. Returns
+    recompute its conformance under the LIVE v4 map. Returns
     (discriminating, problems): discriminating is True only when the
-    lock binds the live map sha, its cause equals the recomputed v2
+    lock binds the live map sha, its cause equals the recomputed v4
     rule cause, and the recomputed verdict is discriminating."""
     capdir = ordermod.capability_dir(fam_c_dir, block, universe, family)
     path = os.path.join(capdir, LOCK_FILENAME)
@@ -215,21 +215,21 @@ def _governed_lock_verdict(fam_c_dir, block, universe, family, livemap):
         return False, [
             f"capability lock for {tag} binds conformance map "
             f"{str(lock.get('conformance_map_sha256'))[:12]} != the live "
-            f"v3 map {live_sha[:12]} (a lock minted under an old "
+            f"v4 map {live_sha[:12]} (a lock minted under an old "
             f"conformance map is stale)"]
     try:
         pre = lock.get("preconditions")
-        requires = [p["requires"] for p in pre]
+        requires = [list(p["requires_all"]) for p in pre]
         verdict = conformancemod.verdict(
             family, requires, livemap,
             limitations=lock.get("limitations"))
     except Exception as e:  # noqa: BLE001 — fail closed, never raise
-        return False, [f"capability lock for {tag} carries no v3 "
+        return False, [f"capability lock for {tag} carries no v4 "
                         f"conformance verdict ({type(e).__name__}: {e})"]
     if lock.get("conformance_cause") != verdict["conformance_cause"]:
         return False, [
             f"capability lock for {tag} cause does not match the live "
-            f"v3 rule recomputation (locked "
+            f"v4 rule recomputation (locked "
             f"{str(lock.get('conformance_cause'))[:80]!r} != recomputed "
             f"{str(verdict['conformance_cause'])[:80]!r})"]
     if verdict["non_discriminating"]:
@@ -241,7 +241,8 @@ def _governed_lock_verdict(fam_c_dir, block, universe, family, livemap):
 
 def _stray_capability_dirs(fam_c_dir, expected_capdirs):
     """The ONLY disk walk: capability dirs under state/ that are NOT in
-    the order expansion. Returns sorted stray paths. Never raises."""
+    the order expansion, plus ANY unexpected symlink anywhere beneath
+    state/. Returns sorted stray paths. Never raises."""
     out = []
     try:
         state_root = os.path.join(fam_c_dir, "state")
@@ -249,19 +250,25 @@ def _stray_capability_dirs(fam_c_dir, expected_capdirs):
             return out
         for dirpath, dirnames, filenames in os.walk(
                 state_root, followlinks=False):
-            # Stray-symlink closure (A12d slice D4, auditor D3-post
-            # P1): an UNEXPECTED `capability` entry that is a symlink
-            # is still reported as a stray naming the exact path —
-            # whether it points at a dir (walk lists it in dirnames)
-            # or dangles / points at a non-dir (walk lists it in
-            # filenames). Symlinked capability dirs at EXPECTED cell
-            # paths stay legal (the D1-era jail / named-volume seam).
+            # Stray-symlink closure (A12d slice D5, auditor D4-post
+            # P1): ANY unexpected symlink anywhere beneath state/ is a
+            # readiness failure naming the exact symlink path — whether
+            # it is a symlinked parent hiding a stray (state/PQ/A/fam07
+            # -> <tmpdir> with <tmpdir>/capability/), a dangling link,
+            # a deep link, or a dir- or file-target link. There is no
+            # need to follow it: the walk never descends through a
+            # link and never reads through one. Symlinked `capability`
+            # entries at EXPECTED cell paths stay legal (the D1-era
+            # jail / named-volume seam).
             for name in list(dirnames) + list(filenames):
-                if name != "capability":
-                    continue
                 full = os.path.join(dirpath, name)
-                if os.path.islink(full) and \
-                        os.path.abspath(full) not in expected_capdirs:
+                try:
+                    linked = os.path.islink(full)
+                except OSError:
+                    continue
+                if not linked:
+                    continue
+                if os.path.abspath(full) not in expected_capdirs:
                     out.append(full)
             # Never descend through a symlinked parent: only real dirs
             # below the state root are examined (no jail escape, no

@@ -492,15 +492,15 @@ res_lock = promotion.advance(root_ok, "PQ", "fam05", "A", FREEZE,
 check("second advance mints CAPABILITY_LOCK",
       res_lock["event"] == "CAPABILITY_LOCK")
 lk = json.load(open(res_lock["lock"]))
-check("fam05 lock carries limitation_present=false, "
+check("fam05 lock carries declared_limitations_present=false, "
       "non_discriminating=true and a committed cause",
       lk.get("limitations") == []
-      and lk.get("limitation_present") is False
+      and lk.get("declared_limitations_present") is False
       and lk.get("non_discriminating") is True
       and isinstance(lk.get("conformance_cause"), str)
       and "fam05.local_v1_sha256" in lk["conformance_cause"]
       and "non-discriminating" in lk["conformance_cause"],
-      str({k: lk.get(k) for k in ("limitation_present",
+      str({k: lk.get(k) for k in ("declared_limitations_present",
                                   "non_discriminating")}))
 check("minted fam05 lock passes the full lock contract",
       LOCK_MOD.verify_lock(lk) == [],
@@ -510,9 +510,9 @@ check("a lock claiming discrimination while the limitation is absent "
       "is LOCK-INADMISSIBLE",
       any("LOCK-INADMISSIBLE" in r and "no limitations" in r
           for r in LOCK_MOD.verify_lock(_claim)))
-_lie = dict(lk, limitation_present=True)
+_lie = dict(lk, declared_limitations_present=True)
 check("a lock lying about limitation presence is LOCK-INADMISSIBLE",
-      any("LOCK-INADMISSIBLE" in r and "limitation_present" in r
+      any("LOCK-INADMISSIBLE" in r and "declared_limitations_present" in r
           for r in LOCK_MOD.verify_lock(_lie)))
 _nocause = dict(lk, conformance_cause="  ")
 check("a lock with no committed cause is LOCK-INADMISSIBLE",
@@ -529,7 +529,7 @@ check("specificity gate excludes the non-discriminating fam05 with cause",
       and gate["verdict"] == "specificity-failure", str(gate))
 _disc = dict(lk, limitations=["only valid for local v1 sha256 "
                              "manifests (synthetic H17 bridge check)"],
-             limitation_present=True, non_discriminating=False,
+             declared_limitations_present=True, non_discriminating=False,
              conformance_cause="synthetic: frozen predicate matched",
              supported_t4_ids=[lk["t4_semantic_id"]])
 check("synthetic discriminating lock passes its own contract",

@@ -205,6 +205,22 @@
    "reason": "A12d slice D4 (auditor D3-post P0/P1): forward amendment AMEND-2026-09-09-d4-atomic-grammar freezing t4-conformance-v3 under atomic-requirement-grammar-v3 and the capability-lock-v3 schema bump",
    "base": "d1d3fa2",
    "slice": "a12d-slice-d4"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": "9b2486daca23cc4c4d437ddc499bd46b3ebccbfa0c379abffd8cb00a22a32ef0",
+   "to_sha": "f2d69276841c271119651e8fc16351bbab41a5421fdcb4cec737887cdce00dd0",
+   "reason": "A12d slice D5 (auditor D4-post P0): forward amendment AMEND-2026-09-09-d5-atomic-conjunction \u2014 governed map to t4-conformance-v4 under atomic-conjunction-grammar-v4 (new frozen atomic_vocabulary 23-token derived list; ONLY preconditions[*].requires_all token lists are conformance candidates; conditional clauses structurally unrepresentable) with the capability-lock-v4 schema bump",
+   "base": "a6cf516",
+   "slice": "a12d-slice-d5"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "b732647f61f35808e0e07cb4221998e75c2851180fd44070e4b25ee5851437c6",
+   "to_sha": "d5277d752c209765ce222e36af5c7d1fe5e13ba00d06514a8ea548b358b6dbb3",
+   "reason": "A12d slice D5 (auditor D4-post P0/P1): forward amendment AMEND-2026-09-09-d5-atomic-conjunction freezing t4-conformance-v4 under atomic-conjunction-grammar-v4 and the capability-lock-v4 schema bump (declared_limitations_present rename)",
+   "base": "a6cf516",
+   "slice": "a12d-slice-d5"
   }
  ]
 }

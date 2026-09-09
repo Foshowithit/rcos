@@ -215,14 +215,17 @@ _OUT = ('\nOutput one JSON object with the keys "decision", '
         'choose use_capability only when a capability-access block is present '
         'and applicable; otherwise choose fresh. '
         'No explanations, no code fences.')
-# A12c slice B (B1) + A12d slice D2 (auditor A12d.4 + A12d.3) — T0
+# A12c slice B (B1) + A12d slice D5 (auditor D4-post P0) — T0
 # producer instruction carries a required `capability_contract` (T0
 # ONLY). The T0 acquisition prompt requests, in addition to `solver_py`,
 # a `capability_contract` object with the keys `semantic_core`
 # (non-empty string: the producer's own statement of what the reusable
-# capability does), `preconditions` (list of {"requires": <non-empty
-# string>} objects, possibly empty: one object per applicability
-# requirement, with exactly the single key "requires"), and
+# capability does), `preconditions` (list of
+# {"requires_all": [<atomic tokens>]} objects, possibly empty: one
+# object per applicability requirement, with exactly the single key
+# "requires_all", each token a single lowercase word of letters,
+# digits, underscore, dot or hyphen with no spaces and no duplicates),
+# and
 # `limitations` (list of strings, possibly empty: free prose about what
 # the capability does not cover). An empty `preconditions` list means
 # "no declared applicability requirement" and is valid, never
@@ -245,9 +248,11 @@ _OUT_T0 = ('\nOutput one JSON object with the keys "decision", '
         '"preconditions", "limitations": "semantic_core" is a non-empty '
         'string stating in your own words what the reusable capability '
         'does; "preconditions" is a list of objects of the exact shape '
-        '{"requires": <non-empty string>} (the list may be empty), one '
-        'object per applicability requirement with only the "requires" '
-        'key; "limitations" is a list of strings '
+        '{"requires_all": [<atomic tokens>]} (the list may be empty), one '
+        'object per applicability requirement with only the "requires_all" '
+        'key; each token is one lowercase word of letters, digits, '
+        'underscore, dot or hyphen, with no spaces and no duplicates; '
+        '"limitations" is a list of strings '
         '(possibly empty) stating what it does not cover. '
         'An empty "preconditions" list means no declared applicability '
         'requirement and is valid, never malformed. '
@@ -1638,9 +1643,9 @@ def selfcheck_wire():
             producer_identity={"lane": "Q", "builder": "selfcheck"},
             protocol_lock_sha256="3" * 64, execution_lock_sha256="4" * 64,
             semantic_core="selfcheck fixture: no semantic claim",
-            preconditions=[{"requires": "fixture"}],
+            preconditions=[{"requires_all": ["fixture"]}],
             limitations=["fixture"],
-            limitation_present=True, non_discriminating=False,
+            declared_limitations_present=True, non_discriminating=False,
             conformance_cause=("selfcheck fixture: synthetic limitation "
                                "present, T4 treated as discriminating"),
             # A12c slice C2: the frozen bridge fields (the synthetic id

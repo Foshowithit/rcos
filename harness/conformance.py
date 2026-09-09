@@ -1,62 +1,60 @@
 #!/usr/bin/env python3
-"""A12d slice D4 (auditor D3-post P0) — the ATOMIC-requires->T4-id
-conformance bridge (v3).
+"""A12d slice D5 (auditor D4-post P0) — the STRUCTURAL atomic-conjunction
+conformance bridge (v4).
 
-Auditor finding D3-post P0: the v2 bridge is disjunction-blind. A text
-such as 'local or remote, v1 or v2, sha256 or blake3 manifests' could
-mark `fam05.local_v1_sha256` supported: the token rule saw `local` +
-`sha256` and ignored the `or`s and commas. False positives are worse
-than false negatives, so ambiguous/disjunctive requirements FAIL
-CONSERVATIVE under a tiny protocol amendment — a restricted
-atomic-requirement grammar, not a growing prose marker list.
+Auditor finding D4-post P0: the v3 grammar is conditional-clause blind.
+A text such as 'when local use v1 sha256 manifests; when remote use
+blake3 manifests' carries no `or`/`,`/`/`/negation token, yet its token
+set contains `local`+`v1`+`sha256`, so fam05 could be marked supported
+although the contract also covers the remote branch. The auditor fix
+(verbatim): don't grow another marker list — move the
+conformance-bearing portion to a truly structural conjunction, one
+positive atomic requirement object containing an explicit requires_all
+list, with no alternatives/branching representation permitted. Free
+prose stays consumer-visible separately (as `limitations`).
 
-Frozen rule atomic-requirement-grammar-v3 (implement exactly, do not
+Frozen rule atomic-conjunction-grammar-v4 (implement exactly, do not
 redesign):
-  1. ONLY `preconditions[*].requires` texts are candidates.
-     `limitations` are NEVER consulted by conformance.
-  2. ADMISSIBILITY: a requires text is INADMISSIBLE iff ANY of:
-     (a) one of its normalized tokens (lowercase; every char not in
-         `[a-z0-9_.-]` -> a space; collapse whitespace; split) is in
-         the frozen top-level `negation_markers` list (fail closed,
-         as in v2);
-     (b) it contains a frozen `disjunction_markers` entry as a WHOLE
-         WORD — TOKEN-level: split on whitespace, strip punctuation,
-         compare (so `ordinary` and `for` never trip `or`);
-     (c) it contains a frozen `structural_separators` entry as a RAW
-         CHARACTER anywhere (`,` or `/`).
-     An INADMISSIBLE text contributes NO conformance evidence: it
-     never supports any T4 id and never acts as negation.
-  3. A predicate matches an ADMISSIBLE requires text iff EVERY token
-     in the predicate is present as a whole token (order irrelevant,
-     no stemming, no substrings). Normalization of admissible texts
-     is UNCHANGED from v2.
-  4. A family's T4 is SUPPORTED iff ANY admissible requires text
-     matches ANY of that family's `requires_predicates`.
-     `supported_t4_ids` = sorted set (computed from admissible texts
-     only; if none are admissible -> `non_discriminating: true`).
-  5. `non_discriminating(family) = t4_semantic_id(family) not in
-     supported_t4_ids`.
-  6. Cause text names the T4 id, the number of declared preconditions,
-     the number of INADMISSIBLE ones, the matched predicate+text when
-     discriminating, and the grammar refusal
-     (`atomic-grammar-inadmissible: ...`) when a disjunctive text is
-     refused. Auditor-side only.
+  1. ONLY `preconditions[*].requires_all` token lists are conformance
+     candidates. `limitations` remain free prose, recorded verbatim,
+     and are NEVER conformance evidence. There is no free-text
+     conformance channel at all.
+  2. Contract shape (v4, exact): each precondition is an object with
+     EXACTLY one key `requires_all`; its value is a list of >=1
+     strings; every string must be an atomic token matching
+     `^[a-z0-9_.-]+$` (no whitespace, no separators, already
+     lowercase); no duplicates in the list; every token must be in
+     the frozen `atomic_vocabulary`. Anything else (bare string, old
+     `requires` key, extra key, empty list, non-atomic token,
+     out-of-vocabulary token, duplicate) is PROMOTION-DENY at the
+     promotion controller, naming the offending token/key.
+  3. Admissibility (defense in depth): a precondition is INADMISSIBLE
+     iff any of its tokens is a frozen `negation_markers` entry, a
+     frozen `disjunction_markers` entry, or contains a frozen
+     `structural_separators` character, or is outside
+     `atomic_vocabulary`. (Rule 2 already refuses these at promotion;
+     this layer re-checks and names the reason.) An INADMISSIBLE
+     precondition contributes NO evidence.
+  4. Matching: a family predicate matches an admissible precondition
+     iff EVERY predicate token is present in that `requires_all` (set
+     membership; order irrelevant).
+  5. Supported set: family T4 supported iff ANY admissible
+     precondition matches ANY of that family's `requires_predicates`;
+     `supported_t4_ids` = sorted set over admissible preconditions
+     only; no admissible precondition at all ->
+     `non_discriminating: true`.
+  6. Cause text: names the T4 id, the number of declared
+     preconditions, the number of inadmissible ones, the matched
+     predicate + `requires_all` when discriminating, and the grammar
+     refusal `atomic-grammar-inadmissible: <reason>` (reason names the
+     exact token/condition) when a precondition is refused.
 
-Auditor finding A12d.3: the frozen v1 bridge is polarity-blind. It
-treated as supporting evidence texts such as 'not limited to local v1
-sha256 manifests', 'DAG export is unsupported', 'does not require
-acyclic input', or 'common unit basis is not required'. The v2 bridge
-maps ONLY affirmative producer applicability claims: the producer
-contract carries its requirements in the structurally positive form
-`preconditions: [{"requires": "<text>"}]`, and the matcher consults
-ONLY those requires texts — never limitations (which stay free prose,
-recorded verbatim in the lock, and contribute nothing here).
-
-Frozen rule atomic-requirement-grammar-v3 (superseding detail: the v2
-affirmative shape is kept — ONLY `preconditions[*].requires` texts are
-candidates and `limitations` stay free prose — with the D4 atomicity
-refusal added: a disjunctive text is INADMISSIBLE and contributes to NO
-family, fail conservative).
+The frozen `atomic_vocabulary` is exactly the sorted union of every
+family's `requires_predicates` tokens (derived-and-frozen, so it can
+never drift from the predicates): a conformance token can only be a
+frozen T4 content token, so branching words (`when`, `if`, `else`,
+`otherwise`, ...) are structurally unrepresentable as conformance
+evidence — no growing marker list.
 
 This module is AUDITOR-SIDE: it reads the governed map and the
 producer's T0 arrival declaration only — never K.md (no hidden-contract
@@ -64,12 +62,12 @@ reader lives here), never consumer artifacts — and it never asserts:
 every refusal raises. FAIL CLOSED: `load` refuses (raises) on a missing
 file, unparsable JSON, a version/rule mismatch, a missing or malformed
 `negation_markers` list, a missing or non-frozen `disjunction_markers`
-or `structural_separators` table, wrong family keys, a
-`t4_semantic_id` that is not the registry resolver's value for that
-family, empty `requires_predicates`, a malformed predicate, or an
-unknown per-family key; `verdict` raises on an unknown family, on
-requires texts that are not strings, or on a map that was not loaded
-here (no sha). Stdlib only.
+/ `structural_separators` / `atomic_vocabulary` table, wrong family
+keys, a `t4_semantic_id` that is not the registry resolver's value for
+that family, empty `requires_predicates`, a malformed predicate, or an
+unknown per-family key; `verdict` raises on an unknown family, on a
+bare-string candidate (fail closed, never silently coerced), or on a
+map that was not loaded here (no sha). Stdlib only.
 """
 import hashlib
 import json
@@ -84,12 +82,21 @@ if _HERE not in sys.path:
 import t4_ids as _t4_ids  # noqa: E402  (the SINGLE registry resolver)
 
 MAP_FILE = "T4-CONFORMANCE.json"
-VERSION = "t4-conformance-v3"
-RULE = "atomic-requirement-grammar-v3"
-# A12d slice D4: the frozen atomic-grammar tables (exact values; the
+VERSION = "t4-conformance-v4"
+RULE = "atomic-conjunction-grammar-v4"
+# A12d slice D5: the frozen atomic-conjunction tables (exact values; the
 # loader refuses any other value — fail closed, never a silent table).
 DISJUNCTION_MARKERS = ["either", "or"]
 STRUCTURAL_SEPARATORS = ["/", ","]
+# The frozen derived vocabulary: exactly sorted(set(union of every
+# family's requires_predicates tokens)). Branching words are structurally
+# unrepresentable as conformance evidence because no such word is a
+# frozen T4 content token.
+ATOMIC_VOCABULARY = ["acyclic", "acyclicity", "aggregate", "basis",
+                     "common", "dedup", "disjoint", "duplicates",
+                     "identical", "input", "local", "order", "pages",
+                     "record", "repeats", "row", "same", "sha256",
+                     "summary", "topological", "unit", "units", "v1"]
 WANT_FAMILIES = tuple(f"fam0{i}" for i in range(1, 7))
 # Per-family keys allowed in the governed map (exact shape; anything
 # else refuses — a smuggled key must never silently ride the map).
@@ -98,9 +105,10 @@ _SHA_KEY = "conformance_map_sha256"
 _MARKERS_KEY = "negation_markers"
 _DISJUNCTION_KEY = "disjunction_markers"
 _SEPARATORS_KEY = "structural_separators"
+_VOCAB_KEY = "atomic_vocabulary"
 
 _TOKEN_RE = re.compile(r"[a-z0-9_.-]+")
-_NONTTOKEN_RE = re.compile(r"[^a-z0-9_.-]+")
+_ATOMIC_RE = re.compile(r"^[a-z0-9_.-]+$")
 
 
 def _refuse(what):
@@ -108,17 +116,22 @@ def _refuse(what):
 
 
 def normalize(text):
-    """Lowercase, blank every non-token character, split on whitespace."""
+    """Lowercase, blank every non-token character, split on whitespace.
+
+    Kept for audit continuity (the v2/v3 text bridge normalized this
+    way); the v4 structural bridge matches atomic token lists directly
+    via matches(), never through this helper."""
     if not isinstance(text, str):
         raise _refuse(f"normalize() needs a string, got "
                       f"{type(text).__name__}")
-    return [tok for tok in _NONTTOKEN_RE.sub(" ", text.lower()).split()
+    return [tok for tok in re.sub(r"[^a-z0-9_.-]+", " ", text.lower()).split()
             if tok]
 
 
 def matches(predicate, tokens):
     """Every predicate token present as a whole token (order irrelevant,
-    no stemming, no synonyms, no substring matching)."""
+    no stemming, no synonyms, no substring matching). `tokens` is any
+    iterable of atomic tokens (a requires_all list or a set of one)."""
     toks = set(tokens)
     return all(tok in toks for tok in predicate)
 
@@ -151,53 +164,59 @@ def _separators(cmap):
     return list(s)
 
 
-_PUNCT_EDGE_RE = re.compile(r"^[^a-z0-9]+|[^a-z0-9]+$")
+def _vocabulary(cmap):
+    v = cmap.get(_VOCAB_KEY)
+    if v != ATOMIC_VOCABULARY:
+        raise _refuse("conformance map carries no frozen "
+                      f"atomic_vocabulary table {ATOMIC_VOCABULARY!r} "
+                      f"(got {v!r}; conformance tokens can only be "
+                      f"frozen T4 content tokens)")
+    return set(v)
 
 
-def _disjunction_hit(text, markers):
-    """The frozen disjunction marker present as a WHOLE WORD, or None.
-    TOKEN-level: split on whitespace, strip punctuation, compare — so
-    `ordinary` and `for` never trip `or` (no substring matching)."""
-    for raw in text.lower().split():
-        if _PUNCT_EDGE_RE.sub("", raw) in markers:
-            return _PUNCT_EDGE_RE.sub("", raw)
-    return None
-
-
-def _separator_hit(text, separators):
-    """The frozen structural separator present as a RAW CHARACTER, or
-    None. Any literal `,` or `/` anywhere refuses the text."""
-    for sep in separators:
-        if sep in text:
-            return sep
-    return None
-
-
-def classify(text, cmap):
-    """Why a requires text is INADMISSIBLE, or None when ADMISSIBLE.
-    Refusal precedence: negation marker, then disjunction marker, then
-    structural separator (every refusal contributes NO evidence)."""
+def classify(requires_all, cmap):
+    """Why a requires_all token list is INADMISSIBLE, or None when
+    ADMISSIBLE. A candidate that is not a token list at all (e.g. a
+    bare string) is not classified — it RAISES via _require_lists
+    (fail closed, never silently coerced)."""
+    if not isinstance(requires_all, list):
+        raise _refuse("conformance needs a requires_all token list "
+                      f"(got {type(requires_all).__name__}; a bare "
+                      f"string cannot carry the structural conjunction)")
+    if not requires_all:
+        return "empty requires_all"
     marks = _markers(cmap)
-    toks = set(normalize(text))
-    neg = sorted(tok for tok in toks if tok in marks)
-    if neg:
-        return f"negation marker {neg[0]!r}"
-    dj = _disjunction_hit(text, _disjunction(cmap))
-    if dj:
-        return f"disjunction marker {dj!r}"
-    sep = _separator_hit(text, _separators(cmap))
-    if sep:
-        return f"structural separator {sep!r}"
+    disj = _disjunction(cmap)
+    seps = _separators(cmap)
+    vocab = _vocabulary(cmap)
+    for tok in requires_all:
+        if not isinstance(tok, str) or not _ATOMIC_RE.match(tok):
+            return f"non-atomic token {tok!r}"
+        if tok in marks:
+            return f"negation marker {tok!r}"
+        if tok in disj:
+            return f"disjunction marker {tok!r}"
+        for sep in seps:
+            if sep in tok:
+                return f"structural separator {sep!r} in {tok!r}"
+        if tok not in vocab:
+            return f"out-of-vocabulary token {tok!r}"
+    seen = set()
+    for tok in requires_all:
+        if tok in seen:
+            return f"duplicate token {tok!r}"
+        seen.add(tok)
     return None
 
 
-def admissible(text, cmap):
-    """True iff a requires text is an ADMISSIBLE conformance candidate:
-    no frozen negation marker token, no disjunction marker as a whole
-    word, no structural separator character. An INADMISSIBLE text
-    (e.g. 'not limited to ...', or 'local or remote, v1 or v2, ...')
-    contributes to NO family — reported, never silently matched."""
-    return classify(text, cmap) is None
+def admissible(requires_all, cmap):
+    """True iff a requires_all token list is an ADMISSIBLE conformance
+    candidate: every token atomic, in-vocabulary, unduplicated, and
+    outside the frozen negation/disjunction tables. An INADMISSIBLE
+    list (e.g. a token-encoded conditional carrying `when`) contributes
+    to NO family — reported, never silently matched. A bare string
+    RAISES (fail closed, never coerced to a token list)."""
+    return classify(requires_all, cmap) is None
 
 
 def _check_map_shape(cmap, where):
@@ -238,6 +257,12 @@ def _check_map_shape(cmap, where):
                       f"{cmap.get(_SEPARATORS_KEY)!r} != the frozen "
                       f"atomic-grammar table {STRUCTURAL_SEPARATORS!r} "
                       f"(the separator table is frozen)")
+    if cmap.get(_VOCAB_KEY) != ATOMIC_VOCABULARY:
+        raise _refuse(f"governed map at {where} carries "
+                      f"atomic_vocabulary "
+                      f"{cmap.get(_VOCAB_KEY)!r} != the frozen "
+                      f"atomic-conjunction table {ATOMIC_VOCABULARY!r} "
+                      f"(the vocabulary is derived-and-frozen)")
     fams = cmap.get("families")
     if not isinstance(fams, dict) or sorted(fams) != sorted(WANT_FAMILIES):
         got = sorted(fams) if isinstance(fams, dict) else type(
@@ -279,6 +304,16 @@ def _check_map_shape(cmap, where):
                               f"carries a malformed predicate {pred!r} "
                               f"(predicates are non-empty lists of "
                               f"non-empty lowercase [a-z0-9_.-]+ tokens)")
+    derived = sorted({t for fam in WANT_FAMILIES
+                      for p in fams[fam]["requires_predicates"]
+                      for t in p})
+    if list(cmap[_VOCAB_KEY]) != derived:
+        raise _refuse(f"governed map at {where} carries an "
+                      f"atomic_vocabulary that is not the sorted union "
+                      f"of every family's requires_predicates tokens "
+                      f"(got {cmap[_VOCAB_KEY]!r}, derived {derived!r}; "
+                      f"the vocabulary can never drift from the "
+                      f"predicates)")
     return reg
 
 
@@ -287,11 +322,12 @@ def load(fam_c_dir):
     its file sha attached under `conformance_map_sha256`. REFUSES
     (raises) on: missing file, unparsable JSON, version/rule mismatch, a
     missing or malformed `negation_markers` list, a missing or
-    non-frozen `disjunction_markers` / `structural_separators` table,
-    wrong family keys, a `t4_semantic_id` outside the registry
-    resolver's value for that family, empty `requires_predicates`, a
-    malformed predicate, or an unknown per-family key — never a silent
-    default."""
+    non-frozen `disjunction_markers` / `structural_separators` /
+    `atomic_vocabulary` table (the vocabulary must also equal the
+    sorted union of every family's predicate tokens), wrong family
+    keys, a `t4_semantic_id` outside the registry resolver's value for
+    that family, empty `requires_predicates`, a malformed predicate, or
+    an unknown per-family key — never a silent default."""
     p = os.path.join(fam_c_dir, MAP_FILE)
     if not os.path.isfile(p) or os.path.islink(p):
         raise _refuse(f"governed map missing at {p} (a promotion rooted "
@@ -311,6 +347,7 @@ def load(fam_c_dir):
             _MARKERS_KEY: list(cmap[_MARKERS_KEY]),
             _DISJUNCTION_KEY: list(cmap[_DISJUNCTION_KEY]),
             _SEPARATORS_KEY: list(cmap[_SEPARATORS_KEY]),
+            _VOCAB_KEY: list(cmap[_VOCAB_KEY]),
             "families": {fam: {
                 "t4_semantic_id": cmap["families"][fam]["t4_semantic_id"],
                 "requires_predicates": [
@@ -338,96 +375,109 @@ def _require_loaded(cmap):
     _markers(cmap)
     _disjunction(cmap)
     _separators(cmap)
+    _vocabulary(cmap)
     return sha
 
 
-def _require_texts(requires_texts):
-    if not isinstance(requires_texts, list) or not all(
-            isinstance(x, str) for x in requires_texts):
-        raise _refuse("conformance needs requires texts as a list of "
-                      "strings (pass preconditions[*].requires — the "
-                      "producer's affirmative applicability claims; "
-                      "limitations are never conformance evidence)")
+def _require_lists(requires_lists):
+    if not isinstance(requires_lists, list):
+        raise _refuse("conformance needs requires_all token lists as a "
+                      "list of lists of atomic vocabulary tokens (pass "
+                      "preconditions[*].requires_all — the producer's "
+                      "structural applicability claims; limitations are "
+                      "never conformance evidence)")
+    for cand in requires_lists:
+        if not isinstance(cand, list):
+            raise _refuse(
+                "conformance needs requires_all token lists (a bare "
+                f"string {cand!r} cannot carry the structural "
+                f"conjunction: pass preconditions[*].requires_all)")
 
 
-def _split_admissible(requires_texts, cmap):
-    """Partition requires texts into (admissible, inadmissible) token
-    sets. Inadmissible (negated or grammar-refused) texts contribute
-    to NO family."""
+def _split_admissible(requires_lists, cmap):
+    """Partition requires_all token lists into (admissible, inadmissible)
+    token sets. Inadmissible lists (non-atomic, out-of-vocabulary, or
+    grammar-refused tokens) contribute to NO family."""
     good, bad = [], []
-    for text in requires_texts:
-        if classify(text, cmap) is None:
-            good.append(set(normalize(text)))
+    for cand in requires_lists:
+        if classify(cand, cmap) is None:
+            good.append((cand, set(cand)))
         else:
-            bad.append(text)
+            bad.append(cand)
     return good, bad
 
 
-def _inadmissible_reasons(requires_texts, cmap):
-    """The per-text refusal reasons, in declaration order, for the
+def _inadmissible_reasons(requires_lists, cmap):
+    """The per-list refusal reasons, in declaration order, for the
     INADMISSIBLE subset (used to name the grammar refusal in the
     cause)."""
     out = []
-    for text in requires_texts:
-        why = classify(text, cmap)
+    for cand in requires_lists:
+        why = classify(cand, cmap)
         if why is not None:
             out.append(why)
     return out
 
 
-def supported_t4_ids(requires_texts, cmap):
+def supported_t4_ids(requires_lists, cmap):
     """The sorted set of family T4 ids supported by this contract: a
-    family's T4 is supported iff ANY ADMISSIBLE requires text matches
-    ANY of its frozen `requires_predicates`. Inadmissible texts
-    (negated or atomic-grammar-refused) and limitations contribute
-    nothing."""
+    family's T4 is supported iff ANY ADMISSIBLE requires_all token list
+    matches ANY of its frozen `requires_predicates` (set membership:
+    every predicate token present in the list). Inadmissible lists and
+    limitations contribute nothing. A bare-string candidate RAISES
+    (fail closed, never coerced)."""
     _require_loaded(cmap)
-    _require_texts(requires_texts)
+    _require_lists(requires_lists)
     fams = cmap["families"]
-    tokenized, _bad = _split_admissible(requires_texts, cmap)
+    tokenized, _bad = _split_admissible(requires_lists, cmap)
     out = set()
     for fam in WANT_FAMILIES:
         for pred in fams[fam]["requires_predicates"]:
-            if any(matches(pred, toks) for toks in tokenized):
+            if any(matches(pred, toks) for _cand, toks in tokenized):
                 out.add(fams[fam]["t4_semantic_id"])
                 break
     return sorted(out)
 
 
-def verdict(family, requires_texts, cmap, *, limitations=None):
+def verdict(family, requires_lists, cmap, *, limitations=None):
     """The frozen conformance verdict for one family over the producer's
-    ACTUAL requires texts (`preconditions[*].requires`). Returns
-    {"t4_semantic_id", "limitation_present", "matched",
-    "supported_t4_ids", "non_discriminating", "conformance_cause",
-    "conformance_map_sha256", "requires_declared",
-    "requires_inadmissible", "inadmissible"}. `limitations`, when given,
-    feeds ONLY the presence bit (free prose, never evidence); when
-    omitted the presence bit falls back to whether any requires text
-    was declared. RAISES on an unknown family, on non-string requires
-    texts, or on a map that was not loaded here — never a silent
-    default in either discriminating direction."""
+    ACTUAL requires_all token lists (`preconditions[*].requires_all`).
+    Returns {"t4_semantic_id", "declared_limitations_present",
+    "matched", "supported_t4_ids", "non_discriminating",
+    "conformance_cause", "conformance_map_sha256",
+    "requires_declared", "requires_inadmissible", "inadmissible"}.
+    `limitations`, when given, feeds ONLY the presence bit (free prose,
+    never evidence); when omitted the presence bit falls back to
+    whether any requires_all list was declared. TOTAL for well-typed
+    candidates: an admissible-shaped but inadmissible token list (an
+    out-of-vocabulary token, a disjunction marker, ...) yields
+    `non_discriminating: true`, `supported_t4_ids: []`, and a
+    `conformance_cause` naming the offending token — never a
+    traceback, so the specificity CLI stays fail-closed on a tampered
+    lock. RAISES on an unknown family, on a bare-string candidate, or
+    on a map that was not loaded here — never a silent default in
+    either discriminating direction."""
     sha = _require_loaded(cmap)
     fams = cmap["families"]
     if family not in fams:
         raise _refuse(f"unknown family {family!r} (governed families: "
                       f"{list(WANT_FAMILIES)}; an unlisted family never "
                       f"defaults to discriminating or non-discriminating)")
-    _require_texts(requires_texts)
+    _require_lists(requires_lists)
     tid = fams[family]["t4_semantic_id"]
-    tokenized, inadmissible = _split_admissible(requires_texts, cmap)
+    tokenized, inadmissible = _split_admissible(requires_lists, cmap)
     matched = []
-    for text, toks in zip([t for t in requires_texts
-                           if t not in inadmissible], tokenized):
+    for cand, toks in tokenized:
         for pred in fams[family]["requires_predicates"]:
             if matches(pred, toks):
                 matched.append({"predicate": list(pred),
-                                "requires": text})
-    matched.sort(key=lambda m: (m["requires"], m["predicate"]))
-    supported = supported_t4_ids(requires_texts, cmap)
+                                "requires_all": list(cand)})
+    matched.sort(key=lambda m: (m["requires_all"], m["predicate"]))
+    supported = supported_t4_ids(requires_lists, cmap)
     non_disc = tid not in supported
-    n, k = len(requires_texts), len(inadmissible)
+    n, k = len(requires_lists), len(inadmissible)
     if limitations is None:
-        lim_present = bool(requires_texts)
+        lim_present = bool(requires_lists)
     else:
         if not isinstance(limitations, list) or not all(
                 isinstance(x, str) for x in limitations):
@@ -441,25 +491,20 @@ def verdict(family, requires_texts, cmap, *, limitations=None):
             f"the contract declares {n} precondition(s) "
             f"({k} inadmissible, contributing to no family) and "
             f"no frozen predicate for {tid} matched any admissible "
-            f"requires text (rule {RULE})")
+            f"requires_all list (rule {RULE})")
         if k:
-            reasons = _inadmissible_reasons(requires_texts, cmap)
-            gram = [r for r in reasons
-                    if r.startswith(("disjunction", "structural"))]
-            if gram:
-                cause += (" atomic-grammar-inadmissible: "
-                          f"{gram[0]}")
-            elif reasons:
-                cause += f" negation-inadmissible: {reasons[0]}"
+            reasons = _inadmissible_reasons(requires_lists, cmap)
+            cause += (" atomic-grammar-inadmissible: "
+                      f"{reasons[0]}")
     else:
         first = matched[0]
         cause = (
             f"family T4 {tid} is discriminating for this contract: "
-            f"frozen predicate {first['predicate']} matched requires "
-            f"{first['requires']!r} ({n} declared precondition(s), "
+            f"frozen predicate {first['predicate']} matched requires_all "
+            f"{first['requires_all']!r} ({n} declared precondition(s), "
             f"{k} inadmissible) (rule {RULE})")
     return {"t4_semantic_id": tid,
-            "limitation_present": lim_present,
+            "declared_limitations_present": lim_present,
             "matched": matched,
             "supported_t4_ids": supported,
             "non_discriminating": non_disc,
@@ -467,4 +512,4 @@ def verdict(family, requires_texts, cmap, *, limitations=None):
             "conformance_map_sha256": sha,
             "requires_declared": n,
             "requires_inadmissible": k,
-            "inadmissible": list(inadmissible)}
+            "inadmissible": [list(c) for c in inadmissible]}

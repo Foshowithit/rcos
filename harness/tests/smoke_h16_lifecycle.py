@@ -6,7 +6,7 @@ path; remove legacy --promote", plus A12.2 grade-aware consumption.
 
 The suite drives the REAL production authorities (`order._local_state` over a
 real manifest + real evidence chain + real reuse_log records + a real
-capability-lock-v3 registry) through every legal and illegal decision shape:
+capability-lock-v4 registry) through every legal and illegal decision shape:
 
   USE            arrival use_capability + record all-true + locked hash match
   REJECT         fresh WITH a capability available + reuse_rejected + reason
@@ -96,11 +96,12 @@ def write_lock(c, grade="harness-validation", engine="print('K')\n"):
                  producer_identity={"adapter": "router9-openai-chat-v2"},
                  protocol_lock_sha256="3" * 64,
                  execution_lock_sha256="4" * 64,
-                 # A12d slice D2: v2 producer shape for preconditions.
+                 # A12d slice D5: v4 producer shape for preconditions.
                  semantic_core="K core",
-                 preconditions=[{"requires": "p"}],
+                 preconditions=[{"requires_all": ["local"]}],
                  limitations=["l"], t4_semantic_id="T4-UNRATIFIED-x",
-                 limitation_present=True, non_discriminating=False,
+                 declared_limitations_present=True,
+                  non_discriminating=False,
                  conformance_cause=("h16 lifecycle fixture: synthetic "
                                     "limitation present, T4 treated as "
                                     "discriminating"),

@@ -544,6 +544,48 @@ becoming `list[{"requires": ...}]` and no longer uniquely describes
 the shape); `verify_lock` refuses any other schema version. No
 estimand locks exist yet, so the bump is cheap.
 
+Forward amendment AMEND-2026-09-09-d5-atomic-conjunction (2026-09-09):
+the atomic-requires bridge frozen above is superseded by the STRUCTURAL
+atomic-conjunction bridge BEFORE any run it governs. The governed map
+benchmarks/fam-c/T4-CONFORMANCE.json is version t4-conformance-v4
+under the frozen rule atomic-conjunction-grammar-v4, with one new
+frozen top-level key `atomic_vocabulary`: exactly the sorted 23-token
+list ["acyclic","acyclicity","aggregate","basis","common","dedup",
+"disjoint","duplicates","identical","input","local","order","pages",
+"record","repeats","row","same","sha256","summary","topological",
+"unit","units","v1"] — the sorted union of every family's
+requires_predicates tokens, derived-and-frozen so it can never drift
+from the predicates. ONLY `preconditions[*].requires_all` token lists
+are conformance candidates: each precondition is an object with
+exactly the key `requires_all` carrying >=1 atomic tokens
+(`^[a-z0-9_.-]+$`, no duplicates, every token in the frozen
+vocabulary); anything else (bare string, the retired `requires` key,
+extra key, empty list, non-atomic or out-of-vocabulary token,
+duplicate) is PROMOTION-DENY naming the offender, and an
+admissible-shaped but inadmissible list (negation marker, disjunction
+marker, separator character, out-of-vocabulary token) contributes NO
+evidence with a cause naming the refusal
+(`atomic-grammar-inadmissible: <reason>`). `limitations` stay free
+prose, recorded verbatim, never conformance evidence. Rationale: a
+conformance token can only be a frozen T4 content token, so branching
+words are structurally unrepresentable as conformance evidence — no
+growing marker list; conditional clauses cannot support any T4 id,
+either as precondition entries (refused) or as limitations prose
+(ignored). A family T4 is supported iff some admissible requires_all
+list contains every token of some frozen requires_predicate (set
+membership, order irrelevant). The v3 map bytes are superseded, not
+edited in place; the v3-to-v4 transition is chained in
+PROTOCOL-LOCK.json. The six T4 semantic IDs frozen above are unchanged
+by this amendment (no ID added, removed, or renamed). The capability
+lock schema bumps to capability-lock-v4: `preconditions` records the
+v4 shape verbatim, and the v3 presence field is renamed to
+`declared_limitations_present` (bool, equal to bool of the declared
+limitations list), since conformance already rides exclusively on
+positive preconditions; observed specificity never consults the
+renamed field, and `verify_lock` refuses any other schema version, any
+lock still carrying the retired field, and any lock missing the
+renamed field. No estimand locks exist yet, so the bump is cheap.
+
 ---
 # 11. Manifest lifecycle
 

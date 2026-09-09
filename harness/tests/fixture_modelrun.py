@@ -156,12 +156,16 @@ def _clean_run_dir(d):
 # K.md at all (no hidden-contract reader lives in this module: the real
 # producer authors its own words from visible information, and the
 # K.md-mutation-invariance invariant requires consumer bytes to hold
-# still when hidden wording changes). A12d slice D2: the v2 shape
-# (non-empty core, preconditions as [{"requires": str}, ...] objects,
-# empty limitations for all six families, so every default lock stays
-# non-discriminating exactly as before — each default requires text is
-# checked against the frozen requires_predicates to match none of them).
-# Callers testing a requires-carrying variant pass an explicit
+# still when hidden wording changes). A12d slice D5: the v4 shape
+# (non-empty core, preconditions as
+# [{"requires_all": [<atomic vocabulary tokens>]}, ...] objects, empty
+# limitations for all six families, so every default lock stays
+# non-discriminating exactly as before — each default token set is
+# verified against the frozen requires_predicates to contain no complete
+# predicate: fam01 ["row","record"], fam02 ["pages","order"], fam03
+# ["repeats","input"], fam04 ["topological","units"], fam05
+# ["local","basis"], fam06 ["unit","same"]).
+# Callers testing a requires_all-carrying variant pass an explicit
 # `producer_contract=` declaration instead.
 PRODUCER_CONTRACTS = {
     "fam01": (
@@ -169,60 +173,36 @@ PRODUCER_CONTRACTS = {
         "turn dollar figures into integer cents, expand tag strings "
         "into tag lists, and return uniform records carrying an id, a "
         "name, a cent amount, and tags, in the same order as the input.",
-        [{"requires": "Every input row stands for one record; rolled-up "
-                      "total lines are left out."},
-         {"requires": "Money values are ordinary US-dollar decimals with "
-                       "a single currency throughout."},
-         {"requires": "Any tags present arrive as strings joined by a "
-                       "delimiter."}],
+        [{"requires_all": ["row", "record"]}],
         []),
     "fam02": (
         "Pull every page of a paged listing: chase the next-page cursor "
         "until it runs out, retry briefly on hiccups, and join all "
         "fetched entries into one collection.",
-        [{"requires": "Each entry shows up on exactly one page."},
-         {"requires": "Each task uses one stable response shape and one "
-                       "steady paging marker."},
-         {"requires": "Any hiccup is short-lived and announced up front."},
-         {"requires": "A task-supplied duplicate policy never widens "
-                       "this: overlapping pages stay out of scope no "
-                       "matter what a POLICY file says."}],
+        [{"requires_all": ["pages", "order"]}],
         []),
     "fam03": (
         "Deduplicate an event window: tally the arrivals, fold exact "
         "repeats into shared identity buckets, and report the overall "
         "count, the distinct count, and how many were dropped.",
-        [{"requires": "A repeat means the same happening was seen twice, "
-                      "never two separate happenings or a status change."},
-         {"requires": "Each task spells out its own identity rule in its "
-                       "prompt, and that rule holds steady for the whole "
-                       "task."}],
+        [{"requires_all": ["repeats", "input"]}],
         []),
     "fam04": (
         "Check a directed graph for cycles and, when it is clean, list "
         "its nodes in a valid execution order.",
-        [{"requires": "The caller guarantees the graph has no cycles; "
-                      "this step double-checks that promise instead of "
-                      "finding cycles."},
-         {"requires": "Every edge means its tail must come before its "
-                       "head."}],
+        [{"requires_all": ["topological", "units"]}],
         []),
     "fam05": (
         "Audit a file listing: measure every named file on disk and "
         "match its byte count and digest against the listing, then file "
         "each entry as good or bad.",
-        [{"requires": "The listing follows the v1 layout of on-disk "
-                      "paths plus byte counts plus digests."},
-         {"requires": "Each named file sits on local disk and can be "
-                       "opened for reading."}],
+        [{"requires_all": ["local", "basis"]}],
         []),
     "fam06": (
         "Reconcile two ledgers: pair rows by identifier, then call out "
         "the pairs that agree, the rows missing on one side, and the "
         "rows whose amounts disagree, quoting both figures.",
-        [{"requires": "Both ledgers tally in one shared measure."},
-         {"requires": "Identifiers repeat nowhere inside either "
-                       "source."}],
+        [{"requires_all": ["unit", "same"]}],
         []),
 }
 
@@ -313,9 +293,9 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
     positive control threads real checker shas/rc/verdict here).
 
     `producer_contract`: an explicit producer declaration
-    {"semantic_core": str, "preconditions": [{"requires": str}, ...],
-    "limitations": [str, ...]} for callers testing a non-default contract
-    (e.g. a requires-carrying variant). The declaration is recorded
+    {"semantic_core": str, "preconditions": [{"requires_all": [str]},
+    ...], "limitations": [str, ...]} for callers testing a non-default
+    contract (e.g. a requires_all-carrying variant). The declaration is recorded
     VERBATIM into the T0 arrival (even a malformed one: shape refusal is
     the promotion controller's job, with named PROMOTION-DENY reasons —
     the fixture must never pre-empt it, or malformed-contract tests

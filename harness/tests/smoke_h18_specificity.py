@@ -9,7 +9,7 @@ INCOMPLETE / contract-conformance-FAILURE).
 <fam_c_dir>/ORDER.md, expands it via order.expand, treats each of the
 exactly 24 CAPABILITY_LOCK cells as present ONLY when
 order.cell_state() says COMPLETE (the sole admissibility authority),
-recomputes each present lock's conformance under the live v2 map, and
+recomputes each present lock's conformance under the live v4 map, and
 refuses stray capability dirs. This suite proves, on hermetic roots
 built through the REAL fixture writer + production promotion
 controller:
@@ -67,16 +67,16 @@ SOLVER = "import sys; sys.exit(0)\n"
 ADAPTER = "import sys; sys.exit(0)\n"
 SPEC_CLI = os.path.join(HARNESS, "specificity.py")
 V1_MAP_SHA = "05a8e094e437f320ed7e9521b483dd98f1febf0f31851992125ccb2f95dbda40"
-# Discriminating producer declarations: each requires text matches a
-# frozen v2 predicate for its own family (and no other family's), so a
-# fully promoted universe is READY.
+# Discriminating producer declarations: each requires_all token list
+# matches a frozen v4 predicate for its own family (and no other
+# family's), so a fully promoted universe is READY.
 CONTRACT = {
-    "fam01": {"requires": "each summary row is an aggregate record"},
-    "fam02": {"requires": "pages must be disjoint"},
-    "fam03": {"requires": "identical repeats are duplicates"},
-    "fam04": {"requires": "the input must be acyclic"},
-    "fam05": {"requires": "only local v1 sha256 manifests"},
-    "fam06": {"requires": "a common unit basis is required"},
+    "fam01": {"requires_all": ["summary", "row"]},
+    "fam02": {"requires_all": ["pages", "disjoint"]},
+    "fam03": {"requires_all": ["identical", "repeats"]},
+    "fam04": {"requires_all": ["acyclic"]},
+    "fam05": {"requires_all": ["local", "sha256"]},
+    "fam06": {"requires_all": ["common", "unit"]},
 }
 FAMILIES = tuple(f"fam0{i}" for i in range(1, 7))
 
@@ -350,7 +350,7 @@ check("specificity.py derives readiness from order.expand(ORDER.md)",
 check("specificity.py uses order.cell_state as the sole "
       "admissibility authority",
       "cell_state" in _src and "SOLE admissibility authority" in _src)
-check("specificity.py binds present locks to the live v2 map via "
+check("specificity.py binds present locks to the live v4 map via "
       "conformance.verdict",
       "conformance.verdict" in _src and "conformance_map_sha256" in _src)
 check("specificity.py walks disk ONLY for stray capability dirs",

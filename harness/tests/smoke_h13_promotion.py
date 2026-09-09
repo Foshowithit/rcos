@@ -210,19 +210,20 @@ def main():
        and lk["source_cells"] == rec["source_cells"])
     # ---- A12b.6 actual-contract conformance ---------------------------
     # fam05's producer-declared contract carries limitations: [], so the
-    # lock must record limitation_present=false, non_discriminating=true
+    # lock must record declared_limitations_present=false,
+    # non_discriminating=true
     # with a committed cause — never silently lock as discriminating.
     ok("fam05 lock records the actual contract as non-discriminating",
        lk.get("limitations") == rec.get("limitations") == []
-       and lk.get("limitation_present") is False
+       and lk.get("declared_limitations_present") is False
        and lk.get("non_discriminating") is True
        and isinstance(lk.get("conformance_cause"), str)
        and "fam05.local_v1_sha256" in lk["conformance_cause"]
        and "non-discriminating" in lk["conformance_cause"],
-       str({k: lk.get(k) for k in ("limitation_present",
+       str({k: lk.get(k) for k in ("declared_limitations_present",
                                    "non_discriminating")}))
     ok("receipt and lock agree on the conformance verdict",
-       rec.get("limitation_present") is False
+       rec.get("declared_limitations_present") is False
        and rec.get("non_discriminating") is True
        and rec.get("conformance_cause") == lk.get("conformance_cause"))
     _claim = dict(lk, non_discriminating=False)
