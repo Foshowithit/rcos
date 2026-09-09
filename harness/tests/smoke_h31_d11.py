@@ -401,7 +401,7 @@ def _code_only(_src):
                                      _tk.NL, _tk.NEWLINE))
 
 
-_RUNNER = os.path.join(os.path.dirname(FAMC), "harness-run",
+_RUNNER = os.path.join(FAMC, "harness-run",
                        "run_arm_h1.py")
 _RTXT = open(_RUNNER, encoding="utf-8").read()
 _RHITS = []
