@@ -101,6 +101,10 @@ check("V2 unlisted drift fails V2",
       any("V2" in f and "ORDER.md" in f and "no listed" in f for f in f_v2),
       str(f_v2))
 open(os.path.join(v2, "ORDER.md"), "w").write("amended order\n")
+# A12d slice D8.2: the recorded to_sha must resolve to committed bytes,
+# so the fixture commits its amended bytes (re-pointed, never weakened).
+git(os.path.join(BASE, "v2repo"), "add", "-A")
+git(os.path.join(BASE, "v2repo"), "commit", "-qm", "amended order")
 lock["amendments"] = [{"file": "ORDER.md", "from_sha": FROZEN_ORDER,
                        "to_sha": sha("amended order\n"),
                        "reason": "test amendment", "base": FC2[:7],

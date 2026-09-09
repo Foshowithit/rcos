@@ -654,6 +654,54 @@ in-commit intermediate of the A12 round-2 close, continued by
 `12dda20242b0`), so the chain stays linear and the tip equals the
 disk bytes. No estimand locks exist yet, so the repair is cheap.
 
+Forward amendment AMEND-2026-09-09-d8-shared-lineage (2026-09-09): one
+shared producer-contract authority plus lineage authority hygiene,
+frozen BEFORE any estimand execution.
+
+(a) ONE pure producer-contract-shape authority. The exact three-key
+contract schema frozen in D7 is unchanged (dict with EXACTLY
+{semantic_core, preconditions, limitations}; missing key refused
+naming the key; extra key refused naming it literally, never dropped;
+nonempty semantic_core; preconditions a possibly-empty list of
+exactly-{"requires_all": [>=1 atomic ^[a-z0-9_.-]+$ tokens, no
+duplicates]} objects; limitations a possibly-empty list of strings;
+unknown atomic tokens still well-formed, D6 semantics kept). What
+changes is that the schema now has ONE implementation:
+harness/contract_shape.py (no I/O, no globals, no vocabulary
+knowledge — it never imports, reads, or consults any recognition
+table) is called by BOTH harness/promotion.py::_producer_contract
+and harness/order.py's PROMOTION-receipt provenance check, so the
+same malformed T0 declaration produces the same finding text through
+both authorities and the D7 defect cannot reopen through the second
+authority. A hand-planted PROMOTION cell whose receipt fields and
+every arrival/artifact hash are internally consistent but whose T0
+declaration is malformed (extra top-level key, missing key, retired
+`requires`, empty `requires_all`, uppercase/non-atomic/duplicate
+token) is INADMISSIBLE naming the defect; a well-formed declaration
+carrying an unknown atom stays ADMISSIBLE.
+
+(b) Lineage authority hygiene. The `9caf3d4fdd33`
+HARNESS-READINESS.md node appeared at no commit: it was an in-commit
+intermediate of the A12 round-2 close (the bytes the A12 close held
+mid-commit before the integration-hardening pass), kept in D7 as an
+internal chain node continued by `12dda20242b0`. It is REMOVED from
+the authoritative chain here: the HARNESS-READINESS.md a12 edge is
+now `382a75fc356e… → 12dda20242b0…` (the states that actually exist
+in git — both nodes resolve to committed file bytes), with this
+historical explanation preserved in the D8 amendment reason and in
+this stanza, NOT in the chain. No other amendment entry is deleted.
+After this, every recorded node is backed by retrievable bytes, and
+V2 additionally rejects: an extra key in `governed` (the governed set
+must be exactly the seven PROTOCOL_GOVERNED files); an amendment
+entry whose `file` is missing, None, or names an ungoverned file; a
+malformed or non-64-lowercase-hex `from_sha`/`to_sha`; a post-freeze
+governed sha that is any descendant rather than the genesis node
+(e.g. moving governed["T4-CONFORMANCE.json"] from its genesis node
+`05a8e094e437…` to the current tip fails); and any recorded node
+with no retrievable bytes in git. The unique-linear-chain topology
+rule from D7 is unchanged. No estimand locks exist yet, so the
+hygiene pass is cheap.
+
 ---
 # 11. Manifest lifecycle
 

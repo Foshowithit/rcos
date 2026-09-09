@@ -1231,11 +1231,28 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     # frozen declaration below (`_t0_pre_lists`); A12d slice D5 maps
     # ONLY the structural preconditions[*].requires_all token lists
     # (never limitations).
+    # A12d slice D8.1 (auditor D7-post P0): the declaration shape
+    # verdict comes from the SINGLE shared authority
+    # (harness/contract_shape.py — no I/O, no globals, no vocabulary
+    # knowledge), the same module the promotion controller calls. The
+    # receipt's own contract triple rides the same authority (no second
+    # approximation of the shape); the receipt-vs-declaration verbatim
+    # equality below is a cross-check, not a shape rule. A malformed T0
+    # declaration is INADMISSIBLE here with the same finding text the
+    # controller raises, even when the receipt mirrors it field for
+    # field.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from contract_shape import validate as _contract_validate
+    from contract_shape import \
+        precondition_token_lists as _contract_pre_lists
     _t0_pre_lists = None
     sc = r.get("semantic_core")
-    if not isinstance(sc, str) or not sc.strip():
-        out.append("promotion provenance: receipt has no semantic_core")
-    elif "T0" not in runs:
+    _rc_triple = {"semantic_core": r.get("semantic_core"),
+                  "preconditions": r.get("preconditions"),
+                  "limitations": r.get("limitations")}
+    for _finding in _contract_validate(_rc_triple):
+        out.append("promotion provenance: receipt contract " + _finding)
+    if "T0" not in runs:
         out.append("promotion provenance: T0 acquisition run not "
                    "validated (contract cross-check not derivable)")
     else:
@@ -1244,49 +1261,35 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
                                                   "arrival.json"))
             _t0_declared = ((_t0_arrival.get("execution_payload") or {})
                             .get("capability_contract"))
+            _t0_unreadable = None
         except (ValueError, OSError) as e:
             _t0_declared = None
-            out.append("promotion provenance: T0 arrival unreadable for "
-                       f"the contract cross-check: {e}")
-        if isinstance(_t0_declared, dict):
-            _t0_pre = _t0_declared.get("preconditions")
-            if isinstance(_t0_pre, list) and all(
-                    isinstance(p, dict) and set(p) == {"requires_all"}
-                    and isinstance(p.get("requires_all"), list)
-                    and p["requires_all"]
-                    and all(isinstance(t, str) for t in
-                            p["requires_all"])
-                    for p in _t0_pre):
-                _t0_pre_lists = [list(p["requires_all"]) for p in _t0_pre]
-            for _k in ("semantic_core", "preconditions", "limitations"):
-                if r.get(_k) != _t0_declared.get(_k):
-                    out.append(f"promotion provenance: receipt {_k} is not "
-                               f"the frozen T0 arrival declaration (the "
-                               f"promoted contract must be the producer's "
-                               f"own declared text, verbatim)")
-                    break
-        elif _t0_declared is not None:
-            out.append("promotion provenance: the frozen T0 arrival "
-                       "declares no producer capability contract")
+            _t0_unreadable = (f"promotion provenance: T0 arrival "
+                              f"unreadable for the contract cross-check: "
+                              f"{e}")
+            out.append(_t0_unreadable)
+        if _t0_unreadable is None:
+            _decl_findings = _contract_validate(_t0_declared)
+            for _finding in _decl_findings:
+                out.append("promotion provenance: " + _finding)
+            if isinstance(_t0_declared, dict):
+                if not _decl_findings:
+                    _t0_pre_lists = _contract_pre_lists(_t0_declared)
+                for _k in ("semantic_core", "preconditions", "limitations"):
+                    if r.get(_k) != _t0_declared.get(_k):
+                        out.append(
+                            f"promotion provenance: receipt {_k} is not "
+                            f"the frozen T0 arrival declaration (the "
+                            f"promoted contract must be the producer's "
+                            f"own declared text, verbatim)")
+                        break
     if isinstance(sc, str) and r.get("semantic_core_sha256") != \
             hashlib.sha256(sc.encode()).hexdigest():
         out.append("promotion provenance: semantic_core_sha256 mismatch")
-    for f in ("preconditions", "limitations"):
-        if f == "preconditions":
-            _pv = r.get(f)
-            if not isinstance(_pv, list) or not all(
-                    isinstance(x, dict) and set(x) == {"requires_all"}
-                    and isinstance(x.get("requires_all"), list)
-                    and x["requires_all"]
-                    and all(isinstance(t, str) and t
-                            for t in x["requires_all"])
-                    for x in _pv):
-                out.append("promotion provenance: preconditions must be "
-                           "a v4 list of {\"requires_all\": [nonempty "
-                           "str]} objects (possibly empty)")
-        elif not isinstance(r.get(f), list) or not all(
-                isinstance(x, str) for x in r[f]):
-            out.append(f"promotion provenance: {f} must be a list of strings")
+    # A12d slice D8.1: no second approximation of the contract shape
+    # lives here — the receipt's own contract triple was already judged
+    # by the shared authority above (any malformed receipt contract is
+    # refused there naming the defect).
     # A12b.6 actual-contract conformance: the receipt carries the
     # producer's ACTUAL contract plus the derived verdict (the lock
     # records exactly these; the conformance check reads the lock only,

@@ -87,18 +87,10 @@
   {
    "file": "HARNESS-READINESS.md",
    "from_sha": "382a75fc356ef571b6f27caecafb1c2cb210202f0c556568e6ecf54e67953533",
-   "to_sha": "9caf3d4fdd33da0a45ed5bf87d79fce3627439d0d543de9934414901ebdc1a91",
-   "reason": "A12 round-2 close: A12.0 acquisition executor + A12.1 promotion controller + A12.2 estimand lock + A12.3 decision-driven ledger",
-   "base": "a11b-integration",
-   "slice": "a12"
-  },
-  {
-   "file": "HARNESS-READINESS.md",
-   "from_sha": "9caf3d4fdd33da0a45ed5bf87d79fce3627439d0d543de9934414901ebdc1a91",
    "to_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
-   "reason": "A12 integration hardening: lock provenance re-derivation, derived t4_ratified, presence-not-truthiness, verbatim semantic core, V3 package-root closure, production-shaped fixture",
-   "base": "a12",
-   "slice": "a12"
+   "reason": "A12d slice D8 (auditor D7-post P1): lineage authority hygiene \u2014 the non-retrievable 9caf3d4fdd33 node (an in-commit intermediate of the A12 round-2 close, appearing at no commit; kept in D7 as an internal chain node continued by 12dda20242b0) is removed from the authoritative chain; the HARNESS-READINESS.md a12 edge is now 382a75fc356e\u2026 \u2192 12dda20242b0\u2026 (the states that actually exist in git). Superseded A12 wordings preserved: A12 round-2 close (A12.0 acquisition executor + A12.1 promotion controller + A12.2 estimand lock + A12.3 decision-driven ledger) + A12 integration hardening (lock provenance re-derivation, derived t4_ratified, presence-not-truthiness, verbatim semantic core, V3 package-root closure, production-shaped fixture)",
+   "base": "3cbf244",
+   "slice": "a12d-slice-d8"
   },
   {
    "file": "preflight.py",
@@ -253,6 +245,22 @@
    "reason": "A12d slice D7 (auditor D6-post P1): forward amendment AMEND-2026-09-09-d7-lineage-repair tightening V2 to the unique-linear-chain rule (validate_file_chain per governed file: exactly one edge out of the frozen/genesis node, indegree/outdegree at most one, no dead end but the single tip, disk bytes equal to that tip; the reachable-set is deleted)",
    "base": "3033e38",
    "slice": "a12d-slice-d7"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "d073cf7042a529fff8f273f32dc2aab0efa85b6dd2ef3e40a82b0c7acf392d02",
+   "to_sha": "a59e2a56072cdf7342bff5ffb2f19c2e06a33321a54202bdb07267e4ede9e253",
+   "reason": "A12d slice D8 (auditor D7-post P0/P1): forward amendment AMEND-2026-09-09-d8-shared-lineage freezing the single shared producer-contract-shape authority (harness/contract_shape.py called by both harness/promotion.py and harness/order.py; same malformed declaration yields the same finding text) and the lineage authority hygiene rule (9caf3d4fdd33 removed from the chain, edge now 382a75fc356e\u2026 \u2192 12dda20242b0\u2026; V2 rejects ungoverned keys/files, malformed shas, a movable post-freeze anchor, and nodes with no retrievable bytes)",
+   "base": "3cbf244",
+   "slice": "a12d-slice-d8"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "3ba01b4b8e11199f7dcb576b1c6b884d0f6ed077ae5149ac427b6911a886f9ca",
+   "to_sha": "5162b1de95fd14e3c2e0acf4186aa6857ba5170e4ea47c8ac4649c79bb6a4c2d",
+   "reason": "A12d slice D8 (auditor D7-post P1): forward amendment AMEND-2026-09-09-d8-shared-lineage tightening V2 to the lineage authority hygiene rule (validate_lock_global: exact seven-file governed set, governed amendment files only; validate_file_chain: 64-lowercase-hex node shas, post-freeze governed sha must equal the genesis node never a descendant; protocol_tips: every recorded node backed by retrievable bytes in git; validate_file_chain stays pure and I/O-free)",
+   "base": "3cbf244",
+   "slice": "a12d-slice-d8"
   }
  ]
 }

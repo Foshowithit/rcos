@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "663e7e4b516f04b52f1ffbbdd03472f3da7eb503904d5aa9c660c70ed0636451",
+ "harness_manifest_sha256": "e6ecc3f26d8acb8e2cecc12c0993db587642dcbbd02f364e15ce293096a7295a",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -14,16 +14,17 @@
   "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
   "benchmarks/fam-c/harness-run/run_arm_h1.py": "c543a2b4ce07d7264125f9f0e0f059624ee0248ad627da54585755692897ebac",
-  "harness/order.py": "0aa5757b970d9b3881ab70f92a8093040f403e838c44fc0b83853071553920b5",
+  "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "5ecee5b4c7dd87cfac298d3fbc36504e82a78e703dc4a7c1fe9688f503d1b3bb",
+  "harness/promotion.py": "e74ea8da707209f212afd9bb66bf1367de86d40274a21628e0883c0ad8e17426",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
   "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
   "harness/specificity.py": "166ee886f77f07c37302891277b0832616a608548fbf0ac9042d24bfec9690b7",
-  "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193"
+  "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193",
+  "harness/contract_shape.py": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2"
  },
  "amendments": [
   {
@@ -686,6 +687,40 @@
    },
    "reason": "A12d slice D7 (auditor D6-post P0/P1): exact three-key producer contract in promotion (contract alias deleted, missing/extra key denied naming the key, D6 unknown-atom semantics kept); V2 unique-linear-lineage rule in preflight (validate_file_chain, reachable-set deleted); H28 sealed suite added (tests stay outside the execution authority)",
    "slice": "a12d-slice-d7",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "663e7e4b516f04b52f1ffbbdd03472f3da7eb503904d5aa9c660c70ed0636451",
+   "to_manifest": "694ae0a82ce179561918c124873847783dee1406c9c7e800a3e3b1c021b62e71",
+   "files": {
+    "harness/contract_shape.py": {
+     "from_sha": null,
+     "to_sha": "c0206085c93aefb2a66b0d58795291b6edd33beb19105b3f2aa80a65a1f8559d"
+    },
+    "harness/order.py": {
+     "from_sha": "0aa5757b970d9b3881ab70f92a8093040f403e838c44fc0b83853071553920b5",
+     "to_sha": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268"
+    },
+    "harness/promotion.py": {
+     "from_sha": "5ecee5b4c7dd87cfac298d3fbc36504e82a78e703dc4a7c1fe9688f503d1b3bb",
+     "to_sha": "e74ea8da707209f212afd9bb66bf1367de86d40274a21628e0883c0ad8e17426"
+    }
+   },
+   "reason": "A12d slice D8 (auditor D7-post P0): new harness/contract_shape.py single shared producer-contract-shape authority (no I/O, no globals, no vocabulary knowledge); harness/promotion.py _producer_contract and harness/order.py PROMOTION provenance check both call it (inline shape approximations deleted, same finding text through both authorities)",
+   "slice": "a12d-slice-d8",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "694ae0a82ce179561918c124873847783dee1406c9c7e800a3e3b1c021b62e71",
+   "to_manifest": "e6ecc3f26d8acb8e2cecc12c0993db587642dcbbd02f364e15ce293096a7295a",
+   "files": {
+    "harness/contract_shape.py": {
+     "from_sha": "c0206085c93aefb2a66b0d58795291b6edd33beb19105b3f2aa80a65a1f8559d",
+     "to_sha": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2"
+    }
+   },
+   "reason": "A12d slice D8 follow-up: duplicate-finding literal made contiguous in source (runtime finding text byte-identical; static one-implementation wording check)",
+   "slice": "a12d-slice-d8",
    "status_after": "open-round2"
   }
  ],

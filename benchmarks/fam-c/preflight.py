@@ -40,6 +40,7 @@ import ast
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -136,6 +137,38 @@ def validate_instance(fam_c_dir, freeze_commit):
     return out
 
 
+# A12d slice D8.2: a recorded node sha is well-formed only as
+# 64-lowercase-hex (a genesis from_sha is the sole null allowed).
+_HEX64 = re.compile(r"^[0-9a-f]{64}$")
+
+
+def validate_lock_global(lock):
+    """A12d slice D8.2: lock-global hygiene (pure function of the lock
+    bytes — no git, no disk reads). Returns findings (empty = green);
+    every finding names the offending key or file literally.
+
+    The `governed` key set must be EXACTLY the seven
+    PROTOCOL_GOVERNED files (an extra key such as TYPO.md fails), and
+    every amendment entry's `file` must name a governed file (a
+    TYPO.md, missing, or None file fails).
+    """
+    out = []
+    governed = lock.get("governed", {})
+    if not isinstance(governed, dict):
+        return ["V2 PROTOCOL-LOCK: lock governed map is not an object"]
+    for key in sorted(set(governed) - set(PROTOCOL_GOVERNED)):
+        out.append(f"V2 PROTOCOL-LOCK: governed carries an ungoverned "
+                   f"key {key!r} (the governed set must be exactly the "
+                   f"seven PROTOCOL_GOVERNED files)")
+    for a in lock.get("amendments", []):
+        fn = a.get("file") if isinstance(a, dict) else None
+        if fn not in PROTOCOL_GOVERNED:
+            out.append(f"V2 PROTOCOL-LOCK: amendment names an ungoverned "
+                       f"file {fn!r} (every amendment file must name a "
+                       f"governed file)")
+    return out
+
+
 def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
                         governed_sha):
     """A12d slice D7: the unique-linear-lineage rule for ONE governed
@@ -160,8 +193,27 @@ def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
     on-disk bytes equal that tip. Deleting any single predecessor
     edge, reverting a from_sha, or retargeting a to_sha off-chain
     fails here naming the file.
+
+    A12d slice D8.2 (same pure function, tightened): every recorded
+    non-genesis from_sha and every to_sha must be 64-lowercase-hex
+    (malformed shas fail naming the file), and for a post-freeze file
+    the lock's governed sha must EQUAL the genesis node — a governed
+    sha moved to any descendant (even the current tip) fails.
     """
     pre = f"V2 PROTOCOL-LOCK: {fn} "
+    for a in amendments:
+        _f, _t = (a.get("from_sha") if isinstance(a, dict) else None,
+                  a.get("to_sha") if isinstance(a, dict) else None)
+        if _f is not None and not (isinstance(_f, str)
+                                   and _HEX64.match(_f)):
+            return ([pre + f"amendment carries a malformed from_sha "
+                     f"{_f!r} (every recorded node sha must be "
+                     f"64-lowercase-hex; the sole null allowed is a "
+                     f"post-freeze genesis from_sha)"], None)
+        if not (isinstance(_t, str) and _HEX64.match(_t)):
+            return ([pre + f"amendment carries a malformed to_sha "
+                     f"{_t!r} (every recorded node sha must be "
+                     f"64-lowercase-hex)"], None)
     links = [(a.get("from_sha"), a.get("to_sha")) for a in amendments]
     genesis = [a for a in amendments if a.get("from_sha") is None]
     if frozen_sha is not None:
@@ -189,10 +241,15 @@ def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
         root = genesis[0].get("to_sha")
         root_label = "genesis"
         walk_edges = [(f, t) for (f, t) in links if f is not None]
-        if governed_sha != root and governed_sha not in {
-                t for (_, t) in walk_edges}:
-            return ([pre + "lock governed-sha is outside its post-freeze "
-                     "amendment chain (lock edited?)"], None)
+        # A12d slice D8.2: a post-freeze anchor is immovable — the
+        # governed sha must EQUAL the genesis node, never any
+        # descendant (moving it to the current tip fails, lock edited?).
+        if governed_sha != root:
+            return ([pre + "lock governed-sha "
+                     f"{str(governed_sha)[:12]} != the post-freeze "
+                     f"genesis node {root[:12]} (a post-freeze anchor "
+                     f"must equal its genesis node, never a descendant; "
+                     f"lock edited?)"], None)
     if not walk_edges:
         if disk_sha == root:
             return ([], root)
@@ -258,9 +315,10 @@ def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
 
 
 def protocol_tips(fam_c_dir, freeze_commit):
-    """A12d slice D7: the validator-computed unique tip per governed
+    """A12d slice D7/D8.2: the validator-computed unique tip per governed
     file, through the real V2 chain path (git-resolved frozen bytes +
-    validate_file_chain). Returns (tips, findings); `tips` maps each
+    validate_file_chain, plus the D8.2 lock-global hygiene and
+    retrievable-bytes rules). Returns (tips, findings); `tips` maps each
     governed file to its unique tip (absent when that file's chain
     fails). A green file always satisfies
     sha256(disk bytes) == tips[file] — computed here, never asserted
@@ -308,7 +366,54 @@ def protocol_tips(fam_c_dir, freeze_commit):
         findings.extend(f_find)
         if tip is not None:
             tips[fn] = tip
+    # A12d slice D8.2: lock-global hygiene (pure: exact governed set,
+    # every amendment file names a governed file).
+    findings.extend(validate_lock_global(lock))
+    # A12d slice D8.2: every recorded node must be backed by
+    # retrievable bytes — each recorded node sha (governed, from_sha,
+    # to_sha) must resolve to committed file bytes in git. This stays
+    # in the git-aware layer; validate_file_chain keeps its pure,
+    # I/O-free signature (its hermetic unit tests stay meaningful).
+    for fn in PROTOCOL_GOVERNED:
+        want = governed.get(fn)
+        if not isinstance(want, str):
+            continue  # already a finding above
+        nodes = {want}
+        for a in by_file.get(fn, []):
+            if not isinstance(a, dict):
+                continue
+            for key in ("from_sha", "to_sha"):
+                val = a.get(key)
+                if isinstance(val, str) and _HEX64.match(val):
+                    nodes.add(val)
+        versions = _file_version_shas(root, f"benchmarks/fam-c/{fn}")
+        for sha in sorted(nodes):
+            if sha not in versions:
+                findings.append(
+                    f"V2 PROTOCOL-LOCK: {fn} records node {sha[:12]} "
+                    f"with no retrievable bytes in git (every chain "
+                    f"node must resolve to committed file bytes)")
     return (tips, findings)
+
+
+def _file_version_shas(repo_root, rel):
+    """Map sha256(file bytes) -> commit for every committed version of
+    the repo-relative path `rel` (git-aware helper for the D8.2
+    retrievable-bytes rule). Fail closed: an unreadable history maps
+    nothing, so every recorded node is refused."""
+    out = {}
+    try:
+        commits = _git(["log", "--all", "--format=%H", "--", rel],
+                       cwd=repo_root).split()
+    except RuntimeError:
+        return out
+    for commit in commits:
+        proc = subprocess.run(["git", "show", f"{commit}:{rel}"],
+                              cwd=repo_root, capture_output=True)
+        if proc.returncode == 0:
+            out.setdefault(hashlib.sha256(proc.stdout).hexdigest(),
+                           commit)
+    return out
 
 
 def validate_protocol(fam_c_dir, freeze_commit):
@@ -327,6 +432,11 @@ def validate_protocol(fam_c_dir, freeze_commit):
     # the single tip, disk bytes equal to that tip). The old
     # reachable-set ("disk merely members of a set") is DELETED: branching,
     # dead ends and multiple tips no longer pass.
+    # A12d slice D8.2: protocol_tips additionally enforces lock-global
+    # hygiene (exact governed set, governed amendment files only,
+    # 64-hex node shas, immovable post-freeze genesis anchor) and the
+    # retrievable-bytes rule (every recorded node resolves to committed
+    # file bytes in git).
     _tips, chain_findings = protocol_tips(fam_c_dir, freeze_commit)
     out += chain_findings
     # Item-7: the enumerated execution order is DERIVED from ORDER.md, so a

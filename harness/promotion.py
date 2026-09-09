@@ -47,7 +47,6 @@ Stdlib only.
 import hashlib
 import json
 import os
-import re
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -59,6 +58,7 @@ import lock as _lock  # noqa: E402
 import identity as _identity  # noqa: E402
 import t4_ids as _t4_ids  # noqa: E402
 import conformance as _conformance  # noqa: E402
+import contract_shape as _contract_shape  # noqa: E402
 
 GRADES = ("estimand", "harness-validation")
 CANDIDATE_FIELD = "execution_payload.solver_py"
@@ -210,9 +210,6 @@ def _read_json(p):
 # own independently written contract text
 # (harness/tests/fixture_modelrun.py).
 
-_ATOMIC_RE = re.compile(r"^[a-z0-9_.-]+$")
-
-
 def _producer_contract(t0_run_dir):
     """Read the PRODUCER-declared capability contract from the T0 arrival's
     own `execution_payload.capability_contract` ({semantic_core,
@@ -221,6 +218,13 @@ def _producer_contract(t0_run_dir):
     Returns (semantic_core, preconditions, limitations) with the
     declaration bytes copied exactly (no normalization: the governance
     validator compares them verbatim). This function never touches K.md.
+
+    A12d slice D8.1 (auditor D7-post P0): the schema below has ONE
+    implementation — harness/contract_shape.py, called here and by
+    order.py's PROMOTION-receipt provenance check, so the same
+    malformed declaration produces the same finding text through both
+    authorities. This function only reads the arrival (I/O at the
+    boundary) and returns the validated declaration copies.
 
     A12d slice D7 (auditor D6-post P0): the producer contract has ONE
     schema and ONE key. `execution_payload.capability_contract` must be
@@ -251,102 +255,16 @@ def _producer_contract(t0_run_dir):
         raise PermissionError(f"PROMOTION-DENY T0 arrival unreadable: {e}")
     payload = _arrival_payload(arrival)
     declared = payload.get("capability_contract")
-    if not isinstance(declared, dict):
-        raise PermissionError(
-            "PROMOTION-DENY T0 arrival declares no producer capability "
-            "contract (execution_payload.capability_contract "
-            "{semantic_core, preconditions, limitations} is required; the "
-            "promoted contract is producer-authored, never synthesized)")
-    _want = {"semantic_core", "preconditions", "limitations"}
-    _got = set(declared)
-    _missing = sorted(_want - _got)
-    if _missing:
-        raise PermissionError(
-            "PROMOTION-DENY producer capability contract is missing the "
-            f"required top-level key {_missing[0]!r} (the exact three-key "
-            "shape {semantic_core, preconditions, limitations} is "
-            "required; nothing is defaulted, nothing is dropped)")
-    _extra = sorted(_got - _want)
-    if _extra:
-        raise PermissionError(
-            "PROMOTION-DENY producer capability contract carries an "
-            f"extra top-level key {_extra[0]!r} (the exact three-key "
-            "shape {semantic_core, preconditions, limitations} is "
-            "required; unlisted keys are refused, never silently dropped)")
+    # A12d slice D8.1: the shape verdict comes from the SINGLE shared
+    # authority (harness/contract_shape.py — no I/O, no globals, no
+    # vocabulary knowledge). Promotion keeps raising PROMOTION-DENY
+    # with the finding text.
+    _findings = _contract_shape.validate(declared)
+    if _findings:
+        raise PermissionError("PROMOTION-DENY " + _findings[0])
     core = declared.get("semantic_core")
-    if "preconditions" not in declared:
-        raise PermissionError(
-            "PROMOTION-DENY producer capability contract declares no "
-            "preconditions list (the v4 shape requires the "
-            "preconditions, limitations, and semantic_core keys to be "
-            "present; preconditions may be an empty list)")
-    if "limitations" not in declared:
-        raise PermissionError(
-            "PROMOTION-DENY producer capability contract declares no "
-            "limitations list (the v4 shape requires the preconditions, "
-            "limitations, and semantic_core keys to be present; "
-            "limitations may be an empty list)")
     pre = declared.get("preconditions")
     lim = declared.get("limitations")
-    if not isinstance(core, str) or not core.strip():
-        raise PermissionError(
-            "PROMOTION-DENY producer capability contract has an empty "
-            "semantic_core")
-    if not isinstance(pre, list):
-        raise PermissionError(
-            "PROMOTION-DENY producer capability contract preconditions "
-            "must be an atomic-conjunction-v5 shape list of "
-            "{\"requires_all\": [atomic tokens]} objects "
-            "(possibly empty)")
-    for entry in pre:
-        if isinstance(entry, str):
-            raise PermissionError(
-                "PROMOTION-DENY producer capability contract carries a "
-                "bare-string precondition "
-                f"{entry[:60]!r}: the atomic-conjunction-v5 shape "
-                "requires {\"requires_all\": [atomic tokens]} objects "
-                "(a bare string cannot carry the structural "
-                "conjunction, so a conditional clause could smuggle a "
-                "branching claim past conformance)")
-        if not isinstance(entry, dict) or set(entry) != {"requires_all"}:
-            raise PermissionError(
-                "PROMOTION-DENY producer capability contract carries a "
-                f"malformed precondition {str(entry)[:80]!r}: the "
-                "atomic-conjunction-v5 shape is exactly "
-                "{\"requires_all\": [atomic tokens]} (the retired "
-                "\"requires\" key and every unknown key are refused)")
-        _toks = entry.get("requires_all")
-        if not isinstance(_toks, list) or not _toks:
-            raise PermissionError(
-                "PROMOTION-DENY producer capability contract carries a "
-                "precondition with an empty requires_all list (each "
-                "{\"requires_all\": [tokens]} must name >=1 atomic "
-                "applicability token)")
-        for _tok in _toks:
-            if not isinstance(_tok, str) or not _ATOMIC_RE.match(_tok):
-                raise PermissionError(
-                    "PROMOTION-DENY producer capability contract "
-                    "carries a non-atomic requires_all token "
-                    f"{_tok!r}: the atomic-conjunction-v5 shape admits "
-                    "only ^[a-z0-9_.-]+$ tokens (a conditional clause "
-                    "is structurally unrepresentable as conformance "
-                    "evidence)")
-            # A12d slice D6: NO vocabulary gate here — an arbitrary
-            # atomic token (even one the auditor-side recognition set
-            # has never seen) promotes verbatim; conformance judges it
-            # non-bearing auditor-side.
-        if len(set(_toks)) != len(_toks):
-            _dup = next(t for t in _toks if _toks.count(t) > 1)
-            raise PermissionError(
-                "PROMOTION-DENY producer capability contract carries "
-                "a duplicate requires_all token "
-                f"{_dup!r}: the atomic-conjunction-v5 shape admits no "
-                "duplicates")
-    if not isinstance(lim, list) or not all(isinstance(x, str) for x in lim):
-        raise PermissionError(
-            "PROMOTION-DENY producer capability contract limitations must "
-            "be a list of strings (possibly empty; free prose, recorded "
-            "verbatim, never conformance evidence)")
     return core, [dict(p) for p in pre], list(lim)
 
 

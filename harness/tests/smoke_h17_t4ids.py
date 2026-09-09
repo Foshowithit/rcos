@@ -238,6 +238,12 @@ disk_reg = {"version": "t4-semantic-ids-v1",
                          "fam06": "fam06.common_unit_basis"}}
 open(os.path.join(v2, "T4-SEMANTIC-IDS.json"), "w").write(
     json.dumps(disk_reg, indent=1))
+# A12d slice D8.2: the recorded genesis node must resolve to committed
+# bytes, so the fixture commits its registry bytes (re-pointed, never
+# weakened). The freeze commit FC still predates the file, so the
+# post-freeze genesis path is unchanged.
+git(repo, "add", "-A")
+git(repo, "commit", "-qm", "fixture registry bytes")
 reg_sha = sha_file(os.path.join(v2, "T4-SEMANTIC-IDS.json"))
 lock = {"freeze_commit": FC,
         "governed": {"T4-SEMANTIC-IDS.json": reg_sha},

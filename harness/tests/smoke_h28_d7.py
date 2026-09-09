@@ -13,8 +13,9 @@ governed file must form ONE path from the frozen (or post-freeze
 genesis) node to exactly one tip, and the on-disk bytes must equal
 that tip (validate_file_chain). Three mis-recorded from_sha edges were
 corrected from git content sha256 with no entry deleted (PREREG D5/D6,
-HARNESS-READINESS a11); 9caf3d4fdd33 is kept as an in-commit internal
-chain node.
+HARNESS-READINESS a11); 9caf3d4fdd33 was kept in D7 as an in-commit
+internal chain node and is REMOVED in D8 (auditor D7-post P1: the a12
+edge is now 382a75fc -> 12dda202 direct).
 
 Driven through the REAL paths: fixture T0/T1 builds -> promotion
 controller -> CAPABILITY_LOCK for D7.1; the real V2 chain validator
@@ -314,18 +315,33 @@ check("D7.2 HARNESS-READINESS a11 edge corrected 8e743e4c63f4 -> "
       _e_a11 is not None
       and (_e_a11.get("from_sha") or "").startswith("3314fa9170ab"),
       str(_e_a11))
-check("D7.2 no amendment entry deleted (28 at D6 -> 30 with the two "
-      "D7 forward edges)",
-      len(LIVE_LOCK["amendments"]) == 30, str(len(LIVE_LOCK["amendments"])))
+check("D7.2 no amendment entry deleted except the D8 hygiene pair "
+      "(30 at D7 - 2 removed a12 edges + 1 D8 edge + 2 D8 forward = 31)",
+      len(LIVE_LOCK["amendments"]) == 31, str(len(LIVE_LOCK["amendments"])))
 check("D7.2 repair recorded as its own forward amendment "
       "AMEND-2026-09-09-d7-lineage-repair (PREREG + preflight edges)",
       sum(1 for a in LIVE_LOCK["amendments"]
           if "AMEND-2026-09-09-d7-lineage-repair" in (a.get("reason") or ""))
       == 2)
-check("D7.2 9caf3d4fdd33 kept as an internal chain node continued by "
-      "12dda20242b0 (linear, tip equals disk)",
-      any((a.get("from_sha") or "").startswith("9caf3d4fdd33")
+check("D8 9caf3d4fdd33 is NO recorded node (removed from the "
+      "authoritative chain)",
+      not any((a.get("from_sha") or "").startswith("9caf3d4fdd33")
+              or (a.get("to_sha") or "").startswith("9caf3d4fdd33")
+              for a in LIVE_LOCK["amendments"])
+      and not any("9caf3d4fdd33" in (v or "")
+                  for v in LIVE_LOCK["governed"].values()),
+      str([(a.get("from_sha") or "")[:12]
+           for a in LIVE_LOCK["amendments"]
+           if "9caf" in json.dumps(a)])[:120])
+check("D8 HARNESS-READINESS a12 edge is 382a75fc -> 12dda20242b0 "
+      "direct (the states that exist in git)",
+      any((a.get("from_sha") or "").startswith("382a75fc356e")
           and (a.get("to_sha") or "").startswith("12dda20242b0")
+          for a in _BY_FILE["HARNESS-READINESS.md"]))
+check("D8 the 9caf3d4f explanation lives in the D8 amendment reason "
+      "(history preserved outside the chain)",
+      any("9caf3d4fdd33" in (a.get("reason") or "")
+          and a.get("slice") == "a12d-slice-d8"
           for a in _BY_FILE["HARNESS-READINESS.md"]))
 
 # --- D7.2 item 2: D5->D6 PREREG edge deleted -> V2 FAILS ------------------
