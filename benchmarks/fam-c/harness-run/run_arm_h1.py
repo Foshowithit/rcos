@@ -2203,13 +2203,11 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                 expected_task_snapshot["file|" + _r] = hashlib.sha256(
                     _fh.read()).hexdigest()
     # DockerSandbox stages its own private copy of `visible` and refuses on
-    # drift; its task_snapshot must equal the hash the context was built
-    # from (same staged bytes -> same hash), else refuse.
-    sb = DockerSandbox(work, visible)
-    if sb.task_snapshot != expected_task_snapshot:
-        raise PermissionError(
-            "STABILITY-DENY constructed task_snapshot != expected "
-            "authorized snapshot; refused before jail use")
+    # drift; the constructor itself enforces the expected snapshot
+    # passed below (SNAPSHOT-DENY on any mismatch, even one its own
+    # reads agreed on), and its task_snapshot must additionally equal
+    # the hash the context was built from, else refuse.
+    sb = DockerSandbox(work, visible, expected_task_snapshot)
     if sb.task_snapshot != staged_tree:
         raise RuntimeError("CONTEXT-SNAPSHOT-DENY sandbox task_snapshot != "
                            "context_task_snapshot_hash source")

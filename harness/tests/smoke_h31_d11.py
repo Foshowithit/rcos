@@ -421,6 +421,47 @@ check("D11.4-PROD the production runner binds the constructed "
       "and refuses before jail use",
       bool(_RHITS), str(_RHITS[:2]))
 
+# --- D11.4-ABA: the auditor's acceptance — every internal read
+# agrees on H, but the independently derived expected value is
+# E != H, so construction must still DENY (no docker needed:
+# refusal happens in __init__ before any mount or jail use).
+sys.path.insert(0, HARNESS)
+import dockersandbox as _dsmod  # noqa: E402
+
+
+def _aba_src(tag):
+    import shutil as _sh
+    src = os.path.join("/tmp/rcos-visible", "h31-" + tag)
+    _sh.rmtree(src, ignore_errors=True)
+    os.makedirs(src, exist_ok=True)
+    open(os.path.join(src, "x.txt"), "w").write("0\n")
+    open(os.path.join(src, "y.txt"), "w").write("1\n")
+    w = os.path.join("/tmp/rcos-runs", "h31-" + tag, "work")
+    os.makedirs(w, exist_ok=True)
+    return src, w
+
+
+_ABA_SRC, _ABA_W = _aba_src("aba")
+_H = _dsmod._hash_tree(_ABA_SRC)
+_E = dict(_H)
+_E["file|x.txt"] = "0" * 64
+try:
+    _dsmod.DockerSandbox(_ABA_W, _ABA_SRC, _E)
+    _aba_denied = False
+except PermissionError as _e:
+    _aba_denied = "SNAPSHOT-DENY" in str(_e)
+check("D11.4-ABA forced H != E refused with SNAPSHOT-DENY even "
+      "though every internal read agrees on H", _aba_denied)
+_ABA_SRC2, _ABA_W2 = _aba_src("aba-good")
+_H2 = _dsmod._hash_tree(_ABA_SRC2)
+try:
+    _sb_aba = _dsmod.DockerSandbox(_ABA_W2, _ABA_SRC2, dict(_H2))
+    _aba_good = (_sb_aba.task_snapshot == _H2)
+except PermissionError:
+    _aba_good = False
+check("D11.4-ABA matching expected snapshot constructs with exact "
+      "identity (control)", _aba_good)
+
 shutil.rmtree(_BASE, ignore_errors=True)
 shutil.rmtree(_MINI, ignore_errors=True)
 bad = [n for n, ok_ in RESULTS if not ok_]

@@ -168,7 +168,8 @@ class DockerSandbox:
     correct: caller code is outside the TCB, this launcher is inside
     it, and experimental agents never execute in the harness process."""
 
-    def __init__(self, assigned_workdir, visible_root):
+    def __init__(self, assigned_workdir, visible_root,
+                 expected_task_snapshot=None):
         ensure_roots()
         work = _check_source(assigned_workdir, "work")
         vis = _check_source(visible_root, "task")
@@ -235,6 +236,20 @@ class DockerSandbox:
             _sh3.rmtree(self.staged, ignore_errors=True)
             raise PermissionError(
                 "STABILITY-DENY source not quiescent; refused")
+        # A12l slice D11.4 (production contract-B binding): when the
+        # caller supplies the independently derived expected snapshot
+        # (frozen/authorized task bytes — never this constructor's own
+        # reads), the staged snapshot must equal it. A constructor
+        # that agrees with itself on bytes H != expected still
+        # refuses here, before any mount or jail use. None keeps
+        # today's fail-closed quiescence behavior for legacy callers.
+        if expected_task_snapshot is not None and \
+                self.task_snapshot != expected_task_snapshot:
+            import shutil as _sh4
+            _sh4.rmtree(self.staged, ignore_errors=True)
+            raise PermissionError(
+                "SNAPSHOT-DENY staged snapshot != expected frozen "
+                "snapshot; refused")
         self.mounts = [(work, "/work", "rw"), (self.staged, "/task", "ro")]
         self.work = work
         self.source = vis
