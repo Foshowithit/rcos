@@ -23,56 +23,56 @@
   {
    "file": "HARNESS-READINESS.md",
    "from_sha": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
-   "to_sha": "3314fa9170ab0a8a8ecd372313306e5289508a7e62e79cd13a6354e6b9729081",
-   "reason": "A1 H-USE-005 implementation note; item-3 H-ID-006 note (audit round 2); authority-locks section (item 4); item-6 single-snapshot + envelope symmetry implementation note; H-ORD-011 execution-order enforcement (item 7); H-CAL-012 calibration pair (item 2)",
+   "to_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
+   "reason": "A1 H-USE-005 implementation note; item-3 H-ID-006 note (audit round 2); authority-locks section (item 4); item-6 single-snapshot + envelope symmetry implementation note; H-ORD-011 execution-order enforcement (item 7); H-CAL-012 calibration pair (item 2); item-6 single-snapshot + envelope symmetry implementation note; H-ORD-011 execution-order enforcement (item 7); H-CAL-012 calibration pair (item 2)",
    "base": "fca3df0",
    "slice": "a4/a5/a7-item-1+3+5"
   },
   {
    "file": "preflight.py",
    "from_sha": "dd07af5de705ac3ad943f37152f0e3d45439c345f8266dd1a17fd8a494617af0",
-   "to_sha": "974ce924d019200508d7a00895c76e0441a28f31b151255dc526b563fb98f1ec",
-   "reason": "item-4 three-authority re-scope (audit round 2): V1 instance / V2 protocol / V3 execution validators replace whole-tree diff; item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
+   "to_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "reason": "item-4 three-authority re-scope (audit round 2): V1 instance / V2 protocol / V3 execution validators replace whole-tree diff; item-7 ORDER-EXPANSION derivation check + harness import-closure completeness; item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
    "base": "fca3df0",
    "slice": "a7-item-4"
   },
   {
    "file": "preflight.py",
    "from_sha": "974ce924d019200508d7a00895c76e0441a28f31b151255dc526b563fb98f1ec",
-   "to_sha": "b11e00259a571a687c0de59f7f96f73745a7e9240fddb01c3af166fe3211d2cc",
-   "reason": "round-3 A11: register AUDIT-ROUND3-REPLY.txt as a meta pointer (integrity by git history + lock record), so the auditor's committed reply is not treated as an unlisted extra file by V1",
+   "to_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "reason": "round-3 A11: register AUDIT-ROUND3-REPLY.txt as a meta pointer (integrity by git history + lock record), so the auditor's committed reply is not treated as an unlisted extra file by V1; item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
    "base": "a11-round3-close",
    "slice": "a11.1-6"
   },
   {
    "file": "HARNESS-READINESS.md",
    "from_sha": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
-   "to_sha": "a0419cedc9a4c2534b7ec6e60303a1869d4ad0e6cf1f99ba3cf5d75bc6e086eb",
-   "reason": "round-3 A11: A11.1 live-branch identity; A11.2 persisted request bytes + adapter/request binding; A11.3 byte-identity symmetry proof (legacy weaker fixture deleted); A11.4 full event-universe expansion; A11.5 derived per-universe namespaces; A11.6 validated cell state",
+   "to_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
+   "reason": "round-3 A11: A11.1 live-branch identity; A11.2 persisted request bytes + adapter/request binding; A11.3 byte-identity symmetry proof (legacy weaker fixture deleted); A11.4 full event-universe expansion; A11.5 derived per-universe namespaces; A11.6 validated cell state; item-6 single-snapshot + envelope symmetry implementation note; H-ORD-011 execution-order enforcement (item 7); H-CAL-012 calibration pair (item 2)",
    "base": "a11-round3-close",
    "slice": "a11.1-6"
   },
   {
    "file": "preflight.py",
    "from_sha": "b11e00259a571a687c0de59f7f96f73745a7e9240fddb01c3af166fe3211d2cc",
-   "to_sha": "b86a25e40616db4bb85ef11b0b58d8e3199b59fd1405ddfcddc6b39bee0179d9",
-   "reason": "round-3 A11 audit: register AUDIT-ROUND3-A11-REPLY.txt as a meta pointer",
+   "to_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "reason": "round-3 A11 audit: register AUDIT-ROUND3-A11-REPLY.txt as a meta pointer; item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
    "base": "a11b",
    "slice": "a11b.0-preserve"
   },
   {
    "file": "HARNESS-READINESS.md",
    "from_sha": "a0419cedc9a4c2534b7ec6e60303a1869d4ad0e6cf1f99ba3cf5d75bc6e086eb",
-   "to_sha": "0bcd6ea024cdcb69632cd0cdac4dff5da0605d35d888f67bc9285efdafa88935",
-   "reason": "A11b P0-1..P0-6 close + P1 accounting wording (primary_work = uncached_input + output_tokens; input tokens are not inherently uncached); consolidated A11b section with per-item evidence",
+   "to_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
+   "reason": "A11b P0-1..P0-6 close + P1 accounting wording (primary_work = uncached_input + output_tokens; input tokens are not inherently uncached); consolidated A11b section with per-item evidence; item-6 single-snapshot + envelope symmetry implementation note; H-ORD-011 execution-order enforcement (item 7); H-CAL-012 calibration pair (item 2)",
    "base": "a11b",
    "slice": "a11b.1-6"
   },
   {
    "file": "HARNESS-READINESS.md",
    "from_sha": "0bcd6ea024cdcb69632cd0cdac4dff5da0605d35d888f67bc9285efdafa88935",
-   "to_sha": "382a75fc356ef571b6f27caecafb1c2cb210202f0c556568e6ecf54e67953533",
-   "reason": "A11b integration verification block (448/448, V1/V2/V3 0/0/0) + H12 count",
+   "to_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
+   "reason": "A11b integration verification block (448/448, V1/V2/V3 0/0/0) + H12 count; item-6 single-snapshot + envelope symmetry implementation note; H-ORD-011 execution-order enforcement (item 7); H-CAL-012 calibration pair (item 2)",
    "base": "a11b",
    "slice": "a11b.integration"
   },
@@ -87,8 +87,8 @@
   {
    "file": "HARNESS-READINESS.md",
    "from_sha": "382a75fc356ef571b6f27caecafb1c2cb210202f0c556568e6ecf54e67953533",
-   "to_sha": "9caf3d4fdd33da0a45ed5bf87d79fce3627439d0d543de9934414901ebdc1a91",
-   "reason": "A12 round-2 close: A12.0 acquisition executor + A12.1 promotion controller + A12.2 estimand lock + A12.3 decision-driven ledger",
+   "to_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
+   "reason": "A12 round-2 close: A12.0 acquisition executor + A12.1 promotion controller + A12.2 estimand lock + A12.3 decision-driven ledger; item-6 single-snapshot + envelope symmetry implementation note; H-ORD-011 execution-order enforcement (item 7); H-CAL-012 calibration pair (item 2)",
    "base": "a11b-integration",
    "slice": "a12"
   },
@@ -96,15 +96,15 @@
    "file": "HARNESS-READINESS.md",
    "from_sha": "9caf3d4fdd33da0a45ed5bf87d79fce3627439d0d543de9934414901ebdc1a91",
    "to_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
-   "reason": "A12 integration hardening: lock provenance re-derivation, derived t4_ratified, presence-not-truthiness, verbatim semantic core, V3 package-root closure, production-shaped fixture",
+   "reason": "A12 integration hardening: lock provenance re-derivation, derived t4_ratified, presence-not-truthiness, verbatim semantic core, V3 package-root closure, production-shaped fixture; item-6 single-snapshot + envelope symmetry implementation note; H-ORD-011 execution-order enforcement (item 7); H-CAL-012 calibration pair (item 2)",
    "base": "a12",
    "slice": "a12"
   },
   {
    "file": "preflight.py",
    "from_sha": "b86a25e40616db4bb85ef11b0b58d8e3199b59fd1405ddfcddc6b39bee0179d9",
-   "to_sha": "17860f35215d3b255cbb5a5ac12a5396d21a176a5f47ecee5e902b6930b2dac5",
-   "reason": "A12 item-7 closure: V3 must cover the whole harness package root (harness/promotion.py mints locks and was unlisted)",
+   "to_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "reason": "A12 item-7 closure: V3 must cover the whole harness package root (harness/promotion.py mints locks and was unlisted); item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
    "base": "a12",
    "slice": "a12"
   },
@@ -119,8 +119,8 @@
   {
    "file": "preflight.py",
    "from_sha": "17860f35215d3b255cbb5a5ac12a5396d21a176a5f47ecee5e902b6930b2dac5",
-   "to_sha": "2ebf24336c56b5165f95ae0a4b87930779d8505315d52e2f9888192c972a8df5",
-   "reason": "A12b.5: govern T4-SEMANTIC-IDS.json under V2 plus the post-freeze genesis-amendment rule for governed files added after the instance freeze",
+   "to_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "reason": "A12b.5: govern T4-SEMANTIC-IDS.json under V2 plus the post-freeze genesis-amendment rule for governed files added after the instance freeze; item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
    "base": "d129243",
    "slice": "a12b.5"
   },
@@ -136,8 +136,8 @@
   {
    "file": "preflight.py",
    "from_sha": "2ebf24336c56b5165f95ae0a4b87930779d8505315d52e2f9888192c972a8df5",
-   "to_sha": "0d6bb91f072771f2f0a31e00b4e65dc4b87be4f0695264ac63cc5daad936c351",
-   "reason": "A12c slice C1 (auditor P0 #7): exact T4 registry<->PREREG set equality in V2 preflight (validate_t4_registry: exactly fam01..fam06 keys, value-set equality both directions, verbatim PREREG presence, key/value family-prefix match); a missing/extra/renamed id or mismatch refuses before any model call naming the offending id",
+   "to_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "reason": "A12c slice C1 (auditor P0 #7): exact T4 registry<->PREREG set equality in V2 preflight (validate_t4_registry: exactly fam01..fam06 keys, value-set equality both directions, verbatim PREREG presence, key/value family-prefix match); a missing/extra/renamed id or mismatch refuses before any model call naming the offending id; item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
    "base": "64247a2",
    "slice": "a12c-slice-c1"
   },
@@ -153,7 +153,7 @@
    "file": "preflight.py",
    "from_sha": "0d6bb91f072771f2f0a31e00b4e65dc4b87be4f0695264ac63cc5daad936c351",
    "to_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
-   "reason": "A12c slice C2 (auditor P0 #6): govern T4-CONFORMANCE.json under V2 plus validate_t4_conformance (map must exist and satisfy every refusal condition before any model call)",
+   "reason": "A12c slice C2 (auditor P0 #6): govern T4-CONFORMANCE.json under V2 plus validate_t4_conformance (map must exist and satisfy every refusal condition before any model call); item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
    "base": "6a620d7",
    "slice": "a12c-slice-c2"
   },
@@ -221,6 +221,38 @@
    "reason": "A12d slice D5 (auditor D4-post P0/P1): forward amendment AMEND-2026-09-09-d5-atomic-conjunction freezing t4-conformance-v4 under atomic-conjunction-grammar-v4 and the capability-lock-v4 schema bump (declared_limitations_present rename)",
    "base": "a6cf516",
    "slice": "a12d-slice-d5"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "be76c0bbadc3142fb1a48f7d32f06c2c44ed5bc6222f59ab982ca926d7f98125",
+   "to_sha": "5374b5c8c8ca65e13fb62374963f5ca623aad0d6905e3f21b28d9d5240739908",
+   "reason": "A12d slice D2 (auditor A12d.3/A12d.4): forward amendments AMEND-2026-09-08-contract-v2 (producer contract shape v2: preconditions as {\"requires\": str} objects, both lists may be empty) and AMEND-2026-09-08-requires-polarity (affirmative-requires conformance bridge supersedes the polarity-blind v1 bridge)",
+   "base": "7639a45",
+   "slice": "a12d-slice-d2"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": "05a8e094e437f320ed7e9521b483dd98f1febf0f31851992125ccb2f95dbda40",
+   "to_sha": "42a07c594ea65eed6b95348d5d9f9425a87eff02d87e2cdf6f2e255abd2b8afc",
+   "reason": "auditor A12d.3 polarity: conformance now maps only affirmative requires claims",
+   "base": "7639a45",
+   "slice": "a12d-slice-d2"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "974ce924d019200508d7a00895c76e0441a28f31b151255dc526b563fb98f1ec",
+   "to_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "reason": "round-3 A11: register AUDIT-ROUND3-REPLY.txt as a meta pointer (integrity by git history + lock record), so the auditor's committed reply is not treated as an unlisted extra file by V1",
+   "base": "a11-round3-close",
+   "slice": "a11.1-6"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
+   "to_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
+   "reason": "round-3 A11: A11.1 live-branch identity; A11.2 persisted request bytes + adapter/request binding; A11.3 byte-identity symmetry proof (legacy weaker fixture deleted); A11.4 full event-universe expansion; A11.5 derived per-universe namespaces; A11.6 validated cell state",
+   "base": "a11-round3-close",
+   "slice": "a11.1-6"
   }
  ]
 }

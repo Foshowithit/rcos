@@ -257,3 +257,35 @@ estimand evidence. The only production execution entry point is
 `harness-run/run_arm_h1.py` with `--block`, the scheduler-derived wired paths,
 and the frozen-order cell authorization.
 
+## Round-3 audit close (A11) — 2026-09-08
+
+The round-3 auditor returned `permission for real Fam-C execution: NO` and a
+six-item A11 work order; A11.1–A11.6 are implemented and locally verified
+(no real P/Q call, no network in this slice):
+
+- A11.1 the calibration live branch returns and persists the provider
+  response object (identity is established from the real call, not a stub);
+- A11.2 the exact request bytes are persisted per call and adapter binding
+  (a v2 id IS a lane binding) + request binding are enforced before the
+  identity gate; mutating temperature/max_tokens/model/messages in any
+  representation fails verification;
+- A11.3 H6 symmetry is now a byte-identity proof
+  (`strip_capability_block(treatment) == control`) — the legacy fixture that
+  asserted the weaker rule was DELETED, not supplemented;
+- A11.4 the frozen order expands over the FULL event universe
+  (`T0, T1, PROMOTION, CAPABILITY_LOCK` for A, then for C, then
+  `T2/T3/T4` × A/B/C/D — 240 events, 192 model calls), so downstream cells
+  can no longer precede the acquisition/promotion of their own capability;
+- A11.5 each estimand cell's capability registry and run directory are
+  DERIVED from the authorized cell (`state/<block>/<universe>/<family>/…`);
+  a C run can no longer be pointed at A's registry;
+- A11.6 order progress consumes validated `cell_state()` (manifest + cell
+  identity + evidence chain + admissibility), not manifest presence.
+
+Verification for this slice: preflight V1/V2/V3 = 0/0/0 findings; harness
+smokes 342/342 closed (graph 12, H1 12, H1-docker 33, H2 33, H3 59, H4 30,
+H5 15, H6 33, H7 67, H8 48), `calibrate --offline` 2/2 lanes green, runner
+`--selfcheck-prompt` and `--selfcheck-wire` green. `estimand-grade = 0` is
+UNCHANGED: the real P/Q calibration pair is still time-gated (Q free-tier
+quota resets 00:00 UTC) and no estimand cell has been run. Execution stays
+STOPPED for estimand-grade runs pending the auditor's next review.

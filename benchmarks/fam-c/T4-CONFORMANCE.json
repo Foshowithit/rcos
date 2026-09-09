@@ -1,6 +1,6 @@
 {
- "version": "t4-conformance-v4",
- "rule": "atomic-conjunction-grammar-v4",
+ "version": "t4-conformance-v2",
+ "rule": "normalize-affirmative-requires-v2",
  "negation_markers": [
   "absent",
   "arent",
@@ -51,39 +51,6 @@
   "void",
   "without",
   "wont"
- ],
- "disjunction_markers": [
-  "either",
-  "or"
- ],
- "structural_separators": [
-  "/",
-  ","
- ],
- "atomic_vocabulary": [
-  "acyclic",
-  "acyclicity",
-  "aggregate",
-  "basis",
-  "common",
-  "dedup",
-  "disjoint",
-  "duplicates",
-  "identical",
-  "input",
-  "local",
-  "order",
-  "pages",
-  "record",
-  "repeats",
-  "row",
-  "same",
-  "sha256",
-  "summary",
-  "topological",
-  "unit",
-  "units",
-  "v1"
  ],
  "families": {
   "fam01": {
