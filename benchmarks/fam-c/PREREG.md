@@ -745,6 +745,45 @@ never a traceback: container types are normalized BEFORE any
 `validate_lock_global`. No estimand locks exist yet, so the pass is
 cheap.
 
+Forward amendment AMEND-2026-09-09-d10-source-stability (2026-09-09):
+source-stability binding fix for a general-seat defect found while
+producing the D9 evidence run (NOT an auditor item; reported to the
+auditor in the D9 post), frozen BEFORE any estimand execution.
+
+(a) Measured defect and rate. `DockerSandbox.__init__` bound the staged
+copy with three equality tests against one pre-copy snapshot
+(source-before == source-after, staged == source-before). When the
+churn thread is starved between `open(p,"w")` truncation and flush,
+the file reads EMPTY for the whole staging window (measured window
+0.16–0.25 s), so all three checks agree on the empty file and the
+sandbox mounts a torn snapshot (empty file) matching no stable source
+state — while the check named "concurrent source mutation refused"
+passes/fails on thread scheduling. Measured on the same tree with no
+D9 code involved: 1 FAIL in 10 consecutive plain runs at light load, 1
+FAIL in 3 suite runs under load (3 FAIL in 5 instrumented runs). This
+is a guard defect, not a flake to re-run until green.
+
+(b) New three-test binding. The staged copy must now equal the CURRENT
+source (`staged == source_after`, not merely the pre-copy snapshot),
+refusing as `STABILITY-DENY staged copy differs from current source;
+refused`; then a quiescence confirmation re-reads the source after a
+bounded settle (total sleep <= 50 ms, at most 3 attempts) and refuses
+unless it still equals `source_after` (`STABILITY-DENY source not
+quiescent; refused`). The pre-copy drift refusal (`STABILITY-DENY
+source mutated during staging; refused`) is unchanged, every refusal
+cleans up the staged dir, and `smoke_h1_docker.py` now carries a
+deterministic injected-mutation refuse check (mutation guaranteed
+inside the window, passes 100%), a stable-source control, and an honest
+churn property (refused OR mounted tree equals two later source reads).
+
+(c) Residual limit (verbatim). The mounted tree equals a source state
+observed identical at two distinct times spanning the copy; a source
+frozen in a torn state for the entire window is indistinguishable from
+a stable source; the guard never proves "the source never changed".
+
+(d) D9 is unaffected: D9 touches no docker staging or isolation code,
+and the loop's clean-battery claim resumes on this fix.
+
 ---
 # 11. Manifest lifecycle
 

@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "e6ecc3f26d8acb8e2cecc12c0993db587642dcbbd02f364e15ce293096a7295a",
+ "harness_manifest_sha256": "40f4b8452f93d87f18b3c758d635150e1df39eec675eefb1846b383eef533c05",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -11,7 +11,7 @@
   "harness/lock.py": "0213e6a5b128d9f0e4f8d239bc65c4bca667e9ae5400ee1283e99e5b13a16cd1",
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
-  "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
+  "harness/dockersandbox.py": "bcef7d975431848fc10b56b9b6df0fd47016012bf2b8d14e8b961ddfb71ac8fb",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
   "benchmarks/fam-c/harness-run/run_arm_h1.py": "c543a2b4ce07d7264125f9f0e0f059624ee0248ad627da54585755692897ebac",
   "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
@@ -721,6 +721,19 @@
    },
    "reason": "A12d slice D8 follow-up: duplicate-finding literal made contiguous in source (runtime finding text byte-identical; static one-implementation wording check)",
    "slice": "a12d-slice-d8",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "e6ecc3f26d8acb8e2cecc12c0993db587642dcbbd02f364e15ce293096a7295a",
+   "to_manifest": "40f4b8452f93d87f18b3c758d635150e1df39eec675eefb1846b383eef533c05",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
+     "to_sha": "bcef7d975431848fc10b56b9b6df0fd47016012bf2b8d14e8b961ddfb71ac8fb"
+    }
+   },
+   "reason": "A12j slice D10: source-stability binding now requires staged==CURRENT source plus bounded quiescence confirmation (total sleep <= 50 ms, at most 3 attempts), with named STABILITY-DENY refusals and staged-dir cleanup on every refusal (general-seat defect found in D9 evidence run: torn snapshot mountable when truncate straddled the window)",
+   "slice": "a12j-slice-d10",
    "status_after": "open-round2"
   }
  ],

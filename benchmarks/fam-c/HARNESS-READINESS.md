@@ -550,6 +550,22 @@ Hardening added while integrating the above (each with a failing probe first):
   use it, and H12 drives the real C-universe cells (global order) before A's
   downstream T2.
 
+## Slice A12j-D10 record (2026-09-09)
+
+General-seat defect found while producing the D9 evidence run, fixed
+here (no estimand semantics touched): the docker source-stability
+binding could mount a torn snapshot when the source froze mid-truncate
+across the staging window (measured 1/10 plain, up to 3/5 under load).
+The binding now requires staged == CURRENT source plus a bounded
+quiescence confirmation (total sleep <= 50 ms, at most 3 attempts),
+with every refusal named (`STABILITY-DENY ...`) and the staged dir
+cleaned up on every refusal. Residual limit: a source frozen in a torn
+state for the entire window is indistinguishable from a stable source;
+the guard never proves "the source never changed". H1-docker smoke
+carries the deterministic injected-mutation refuse check, the
+stable-source control, and the honest churn property (refused OR
+mounted-not-torn).
+
 ## Status
 
 - [ ] H1 specified (this document) — implementation open

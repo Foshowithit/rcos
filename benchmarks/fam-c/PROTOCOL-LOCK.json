@@ -277,6 +277,22 @@
    "reason": "A12i slice D9 (auditor D8-post P0/P2): forward amendment AMEND-2026-09-09-d9-protocol-chronology tightening V2 to the experiment-branch chronology rule (validate_file_chain takes the git-derived branch_seq: Rule A every recorded node on the HEAD lineage, Rule B recorded order a subsequence; _branch_seq_shas replaces the all-refs map; validate_file_chain stays pure and I/O-free; protocol_tips and validate_lock_global normalize lock containers before any .get() so malformed containers fail closed with a named finding)",
    "base": "73d9d57",
    "slice": "a12i-slice-d9"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "244c6d55967850f4cd74dc4a0de7d45cb6844d3b2f551e534a3d0061e9c3f162",
+   "to_sha": "cdbe2b4aa4222d6611d5b337fbc4ea111b64cddb9f834e5ec78ad91eac91b7b5",
+   "reason": "A12j slice D10 (general-seat defect found in the D9 evidence run): forward amendment AMEND-2026-09-09-d10-source-stability recording the measured torn-snapshot defect (truncate starved across the staging window: 1 FAIL in 10 plain runs, up to 3 FAIL in 5 instrumented runs) and the strengthened three-test binding (staged copy must equal the CURRENT source, bounded quiescence confirmation, named STABILITY-DENY refusals with staged-dir cleanup on every refusal), with the documented residual limit (a source frozen in a torn state for the entire window is indistinguishable from a stable source; the guard never proves \"the source never changed\"); D9 unaffected (no docker staging or isolation code involved)",
+   "base": "0b32400",
+   "slice": "a12j-slice-d10"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
+   "to_sha": "66732960bc20cc20b4e0ff1b21ba9a71ba4ebd9b5500df4c087a3c72f47d4c46",
+   "reason": "A12j slice D10 (general-seat defect found in the D9 evidence run): forward amendment AMEND-2026-09-09-d10-source-stability recording the D10 slice record in HARNESS-READINESS.md (source-stability binding fix; doc record only, no protocol rule change)",
+   "base": "0b32400",
+   "slice": "a12j-slice-d10"
   }
  ]
 }
