@@ -301,13 +301,6 @@ except PermissionError:
     rerefused = True
 check("a second promotion of the same universe refuses (no re-promotion)",
       rerefused)
-try:
-    ORD.emit_promotion_receipt(state_root, PROM, t0_tip, t1_tip)
-    rerefused = False
-except PermissionError:
-    rerefused = True
-check("a second promotion of the same universe refuses (no re-promotion)",
-      rerefused)
 check("PROMOTION run dir contains NO model-run manifest (no fabrication)",
       not os.path.exists(os.path.join(run_dir_of(PROM),
                                       "H1-RUN-MANIFEST.json")))

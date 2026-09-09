@@ -1,1 +1,474 @@
-python3: can't open file '/tmp/cdp_chat.py': [Errno 2] No such file or directory
+I re-audited 2c752fe → f16d86e. The public diff is eight commits and contains the new lock/preflight/order/calibration machinery; it does not add new benchmark-result directories, so the branch state is consistent with “harness work only, estimand-grade still 0.” The overall direction is right.
+
+But I found four real blockers inside items 1–7. Two are especially important: H6 is still not true treatment/control symmetry, and H7 accidentally proves that acquisition ordering/namespacing is still missing.
+
+Round-3 verdict
+1. usage v2 + normalized evidence       PARTIAL PASS
+2. calibration scaffold                 FAIL live path / real pair pending
+3. identity hardening                   PARTIAL PASS
+4. three-authority preflight            PASS for development, not final seal
+5. immutable instance authority         PASS
+6. context symmetry / snapshot          SNAPSHOT PASS, SYMMETRY FAIL
+7. order + A/B/C/D namespace            DOWNSTREAM ORDER PASS,
+                                        ACQUISITION/NAMESPACE FAIL
+
+estimand-grade runs                      0  ✅
+permission for real Fam-C execution     NO
+
+The single-source snapshot portion of #6 is good. The frozen-instance resolution in #5 is good. Those I would leave alone.
+
+1. Provider-bound usage is much better, but the “bound” property is not actually enforced everywhere
+
+The v2 adapters now exist and normalized usage is written immediately, self-hashed, bound to the raw receipt, re-derived, and included in the chain with the actual primary metric. That closes most of A1.
+
+The remaining gap is that this metadata:
+
+router9-openai-chat-v2
+  bound.lane = P
+  endpoint = router9
+  model = minimax
+
+kenari-openai-chat-v2
+  bound.lane = Q
+  ...
+
+is currently mostly documentary. normalize_usage() does not validate the receipt against the adapter's bound block. verify_normalized_usage() simply reuses whichever normalizer_id the receipt names.
+
+The production runner protects this somewhat because it passes the expected lane adapter during initial creation. But admissibility does not re-establish that the adapter ID is the preregistered adapter for that lane/endpoint/model; it just verifies the resulting normalized artifact.
+
+Fix: add something like:
+
+verify_adapter_binding(
+    normalizer_id,
+    lane,
+    endpoint,
+    requested_model
+)
+
+and invoke it both at call time and independently in admissibility.
+
+Acceptance:
+
+P receipt relabeled kenari-openai-chat-v2 → EXCLUDED
+
+same usage bytes but wrong endpoint → EXCLUDED
+
+same model with wrong lane → EXCLUDED
+
+That's a small fix.
+
+2. The live calibration path is currently broken
+
+This is the cleanest concrete bug I found.
+
+In _capture(..., "live"), calibration calls:
+
+Python
+Run
+UG.recorded_call(... return_response=False)
+
+and then returns:
+
+Python
+Run
+return reply, receipt, None
+
+But _compose() immediately requires the actual provider object and raises if it is None.
+
+So as currently pushed:
+
+calibrate.py --live ...
+       ↓
+real provider charged/called
+       ↓
+provider_obj = None
+       ↓
+CALIBRATION-IDENTITY failure
+
+The offline 38/38 does not exercise this actual live branch.
+
+Fix: use the already-supported:
+
+Python
+Run
+return_response=True
+
+once. No second call, no double-spend.
+
+Acceptance before spending: add a local stub test that executes the same live codepath except transport, returning the three-tuple from recorded_call, and proves _compose() receives the response object.
+
+Then later, after items 8–13 are final, run the real P/Q calibration immediately before the final lock.
+
+So #2 is not merely “pending quota”; its live implementation needs one code correction first.
+
+3. Request-body hashing is good, but “alter any explicit generation param → failure” is not yet truly proven
+
+This is subtler.
+
+You now hash the exact POST body, which is good. Identity stores the same hash.
+
+But verify_identity_binding() compares:
+
+identity.request_body_sha256
+==
+receipt.request_body_sha256
+
+It does not reconstruct that hash from the recorded model/messages/generation parameters, nor does it compare identity.generation_params against an independently persisted request body.
+
+So before the evidence chain is minted, an altered:
+
+JSON
+"generation_params": {"max_tokens": 123}
+
+can still agree with the untouched body hash because there is no verifier proving those params generated that body hash.
+
+Your comment says the complete params are bound; mechanically they aren't yet.
+
+Best fix
+
+Persist the exact POST body bytes:
+
+call-<id>.request.json
+
+or equivalent immutable artifact.
+
+Then verify:
+
+sha256(request bytes)
+    == receipt.request_body_sha256
+
+request.model
+    == identity.model_requested
+
+request generation fields
+    == identity.generation_params
+
+request messages[0].content hash
+    == prompt/context hash
+
+Chain its SHA too.
+
+That will become especially useful in item #13 anyway.
+
+Acceptance: mutate temperature/max_tokens/model/prompt in any one representation and the independent verifier fails.
+
+4. Three-authority design is good, but the “living locks” must eventually stop living
+
+Your re-scope decision was implemented correctly: the original instance is still tied to d1292434…, while protocol and execution machinery evolve separately. That's the right provenance structure.
+
+And your execution lock openly says:
+
+status = open-round2
+PLACEHOLDER until final lock
+
+which is good disclosure.
+
+Do not change this yet.
+
+But before real data, both V2 and V3 need a true terminal state:
+
+PROTOCOL-LOCK
+status: FINAL
+
+EXECUTION-LOCK
+status: FINAL
+
+Once FINAL:
+
+amendments forbidden
+
+runner refuses a non-FINAL lock
+
+finalization commit SHA is recorded
+
+first estimand run must descend from that finalization commit
+
+no “add amendment and keep going” path exists in the same experimental epoch
+
+Right now V2 accepts any disk hash reachable through the amendment allowlist, rather than requiring one terminal state. That's fine during this reviewer loop, not fine after observation begins.
+
+Not a reason to redo item 4 now; it's a requirement for final item #14.
+
+5. Instance freeze: PASS
+
+This one is materially closed.
+
+FREEZE-HASHES.sha256 is now resolved from the frozen Git commit instead of trusted from the working tree, and freeze_tree is independently checked against the historical Git tree.
+
+That defeats the attack:
+
+modify task
++
+modify local hash manifest
+→ pretend still frozen
+
+Good. Don't touch this unless another feature forces it.
+
+6. The one-snapshot mechanism passes. The symmetry mechanism does not.
+
+This is the biggest item-1–7 methodological blocker.
+
+Your stated rule was:
+
+treatment/control differ ONLY by capability access.
+
+But the implementation explicitly permits three differences:
+
+1. different preamble
+2. capability block
+3. different output schema
+
+The treatment says:
+
+using a PROVIDED capability interface
+
+while control says:
+
+solving ... from scratch
+No registry/capability/prior solution exists
+
+And treatment must emit:
+
+JSON
+{"records": ..., "field_map": ...}
+
+while control must emit:
+
+JSON
+{"solver_py": ...}
+
+Those are not cosmetic differences. They directly alter:
+
+reasoning framing,
+
+requested work,
+
+output length,
+
+code-generation burden,
+
+therefore your primary token estimand.
+
+That can create exactly the token delta Fam-C is trying to measure.
+
+Your H6 smoke actually codifies this weaker rule by normalizing away the preamble/output differences and declaring the pair symmetric.
+
+So 30/30 here means:
+
+the implementation perfectly enforces the wrong symmetry definition.
+
+Fix this before item 8
+
+Use one literal preamble and one literal output contract for both arms.
+
+For example:
+
+You are solving the task below.
+Use only resources supplied in this request.
+Return the following envelope...
+
+Then:
+
+JSON
+{
+  "decision": "use_capability|fresh",
+  "adapter_py": "...",
+  "solver_py": "...",
+  "notes": "..."
+}
+
+or some better unified contract.
+
+Treatment differs only by insertion of:
+
+<<<CAPABILITY-ACCESS-BEGIN>>>
+...
+<<<CAPABILITY-ACCESS-END>>>
+
+Control has no block.
+
+The consumer can choose fresh solving even when K exists — which also naturally becomes the T4 REJECT path for item 10.
+
+The desired invariant is literally:
+
+strip_capability_block(treatment_prompt)
+==
+control_prompt
+
+byte for byte.
+
+Acceptance: SHA equality after stripping exactly one capability block. No special normalization for preamble or schema is allowed.
+
+That is stronger and simpler than the current H6 machinery.
+
+7. H7 has a major hole: it starts at T2
+
+This is the biggest implementation discrepancy in the round.
+
+ORDER.md says:
+
+Within each family:
+T0
+T1
+PROMOTION
+CAPABILITY_LOCK
+T2
+T3
+T4
+
+But order.py explicitly filters:
+
+Python
+Run
+downstream = T2..T4
+
+and constructs only 144 downstream cells.
+
+Your H7 test then explicitly declares:
+
+cell 0 = fam05/T2/A
+
+That cannot instantiate the prereg because the capability needed by that T2 cell has not yet been acquired or promoted.
+
+This is also the exact A-vs-C acquisition ambiguity I asked you to close in Round 2.
+
+The prereg says A/B/C/D are separate universes and specifically says:
+
+C creates and promotes its own capability using its own Model-P producer runs.
+
+So per PQ/family you need something equivalent to:
+
+A universe:
+  T0 producer acquisition
+  T1 producer validation
+  PROMOTION
+  CAPABILITY_LOCK_A
+
+C universe:
+  T0 independent producer acquisition
+  T1 independent producer validation
+  PROMOTION
+  CAPABILITY_LOCK_C
+
+then downstream:
+  T2 A/B/C/D
+  T3 A/B/C/D
+  T4 A/B/C/D
+
+and similarly reciprocal QP.
+
+There's a second H7 hole: registry isolation isn't actually A/C isolation
+
+_verify_capability() currently only checks:
+
+capability directory is somewhere under benchmarks/fam-c
+
+Therefore this is currently legal:
+
+C run
+→ pass A's capability directory
+→ accepted
+
+as long as it lives inside Fam-C.
+
+That directly violates §2.
+
+You need hard namespaces:
+
+state/PQ/A/fam05/...
+state/PQ/C/fam05/...
+state/QP/A/fam05/...
+state/QP/C/fam05/...
+
+and the scheduler—not the operator—derives the capability location.
+
+Do not accept capdir as a free CLI path for estimand runs.
+
+Likewise, don't accept arbitrary outdir; derive it from the authorized cell.
+
+Third H7 issue
+
+completed_cells() considers a cell completed merely because a wired/non-dev manifest containing its cell_id exists.
+
+It does not require:
+
+intact evidence chain,
+
+valid attempt state,
+
+infrastructure replacement resolved,
+
+admissibility.
+
+That can advance the frozen order on malformed evidence.
+
+This partly belongs to items 12/13, but architect the scheduler now so it asks a single future cell_state() authority, not raw filesystem presence.
+
+So the next useful item is not item 8 yet
+
+Do a short A11 / Round-3-close commit first. No network.
+
+Priority:
+
+A11.1  fix calibration live branch
+A11.2  persist exact request body + enforce adapter binding
+A11.3  make H6 byte-identical except capability block
+A11.4  expand ORDER to acquisition/promotion/lock events
+A11.5  enforce A/C universe-scoped registries + derived outdirs
+A11.6  make order progress consume validated cell-state, not manifest presence
+
+Then the next major implementation unit should combine items 8 + 9 + 10, because they now fit together naturally:
+
+T0
+ ↓
+candidate
+
+T1
+ ↓
+two independent SHIPs
+ ↓
+PROMOTION CONTROLLER
+ ↓
+estimand-aware CAPABILITY_LOCK
+ ↓
+T2/T3:
+  USE or REJECT
+ ↓
+T4:
+  expected REJECT → fresh solve
+
+Trying to write the promotion controller before fixing H7 would force you to invent acquisition namespaces twice.
+
+After that
+
+The remaining path should be:
+
+A11
+close items 1–7 residuals
+        ↓
+A12
+#8 promotion
+#9 estimand-aware locks
+#10 USE / REJECT
+        ↓
+A13
+#11 objective material contribution
+        ↓
+A14
+#12 infrastructure/retry state machine
+        ↓
+A15
+#13 full chain + §24 admissibility
+        ↓
+FULL synthetic Fam-C family attack
+        ↓
+real P/Q CALIBRATION
+        ↓
+PROTOCOL FINAL
+EXECUTION FINAL
+        ↓
+first real authorized cell
+
+One other point: do not use the 295/295 number as readiness evidence in isolation. The suite is useful, but H6 and H7 currently prove internally consistent implementations of two weaker rules than the prereg requires. After A11, I want the old H6/H7 assertions that legitimize those weaker rules deleted/replaced, not merely supplemented.
+
+So Round 3 is productive, but I am not clearing items 1–7 yet. The exact blockers are now narrow enough that one offline cleanup round should close them.
