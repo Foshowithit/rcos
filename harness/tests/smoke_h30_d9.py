@@ -4,8 +4,9 @@
 
 D9.1 closes the lineage-authority gap: for every governed file V2
 derives the ORDERED distinct committed content states from the
-EXPERIMENT BRANCH (`git log --format=%H -- benchmarks/fam-c/<fn>`
-from HEAD, oldest -> newest, consecutive duplicates collapsed) and
+EXPERIMENT BRANCH (`git log --first-parent --format=%H --
+benchmarks/fam-c/<fn>` from HEAD, oldest -> newest, consecutive
+duplicates collapsed; first-parent since A12l slice D11) and
 requires the recorded root -> tip node sequence to be a SUBSEQUENCE
 of it (Rule A lineage membership replaces the all-refs
 retrievability test; Rule B chronology). A recorded chain with two
@@ -99,7 +100,8 @@ LIVE_LOCK = json.load(open(os.path.join(FAMC, "PROTOCOL-LOCK.json")))
 
 def _live_branch_seq(fn):
     commits = subprocess.run(
-        ["git", "log", "--format=%H", "--", f"benchmarks/fam-c/{fn}"],
+        ["git", "log", "--first-parent", "--format=%H", "--",
+         f"benchmarks/fam-c/{fn}"],
         cwd=TOP, capture_output=True, text=True).stdout.split()
     seq = []
     for c in reversed(commits):
@@ -113,12 +115,12 @@ def _live_branch_seq(fn):
 
 _SEQ = {fn: _live_branch_seq(fn) for fn in PF.PROTOCOL_GOVERNED}
 check("D9.1-LIVE branch-sequence lengths match the certified facts "
-      "(untouched files 5/5/1/7; preflight.py at its D9 17, PREREG.md "
-      "by its one D10 commit to 19, HARNESS-READINESS.md by its one "
-      "D10 slice record to 12)",
+      "(untouched files 5/5/1/7; preflight.py by its one D11 commit "
+      "to 18, PREREG.md by its one D11 commit to 20, "
+      "HARNESS-READINESS.md still at its D10 12)",
       {fn: len(_SEQ[fn]) for fn in PF.PROTOCOL_GOVERNED} == {
-          "PREREG.md": 19, "ORDER.md": 5, "LANES.md": 5,
-          "HARNESS-READINESS.md": 12, "preflight.py": 17,
+          "PREREG.md": 20, "ORDER.md": 5, "LANES.md": 5,
+          "HARNESS-READINESS.md": 12, "preflight.py": 18,
           "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str({fn: len(s) for fn, s in _SEQ.items()}))
 
@@ -193,9 +195,9 @@ check("D9-GOV the D9 stanza lives in PREREG.md (chronology rule + "
       in open(os.path.join(FAMC, "PREREG.md")).read()
       and "no chain repair" in
       open(os.path.join(FAMC, "PREREG.md")).read().lower())
-check("D9-GOV no amendment entry deleted (33 at D9 + 2 D10 forward "
-      "= 35)",
-      len(LIVE_LOCK["amendments"]) == 35,
+check("D9-GOV no amendment entry deleted (35 at D10 + 2 D11 forward "
+      "= 37)",
+      len(LIVE_LOCK["amendments"]) == 37,
       str(len(LIVE_LOCK["amendments"])))
 check("D9-GOV the D9 slice recorded as its own forward amendment "
       "(PREREG + preflight edges)",
@@ -280,6 +282,16 @@ def _v2(chain):
                             "to_sha": t} for (f, t) in chain]}
     with open(os.path.join(_FAMC, "PROTOCOL-LOCK.json"), "w") as f:
         json.dump(lock, f)
+    # A12l slice D11.1: the lock under test must be COMMITTED (the
+    # byte authority compares worktree bytes against HEAD) — a
+    # fixture strengthening, never a weakening: the assertions below
+    # still prove the same chain verdicts. --allow-empty covers the
+    # double-call pattern (baseline evaluated twice for the extra).
+    _repo = os.path.dirname(os.path.dirname(_FAMC))
+    _git(_repo, "add", "benchmarks/fam-c/PROTOCOL-LOCK.json")
+    subprocess.run(["git", "commit", "--allow-empty", "-qm",
+                    "h30 test lock"], cwd=_repo, capture_output=True,
+                   env=_ENV, text=True)
     return [g for g in PF.validate_protocol(_FAMC, _FC)
             if g.startswith("V2")]
 

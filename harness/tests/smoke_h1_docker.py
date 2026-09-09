@@ -330,6 +330,49 @@ def _churn_property():
 _churn_outcome, _churn_ok = _churn_property()
 print("CHURN-PROPERTY-OUTCOME: " + _churn_outcome)
 check("concurrent churn: refused OR mounted-not-torn", _churn_ok)
+
+# --- source-stability D11.4: contract B, refusal OR exact
+# expected-byte identity (independent expected value) ---
+# Byte-integrity, stated honestly: source churn may occur, but no
+# bytes influenced by it can enter the consumed snapshot. The
+# assertion is refusal with STABILITY-DENY, or the constructed
+# task_snapshot equalling an INDEPENDENTLY computed expected value
+# (direct hashlib walk written here — never ds._hash_tree, so the
+# expectation is not the implementation re-asserting itself).
+# Deterministic: the source is stable, so construction must succeed
+# with exact identity; any refusal must still name STABILITY-DENY.
+def _contract_b_identity():
+    import hashlib as _hl3
+    import shutil as _sh3
+    src = os.path.join(VBASE, "contract-b")
+    _sh3.rmtree(src, ignore_errors=True)
+    os.makedirs(src, exist_ok=True)
+    payload = {"alpha.txt": "alpha\n" * 40, "beta.txt": "beta\n" * 40,
+               "gamma.txt": "gamma\n" * 40}
+    for name, data in sorted(payload.items()):
+        open(os.path.join(src, name), "w").write(data)
+    expected = {}
+    for base, _dirs, files in os.walk(src):
+        for fn in sorted(files):
+            p = os.path.join(base, fn)
+            rel = os.path.relpath(p, src)
+            expected["file|" + rel] = _hl3.sha256(
+                open(p, "rb").read()).hexdigest()
+    w = os.path.join(WBASE, "contract-b", "work")
+    os.makedirs(w, exist_ok=True)
+    try:
+        sb = DockerSandbox(w, src)
+    except PermissionError as e:
+        return ("STABILITY-DENY" in str(e), "refused")
+    if sb.task_snapshot == expected:
+        return (True, "exact-expected-byte-identity")
+    return (False, "identity-mismatch")
+
+
+_cb_ok, _cb_arm = _contract_b_identity()
+print("CONTRACT-B-OUTCOME: " + _cb_arm)
+check("contract-B: STABILITY-DENY refusal OR exact expected-byte "
+      "identity (independent expected value)", _cb_ok)
 bad = [n for n, ok_ in results if not ok_]
 print(f"\nH1-docker smoke: {len(results) - len(bad)}/{len(results)} closed")
 sys.exit(1 if bad else 0)

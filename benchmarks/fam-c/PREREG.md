@@ -784,6 +784,66 @@ a stable source; the guard never proves "the source never changed".
 (d) D9 is unaffected: D9 touches no docker staging or isolation code,
 and the loop's clean-battery claim resumes on this fix.
 
+Forward amendment AMEND-2026-09-09-d11-protocol-authority (2026-09-09):
+lock self-authentication, first-parent chronology, the committed A13
+canonical bar, and one honest stability contract (auditor D9-post
+P0/P1/P1/P2), frozen BEFORE any estimand execution and BEFORE any
+A13 code lands.
+
+(a) The lock authenticates itself (P0). `PROTOCOL-LOCK.json` is byte-
+governed out of V1 (META), so V2 now requires, BEFORE any consumer
+parses the lock, `sha256(on-disk PROTOCOL-LOCK.json) ==
+sha256(git show <experiment-HEAD>:benchmarks/fam-c/PROTOCOL-LOCK.json)`
+(a BYTE comparison, never a semantic one — even a cosmetic reformat
+refuses). Otherwise V2 emits `V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json
+differs from committed experiment-HEAD authority`, withholds every
+lock-derived tip, and the runner refuses start. The verdict is
+derived in the git-aware layer (`protocol_tips` /
+`validate_protocol`) and passed in exactly like `branch_seq`, so
+`validate_file_chain` stays pure and I/O-free. Forward policy from
+D11 on (no retroactive ban: the legitimate earlier repairs stand):
+lock amendment entries are append-only (an entry may be added, never
+rewritten or deleted) and the lock must be committed with the
+amendment it records — an uncommitted worktree lock is refused,
+never trusted.
+
+(b) First-parent chronology (P1). The branch walk is now `git log
+--first-parent --format=%H -- benchmarks/fam-c/<fn>`: a state that
+lived only on a merged side branch is never experiment chronology
+and can never satisfy the subsequence test, so linearizing the DAG
+is refused (a forged `v0 -> vX -> vC` names the side-branch node;
+a genuine first-parent chain stays clean). Non-regression measured
+at the D11 base (`a029b91`): first-parent and the old walk yield
+IDENTICAL sequences for all seven governed files (PREREG.md 19,
+ORDER.md 5, LANES.md 5, HARNESS-READINESS.md 12, preflight.py 17,
+T4-SEMANTIC-IDS.json 1, T4-CONFORMANCE.json 7), so no chain repair
+was needed; this slice adds two forward edges (preflight.py, this
+document) and deletes no entry.
+
+(c) The A13 canonical-adaptation bar, committed (P1). The D9 post's
+claim is corrected by committing the bar here, before any A13 code
+lands (no A13 implementation code lands in this slice). The frozen
+rule is mechanical: `adapted_input = F(frozen_capability_schema,
+exact_visible_task_snapshot)`, with `F` deterministic frozen code.
+The requirement binds the same task snapshot with the same
+capability under different model-authored mapping/order choices:
+those runs MUST yield identical adapted-input bytes AND
+an identical adapted-input hash. On failure the only permitted
+weaker claim is `capability_causally_necessary_given_model_adapter
+= true`, and the material-contribution claim must never be upgraded
+from it.
+
+(d) One honest stability contract (P2): contract B (byte-integrity).
+Source churn may occur, but no bytes influenced by it can enter the
+consumed snapshot — the staged bytes must equal the already-frozen
+expected snapshot (`task_snapshot`), re-proved by the in-jail
+re-hash before the first run. The constructor does not guarantee
+detection of every concurrent mutation event. The smoke asserts
+refusal (`STABILITY-DENY`) OR exact expected-byte identity against
+an independently computed expected value — never "re-run until
+green", and the D10 quiescence read is a confirmation read, not an
+event-detection guarantee.
+
 ---
 # 11. Manifest lifecycle
 

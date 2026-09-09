@@ -316,10 +316,11 @@ check("D7.2 HARNESS-READINESS a11 edge corrected 8e743e4c63f4 -> "
       and (_e_a11.get("from_sha") or "").startswith("3314fa9170ab"),
       str(_e_a11))
 check("D7.2 no amendment entry deleted except the D8 hygiene pair, "
-      "the D9 chronology pair, and the D10 stability pair "
+      "the D9 chronology pair, the D10 stability pair, and the D11 "
+      "authority pair "
       "(30 at D7 - 2 removed a12 edges + 1 D8 edge + 2 D8 forward "
-      "+ 2 D9 forward + 2 D10 forward = 35)",
-      len(LIVE_LOCK["amendments"]) == 35, str(len(LIVE_LOCK["amendments"])))
+      "+ 2 D9 forward + 2 D10 forward + 2 D11 forward = 37)",
+      len(LIVE_LOCK["amendments"]) == 37, str(len(LIVE_LOCK["amendments"])))
 check("D7.2 repair recorded as its own forward amendment "
       "AMEND-2026-09-09-d7-lineage-repair (PREREG + preflight edges)",
       sum(1 for a in LIVE_LOCK["amendments"]

@@ -29,6 +29,15 @@ every refusal condition, or nothing runs.
       SUBSEQUENCE of the file's committed content states on the
       experiment branch (Rule A lineage membership + Rule B
       chronology; the old all-refs retrievability test is deleted).
+      A12l slice D11.1: the lock authenticates ITSELF first — the
+      on-disk PROTOCOL-LOCK.json bytes must equal the committed
+      experiment-HEAD bytes (byte comparison, before any consumer
+      parses the lock), else the named finding
+      `V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json differs from committed
+      experiment-HEAD authority`, with lock-derived tips withheld.
+      A12l slice D11.2: the branch walk is first-parent (a merged
+      side-branch state is never experiment chronology); measured
+      identical to the old walk for all seven governed files.
   V3 EXECUTION-LOCK — the executing harness bytes (8 modules + runner)
       match EXECUTION-LOCK.json. Status rides along: `open-round2`
       (placeholder, re-minted on every harness change) until round-2 #14
@@ -146,6 +155,55 @@ def validate_instance(fam_c_dir, freeze_commit):
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
+def _lock_authority_findings(fam_c_dir):
+    """A12l slice D11.1 (auditor D9-post P0): the lock authenticates
+    itself. Git-aware helper (I/O belongs here, never in
+    validate_file_chain): requires the on-disk PROTOCOL-LOCK.json
+    bytes to equal the committed experiment-HEAD bytes
+    (`git show HEAD:<rel>`), by BYTE comparison, not semantic
+    equality (even a cosmetic reformat refuses). Returns the single
+    named finding on mismatch, else [].
+
+    No committed counterpart (the lock path is untracked at HEAD,
+    e.g. a synthetic hermetic fixture dir) means there is no
+    authority to violate: [] (the chain/global rules below still
+    evaluate the bytes on their merits). A missing lock, an
+    unreadable lock, or an unusable git binary likewise yields []
+    here — the missing/unparsable/git-unavailable paths below own
+    those findings. Callers run this BEFORE parsing the lock and
+    withhold lock-derived tips on mismatch (see protocol_tips), so
+    a forged worktree lock can never certify tips; every production
+    entry (CLI, validate_all via validate_protocol) refuses start
+    on any V2 finding, and the full component diagnostics are still
+    collected so each refusal names its own defect.
+    """
+    lp = os.path.join(fam_c_dir, "PROTOCOL-LOCK.json")
+    if not os.path.exists(lp):
+        return []
+    try:
+        root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
+    except RuntimeError:
+        return []
+    rel = os.path.relpath(os.path.abspath(lp), root)
+    try:
+        proc = subprocess.run(["git", "show", f"HEAD:{rel}"],
+                              cwd=root, capture_output=True)
+    except FileNotFoundError:
+        return []
+    if proc.returncode != 0:
+        return []
+    try:
+        with open(lp, "rb") as f:
+            disk = f.read()
+    except OSError:
+        return []
+    if hashlib.sha256(disk).hexdigest() != \
+            hashlib.sha256(proc.stdout).hexdigest():
+        return ["V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json differs from "
+                "committed experiment-HEAD authority"]
+    return []
+
+
 def validate_lock_global(lock):
     """A12d slice D8.2: lock-global hygiene (pure function of the lock
     bytes — no git, no disk reads). Returns findings (empty = green);
@@ -194,7 +252,8 @@ def validate_lock_global(lock):
 
 
 def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
-                        governed_sha, branch_seq=None):
+                        governed_sha, branch_seq=None,
+                        lock_authority_ok=None):
     """A12d slice D7: the unique-linear-lineage rule for ONE governed
     file. Pure function of its arguments (no git, no disk reads): the
     hermetic unit under test, and the exact code path validate_protocol
@@ -239,8 +298,19 @@ def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
     `protocol_tips` always derives the sequence and fails closed with
     a named finding when derivation is impossible, so production
     never silently skips Rule A/B.
+
+    A12l slice D11.1 (same pure function, tightened): when the
+    caller passes `lock_authority_ok` — the git-aware layer's byte
+    verdict on the lock itself (see `_lock_authority_findings`),
+    passed in exactly like `branch_seq` — a False refuses with the
+    named lock-authority finding and no tip. None (the default)
+    selects the hermetic mode, which evaluates the chain on its
+    merits without the lock-bytes verdict.
     """
     pre = f"V2 PROTOCOL-LOCK: {fn} "
+    if lock_authority_ok is False:
+        return (["V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json differs from "
+                 "committed experiment-HEAD authority"], None)
     for a in amendments:
         _f, _t = (a.get("from_sha") if isinstance(a, dict) else None,
                   a.get("to_sha") if isinstance(a, dict) else None)
@@ -399,20 +469,29 @@ def protocol_tips(fam_c_dir, freeze_commit):
     `.get()` is reached on them, so a non-object `governed`, a
     non-list `amendments`, or a non-object amendment entry yields a
     named V2 finding (the canonical text rides with
-    validate_lock_global), never a traceback."""
+    validate_lock_global), never a traceback.
+
+    A12l slice D11.1: the lock's byte authority
+    (`_lock_authority_findings`) is verified BEFORE the lock is
+    parsed — a worktree lock that differs from the committed
+    experiment-HEAD bytes yields the named lock-authority finding
+    and NO lock-derived tips are certified (tips are withheld even
+    though the component diagnostics below still run, so every
+    refusal names its own defect)."""
+    auth = _lock_authority_findings(fam_c_dir)
     try:
         lock = json.load(open(os.path.join(fam_c_dir,
                                            "PROTOCOL-LOCK.json")))
     except (ValueError, OSError) as e:
-        return ({}, [f"V2 PROTOCOL-LOCK: lock unparsable: {e}"])
+        return ({}, auth + [f"V2 PROTOCOL-LOCK: lock unparsable: {e}"])
     if not isinstance(lock, dict):
-        return ({}, ["V2 PROTOCOL-LOCK: lock is not an object (the "
-                     "lock top level must be a JSON object carrying "
-                     "governed and amendments)"])
+        return ({}, auth + ["V2 PROTOCOL-LOCK: lock is not an object (the "
+                            "lock top level must be a JSON object carrying "
+                            "governed and amendments)"])
     try:
         root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
     except RuntimeError as e:
-        return ({}, [f"V2 PROTOCOL-LOCK: git unavailable: {e}"])
+        return ({}, auth + [f"V2 PROTOCOL-LOCK: git unavailable: {e}"])
     governed = lock.get("governed", {})
     if not isinstance(governed, dict):
         governed = {}
@@ -459,6 +538,16 @@ def protocol_tips(fam_c_dir, freeze_commit):
                 f"underivable ({e}; fail closed — the recorded chain "
                 f"must be provable on the experiment branch)")
             seq = None
+        # A12l slice D11.1: the per-file chain is evaluated on its
+        # merits (None: hermetic chain mode), so the D7/D8/D9
+        # component diagnostics still name their own defect (file,
+        # node, container) even on a lock that fails its byte
+        # authority. The authority itself is enforced at this layer
+        # (named finding leads, tips withheld below) — threading
+        # False in here would replace those diagnostics with seven
+        # copies of one finding. The `lock_authority_ok` parameter
+        # stays the direct/unit enforcement point for callers that
+        # own the verdict.
         f_find, tip = validate_file_chain(fn, frozen_sha,
                                           by_file.get(fn, []), disk,
                                           want, seq)
@@ -469,25 +558,35 @@ def protocol_tips(fam_c_dir, freeze_commit):
     # exact governed set, governed amendment files only, named
     # container failures).
     findings.extend(validate_lock_global(lock))
+    if auth:
+        # A12l slice D11.1: a lock that fails its own byte authority
+        # certifies no tips — the contents are diagnosed, never
+        # trusted — and the named authority finding leads.
+        return ({}, auth + findings)
     return (tips, findings)
 
 
 def _branch_seq_shas(repo_root, rel):
     """Ordered DISTINCT sha256(file bytes) sequence for the
     repo-relative path `rel` along the experiment branch: [sha256 of
-    the file bytes at commit c for c in `git log --format=%H -- <rel>`
-    (HEAD ancestry, oldest -> newest), consecutive duplicates
-    collapsed]. A12i slice D9.1: this sequence is the lineage
-    authority — the recorded node chain must be a subsequence of it
-    (Rule A membership + Rule B chronology), replacing the old
-    all-refs retrievability map. The plain HEAD-ancestry walk is
-    chosen over `--first-parent`: both yield the same sequences for
-    every governed file on this tree, and HEAD ancestry is the
-    experiment-branch definition. Raises RuntimeError when the
+    the file bytes at commit c for c in `git log --first-parent
+    --format=%H -- <rel>` (first-parent HEAD lineage, oldest ->
+    newest), consecutive duplicates collapsed]. A12i slice D9.1: this
+    sequence is the lineage authority — the recorded node chain must
+    be a subsequence of it (Rule A membership + Rule B chronology),
+    replacing the old all-refs retrievability map. A12l slice D11.2
+    (auditor D9-post P1): the walk is first-parent, so a state that
+    lived only on a merged side branch can never satisfy the
+    subsequence test — linearizing the DAG is refused. Non-regression
+    measured at the D11 base: first-parent and the old walk yield
+    IDENTICAL sequences for all seven governed files on this tree
+    (PREREG.md 19, ORDER.md 5, LANES.md 5, HARNESS-READINESS.md 12,
+    preflight.py 17, T4-SEMANTIC-IDS.json 1, T4-CONFORMANCE.json 7),
+    so no chain repair was needed. Raises RuntimeError when the
     history is underivable — callers fail closed, never skip."""
     try:
-        commits = _git(["log", "--format=%H", "--", rel],
-                       cwd=repo_root).split()
+        commits = _git(["log", "--first-parent", "--format=%H", "--",
+                        rel], cwd=repo_root).split()
     except RuntimeError:
         raise RuntimeError(f"git log unreadable for {rel}")
     seq = []
@@ -509,10 +608,12 @@ def validate_protocol(fam_c_dir, freeze_commit):
     lp = os.path.join(fam_c_dir, "PROTOCOL-LOCK.json")
     if not os.path.exists(lp):
         return ["V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json missing"]
-    try:
-        json.load(open(lp))
-    except ValueError as e:
-        return [f"V2 PROTOCOL-LOCK: lock unparsable: {e}"]
+    # A12l slice D11.1: this consumer never parses the lock itself —
+    # the single parse lives in protocol_tips, which verifies the
+    # lock's byte authority BEFORE parsing (named finding plus
+    # lock-derived tips withheld on mismatch). Every production
+    # entry (CLI, validate_all, the runner) therefore refuses a
+    # forged worktree lock before trusting a byte of it.
     # A12d slice D7: the per-file chain rule is the unique-linear-chain
     # (validate_file_chain via protocol_tips: exactly one edge out of
     # the frozen/genesis node, indegree/outdegree <= 1, no dead end but
@@ -527,6 +628,10 @@ def validate_protocol(fam_c_dir, freeze_commit):
     # lineage in the recorded order; the all-refs retrievability test
     # is deleted) and D9.2 fails malformed lock containers closed
     # with a named finding instead of a traceback.
+    # A12l slice D11.1: protocol_tips verifies the lock's byte
+    # authority before parsing it (named finding, tips withheld).
+    # A12l slice D11.2: the chronology walk is first-parent (a merged
+    # side-branch state never enters the sequence).
     _tips, chain_findings = protocol_tips(fam_c_dir, freeze_commit)
     out += chain_findings
     # Item-7: the enumerated execution order is DERIVED from ORDER.md, so a

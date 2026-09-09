@@ -145,6 +145,18 @@ class DockerSandbox:
     """One lane/run kernel jail. ONLY representable configuration:
     assigned_workdir -> /work (rw) + visible_root -> /task (ro).
 
+    Stability contract B — byte-integrity (frozen A12l slice D11):
+    source churn may occur during staging, but no bytes influenced
+    by it can enter the consumed snapshot — the staged bytes must
+    equal the already-frozen expected snapshot (task_snapshot), and
+    the in-jail re-hash must equal it again before the first run.
+    The constructor does NOT guarantee detection of every
+    concurrent mutation event: a source that changes and changes
+    back between two reads is indistinguishable from a stable
+    source. What IS guaranteed: either construction refuses with
+    STABILITY-DENY, or the mounted tree has exact expected-byte
+    identity with the frozen snapshot. Never "re-run until green".
+
     NOTE (abstraction-claim precision): the production constructor
     exposes no arbitrary-mount interface. Module-level helpers remain
     importable Python (no real privacy), but the trust boundary is
@@ -157,9 +169,12 @@ class DockerSandbox:
         vis = _check_source(visible_root, "task")
         if work == vis:
             raise PermissionError("MOUNT-POLICY-DENY work == visible")
-        # Source-stability binding: the staged copy must equal ONE stable
-        # source state. Hash before, copy, hash after; refuse on any drift.
-        # Concurrent source mutation becomes fail-closed, never a hybrid.
+        # Source-stability binding (contract B — byte-integrity, not
+        # event detection): the staged copy must equal ONE stable
+        # source state. Hash before, copy, hash after; refuse on any
+        # drift. A concurrent mutation that lands inside the staged
+        # bytes is refused; a mutation the reads never observe is out
+        # of scope by contract (see the class docstring).
         #
         # REAL guarantee (exactly this, no more): the mounted tree equals a
         # source state observed identical at two distinct times spanning the
