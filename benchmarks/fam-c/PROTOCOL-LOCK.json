@@ -173,6 +173,22 @@
    "reason": "A12d slice D1 (auditor A12d.1/A12d.2/A12d.7): forward amendment AMEND-2026-09-08-failed-acquisition freezing the failed-acquisition continuation rule before live execution (T1 COMPLETE with validated=false is NOT-PROMOTED, no lock, downstream NOT-EVALUABLE, no retry); jail isolation and candidate-input lineage are harness-enforced and change no ordering",
    "base": "790320f",
    "slice": "a12d-slice-d1"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "be76c0bbadc3142fb1a48f7d32f06c2c44ed5bc6222f59ab982ca926d7f98125",
+   "to_sha": "5374b5c8c8ca65e13fb62374963f5ca623aad0d6905e3f21b28d9d5240739908",
+   "reason": "A12d slice D2 (auditor A12d.3/A12d.4): forward amendments AMEND-2026-09-08-contract-v2 (producer contract shape v2: preconditions as {\"requires\": str} objects, both lists may be empty) and AMEND-2026-09-08-requires-polarity (affirmative-requires conformance bridge supersedes the polarity-blind v1 bridge)",
+   "base": "7639a45",
+   "slice": "a12d-slice-d2"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": "05a8e094e437f320ed7e9521b483dd98f1febf0f31851992125ccb2f95dbda40",
+   "to_sha": "42a07c594ea65eed6b95348d5d9f9425a87eff02d87e2cdf6f2e255abd2b8afc",
+   "reason": "auditor A12d.3 polarity: conformance now maps only affirmative requires claims",
+   "base": "7639a45",
+   "slice": "a12d-slice-d2"
   }
  ]
 }

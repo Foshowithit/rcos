@@ -163,7 +163,21 @@ def _producer_contract(t0_run_dir):
     contract text (A12b.1/AC6b). Fail closed when absent or malformed.
     Returns (semantic_core, preconditions, limitations) with the
     declaration bytes copied exactly (no normalization: the governance
-    validator compares them verbatim). This function never touches K.md."""
+    validator compares them verbatim). This function never touches K.md.
+
+    A12d slice D2 (auditor A12d.4 + A12d.3): the v2 shape is
+    `{"semantic_core": <nonempty str>,
+      "preconditions": [{"requires": <nonempty str>}, ...],  # MAY be []
+      "limitations": [<str>, ...]}`.                         # MAY be []
+    All three keys must be PRESENT; both lists may be empty (an empty
+    `preconditions` list means "no declared applicability requirement"
+    and is non-discriminating, never malformed). Each precondition must
+    be an object with exactly the key `requires` carrying a
+    non-blank string; a bare-string precondition, an object with any
+    other key, or a blank `requires` is refused with a named
+    PROMOTION-DENY (backward compatibility is NOT offered: no live
+    promotion exists yet, and the failure is explicit, never silent).
+    """
     try:
         arrival = _read_json(os.path.join(t0_run_dir, "arrival.json"))
     except (ValueError, OSError) as e:
@@ -179,22 +193,58 @@ def _producer_contract(t0_run_dir):
             "{semantic_core, preconditions, limitations} is required; the "
             "promoted contract is producer-authored, never synthesized)")
     core = declared.get("semantic_core")
+    if "preconditions" not in declared:
+        raise PermissionError(
+            "PROMOTION-DENY producer capability contract declares no "
+            "preconditions list (the v2 shape requires the "
+            "preconditions, limitations, and semantic_core keys to be "
+            "present; preconditions may be an empty list)")
+    if "limitations" not in declared:
+        raise PermissionError(
+            "PROMOTION-DENY producer capability contract declares no "
+            "limitations list (the v2 shape requires the preconditions, "
+            "limitations, and semantic_core keys to be present; "
+            "limitations may be an empty list)")
     pre = declared.get("preconditions")
-    lim = declared.get("limitations", [])
+    lim = declared.get("limitations")
     if not isinstance(core, str) or not core.strip():
         raise PermissionError(
             "PROMOTION-DENY producer capability contract has an empty "
             "semantic_core")
-    if not isinstance(pre, list) or not pre or not all(
-            isinstance(x, str) and x.strip() for x in pre):
+    if not isinstance(pre, list):
         raise PermissionError(
-            "PROMOTION-DENY producer capability contract has no "
-            "preconditions list")
+            "PROMOTION-DENY producer capability contract preconditions "
+            "must be a v2-shape list of {\"requires\": str} objects "
+            "(possibly empty)")
+    for entry in pre:
+        if isinstance(entry, str):
+            raise PermissionError(
+                "PROMOTION-DENY producer capability contract carries a "
+                "bare-string precondition "
+                f"{entry[:60]!r}: the v2 shape requires "
+                "{\"requires\": <nonempty str>} objects (a bare string "
+                "cannot carry polarity, so the conformance bridge "
+                "cannot tell an applicability requirement from a "
+                "negated limitation)")
+        if not isinstance(entry, dict) or set(entry) != {"requires"}:
+            raise PermissionError(
+                "PROMOTION-DENY producer capability contract carries a "
+                f"malformed precondition {str(entry)[:80]!r}: the v2 "
+                "shape is exactly {\"requires\": <nonempty str>} "
+                "(unknown keys are refused)")
+        if not isinstance(entry.get("requires"), str) or not \
+                entry["requires"].strip():
+            raise PermissionError(
+                "PROMOTION-DENY producer capability contract carries a "
+                "precondition with an empty requires text (each "
+                "{\"requires\": str} must name a non-blank applicability "
+                "requirement)")
     if not isinstance(lim, list) or not all(isinstance(x, str) for x in lim):
         raise PermissionError(
             "PROMOTION-DENY producer capability contract limitations must "
-            "be a list of strings")
-    return core, list(pre), list(lim)
+            "be a list of strings (possibly empty; free prose, recorded "
+            "verbatim, never conformance evidence)")
+    return core, [dict(p) for p in pre], list(lim)
 
 
 def t4_semantic_id(fam_c_dir, family, semantic_core_sha256,
@@ -669,7 +719,10 @@ def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
                       core,
                       ""]
     contract_lines.append("preconditions:")
-    contract_lines.extend(f"- {p}" for p in pre)
+    # A12d slice D2: preconditions are v2 {"requires": str} objects —
+    # the notes render the producer's requires text (never the dict
+    # repr), exactly as the v1 notes rendered the bare strings.
+    contract_lines.extend(f"- {p['requires']}" for p in pre)
     contract_lines.append("limitations:"
                           if lim else "limitations: none declared")
     contract_lines.extend(f"- {x}" for x in lim)
@@ -824,21 +877,25 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     core_sha = _sha_bytes(contract[0].encode())
     t4_id, t4_ratified = t4_semantic_id(fam_c_dir, cell["family"],
                                         core_sha, evidence_grade)
-    # A12c slice C2 (auditor P0 #6): the frozen limitation->T4-id
-    # conformance bridge. The lock records the producer's ACTUAL
-    # limitations plus the derived verdict — derived HERE mechanically
-    # from the producer-declared contract through the SINGLE governed
-    # implementation (harness/conformance.py over the frozen
+    # A12c slice C2 (auditor P0 #6), A12d slice D2 (auditor A12d.3): the
+    # frozen requires->T4-id conformance bridge. The lock records the
+    # producer's ACTUAL contract plus the derived verdict — derived HERE
+    # mechanically from the producer-declared contract through the SINGLE
+    # governed implementation (harness/conformance.py over the frozen
     # T4-CONFORMANCE.json map, never by copying hidden K.md text: this
     # controller has no hidden-contract reader by design, and the
-    # conformance check reads the lock only). `not bool(limitations)`
-    # is GONE: an unrelated limitation (e.g. 'requires Python 3')
-    # leaves the T4 non-discriminating, because only a limitation
-    # naming the T4's applicability condition (a frozen predicate
-    # match) supports the id.
+    # conformance check reads the lock only). Conformance consults ONLY
+    # the affirmative preconditions[*].requires claims: an unrelated
+    # requires text (e.g. 'requires Python 3') — and every limitation,
+    # always — leaves the T4 non-discriminating, because only a requires
+    # claim naming the T4's applicability condition (a frozen predicate
+    # match over admissible, non-negated text) supports the id.
     limitation_present = bool(contract[2])
     cmap = _conformance.load(fam_c_dir)
-    cverdict = _conformance.verdict(cell["family"], contract[2], cmap)
+    cverdict = _conformance.verdict(
+        cell["family"],
+        [p["requires"] for p in contract[1]], cmap,
+        limitations=contract[2])
     non_discriminating = cverdict["non_discriminating"]
     conformance_cause = cverdict["conformance_cause"]
     supported_t4_ids = cverdict["supported_t4_ids"]

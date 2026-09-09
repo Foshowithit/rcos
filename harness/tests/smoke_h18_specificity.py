@@ -183,14 +183,19 @@ check("CLI stdout carries contract_conformance_ready false",
 from fixture_modelrun import PRODUCER_CONTRACTS as _STANDIN_CONTRACTS
 _b_core, _b_pre, _b_lim = _STANDIN_CONTRACTS["fam05"]
 LIMITATION_CONTRACT = {"semantic_core": _b_core,
-                       "preconditions": list(_b_pre),
-                       # A12c slice C2: discrimination is set membership
-                       # over the frozen bridge — the variant limitation
-                       # must NAME the T4's applicability condition (a
-                       # frozen fam05 predicate match), not merely exist.
-                       "limitations": ["Synthetic H18 limitation: only "
-                                       "valid for local v1 sha256 "
-                                       "manifests."]}
+                       # A12d slice D2: discrimination is set membership
+                       # over the affirmative requires bridge — the
+                       # variant's extra precondition must NAME the T4's
+                       # applicability condition (a frozen fam05 predicate
+                       # match). The variant still carries one real
+                       # limitation (free prose, never evidence) so the
+                       # lock-shape assertions below stay meaningful.
+                       "preconditions": [dict(p) for p in _b_pre] + [
+                           {"requires": "only valid for local v1 sha256 "
+                                        "manifests"}],
+                       "limitations": ["Synthetic H18 limitation: "
+                                       "rejected payloads are reported "
+                                       "without detail."]}
 root_b = hermetic(LIMITATION_APPEND)
 res_b, res2_b, cap_b, lock_b = mint_fam05(
     root_b, producer_contract=LIMITATION_CONTRACT)

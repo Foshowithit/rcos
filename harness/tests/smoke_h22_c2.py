@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""H22 — A12c slice C2: the frozen limitation->T4-id conformance bridge
-(auditor P0 #6).
+"""H22 — A12c slice C2 + A12d slice D2: the frozen AFFIRMATIVE
+requires->T4-id conformance bridge (auditor P0 #6, A12d.3).
 
 `non_discriminating = not bool(limitations)` is now wrong in general: an
-unrelated producer limitation must leave the T4 non-discriminating. The
-frozen bridge (governed T4-CONFORMANCE.json under
-normalize-token-all-present-v1, single implementation
-harness/conformance.py, wired through promotion/lock/order/preflight)
-is proven here by REAL tests — the live governed map, the real verdict
+unrelated producer text must leave the T4 non-discriminating, and
+limitations NEVER drive conformance at all. The frozen bridge (governed
+T4-CONFORMANCE.json under normalize-affirmative-requires-v2, single
+implementation harness/conformance.py, wired through
+promotion/lock/order/preflight) maps ONLY affirmative
+preconditions[*].requires claims: a negated requires text is
+INADMISSIBLE (fail closed, reported — never silently matched). Proven
+here by REAL tests — the live governed map, the real verdict
 machinery, the real promotion controller / lock verifier / order
 provenance re-derivation / preflight V2, never a claim:
 
@@ -93,17 +96,20 @@ def hermetic(tag, families=("fam05",)):
     return root
 
 
-def contract_with(limitations, family="fam05"):
-    core, pre, _lim = PRODUCER_CONTRACTS[family]
-    return {"semantic_core": core, "preconditions": list(pre),
+def contract_with(requires, family="fam05", limitations=()):
+    core, _pre, _lim = PRODUCER_CONTRACTS[family]
+    return {"semantic_core": core,
+            "preconditions": [{"requires": t} for t in requires],
             "limitations": list(limitations)}
 
 
-def mint(root, family="fam05", universe="A", limitations=None):
+def mint(root, family="fam05", universe="A", requires=None,
+         limitations=()):
     """Acquire/promote/lock one family through the production path with
-    the given producer limitations. Returns (receipt_path, lock_dict)."""
-    pc = contract_with([] if limitations is None else limitations,
-                       family)
+    the given producer requires claims (and free-prose limitations).
+    Returns (receipt_path, lock_dict)."""
+    pc = contract_with([] if requires is None else requires, family,
+                       limitations)
     exp = order.load_expansion(root)
     t0 = order.expected_event(exp, "PQ", family, "T0", universe)
     t1 = order.expected_event(exp, "PQ", family, "T1", universe)
@@ -129,30 +135,30 @@ def prom_cell(root, family="fam05", universe="A"):
 
 # --- K1-K5: verdict proofs on the live governed map ---------------------
 cmap = CONF.load(FAMC)
-check("live governed map loads (version t4-conformance-v1, rule "
-      "normalize-token-all-present-v1)",
-      cmap["version"] == "t4-conformance-v1"
-      and cmap["rule"] == "normalize-token-all-present-v1"
+check("live governed map loads (version t4-conformance-v2, rule "
+      "normalize-affirmative-requires-v2)",
+      cmap["version"] == "t4-conformance-v2"
+      and cmap["rule"] == "normalize-affirmative-requires-v2"
       and cmap["conformance_map_sha256"] == LIVE_MAP_SHA)
 
 v = CONF.verdict("fam05", [], cmap)
-check("K1 fam05 limitations [] -> non_discriminating True, "
+check("K1 fam05 requires [] -> non_discriminating True, "
       "supported_t4_ids [], cause names fam05.local_v1_sha256",
       v["non_discriminating"] is True and v["supported_t4_ids"] == []
       and v["limitation_present"] is False
       and FAM05_ID in v["conformance_cause"]
-      and "0 limitation(s)" in v["conformance_cause"])
+      and "0 precondition(s)" in v["conformance_cause"])
 
 v = CONF.verdict("fam05", ["requires Python 3"], cmap)
-check("K2 fam05 limitations ['requires Python 3'] -> "
-      "non_discriminating True (unrelated limitation supports nothing)",
+check("K2 fam05 requires ['requires Python 3'] -> "
+      "non_discriminating True (unrelated requires supports nothing)",
       v["non_discriminating"] is True and v["supported_t4_ids"] == []
       and v["limitation_present"] is True
       and FAM05_ID in v["conformance_cause"])
 
 v = CONF.verdict("fam05", ["only valid for local v1 sha256 manifests"],
                  cmap)
-check("K3 fam05 limitations ['only valid for local v1 sha256 "
+check("K3 fam05 requires ['only valid for local v1 sha256 "
       "manifests'] -> non_discriminating False, supported_t4_ids "
       "['fam05.local_v1_sha256']",
       v["non_discriminating"] is False
@@ -162,7 +168,7 @@ check("K3 fam05 limitations ['only valid for local v1 sha256 "
       in v["conformance_cause"])
 
 v = CONF.verdict("fam05", ["works on the local sha256 basis"], cmap)
-check("K4 fam05 limitations ['works on the local sha256 basis'] -> "
+check("K4 fam05 requires ['works on the local sha256 basis'] -> "
       "non_discriminating False (token rule, order-independent)",
       v["non_discriminating"] is False
       and v["supported_t4_ids"] == [FAM05_ID])
@@ -172,7 +178,7 @@ k5a = (v["non_discriminating"] is True
        and v["supported_t4_ids"] == []
        and FAM04_ID in v["conformance_cause"])
 v = CONF.verdict("fam04", ["assumes an acyclic graph"], cmap)
-check("K5 fam04 limitations ['requires Python 3'] -> "
+check("K5 fam04 requires ['requires Python 3'] -> "
       "non_discriminating True; ['assumes an acyclic graph'] -> "
       "supported ['fam04.promised_acyclic']",
       k5a and v["non_discriminating"] is False
@@ -180,7 +186,7 @@ check("K5 fam04 limitations ['requires Python 3'] -> "
 
 # --- production-path mints (receipt+lock carry the bridge fields) -------
 root_d = hermetic("default")
-rp_d, lock_d = mint(root_d, limitations=[])
+rp_d, lock_d = mint(root_d, requires=[])
 rec_d = json.load(open(rp_d))
 check("default production mint locks non-discriminating with empty "
       "support and the live map sha (receipt and lock agree)",
@@ -197,10 +203,10 @@ check("minted default promotion is order-COMPLETE (provenance "
       == "COMPLETE")
 
 root_s = hermetic("support")
-rp_s, lock_s = mint(root_s, limitations=[
+rp_s, lock_s = mint(root_s, requires=[
     "only valid for local v1 sha256 manifests"])
 rec_s = json.load(open(rp_s))
-check("supporting-limitation production mint locks discriminating "
+check("supporting-requires production mint locks discriminating "
       "with the id in the supported set (receipt and lock agree)",
       rec_s["non_discriminating"] is False
       and rec_s["supported_t4_ids"] == [FAM05_ID]
@@ -223,7 +229,7 @@ check("K6 lock claiming discriminating fam05.local_v1_sha256 with "
 
 # --- K7: receipt over-claiming discrimination -> promotion DENY ----------
 root_u = hermetic("unrelated")
-rp_u, _lock_u = mint(root_u, limitations=["requires Python 3"])
+rp_u, _lock_u = mint(root_u, requires=["requires Python 3"])
 rec_u = json.load(open(rp_u))
 assert rec_u["non_discriminating"] is True
 rec_u["non_discriminating"] = False
@@ -239,10 +245,10 @@ check("K7 receipt claiming non_discriminating False with map support "
 # --- K8a: mutated map without re-minting -> preflight V2 refuses --------
 orig_bytes = open(LIVE_MAP, "rb").read()
 mut = json.loads(orig_bytes.decode())
-mut["families"]["fam03"]["limitation_predicates"] = [
-    p for p in mut["families"]["fam03"]["limitation_predicates"]
+mut["families"]["fam03"]["requires_predicates"] = [
+    p for p in mut["families"]["fam03"]["requires_predicates"]
     if p != ["dedup"]]
-assert len(mut["families"]["fam03"]["limitation_predicates"]) == 2
+assert len(mut["families"]["fam03"]["requires_predicates"]) == 2
 v2_findings = None
 try:
     open(LIVE_MAP, "w").write(json.dumps(mut, indent=1) + "\n")
@@ -262,7 +268,7 @@ check("K8 map mutated without re-minting lock -> preflight V2 nonzero "
 
 # --- K8b: receipt map-sha mismatch -> deny naming the field -------------
 root_m = hermetic("mapsha")
-rp_m, _lock_m = mint(root_m, limitations=[])
+rp_m, _lock_m = mint(root_m, requires=[])
 rec_m = json.load(open(rp_m))
 flip = ("0" if rec_m["conformance_map_sha256"][-1] != "0" else "1")
 rec_m["conformance_map_sha256"] = \
@@ -338,7 +344,7 @@ prompts = [
                    "h22-dis", None)["prompt"],
 ]
 assert len(prompts) == 4
-declarations = [core + "\n" + "\n".join(pre)
+declarations = [core + "\n" + "\n".join(p["requires"] for p in pre)
                 for core, pre, _lim in PRODUCER_CONTRACTS.values()]
 six_ids = ["fam01.rows_are_records", "fam02.pages_disjoint",
            "fam03.repeats_are_duplicates", "fam04.promised_acyclic",
@@ -369,7 +375,7 @@ harness_text = (scaffold_manifest + "\n" + scaffold_notes + "\n"
                 + RA._CAP_FMT)
 needles = []
 for fam in sorted(cmap["families"]):
-    for pred in cmap["families"][fam]["limitation_predicates"]:
+    for pred in cmap["families"][fam]["requires_predicates"]:
         needles.append(" ".join(pred))
 leaks2 = sorted({ndl for ndl in needles if ndl in harness_text})
 leaks = leaks1 + leaks2

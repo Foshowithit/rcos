@@ -62,19 +62,22 @@ C1A_CORE = ("Walk a directory inventory: for every pathname written in "
             "the inventory, stat the file where it lives, weigh it in "
             "bytes, fingerprint its contents, then sort each line into "
             "verified or broken.")
-C1A_PRE = ["The inventory arrives in the house v1 arrangement of "
-           "pathnames plus weights plus fingerprints.",
-           "Each pathname names a nearby document that can be opened "
-           "and weighed."]
+C1A_PRE = [{"requires": "The inventory arrives in the house v1 "
+                         "arrangement of pathnames plus weights plus "
+                         "fingerprints."},
+           {"requires": "Each pathname names a nearby document that can "
+                         "be opened and weighed."}]
 C1A_CONTRACT = {"semantic_core": C1A_CORE, "preconditions": list(C1A_PRE),
                 "limitations": []}
 # "Long substring" bar: nothing shared with K.md at or above this
 # length (measured max on this text is 8 chars).
 C1A_SUBSTRING_BAR = 24
 
-# C1-3 green control: a predicate-matching fam05 limitation (the frozen
-# bridge: only a limitation naming the T4's applicability condition
-# supports the id) -> discriminating, through the reframed surface.
+# C1-3 green control: a predicate-matching fam05 requires claim (the
+# frozen affirmative bridge: only a requires claim naming the T4's
+# applicability condition supports the id) -> discriminating, through
+# the reframed surface. The control still carries one real limitation
+# (free prose, never evidence).
 _B_CORE = ("Audit a file listing: measure every named file on disk and "
            "match its byte count and digest against the listing, then file "
            "each entry as good or bad.")
@@ -83,9 +86,12 @@ _B_PRE = ["The listing follows the v1 layout of on-disk paths plus byte "
           "Each named file sits on local disk and can be opened for "
           "reading."]
 LIMITATION_CONTRACT = {
-    "semantic_core": _B_CORE, "preconditions": list(_B_PRE),
-    "limitations": ["Synthetic H21 limitation: only valid for local v1 "
-                    "sha256 manifests."]}
+    "semantic_core": _B_CORE,
+    "preconditions": [{"requires": p} for p in _B_PRE] + [
+        {"requires": "Synthetic H21 requires: only valid for local v1 "
+                     "sha256 manifests."}],
+    "limitations": ["Synthetic H21 limitation: rejected payloads are "
+                    "reported without detail."]}
 
 
 def check(name, cond, extra=""):
@@ -163,7 +169,7 @@ def run_cli(root):
 # --- C1-0(a): independently worded producer text still promotes -------
 kmd_text = open(os.path.join(FAMC, "families", "fam05", "K.md")).read()
 shared = max([lcs_len(C1A_CORE, kmd_text)]
-             + [lcs_len(p, kmd_text) for p in C1A_PRE])
+             + [lcs_len(p["requires"], kmd_text) for p in C1A_PRE])
 check("C1-0(a) independently worded core shares no long substring "
       "with K.md",
       shared < C1A_SUBSTRING_BAR, f"max shared run = {shared}")

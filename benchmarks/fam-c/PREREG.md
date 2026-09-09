@@ -479,6 +479,44 @@ artifact) invalidates the affected runs. If a locked capability lacks
 the ID its family's T4 relies on, that T4 is non-discriminating
 (report with cause; the specificity gate counts remaining families).
 
+Forward amendment AMEND-2026-09-08-contract-v2 (2026-09-08): the
+producer capability-contract shape is v2. `execution_payload.
+capability_contract` is `{"semantic_core": <nonempty str>,
+"preconditions": [{"requires": <nonempty str>}, ...], "limitations":
+[<str>, ...]}`. All three keys must be PRESENT; `preconditions` and
+`limitations` may each be an empty list (an empty `preconditions` list
+means "no declared applicability requirement" and is therefore
+non-discriminating, never a malformed contract). Each precondition is
+an object with exactly the key `requires`; a bare-string precondition,
+an object with any other key, or a blank `requires` text is refused at
+promotion with a named reason (no silent skips, no backward
+compatibility with the v1 string list). The lock records the
+producer's ACTUAL contract bytes unchanged, and the consumer manifest
+carries the same v2 shape verbatim. Reason for the shape change: the
+polarity fix below — conformance now maps ONLY affirmative requires
+claims, so the contract must carry applicability requirements in a
+structurally positive form that a negated limitation cannot mimic.
+
+Forward amendment AMEND-2026-09-08-requires-polarity (2026-09-08):
+the conformance bridge frozen above is superseded by the AFFIRMATIVE
+requires bridge BEFORE any run it governs. The governed map
+benchmarks/fam-c/T4-CONFORMANCE.json is version t4-conformance-v2
+under the frozen rule normalize-affirmative-requires-v2: ONLY
+`preconditions[*].requires` texts are conformance candidates and
+`limitations` are NEVER consulted (they stay free prose, recorded
+verbatim in the lock). A requires text is ADMISSIBLE unless one of its
+normalized tokens is in the frozen top-level `negation_markers` list;
+an inadmissible (negated) text contributes to NO family. A predicate
+matches a requires text iff every predicate token is present as a
+whole token (order irrelevant, no stemming, no synonyms, no substring
+matching); a family T4 is supported iff any admissible requires text
+matches any of that family's `requires_predicates` (per-family key
+renamed from `limitation_predicates`, same predicate syntax);
+non-discriminating iff its T4 id is not in the supported set. The v1
+map bytes are superseded, not edited in place; the v1-to-v2 transition
+is chained in PROTOCOL-LOCK.json. The six T4 semantic IDs frozen above
+are unchanged by this amendment (no ID added, removed, or renamed).
+
 ---
 # 11. Manifest lifecycle
 

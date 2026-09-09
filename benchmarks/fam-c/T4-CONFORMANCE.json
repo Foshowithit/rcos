@@ -1,18 +1,156 @@
 {
- "version": "t4-conformance-v1",
- "rule": "normalize-token-all-present-v1",
+ "version": "t4-conformance-v2",
+ "rule": "normalize-affirmative-requires-v2",
+ "negation_markers": [
+  "absent",
+  "arent",
+  "cannot",
+  "cant",
+  "couldnt",
+  "didnt",
+  "disallow",
+  "disallowed",
+  "disallows",
+  "doesnt",
+  "dont",
+  "except",
+  "exclude",
+  "excluded",
+  "excludes",
+  "excluding",
+  "false",
+  "forbid",
+  "forbidden",
+  "forbids",
+  "inapplicable",
+  "invalid",
+  "isnt",
+  "lacking",
+  "lacks",
+  "missing",
+  "n_a",
+  "na",
+  "negated",
+  "negation",
+  "neither",
+  "never",
+  "no",
+  "non",
+  "none",
+  "nor",
+  "not",
+  "not_required",
+  "null",
+  "prohibit",
+  "prohibited",
+  "prohibits",
+  "unapplicable",
+  "unavailable",
+  "unless",
+  "unsupported",
+  "void",
+  "without",
+  "wont"
+ ],
  "families": {
-  "fam01": {"t4_semantic_id": "fam01.rows_are_records",
-            "limitation_predicates": [["summary", "row"], ["aggregate", "record"], ["aggregate", "row"]]},
-  "fam02": {"t4_semantic_id": "fam02.pages_disjoint",
-            "limitation_predicates": [["disjoint", "pages"], ["pages", "disjoint"], ["no", "overlap"]]},
-  "fam03": {"t4_semantic_id": "fam03.repeats_are_duplicates",
-            "limitation_predicates": [["repeats", "duplicates"], ["identical", "repeats"], ["dedup"]]},
-  "fam04": {"t4_semantic_id": "fam04.promised_acyclic",
-            "limitation_predicates": [["acyclic"], ["acyclicity"], ["dag"], ["topological"]]},
-  "fam05": {"t4_semantic_id": "fam05.local_v1_sha256",
-            "limitation_predicates": [["local", "sha256"], ["v1", "sha256"], ["local", "v1"], ["sha256", "basis"]]},
-  "fam06": {"t4_semantic_id": "fam06.common_unit_basis",
-            "limitation_predicates": [["unit", "basis"], ["same", "units"], ["common", "unit"], ["conversion"]]}
+  "fam01": {
+   "t4_semantic_id": "fam01.rows_are_records",
+   "requires_predicates": [
+    [
+     "summary",
+     "row"
+    ],
+    [
+     "aggregate",
+     "record"
+    ],
+    [
+     "aggregate",
+     "row"
+    ]
+   ]
+  },
+  "fam02": {
+   "t4_semantic_id": "fam02.pages_disjoint",
+   "requires_predicates": [
+    [
+     "pages",
+     "disjoint"
+    ]
+   ]
+  },
+  "fam03": {
+   "t4_semantic_id": "fam03.repeats_are_duplicates",
+   "requires_predicates": [
+    [
+     "repeats",
+     "duplicates"
+    ],
+    [
+     "identical",
+     "repeats"
+    ],
+    [
+     "dedup"
+    ]
+   ]
+  },
+  "fam04": {
+   "t4_semantic_id": "fam04.promised_acyclic",
+   "requires_predicates": [
+    [
+     "acyclic"
+    ],
+    [
+     "acyclicity"
+    ],
+    [
+     "topological",
+     "order"
+    ],
+    [
+     "input",
+     "acyclic"
+    ]
+   ]
+  },
+  "fam05": {
+   "t4_semantic_id": "fam05.local_v1_sha256",
+   "requires_predicates": [
+    [
+     "local",
+     "sha256"
+    ],
+    [
+     "v1",
+     "sha256"
+    ],
+    [
+     "local",
+     "v1"
+    ],
+    [
+     "sha256",
+     "basis"
+    ]
+   ]
+  },
+  "fam06": {
+   "t4_semantic_id": "fam06.common_unit_basis",
+   "requires_predicates": [
+    [
+     "unit",
+     "basis"
+    ],
+    [
+     "same",
+     "units"
+    ],
+    [
+     "common",
+     "unit"
+    ]
+   ]
+  }
  }
 }

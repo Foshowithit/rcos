@@ -42,7 +42,9 @@ _EST = dict(
     producer_identity={"lane": "P", "adapter": "router9-openai-chat-v2"},
     protocol_lock_sha256="2" * 64, execution_lock_sha256="3" * 64,
     semantic_core="fixture semantic core",
-    preconditions=["fixture precondition"],
+    # A12d slice D2: v2 producer shape (requires objects; limitations
+    # stay free-prose strings).
+    preconditions=[{"requires": "fixture precondition"}],
     limitations=["synthetic fixture, never an estimand artifact"],
     limitation_present=True, non_discriminating=False,
     conformance_cause=("h3 fixture: synthetic limitation present, T4 "

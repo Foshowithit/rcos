@@ -33,8 +33,12 @@ LOCK_REQUIRED_FIELDS = (
     "execution_lock_sha256",     # 64hex, matches the frozen execution lock
     "artifacts",                 # {name: 64hex} exactly the promoted set
     "semantic_core",             # nonempty str
-    "preconditions",             # list[str] (may be empty)
-    "limitations",               # list[str] (may be empty)
+    # A12d slice D2 (auditor A12d.3/A12d.4): producer applicability
+    # requirements in the structurally positive v2 form.
+    "preconditions",             # list[{"requires": nonempty str}]
+                                 # (may be empty: no declared
+                                 # applicability requirement)
+    "limitations",               # list[str] (may be empty; free prose)
     # A12b.6 actual-contract conformance (auditor rule: the lock records
     # the contract the producer ACTUALLY shipped, and conformance is
     # checked against that contract):
@@ -144,23 +148,35 @@ def verify_lock(lock, expect=None, fam_c_dir=None):
                    f"string, got {sc!r}")
     for f in ("preconditions", "limitations"):
         v = lock.get(f)
-        if v is not None and (not isinstance(v, list)
-                              or not all(isinstance(x, str) for x in v)):
+        if f == "preconditions":
+            if v is not None and (not isinstance(v, list)
+                                  or not all(
+                                      isinstance(x, dict)
+                                      and set(x) == {"requires"}
+                                      and isinstance(x.get("requires"), str)
+                                      and x["requires"].strip()
+                                      for x in v)):
+                out.append("LOCK-INADMISSIBLE: preconditions must be a "
+                           "list of {\"requires\": nonempty str} objects "
+                           f"(v2 shape), got {v!r}")
+        elif v is not None and (not isinstance(v, list)
+                                or not all(isinstance(x, str) for x in v)):
             out.append(f"LOCK-INADMISSIBLE: {f} must be a list of strings, "
                        f"got {v!r}")
     # A12b.6 actual-contract conformance. The lock records the producer's
-    # ACTUAL limitations plus the derived conformance verdict — never a
+    # ACTUAL contract plus the derived conformance verdict — never a
     # claim smuggled from hidden auditor text (the controller derives
     # these mechanically from the producer-declared contract; the
     # conformance check reads the lock only):
     #   * limitation_present must be a bool and must equal
     #     bool(limitations) — lying about presence voids the lock;
     #   * non_discriminating must be a bool;
-    #   * conformance_cause must be a nonempty committed reason;
-    #   * a lock that CLAIMS discrimination (non_discriminating False)
-    #     while the limitation is absent (empty limitations) is
-    #     LOCK-INADMISSIBLE — an empty contract must never silently lock
-    #     as discriminating.
+    #   * conformance_cause must be a nonempty committed reason.
+    # A12d slice D2: discrimination rides the affirmative requires
+    # claims, never limitations — so no rule here may void a lock for
+    # carrying empty limitations alongside a discriminating verdict
+    # (that is the legitimate C2 shape: limitations are free prose).
+    # Discrimination is set membership, checked below.
     lim = lock.get("limitations")
     lim_present = lock.get("limitation_present")
     non_disc = lock.get("non_discriminating")
@@ -179,21 +195,17 @@ def verify_lock(lock, expect=None, fam_c_dir=None):
     if cause is not None and not (isinstance(cause, str) and cause.strip()):
         out.append("LOCK-INADMISSIBLE: conformance_cause must be a "
                    f"nonempty committed reason, got {cause!r}")
-    if isinstance(lim, list) and not lim and non_disc is False:
-        out.append("LOCK-INADMISSIBLE: lock claims a discriminating T4 "
-                   "(non_discriminating is False) while the locked "
-                   "contract carries no limitations — an absent "
-                   "limitation cannot discriminate")
-    # A12c slice C2 (auditor P0 #6): the frozen bridge. The verdict is
-    # set membership over the supported id set, never bare presence:
+    # A12c slice C2 (auditor P0 #6), A12d slice D2 (auditor A12d.3): the
+    # frozen bridge. The verdict is set membership over the supported id
+    # set, never bare presence:
     #   * supported_t4_ids must be a list of strings (an empty list is
     #     a real verdict — presence, not truthiness);
     #   * non_discriminating must equal (t4_semantic_id not in
     #     supported_t4_ids);
     #   * a lock claiming a discriminating T4 whose id is NOT in
-    #     supported_t4_ids is LOCK-INADMISSIBLE naming the id (this
-    #     generalizes the claim-without-limitation rule above: an
-    #     unrelated limitation supports nothing).
+    #     supported_t4_ids is LOCK-INADMISSIBLE naming the id (an
+    #     unsupported requires claim discriminates nothing; limitations
+    #     never support an id).
     sup = lock.get("supported_t4_ids")
     if sup is not None and (not isinstance(sup, list)
                             or not all(isinstance(x, str) and x.strip()
@@ -209,10 +221,12 @@ def verify_lock(lock, expect=None, fam_c_dir=None):
                        f"supported_t4_ids {sorted(sup)!r}) (the frozen "
                        f"bridge: discrimination is set membership)")
         if non_disc is False and _tid not in sup:
+            _nolim = (" (the locked contract carries no limitations)"
+                      if isinstance(lim, list) and not lim else "")
             out.append(f"LOCK-INADMISSIBLE: lock claims a discriminating "
                        f"T4 {_tid!r} whose id is not in supported_t4_ids "
-                       f"{sorted(sup)!r} — an unsupported limitation "
-                       f"cannot discriminate")
+                       f"{sorted(sup)!r} — an unsupported requires claim "
+                       f"cannot discriminate{_nolim}")
     # The lock's verdict is bound to the governed map bytes live on
     # disk: a map edited without re-minting the lock refuses here
     # (preflight V2 owns the before-any-model-call refusal; this is

@@ -96,7 +96,9 @@ def write_lock(c, grade="harness-validation", engine="print('K')\n"):
                  producer_identity={"adapter": "router9-openai-chat-v2"},
                  protocol_lock_sha256="3" * 64,
                  execution_lock_sha256="4" * 64,
-                 semantic_core="K core", preconditions=["p"],
+                 # A12d slice D2: v2 producer shape for preconditions.
+                 semantic_core="K core",
+                 preconditions=[{"requires": "p"}],
                  limitations=["l"], t4_semantic_id="T4-UNRATIFIED-x",
                  limitation_present=True, non_discriminating=False,
                  conformance_cause=("h16 lifecycle fixture: synthetic "

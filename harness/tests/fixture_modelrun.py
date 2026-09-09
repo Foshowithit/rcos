@@ -156,10 +156,12 @@ def _clean_run_dir(d):
 # K.md at all (no hidden-contract reader lives in this module: the real
 # producer authors its own words from visible information, and the
 # K.md-mutation-invariance invariant requires consumer bytes to hold
-# still when hidden wording changes). Shapes mirror the retired reader
-# (non-empty core, non-empty preconditions, empty limitations for all six
-# families, so every default lock stays non-discriminating exactly as
-# before). Callers testing a limitation-carrying variant pass an explicit
+# still when hidden wording changes). A12d slice D2: the v2 shape
+# (non-empty core, preconditions as [{"requires": str}, ...] objects,
+# empty limitations for all six families, so every default lock stays
+# non-discriminating exactly as before — each default requires text is
+# checked against the frozen requires_predicates to match none of them).
+# Callers testing a requires-carrying variant pass an explicit
 # `producer_contract=` declaration instead.
 PRODUCER_CONTRACTS = {
     "fam01": (
@@ -167,55 +169,60 @@ PRODUCER_CONTRACTS = {
         "turn dollar figures into integer cents, expand tag strings "
         "into tag lists, and return uniform records carrying an id, a "
         "name, a cent amount, and tags, in the same order as the input.",
-        ["Every input row stands for one record; rolled-up summary rows "
-         "are excluded.",
-         "Money values are ordinary US-dollar decimals with a single "
-         "currency throughout.",
-         "Any tags present arrive as strings joined by a delimiter."],
+        [{"requires": "Every input row stands for one record; rolled-up "
+                      "total lines are left out."},
+         {"requires": "Money values are ordinary US-dollar decimals with "
+                       "a single currency throughout."},
+         {"requires": "Any tags present arrive as strings joined by a "
+                       "delimiter."}],
         []),
     "fam02": (
         "Pull every page of a paged listing: chase the next-page cursor "
         "until it runs out, retry briefly on hiccups, and join all "
         "fetched entries into one collection.",
-        ["No entry shows up on more than one page.",
-         "Each task uses one stable response shape and one steady paging "
-         "marker.",
-         "Any hiccup is short-lived and announced up front.",
-         "A task-supplied duplicate policy never widens this: "
-         "overlapping pages stay out of scope no matter what a POLICY "
-         "file says."],
+        [{"requires": "Each entry shows up on exactly one page."},
+         {"requires": "Each task uses one stable response shape and one "
+                       "steady paging marker."},
+         {"requires": "Any hiccup is short-lived and announced up front."},
+         {"requires": "A task-supplied duplicate policy never widens "
+                       "this: overlapping pages stay out of scope no "
+                       "matter what a POLICY file says."}],
         []),
     "fam03": (
         "Deduplicate an event window: tally the arrivals, fold exact "
         "repeats into shared identity buckets, and report the overall "
         "count, the distinct count, and how many were dropped.",
-        ["A repeat means the same happening was seen twice, never two "
-         "separate happenings or a status change.",
-         "Each task spells out its own identity rule in its prompt, and "
-         "that rule does not shift mid-task."],
+        [{"requires": "A repeat means the same happening was seen twice, "
+                      "never two separate happenings or a status change."},
+         {"requires": "Each task spells out its own identity rule in its "
+                       "prompt, and that rule holds steady for the whole "
+                       "task."}],
         []),
     "fam04": (
         "Check a directed graph for cycles and, when it is clean, list "
         "its nodes in a valid execution order.",
-        ["The caller guarantees the graph has no cycles; this step "
-         "double-checks that promise instead of finding cycles.",
-         "Every edge means its tail must come before its head."],
+        [{"requires": "The caller guarantees the graph has no cycles; "
+                      "this step double-checks that promise instead of "
+                      "finding cycles."},
+         {"requires": "Every edge means its tail must come before its "
+                       "head."}],
         []),
     "fam05": (
         "Audit a file listing: measure every named file on disk and "
         "match its byte count and digest against the listing, then file "
         "each entry as good or bad.",
-        ["The listing follows the v1 layout of on-disk paths plus byte "
-         "counts plus digests.",
-         "Each named file sits on local disk and can be opened for "
-         "reading."],
+        [{"requires": "The listing follows the v1 layout of on-disk "
+                      "paths plus byte counts plus digests."},
+         {"requires": "Each named file sits on local disk and can be "
+                       "opened for reading."}],
         []),
     "fam06": (
         "Reconcile two ledgers: pair rows by identifier, then call out "
         "the pairs that agree, the rows missing on one side, and the "
         "rows whose amounts disagree, quoting both figures.",
-        ["The two sources count in the same units.",
-         "Identifiers repeat nowhere inside either source."],
+        [{"requires": "Both ledgers tally in one shared measure."},
+         {"requires": "Identifiers repeat nowhere inside either "
+                       "source."}],
         []),
 }
 
@@ -306,11 +313,15 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
     positive control threads real checker shas/rc/verdict here).
 
     `producer_contract`: an explicit producer declaration
-    {"semantic_core": str, "preconditions": [str, ...], "limitations":
-    [str, ...]} for callers testing a non-default contract (e.g. a
-    limitation-carrying variant). When absent, the stand-in declares its
-    independently written per-family text (PRODUCER_CONTRACTS) — never
-    hidden K.md wording.
+    {"semantic_core": str, "preconditions": [{"requires": str}, ...],
+    "limitations": [str, ...]} for callers testing a non-default contract
+    (e.g. a requires-carrying variant). The declaration is recorded
+    VERBATIM into the T0 arrival (even a malformed one: shape refusal is
+    the promotion controller's job, with named PROMOTION-DENY reasons —
+    the fixture must never pre-empt it, or malformed-contract tests
+    could not drive the real refusal path). When absent, the stand-in
+    declares its independently written per-family text
+    (PRODUCER_CONTRACTS) — never hidden K.md wording.
 
     `candidate_input_tamper`: None (default — the persisted manifest and
     the event agree) or "entry-sha" (A12d D1-C4 test support — the
@@ -364,26 +375,13 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
         # hidden K.md — and the order.py governance cross-check compares
         # the receipt against this same declaration verbatim.
         if producer_contract is not None:
-            if (not isinstance(producer_contract, dict)
-                    or not isinstance(
-                        producer_contract.get("semantic_core"), str)
-                    or not producer_contract["semantic_core"].strip()
-                    or not isinstance(
-                        producer_contract.get("preconditions"), list)
-                    or not producer_contract["preconditions"]
-                    or not all(isinstance(x, str) and x.strip()
-                               for x in producer_contract["preconditions"])
-                    or not isinstance(
-                        producer_contract.get("limitations"), list)
-                    or not all(isinstance(x, str)
-                               for x in producer_contract["limitations"])):
+            if not isinstance(producer_contract, dict):
                 raise ValueError(
-                    "fixture misuse: producer_contract must be "
-                    "{semantic_core: nonempty str, preconditions: "
-                    "nonempty [str, ...], limitations: [str, ...]}")
-            _core = producer_contract["semantic_core"]
-            _pre = list(producer_contract["preconditions"])
-            _lim = list(producer_contract["limitations"])
+                    "fixture misuse: producer_contract must be a dict "
+                    "(its shape — including malformed shapes modeled on "
+                    "purpose — is judged by the promotion controller, "
+                    "never here)")
+            payload["capability_contract"] = dict(producer_contract)
         else:
             try:
                 _core, _pre, _lim = PRODUCER_CONTRACTS[cell["family"]]
@@ -391,9 +389,10 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                 raise ValueError(
                     "fixture misuse: no stand-in producer contract for "
                     f"family {cell['family']!r}") from None
-        payload["capability_contract"] = {"semantic_core": _core,
-                                          "preconditions": list(_pre),
-                                          "limitations": list(_lim)}
+            payload["capability_contract"] = {
+                "semantic_core": _core,
+                "preconditions": [dict(p) for p in _pre],
+                "limitations": list(_lim)}
     arrival = {"decision": decision, "execution_payload": payload,
                "notes": "fixture_modelrun (NOT evidence)"}
     with open(os.path.join(d, "arrival.json"), "w") as f:

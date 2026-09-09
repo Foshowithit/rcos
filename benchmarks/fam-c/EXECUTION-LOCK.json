@@ -3,27 +3,27 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "123754485207d758c925725a4f9a6ea4f274900f105594f970532f6989265f88",
+ "harness_manifest_sha256": "532476dce36d0b7d89523c9eabb5e5d3d72ef4042fa401273b307f02ed31b36b",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
   "harness/chain.py": "cd5ba7b92c889e239d2513276a53483fd6007d3f147809cab583d039850a3df5",
-  "harness/lock.py": "a37a231cfe9b5bbcba837729c15ee7c3fd877d15b22d2a2f6118576607858fa2",
+  "harness/lock.py": "35f223238382a84331e255695118a2f5987bff32d3aa302126189e848aea9c07",
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "63d502e4701916e5ae2cb4561c8253dc25e002d98ac30ea2eaf5679195378383",
-  "harness/order.py": "750dd29bcdcc55fff16fa6682cb2924612b11f753971f224d9611689295d6588",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "d56742951341b88ae5070812b6380221d43ad53f0e37940db0bc85525e9d838c",
+  "harness/order.py": "e40710d5fea5d09c8e41492a3c2a5c6bbceed64ec4974b6d6f08f1946b8c7149",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "5f5b7a1c40656e6ef4a0678e469ebd5c650c3d4d80de1e7b4bf3dc571ed1b009",
+  "harness/promotion.py": "80d9a91b8c9cf8a95ebc5b39254455b23ff9e5170af056f211d00b92008a09e5",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
   "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
   "harness/specificity.py": "57f6381249ef4bc82744e3244ad05653d6515743f18c58845efeb04bae30e5d1",
-  "harness/conformance.py": "dc49da6a0bea9418ce28da57b5901b0e6f6b7b72c4ab3dcf7121d5911154e507"
+  "harness/conformance.py": "d9552ab32e6321b5ffa1625e10971c99645c58eb2e05efbe1496fbbc5ea6bf71"
  },
  "amendments": [
   {
@@ -526,6 +526,35 @@
    },
    "reason": "A12d slice D1: missing adapter input stages EMPTY and the candidate still runs (failure is the evidence); candidate-input-missing retained only for mid-flight vanishing",
    "slice": "a12d-slice-d1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "123754485207d758c925725a4f9a6ea4f274900f105594f970532f6989265f88",
+   "to_manifest": "532476dce36d0b7d89523c9eabb5e5d3d72ef4042fa401273b307f02ed31b36b",
+   "files": {
+    "harness/lock.py": {
+     "from_sha": "a37a231cfe9b5bbcba837729c15ee7c3fd877d15b22d2a2f6118576607858fa2",
+     "to_sha": "35f223238382a84331e255695118a2f5987bff32d3aa302126189e848aea9c07"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "63d502e4701916e5ae2cb4561c8253dc25e002d98ac30ea2eaf5679195378383",
+     "to_sha": "d56742951341b88ae5070812b6380221d43ad53f0e37940db0bc85525e9d838c"
+    },
+    "harness/order.py": {
+     "from_sha": "750dd29bcdcc55fff16fa6682cb2924612b11f753971f224d9611689295d6588",
+     "to_sha": "e40710d5fea5d09c8e41492a3c2a5c6bbceed64ec4974b6d6f08f1946b8c7149"
+    },
+    "harness/promotion.py": {
+     "from_sha": "5f5b7a1c40656e6ef4a0678e469ebd5c650c3d4d80de1e7b4bf3dc571ed1b009",
+     "to_sha": "80d9a91b8c9cf8a95ebc5b39254455b23ff9e5170af056f211d00b92008a09e5"
+    },
+    "harness/conformance.py": {
+     "from_sha": "dc49da6a0bea9418ce28da57b5901b0e6f6b7b72c4ab3dcf7121d5911154e507",
+     "to_sha": "d9552ab32e6321b5ffa1625e10971c99645c58eb2e05efbe1496fbbc5ea6bf71"
+    }
+   },
+   "reason": "A12d slice D2 (auditor A12d.3/A12d.4): producer contract schema v2 (preconditions as {requires} objects, empty lists legal) + affirmative-requires conformance bridge v2 (negation markers, requires_predicates, limitations never evidence) in harness/conformance.py, harness/promotion.py, harness/lock.py, harness/order.py; T0 prompt states the v2 shape (benchmarks/fam-c/harness-run/run_arm_h1.py)",
+   "slice": "a12d-slice-d2",
    "status_after": "open-round2"
   }
  ],

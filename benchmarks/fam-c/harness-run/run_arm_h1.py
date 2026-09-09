@@ -215,18 +215,24 @@ _OUT = ('\nOutput one JSON object with the keys "decision", '
         'choose use_capability only when a capability-access block is present '
         'and applicable; otherwise choose fresh. '
         'No explanations, no code fences.')
-# A12c slice B (B1) — T0 producer instruction gains a required
-# `capability_contract` (T0 ONLY). The T0 acquisition prompt requests, in
-# addition to `solver_py`, a `capability_contract` object with the keys
-# `semantic_core` (non-empty string: the producer's own statement of what
-# the reusable capability does), `preconditions` (list of strings, may be
-# empty), and `limitations` (list of strings, may be empty). The wording
-# names only producer-visible concepts — never hidden files, semantic
-# IDs, conformance, ratification, or any auditor artifact — and states
-# that omitting the contract makes the run unpromotable. Every
-# non-acquisition arm prompt (correct/disabled, B/D fresh controls) keeps
-# the byte-identical shared _OUT below and is unchanged by this slice;
-# the T1 acquisition instruction (_OUT_T1) is likewise unchanged.
+# A12c slice B (B1) + A12d slice D2 (auditor A12d.4 + A12d.3) — T0
+# producer instruction carries a required `capability_contract` (T0
+# ONLY). The T0 acquisition prompt requests, in addition to `solver_py`,
+# a `capability_contract` object with the keys `semantic_core`
+# (non-empty string: the producer's own statement of what the reusable
+# capability does), `preconditions` (list of {"requires": <non-empty
+# string>} objects, possibly empty: one object per applicability
+# requirement, with exactly the single key "requires"), and
+# `limitations` (list of strings, possibly empty: free prose about what
+# the capability does not cover). An empty `preconditions` list means
+# "no declared applicability requirement" and is valid, never
+# malformed. The wording names only producer-visible concepts — never
+# hidden files, semantic IDs, conformance, ratification, or any auditor
+# artifact — and states that omitting the contract makes the run
+# unpromotable. Every non-acquisition arm prompt (correct/disabled, B/D
+# fresh controls) keeps the byte-identical shared _OUT below and is
+# unchanged by this slice; the T1 acquisition instruction (_OUT_T1) is
+# likewise unchanged.
 _OUT_T0 = ('\nOutput one JSON object with the keys "decision", '
         '"execution_payload", "notes". "decision" is exactly '
         '"use_capability" or "fresh". When "decision" is "use_capability", '
@@ -238,9 +244,13 @@ _OUT_T0 = ('\nOutput one JSON object with the keys "decision", '
         'The capability contract has the keys "semantic_core", '
         '"preconditions", "limitations": "semantic_core" is a non-empty '
         'string stating in your own words what the reusable capability '
-        'does; "preconditions" is a list of strings (possibly empty) '
-        'stating when it applies; "limitations" is a list of strings '
+        'does; "preconditions" is a list of objects of the exact shape '
+        '{"requires": <non-empty string>} (the list may be empty), one '
+        'object per applicability requirement with only the "requires" '
+        'key; "limitations" is a list of strings '
         '(possibly empty) stating what it does not cover. '
+        'An empty "preconditions" list means no declared applicability '
+        'requirement and is valid, never malformed. '
         'Write the contract from the task in front of you, in your own '
         'words about the reusable capability. '
         'Omitting the capability contract makes the run unpromotable '
@@ -1628,7 +1638,8 @@ def selfcheck_wire():
             producer_identity={"lane": "Q", "builder": "selfcheck"},
             protocol_lock_sha256="3" * 64, execution_lock_sha256="4" * 64,
             semantic_core="selfcheck fixture: no semantic claim",
-            preconditions=["fixture"], limitations=["fixture"],
+            preconditions=[{"requires": "fixture"}],
+            limitations=["fixture"],
             limitation_present=True, non_discriminating=False,
             conformance_cause=("selfcheck fixture: synthetic limitation "
                                "present, T4 treated as discriminating"),

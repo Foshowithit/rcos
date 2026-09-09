@@ -1228,8 +1228,10 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     # hidden capability text. A receipt that rewrites the producer's declared text
     # is refused here, exactly as a non-frozen contract was before.
     # A12c slice C2 re-derives the conformance verdict from the same
-    # frozen declaration below (`_t0_lim`).
-    _t0_lim = None
+    # frozen declaration below (`_t0_pre_texts`); A12d slice D2 maps
+    # ONLY the affirmative preconditions[*].requires claims (never
+    # limitations).
+    _t0_pre_texts = None
     sc = r.get("semantic_core")
     if not isinstance(sc, str) or not sc.strip():
         out.append("promotion provenance: receipt has no semantic_core")
@@ -1247,7 +1249,12 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
             out.append("promotion provenance: T0 arrival unreadable for "
                        f"the contract cross-check: {e}")
         if isinstance(_t0_declared, dict):
-            _t0_lim = _t0_declared.get("limitations")
+            _t0_pre = _t0_declared.get("preconditions")
+            if isinstance(_t0_pre, list) and all(
+                    isinstance(p, dict) and set(p) == {"requires"}
+                    and isinstance(p.get("requires"), str)
+                    for p in _t0_pre):
+                _t0_pre_texts = [p["requires"] for p in _t0_pre]
             for _k in ("semantic_core", "preconditions", "limitations"):
                 if r.get(_k) != _t0_declared.get(_k):
                     out.append(f"promotion provenance: receipt {_k} is not "
@@ -1262,16 +1269,27 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
             hashlib.sha256(sc.encode()).hexdigest():
         out.append("promotion provenance: semantic_core_sha256 mismatch")
     for f in ("preconditions", "limitations"):
-        if not isinstance(r.get(f), list) or not all(
+        if f == "preconditions":
+            _pv = r.get(f)
+            if not isinstance(_pv, list) or not all(
+                    isinstance(x, dict) and set(x) == {"requires"}
+                    and isinstance(x.get("requires"), str)
+                    and x["requires"].strip() for x in _pv):
+                out.append("promotion provenance: preconditions must be "
+                           "a v2 list of {\"requires\": nonempty str} "
+                           "objects (possibly empty)")
+        elif not isinstance(r.get(f), list) or not all(
                 isinstance(x, str) for x in r[f]):
             out.append(f"promotion provenance: {f} must be a list of strings")
     # A12b.6 actual-contract conformance: the receipt carries the
-    # producer's ACTUAL limitations plus the derived verdict (the lock
+    # producer's ACTUAL contract plus the derived verdict (the lock
     # records exactly these; the conformance check reads the lock only,
     # never hidden capability text). limitation_present must equal
-    # bool(limitations); a receipt that claims discrimination
-    # (non_discriminating False) while the limitation is absent is
-    # refused — empty limitations never silently lock as discriminating.
+    # bool(limitations). A12d slice D2: discrimination rides the
+    # affirmative requires claims, never limitations — so an empty
+    # limitations list alongside a discriminating verdict is legitimate
+    # (limitations are free prose); only the re-derived set membership
+    # below judges the claim.
     _lim = r.get("limitations")
     _lp = r.get("limitation_present")
     _nd = r.get("non_discriminating")
@@ -1285,9 +1303,6 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     if not (isinstance(_cause, str) and _cause.strip()):
         out.append("promotion provenance: conformance_cause must be a "
                    "nonempty committed reason")
-    if isinstance(_lim, list) and not _lim and _nd is False:
-        out.append("promotion provenance: receipt claims a discriminating "
-                   "T4 while the locked contract carries no limitations")
     # A12c slice C2 (auditor P0 #6): RE-DERIVE the conformance verdict
     # from the T0 arrival declaration + the governed map (never trust
     # the receipt): recomputed non_discriminating, supported_t4_ids,
@@ -1306,13 +1321,13 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     if _cmap_err is not None:
         out.append("promotion provenance: governed T4-CONFORMANCE.json "
                    f"refuses: {_cmap_err}")
-    elif _t0_lim is None:
-        out.append("promotion provenance: T0 arrival declares no "
-                   "limitation list (conformance verdict not "
+    elif _t0_pre_texts is None:
+        out.append("promotion provenance: T0 arrival declares no v2 "
+                   "preconditions list (conformance verdict not "
                    "re-derivable)")
     else:
         try:
-            _re = _conf_verdict(cell["family"], _t0_lim, _cmap)
+            _re = _conf_verdict(cell["family"], _t0_pre_texts, _cmap)
             _re_err = None
         except Exception as e:                            # noqa: BLE001
             _re, _re_err = None, str(e)
