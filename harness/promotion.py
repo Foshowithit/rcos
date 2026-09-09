@@ -213,7 +213,7 @@ def _read_json(p):
 _ATOMIC_RE = re.compile(r"^[a-z0-9_.-]+$")
 
 
-def _producer_contract(t0_run_dir, vocabulary=None):
+def _producer_contract(t0_run_dir):
     """Read the PRODUCER-declared capability contract from the T0 arrival's
     own `execution_payload.capability_contract` ({semantic_core,
     preconditions, limitations}) — the SOLE source of the promoted
@@ -222,21 +222,26 @@ def _producer_contract(t0_run_dir, vocabulary=None):
     declaration bytes copied exactly (no normalization: the governance
     validator compares them verbatim). This function never touches K.md.
 
-    A12d slice D5 (auditor D4-post P0): the v4 shape is
+    A12d slice D6 (auditor D5-post P0): promotion validates STRUCTURAL
+    shape only and preserves arbitrary atomic producer tokens
+    verbatim. The v5 shape is
     `{"semantic_core": <nonempty str>,
       "preconditions": [{"requires_all": [<atomic tokens>]}, ...],
       "limitations": [<str>, ...]}`.  Both lists MAY be empty (an empty
     `preconditions` list means "no declared applicability requirement"
     and is non-discriminating, never malformed). Each precondition must
     be an object with EXACTLY the key `requires_all` carrying a list of
-    >=1 atomic tokens (`^[a-z0-9_.-]+$`, no duplicates, every token in
-    the frozen `atomic_vocabulary`); a bare-string precondition, the
-    retired `requires` key, an object with any other key, an empty
-    list, a non-atomic token, an out-of-vocabulary token, or a
-    duplicate is refused with a named PROMOTION-DENY under the
-    atomic-conjunction-v4 shape (backward compatibility is NOT
-    offered: no live promotion exists yet, and the failure is
-    explicit, never silent).
+    >=1 atomic tokens (`^[a-z0-9_.-]+$`, no duplicates). A bare-string
+    precondition, the retired `requires` key, an object with any other
+    key, an empty list, a non-atomic token, or a duplicate is refused
+    with a named PROMOTION-DENY under the atomic-conjunction-v5 shape
+    (backward compatibility is NOT offered: no live promotion exists
+    yet, and the failure is explicit, never silent). An unknown atom
+    (any token outside the auditor-side recognition set — e.g.
+    `manifest`, `when`) is NOT a promotion
+    defect: it promotes verbatim and is judged auditor-side by
+    conformance as non-conformance-bearing (zero supported ids).
+    Promotion never loads, reads, or consults the recognition set.
     """
     try:
         arrival = _read_json(os.path.join(t0_run_dir, "arrival.json"))
@@ -274,16 +279,15 @@ def _producer_contract(t0_run_dir, vocabulary=None):
     if not isinstance(pre, list):
         raise PermissionError(
             "PROMOTION-DENY producer capability contract preconditions "
-            "must be an atomic-conjunction-v4 shape list of "
+            "must be an atomic-conjunction-v5 shape list of "
             "{\"requires_all\": [atomic tokens]} objects "
             "(possibly empty)")
-    _vocab = set(vocabulary) if vocabulary is not None else None
     for entry in pre:
         if isinstance(entry, str):
             raise PermissionError(
                 "PROMOTION-DENY producer capability contract carries a "
                 "bare-string precondition "
-                f"{entry[:60]!r}: the atomic-conjunction-v4 shape "
+                f"{entry[:60]!r}: the atomic-conjunction-v5 shape "
                 "requires {\"requires_all\": [atomic tokens]} objects "
                 "(a bare string cannot carry the structural "
                 "conjunction, so a conditional clause could smuggle a "
@@ -292,7 +296,7 @@ def _producer_contract(t0_run_dir, vocabulary=None):
             raise PermissionError(
                 "PROMOTION-DENY producer capability contract carries a "
                 f"malformed precondition {str(entry)[:80]!r}: the "
-                "atomic-conjunction-v4 shape is exactly "
+                "atomic-conjunction-v5 shape is exactly "
                 "{\"requires_all\": [atomic tokens]} (the retired "
                 "\"requires\" key and every unknown key are refused)")
         _toks = entry.get("requires_all")
@@ -307,22 +311,20 @@ def _producer_contract(t0_run_dir, vocabulary=None):
                 raise PermissionError(
                     "PROMOTION-DENY producer capability contract "
                     "carries a non-atomic requires_all token "
-                    f"{_tok!r}: the atomic-conjunction-v4 shape admits "
+                    f"{_tok!r}: the atomic-conjunction-v5 shape admits "
                     "only ^[a-z0-9_.-]+$ tokens (a conditional clause "
                     "is structurally unrepresentable as conformance "
                     "evidence)")
-            if _vocab is not None and _tok not in _vocab:
-                raise PermissionError(
-                    "PROMOTION-DENY producer capability contract "
-                    "carries an out-of-vocabulary requires_all token "
-                    f"{_tok!r}: the atomic-conjunction-v4 shape admits "
-                    "only frozen atomic_vocabulary tokens")
+            # A12d slice D6: NO vocabulary gate here — an arbitrary
+            # atomic token (even one the auditor-side recognition set
+            # has never seen) promotes verbatim; conformance judges it
+            # non-bearing auditor-side.
         if len(set(_toks)) != len(_toks):
             _dup = next(t for t in _toks if _toks.count(t) > 1)
             raise PermissionError(
                 "PROMOTION-DENY producer capability contract carries "
                 "a duplicate requires_all token "
-                f"{_dup!r}: the atomic-conjunction-v4 shape admits no "
+                f"{_dup!r}: the atomic-conjunction-v5 shape admits no "
                 "duplicates")
     if not isinstance(lim, list) or not all(isinstance(x, str) for x in lim):
         raise PermissionError(
@@ -822,7 +824,7 @@ def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
                       core,
                       ""]
     contract_lines.append("preconditions:")
-    # A12d slice D5: preconditions are v4 {"requires_all": [tokens]}
+    # A12d slice D6: preconditions are v5 {"requires_all": [tokens]}
     # objects — the notes render the producer's token list joined by
     # spaces (never the dict repr), exactly as earlier notes rendered
     # the requires text.
@@ -994,15 +996,13 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     # supports the id.
     declared_limitations_present = bool(contract[2])
     cmap = _conformance.load(fam_c_dir)
-    _vocab = set(cmap.get("atomic_vocabulary") or [])
-    for _p in contract[1]:
-        for _tok in _p["requires_all"]:
-            if _tok not in _vocab:
-                raise PermissionError(
-                    "PROMOTION-DENY producer capability contract "
-                    "carries an out-of-vocabulary requires_all token "
-                    f"{_tok!r}: the atomic-conjunction-v4 shape admits "
-                    "only frozen atomic_vocabulary tokens)")
+    # A12d slice D6 (auditor D5-post P0): NO vocabulary gate — the
+    # contract above already survived structural validation (arbitrary
+    # atomic tokens preserved verbatim). The auditor-side recognition
+    # set is consulted ONLY inside conformance.verdict() below, which
+    # marks unknown-atom preconditions non-conformance-bearing; it
+    # never denies promotion. This controller does not read the
+    # recognition set at all.
     cverdict = _conformance.verdict(
         cell["family"],
         [p["requires_all"] for p in contract[1]], cmap,

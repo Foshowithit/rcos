@@ -221,6 +221,22 @@
    "reason": "A12d slice D5 (auditor D4-post P0/P1): forward amendment AMEND-2026-09-09-d5-atomic-conjunction freezing t4-conformance-v4 under atomic-conjunction-grammar-v4 and the capability-lock-v4 schema bump (declared_limitations_present rename)",
    "base": "a6cf516",
    "slice": "a12d-slice-d5"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": "f2d69276841c271119651e8fc16351bbab41a5421fdcb4cec737887cdce00dd0",
+   "to_sha": "a7e044a126b615521254b2b8494603970806213f82bfb7cc59ab604196bc9654",
+   "reason": "A12d slice D6 (auditor D5-post P0): forward amendment AMEND-2026-09-09-d6-vocabulary-role-split \u2014 governed map to t4-conformance-v5 under atomic-conjunction-grammar-v5 (key atomic_vocabulary renamed to recognized_conformance_atoms with the IDENTICAL 23-token value set: auditor-side recognition whitelist for conformance only, never a producer requirement; promotion validates structural shape only and preserves arbitrary atomic producer tokens; unknown atoms make the whole precondition non-conformance-bearing and NEVER deny promotion)",
+   "base": "9530bb1",
+   "slice": "a12d-slice-d6"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "b732647f61f35808e0e07cb4221998e75c2851180fd44070e4b25ee5851437c6",
+   "to_sha": "1fb9089161cee06d7e0d14971beaaba30209e8c298e4fe7c8d78550384dc23ae",
+   "reason": "A12d slice D6 (auditor D5-post P0): forward amendment AMEND-2026-09-09-d6-vocabulary-role-split freezing t4-conformance-v5 under atomic-conjunction-grammar-v5 (promotion structural-only, recognized_conformance_atoms auditor-side, unknown atoms non-bearing never denied, T0 prompt reveals no values)",
+   "base": "9530bb1",
+   "slice": "a12d-slice-d6"
   }
  ]
 }

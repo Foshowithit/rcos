@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""H22 — A12c slice C2 + A12d slice D5: the frozen STRUCTURAL
-requires_all->T4-id conformance bridge (auditor P0 #6, D4-post P0).
+"""H22 — A12c slice C2 + A12d slices D5/D6: the frozen STRUCTURAL
+requires_all->T4-id conformance bridge (auditor P0 #6, D4-post P0,
+D5-post P0).
 
 `non_discriminating = not bool(limitations)` is now wrong in general: an
 unrelated producer token list must leave the T4 non-discriminating, and
 limitations NEVER drive conformance at all. The frozen bridge (governed
-T4-CONFORMANCE.json under atomic-conjunction-grammar-v4, single
+T4-CONFORMANCE.json under atomic-conjunction-grammar-v5 (D6: the
+23-token set is the auditor-side recognized_conformance_atoms
+recognition whitelist; unknown atoms never deny promotion), single
 implementation harness/conformance.py, wired through
 promotion/lock/order/preflight) maps ONLY structural
 preconditions[*].requires_all token lists: an inadmissible token list
@@ -135,10 +138,10 @@ def prom_cell(root, family="fam05", universe="A"):
 
 # --- K1-K5: verdict proofs on the live governed map ---------------------
 cmap = CONF.load(FAMC)
-check("live governed map loads (version t4-conformance-v4, rule "
-      "atomic-conjunction-grammar-v4)",
-      cmap["version"] == "t4-conformance-v4"
-      and cmap["rule"] == "atomic-conjunction-grammar-v4"
+check("live governed map loads (version t4-conformance-v5, rule "
+      "atomic-conjunction-grammar-v5)",
+      cmap["version"] == "t4-conformance-v5"
+      and cmap["rule"] == "atomic-conjunction-grammar-v5"
       and cmap["conformance_map_sha256"] == LIVE_MAP_SHA)
 
 v = CONF.verdict("fam05", [], cmap)

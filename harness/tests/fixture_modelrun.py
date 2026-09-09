@@ -158,7 +158,7 @@ def _clean_run_dir(d):
 # K.md-mutation-invariance invariant requires consumer bytes to hold
 # still when hidden wording changes). A12d slice D5: the v4 shape
 # (non-empty core, preconditions as
-# [{"requires_all": [<atomic vocabulary tokens>]}, ...] objects, empty
+# [{"requires_all": [<atomic tokens>]}, ...] objects, empty
 # limitations for all six families, so every default lock stays
 # non-discriminating exactly as before — each default token set is
 # verified against the frozen requires_predicates to contain no complete

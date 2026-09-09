@@ -11,8 +11,9 @@ re-derivation -> CAPABILITY_LOCK), never a claim:
 
   C1  four negation-marker token lists, each as the ONLY precondition,
       yield EMPTY supported_t4_ids and non_discriminating True for ALL
-      six families — reported INADMISSIBLE with a named reason — and
-      are PROMOTION-DENY as contract entries (a conditional clause is
+      six families — reported non-bearing with a cause naming the unrecognized token — and
+      PROMOTE as contracts into non-conformance-bearing locks (D6:
+      unknown atoms never deny promotion; a conditional clause is
       structurally unrepresentable as conformance evidence);
   C2  three affirmative requires_all token lists each support EXACTLY
       their family's T4 and none of the other five;
@@ -27,7 +28,8 @@ re-derivation -> CAPABILITY_LOCK), never a claim:
       limitations) are each refused with a named PROMOTION-DENY;
   C6  polarity regression: limitations prose carrying negated words
       never flips an affirmative requires_all claim for another
-      family (and an inadmissible token list poisons its contract);
+      family (and an unrecognized-atom token list renders its
+      contract non-bearing, never denied);
   C7  an old-map lock (conformance_map_sha256 = v1 map sha) is
       inadmissible at lock verify and at order, and the engine is
       unloadable from it (readiness FAILURE: nothing downstream may
@@ -146,9 +148,10 @@ def refuse_reason(tag, contract):
 
 cmap = CONF.load(FAMC)
 
-# --- C1: negation-marker token lists are INADMISSIBLE -----------------
-# D5: negation is structurally unrepresentable as conformance evidence —
-# a negation-marker / non-vocabulary token refuses the whole precondition.
+# --- C1: unknown-atom token lists are NON-BEARING, never denied --------
+# D6: unknown atoms never deny promotion — each list below promotes
+# through the real path into a non-conformance-bearing lock whose cause
+# names the unrecognized token.
 NEGATIVES = [
     ["not", "local", "sha256"],
     ["unsupported", "acyclic"],
@@ -162,13 +165,17 @@ for i, neg in enumerate(NEGATIVES):
         fam_ok = fam_ok and v["supported_t4_ids"] == [] \
             and v["non_discriminating"] is True \
             and v["requires_inadmissible"] == 1
-    _reason = refuse_reason(f"C1n{i}", v4_contract([neg]))
+    _rootn, _recn, _lockn = mint(f"C1n{i}", v4_contract([neg]))
     check(f"C1 negated requires_all #{i + 1} {neg!r} is INADMISSIBLE "
-          f"(empty support, all families non-discriminating) and refused "
-          f"as a contract",
-          fam_ok and _reason is not None
-          and "PROMOTION-DENY" in _reason and neg[0] in _reason,
-          f"reason={str(_reason)[:140]!r}")
+          f"(empty support, all families non-discriminating), promotes, "
+          f"and locks non-bearing with a cause naming {neg[0]!r}",
+          fam_ok
+          and _lockn.get("non_discriminating") is True
+          and _lockn.get("supported_t4_ids") == []
+          and f"'{neg[0]}'" in (_lockn.get("conformance_cause") or "")
+          and _lockn.get("preconditions") == [{"requires_all": neg}],
+          f"sup={_lockn.get('supported_t4_ids')} "
+          f"cause={str(_lockn.get('conformance_cause'))[:140]!r}")
 
 # --- C2: affirmative requires_all lists support exactly one T4 -------
 POSITIVES = [

@@ -1,28 +1,39 @@
 #!/usr/bin/env python3
-"""H27 — A12d slice D5 acceptance: structural atomic conjunction v4 +
-stray-symlink closure + capability-lock-v4 field rename (auditor
-D4-post P0/P1/P1).
+"""H27 — A12d slice D6 acceptance: the vocabulary role split (auditor
+D5-post P0), on top of the D5 structural atomic conjunction v4 +
+stray-symlink closure + capability-lock-v4 field rename.
 
-The v3 grammar is conditional-clause blind (`when local use v1 sha256
-manifests; when remote use blake3 manifests` matches local+v1+sha256);
-the D4 stray walk drops symlinked parents; the v3 lock carries the
-stale `limitation_present` field. The v4 structural conjunction makes
-conditional clauses UNREPRESENTABLE as conformance evidence (refused
-at promotion, never supported, never negated), fails ANY unexpected
-symlink beneath state/ naming the exact path without following it, and
-renames the lock field to `declared_limitations_present`. Driven
-through the REAL production path (fixture T0/T1 builds -> promotion
-controller -> order provenance re-derivation -> CAPABILITY_LOCK),
-never a claim — both directions (refusal + support):
+D5 made conditional clauses UNREPRESENTABLE as conformance evidence and
+closed the symlinked-parent stray evasion — but promotion itself
+consulted the auditor-only 23-token `atomic_vocabulary` (derived from
+the hidden T4 predicate sets) and refused every producer token outside
+that hidden set, although the T0 prompt never reveals those values: an
+undocumented enum and a wording-style confound. D6 splits the roles:
 
-  D5a map / shape / attacks / positive control / six-family
-      no-overreach
+  promotion:   structural shape only, arbitrary atomic producer tokens
+               preserved verbatim (never reads the recognition set);
+  conformance: the 23-token set is the auditor-side
+               `recognized_conformance_atoms` whitelist; an unknown
+               atom makes its whole precondition non-conformance-bearing
+               (zero supported ids), never a promotion denial.
+
+Driven through the REAL production path (fixture T0/T1 builds ->
+promotion controller -> order provenance re-derivation ->
+CAPABILITY_LOCK), never a claim — both directions (promotion +
+non-bearing verdicts):
+
+  D6a map / renamed key / unchanged value set / structural refusals
+  D6b auditor acceptance attacks (3-known+1-unknown, all-unknown),
+      when/either/or as unrecognized atoms, promotion vocab-freedom
+  D5a conditional-as-limitations prose still gives no support
+  D5a positive control still discriminating for exactly
+      fam05.local_v1_sha256; six-family no-overreach walk READY
   D5b parent / dangling / deep symlinks fail; expected-path
       capability symlink stays legal
   D5c v4 schema / rename / refusals / specificity indifference
 
 Stdlib only. Hermetic fixtures in throwaway dirs (live-tree reads are
-read-only). Prints `H27 D5 smoke: N/N closed`; exits non-zero on any
+read-only). Prints `H27 D6 smoke: N/N closed`; exits non-zero on any
 failure.
 """
 import hashlib
@@ -170,47 +181,64 @@ def capdir(root, block, universe, family):
 
 cmap = CONF.load(FAMC)
 
-# --- D5a: the live governed map is the v4 structural grammar ----------
-check("D5a live map is t4-conformance-v4 / "
-      "atomic-conjunction-grammar-v4",
-      cmap["version"] == "t4-conformance-v4"
-      and cmap["rule"] == "atomic-conjunction-grammar-v4"
+# --- D6a: the live governed map is the v5 recognition split -----------
+check("D6a live map is t4-conformance-v5 / "
+      "atomic-conjunction-grammar-v5",
+      cmap["version"] == "t4-conformance-v5"
+      and cmap["rule"] == "atomic-conjunction-grammar-v5"
       and cmap["conformance_map_sha256"] == LIVE_MAP_SHA)
-check("D5a atomic_vocabulary is the frozen 23-token list",
-      cmap.get("atomic_vocabulary") == VOCAB)
-check("D5a vocabulary equals the sorted union of predicate tokens",
+check("D6a recognized_conformance_atoms is the frozen 23-token list",
+      cmap.get("recognized_conformance_atoms") == VOCAB)
+check("D6a recognition set equals the sorted union of predicate tokens",
       sorted({t for f in cmap["families"].values()
               for p in f["requires_predicates"] for t in p}) == VOCAB)
+check("D6a the retired atomic_vocabulary key is gone (role split, "
+      "never a second table)",
+      "atomic_vocabulary" not in cmap
+      and "recognized_conformance_atoms" in cmap)
 
-# --- D5a: loader refuses a tampered / missing vocabulary ---------------
+# --- D6a: loader refuses a tampered / missing recognition set ----------
 _tmp = hermetic("vocab-tamper")
 _mut = json.load(open(os.path.join(_tmp, "T4-CONFORMANCE.json")))
-_mut["atomic_vocabulary"] = list(VOCAB) + ["when"]
+_mut["recognized_conformance_atoms"] = list(VOCAB) + ["when"]
 json.dump(_mut, open(os.path.join(_tmp, "T4-CONFORMANCE.json"), "w"))
 try:
     CONF.load(_tmp)
     _tok = "loaded (fail-open)"
 except Exception as e:  # noqa: BLE001
     _tok = f"{type(e).__name__}: {e}"
-check("D5a loader refuses a tampered atomic_vocabulary",
-      "loaded" not in _tok and "atomic_vocabulary" in _tok, _tok[:120])
+check("D6a loader refuses a tampered recognized_conformance_atoms",
+      "loaded" not in _tok and "recognized_conformance_atoms" in _tok,
+      _tok[:120])
 _tmp2 = hermetic("vocab-missing")
 _mut2 = json.load(open(os.path.join(_tmp2, "T4-CONFORMANCE.json")))
-_mut2.pop("atomic_vocabulary", None)
+_mut2.pop("recognized_conformance_atoms", None)
 json.dump(_mut2, open(os.path.join(_tmp2, "T4-CONFORMANCE.json"), "w"))
 try:
     CONF.load(_tmp2)
     _tok2 = "loaded (fail-open)"
 except Exception as e:  # noqa: BLE001
     _tok2 = f"{type(e).__name__}: {e}"
-check("D5a loader refuses a missing atomic_vocabulary",
-      "loaded" not in _tok2 and "atomic_vocabulary" in _tok2,
+check("D6a loader refuses a missing recognized_conformance_atoms",
+      "loaded" not in _tok2 and "recognized_conformance_atoms" in _tok2,
       _tok2[:120])
+_tmp3 = hermetic("vocab-retired-key")
+_mut3 = json.load(open(os.path.join(_tmp3, "T4-CONFORMANCE.json")))
+_mut3["atomic_vocabulary"] = _mut3.pop("recognized_conformance_atoms")
+json.dump(_mut3, open(os.path.join(_tmp3, "T4-CONFORMANCE.json"), "w"))
+try:
+    CONF.load(_tmp3)
+    _tok3 = "loaded (fail-open)"
+except Exception as e:  # noqa: BLE001
+    _tok3 = f"{type(e).__name__}: {e}"
+check("D6a loader refuses the retired atomic_vocabulary key",
+      "loaded" not in _tok3 and "recognized_conformance_atoms" in _tok3,
+      _tok3[:120])
 
-# --- D5a: v4 shape accepted; every malformed shape refused -------------
-_ok = refuse_reason("d5a-valid", v4_contract([["local", "v1", "sha256"]]))
-check("D5a a v4 requires_all contract promotes (no refusal)", _ok is None,
-      str(_ok)[:120])
+# --- D6a: structural shape accepted; structural defects refused --------
+_ok = refuse_reason("d6a-valid", v4_contract([["local", "v1", "sha256"]]))
+check("D6a a structural requires_all contract promotes (no refusal)",
+      _ok is None, str(_ok)[:120])
 for _label, _pre, _needle in (
         ("bare-string precondition", ["local v1 sha256"], "precondition"),
         ("old requires key", [{"requires": "local v1 sha256"}], "requires"),
@@ -218,19 +246,73 @@ for _label, _pre, _needle in (
         ("non-atomic token", [{"requires_all": ["local local"]}],
          "local local"),
         ("uppercase token", [{"requires_all": ["Local"]}], "Local"),
-        ("out-of-vocabulary token", [{"requires_all": ["when"]}], "when"),
         ("duplicate token", [{"requires_all": ["local", "local"]}],
          "local"),
         ("extra key", [{"requires_all": ["local"], "prose": "x"}],
          "prose"),
-        ("token-encoded conditional", [{"requires_all": COND_TOKENS}],
-         "when")):
-    _r = refuse_reason("d5a-" + _label.split()[0],
+        ("duplicate token in a conditional-shaped list",
+         [{"requires_all": COND_TOKENS}], "duplicate")):
+    _r = refuse_reason("d6a-" + _label.split()[0],
                        {"semantic_core": CORE, "preconditions": _pre,
                         "limitations": []})
-    check(f"D5a malformed contract refused ({_label})",
+    check(f"D6a malformed contract refused ({_label})",
           _r is not None and "PROMOTION-DENY" in _r and _needle in _r,
           str(_r)[:140])
+
+# --- D6b: the auditor acceptance attacks promote, then go non-bearing -
+ATTACK_1 = ["local", "v1", "sha256", "manifest"]
+ATTACK_2 = ["filesystem", "version_one", "sha2"]
+_a1r = refuse_reason("d6b-attack1", v4_contract([ATTACK_1]))
+check("D6b attack ['local','v1','sha256','manifest'] promotes (no "
+      "vocabulary denial)", _a1r is None, str(_a1r)[:140])
+_roota1, _reca1, _locka1 = mint("d6b-attack1", v4_contract([ATTACK_1]))
+check("D6b attack1 lock is non-conformance-bearing (zero ids, cause "
+      "names 'manifest')",
+      _locka1.get("non_discriminating") is True
+      and _locka1.get("supported_t4_ids") == []
+      and "manifest" in (_locka1.get("conformance_cause") or ""),
+      f"nd={_locka1.get('non_discriminating')} "
+      f"sup={_locka1.get('supported_t4_ids')} "
+      f"cause={str(_locka1.get('conformance_cause'))[:120]!r}")
+check("D6b attack1 producer tokens preserved verbatim in the lock",
+      _locka1.get("preconditions") == [{"requires_all": ATTACK_1}]
+      and _reca1.get("preconditions") == [{"requires_all": ATTACK_1}])
+_a2r = refuse_reason("d6b-attack2", v4_contract([ATTACK_2]))
+check("D6b attack ['filesystem','version_one','sha2'] promotes (no "
+      "vocabulary denial)", _a2r is None, str(_a2r)[:140])
+_roota2, _reca2, _locka2 = mint("d6b-attack2", v4_contract([ATTACK_2]))
+check("D6b attack2 lock is non-conformance-bearing (zero ids, cause "
+      "names an unknown atom)",
+      _locka2.get("non_discriminating") is True
+      and _locka2.get("supported_t4_ids") == []
+      and any(t in (_locka2.get("conformance_cause") or "")
+              for t in ATTACK_2),
+      f"nd={_locka2.get('non_discriminating')} "
+      f"sup={_locka2.get('supported_t4_ids')} "
+      f"cause={str(_locka2.get('conformance_cause'))[:120]!r}")
+check("D6b attack2 producer tokens preserved verbatim in the lock",
+      _locka2.get("preconditions") == [{"requires_all": ATTACK_2}]
+      and _reca2.get("preconditions") == [{"requires_all": ATTACK_2}])
+
+# --- D6b: when/either/or are unrecognized atoms, never refusals -------
+for _w in ("when", "either", "or"):
+    _wr = refuse_reason("d6b-" + _w, v4_contract([[_w]]))
+    check(f"D6b {_w!r} no longer causes a promotion refusal",
+          _wr is None, str(_wr)[:140])
+    _wv = CONF.verdict("fam05", [[_w]], cmap)
+    check(f"D6b {_w!r} is non-conformance-bearing with a cause "
+          f"naming {_w!r}",
+          _wv["non_discriminating"] is True
+          and _wv["supported_t4_ids"] == []
+          and _w in _wv["conformance_cause"],
+          _wv["conformance_cause"][:120])
+
+# --- D6b: promotion never reads the recognition set --------------------
+_prom_src = open(os.path.join(HARNESS, "promotion.py")).read()
+check("D6b promotion.py contains no read of the recognition set "
+      "(neither key spelling)",
+      "recognized_conformance_atoms" not in _prom_src
+      and "atomic_vocabulary" not in _prom_src)
 
 # --- D5a: auditor conditional clauses support nothing ------------------
 _rootl, _recl, _lockl = mint(
@@ -513,5 +595,5 @@ check("D5c specificity.py mentions neither the old nor the new field "
       and "declared_limitations_present" not in _src)
 
 bad = [n for n, ok_ in RESULTS if not ok_]
-print(f"\nH27 D5 smoke: {len(RESULTS) - len(bad)}/{len(RESULTS)} closed")
+print(f"\nH27 D6 smoke: {len(RESULTS) - len(bad)}/{len(RESULTS)} closed")
 sys.exit(1 if bad else 0)

@@ -1,6 +1,6 @@
 {
- "version": "t4-conformance-v4",
- "rule": "atomic-conjunction-grammar-v4",
+ "version": "t4-conformance-v5",
+ "rule": "atomic-conjunction-grammar-v5",
  "negation_markers": [
   "absent",
   "arent",
@@ -60,7 +60,7 @@
   "/",
   ","
  ],
- "atomic_vocabulary": [
+ "recognized_conformance_atoms": [
   "acyclic",
   "acyclicity",
   "aggregate",

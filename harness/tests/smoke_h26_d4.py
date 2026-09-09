@@ -1,25 +1,31 @@
 #!/usr/bin/env python3
 """H26 — A12d slice D4 acceptance, reframed by slice D5 for the v4
 structural atomic conjunction (auditor D4-post P0) + P1 (stray-symlink
-closure, capability-lock-v4).
+closure, capability-lock-v4), and by slice D6 for the vocabulary role
+split (auditor D5-post P0: promotion is structural-only, unknown atoms
+are auditor-side non-bearing, never a promotion denial).
 
 The v3 grammar is conditional-clause blind: `when local use v1 sha256
 manifests; when remote use blake3 manifests` carries no `or`/`,`/`/`
-token yet still matches `local`+`v1`+`sha256`. The v4 structural
+token yet still matches `local`+`v1`+`sha256`. The v5 structural
 grammar makes such clauses UNREPRESENTABLE as conformance evidence
-(refused at promotion), closes the symlinked-parent stray evasion in
-`_stray_capability_dirs`, and bumps the lock schema to
-capability-lock-v4 with the renamed presence field. Driven through the
-REAL production path (fixture T0/T1 builds -> promotion controller ->
-order provenance re-derivation -> CAPABILITY_LOCK), never a claim:
+(structurally malformed ones refused at promotion; well-formed ones
+with unknown atoms promoted but non-conformance-bearing), closes the
+symlinked-parent stray evasion in `_stray_capability_dirs`, and bumps
+the lock schema to capability-lock-v4 with the renamed presence
+field. Driven through the REAL production path (fixture T0/T1 builds
+-> promotion controller -> order provenance re-derivation ->
+CAPABILITY_LOCK), never a claim:
 
-  D4a live governed map is t4-conformance-v4 /
-      atomic-conjunction-grammar-v4 with the frozen tables exact
+  D4a live governed map is t4-conformance-v5 /
+      atomic-conjunction-grammar-v5 with the frozen tables exact
   D4b the two auditor conditional clauses (as single precondition
-      elements and as token-encoded lists) plus uppercase, duplicate,
-      disjunctive and out-of-vocabulary token lists are INADMISSIBLE at
-      the token level AND refused as contracts with PROMOTION-DENY
-      naming the offender
+      elements and as token-encoded lists) plus uppercase and
+      duplicate token lists are INADMISSIBLE at the token level AND
+      refused as contracts with PROMOTION-DENY naming the offender;
+      `["local", "or", "sha256"]` stays INADMISSIBLE at the token
+      level but PROMOTES (D6: "or" is an unrecognized atom, never a
+      promotion defect) into a non-conformance-bearing lock
   D4c `["local", "v1", "sha256"]` stays admissible and still supports
       fam05.local_v1_sha256 (minted lock discriminating); the six
       default family token sets stay admissible; limitations prose
@@ -174,28 +180,32 @@ def mint(tag, contract, universe="A"):
 
 cmap = CONF.load(FAMC)
 
-# --- D4a: the live governed map is the amended v3 atomic grammar ------
-check("D4a live map version is t4-conformance-v4 with rule "
-      "atomic-conjunction-grammar-v4 and the live sha",
-      cmap["version"] == "t4-conformance-v4"
-      and cmap["rule"] == "atomic-conjunction-grammar-v4"
+# --- D4a: the live governed map is the amended v5 atomic grammar ------
+check("D4a live map version is t4-conformance-v5 with rule "
+      "atomic-conjunction-grammar-v5 and the live sha",
+      cmap["version"] == "t4-conformance-v5"
+      and cmap["rule"] == "atomic-conjunction-grammar-v5"
       and cmap["conformance_map_sha256"] == LIVE_MAP_SHA,
       f"v={cmap.get('version')} r={cmap.get('rule')}")
 check("D4a frozen tables exact (disjunction, separators, 23-token "
-      "derived vocabulary)",
+      "recognition set)",
       cmap.get("disjunction_markers") == ["either", "or"]
       and cmap.get("structural_separators") == ["/", ","]
-      and cmap.get("atomic_vocabulary") == ["acyclic", "acyclicity",
+      and cmap.get("recognized_conformance_atoms") == ["acyclic", "acyclicity",
             "aggregate", "basis", "common", "dedup", "disjoint",
             "duplicates", "identical", "input", "local", "order",
             "pages", "record", "repeats", "row", "same", "sha256",
-            "summary", "topological", "unit", "units", "v1"],
+            "summary", "topological", "unit", "units", "v1"]
+      and "atomic_vocabulary" not in cmap,
       f"dj={cmap.get('disjunction_markers')} "
       f"sep={cmap.get('structural_separators')} "
-      f"vocab={len(cmap.get('atomic_vocabulary') or [])}")
+      f"vocab={len(cmap.get('recognized_conformance_atoms') or [])}")
 
-# --- D4b: attacks are INADMISSIBLE and refused as contracts ------------
-for i, (att, needle) in enumerate(ATTACKS):
+# --- D4b: attacks are INADMISSIBLE; all but one refused as contracts --
+# D6: (["local", "or", "sha256"]) is structurally valid ("or" is an
+# unrecognized atom, never a promotion defect): it stays INADMISSIBLE
+# at the token level but PROMOTES into a non-conformance-bearing lock.
+for i, (att, needle) in enumerate(ATTACKS[:5]):
     check(f"D4b attack #{i + 1} {str(att)[:44]!r} is INADMISSIBLE at "
           f"the token level",
           CONF.admissible(att, cmap) is False)
@@ -205,6 +215,21 @@ for i, (att, needle) in enumerate(ATTACKS):
           _reason is not None and "PROMOTION-DENY" in _reason
           and needle in _reason,
           f"reason={str(_reason)[:140]!r}")
+_OR = ["local", "or", "sha256"]
+check(f"D4b attack #6 {_OR!r} is INADMISSIBLE at the token level",
+      CONF.admissible(_OR, cmap) is False)
+_or_reason = refuse_reason("D4b-or", v4_contract([_OR]))
+check("D4b attack #6 promotes (unrecognized atoms never deny "
+      "promotion)", _or_reason is None, str(_or_reason)[:140])
+_oro, _orec, _orlock = mint("D4b-or", v4_contract([_OR]))
+check("D4b attack #6 lock is non-conformance-bearing (zero ids, "
+      "cause names 'or')",
+      _orlock.get("non_discriminating") is True
+      and _orlock.get("supported_t4_ids") == []
+      and "'or'" in (_orlock.get("conformance_cause") or ""),
+      f"nd={_orlock.get('non_discriminating')} "
+      f"sup={_orlock.get('supported_t4_ids')} "
+      f"cause={str(_orlock.get('conformance_cause'))[:120]!r}")
 
 # --- D4c: no over-reach ------------------------------------------------
 check("D4c `['local', 'v1', 'sha256']` stays admissible",

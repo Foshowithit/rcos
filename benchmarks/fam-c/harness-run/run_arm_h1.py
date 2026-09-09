@@ -224,7 +224,8 @@ _OUT = ('\nOutput one JSON object with the keys "decision", '
 # {"requires_all": [<atomic tokens>]} objects, possibly empty: one
 # object per applicability requirement, with exactly the single key
 # "requires_all", each token a single lowercase word of letters,
-# digits, underscore, dot or hyphen with no spaces and no duplicates),
+# digits, underscore, dot or hyphen with no spaces, each used at most
+# once per list),
 # and
 # `limitations` (list of strings, possibly empty: free prose about what
 # the capability does not cover). An empty `preconditions` list means
@@ -251,7 +252,8 @@ _OUT_T0 = ('\nOutput one JSON object with the keys "decision", '
         '{"requires_all": [<atomic tokens>]} (the list may be empty), one '
         'object per applicability requirement with only the "requires_all" '
         'key; each token is one lowercase word of letters, digits, '
-        'underscore, dot or hyphen, with no spaces and no duplicates; '
+        'underscore, dot or hyphen, with no spaces, each used at most '
+        'once per list; '
         '"limitations" is a list of strings '
         '(possibly empty) stating what it does not cover. '
         'An empty "preconditions" list means no declared applicability '

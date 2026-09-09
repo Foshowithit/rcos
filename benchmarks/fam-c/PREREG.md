@@ -586,6 +586,31 @@ renamed field, and `verify_lock` refuses any other schema version, any
 lock still carrying the retired field, and any lock missing the
 renamed field. No estimand locks exist yet, so the bump is cheap.
 
+Forward amendment AMEND-2026-09-09-d6-vocabulary-role-split
+(2026-09-09): the structural atomic-conjunction bridge frozen above
+keeps its shape but splits the vocabulary role BEFORE any run it
+governs. The governed map benchmarks/fam-c/T4-CONFORMANCE.json is
+version t4-conformance-v5 under the frozen rule
+atomic-conjunction-grammar-v5: the top-level key `atomic_vocabulary`
+is renamed to `recognized_conformance_atoms` with the IDENTICAL
+23-token value set (same set, sorted, no additions, no removals) — an
+auditor-side recognition whitelist for conformance only, never a
+producer requirement; promotion never loads, reads, or consults it.
+Promotion validates STRUCTURAL shape only (each precondition exactly
+`{"requires_all": [<atomic tokens>]}`: exact key, non-empty list,
+atomic `^[a-z0-9_.-]+$` tokens, no duplicates) and preserves arbitrary
+atomic producer tokens verbatim in the promoted contract. A
+`requires_all` entry containing any unknown atom is
+non-conformance-bearing (contributes zero supported T4 ids, verdict
+non_discriminating with a cause naming the unrecognized token) and
+NEVER denies promotion. The v4 map bytes are superseded, not edited in
+place; the v4-to-v5 transition is chained in PROTOCOL-LOCK.json. The
+six T4 semantic IDs frozen above are unchanged by this amendment (no
+ID added, removed, or renamed). The T0 producer prompt states only the
+structural rules and reveals none of the 23 values, the recognition
+key name, or any allowed-token list. No estimand locks exist yet, so
+the transition is cheap.
+
 ---
 # 11. Manifest lifecycle
 
