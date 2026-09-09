@@ -21,6 +21,10 @@ every refusal condition, or nothing runs.
       HARNESS-READINESS + this validator) match EITHER their frozen bytes
       OR an explicit forward amendment recorded in PROTOCOL-LOCK.json.
       Unlisted drift fails this lock (never a silent substitution).
+      A12d slice D7: the amendments per governed file must form ONE
+      linear path from the frozen (or post-freeze genesis) node to
+      exactly one tip, and the on-disk bytes must equal that tip
+      (validate_file_chain; the old reachable-set is deleted).
   V3 EXECUTION-LOCK — the executing harness bytes (8 modules + runner)
       match EXECUTION-LOCK.json. Status rides along: `open-round2`
       (placeholder, re-minted on every harness change) until round-2 #14
@@ -132,32 +136,157 @@ def validate_instance(fam_c_dir, freeze_commit):
     return out
 
 
-def validate_protocol(fam_c_dir, freeze_commit):
-    """V2 PROTOCOL-LOCK. Returns findings list (empty = green)."""
-    out = []
-    lp = os.path.join(fam_c_dir, "PROTOCOL-LOCK.json")
-    if not os.path.exists(lp):
-        return ["V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json missing"]
+def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
+                        governed_sha):
+    """A12d slice D7: the unique-linear-lineage rule for ONE governed
+    file. Pure function of its arguments (no git, no disk reads): the
+    hermetic unit under test, and the exact code path validate_protocol
+    runs per file. Returns (findings, tip).
+
+    `amendments` is the file's amendment-entry list in lock order;
+    `frozen_sha` is the git-resolved frozen content sha (None when the
+    file postdates the freeze); `governed_sha` is the lock's governed
+    entry for the file. Findings are all prefixed
+    "V2 PROTOCOL-LOCK: {fn} ..." (every finding names its file).
+    `tip` is the validator-computed unique tip (None when no root is
+    determinable); on a green file disk_sha == tip (equality with the
+    tip, not mere reachability).
+
+    The rule: the amendments for the file form ONE path from the
+    frozen (or post-freeze genesis) node to exactly one tip —
+    exactly one edge out of the root, at most one incoming and at
+    most one outgoing edge per node, no dead-end node other than the
+    single tip (every recorded edge is walked from the root), and the
+    on-disk bytes equal that tip. Deleting any single predecessor
+    edge, reverting a from_sha, or retargeting a to_sha off-chain
+    fails here naming the file.
+    """
+    pre = f"V2 PROTOCOL-LOCK: {fn} "
+    links = [(a.get("from_sha"), a.get("to_sha")) for a in amendments]
+    genesis = [a for a in amendments if a.get("from_sha") is None]
+    if frozen_sha is not None:
+        if frozen_sha != governed_sha:
+            return ([pre + "lock frozen-sha != git truth (lock edited?)"],
+                    None)
+        stray = [a for a in genesis]
+        if stray:
+            return ([pre + "amendment chain is not a unique linear chain: "
+                     "a frozen file carries a post-freeze genesis "
+                     "amendment (unlisted root?)"], None)
+        root, root_label = frozen_sha, "frozen"
+        walk_edges = links
+    else:
+        if len(genesis) != 1 or genesis[0].get(
+                "added_after_freeze") is not True:
+            if not genesis:
+                return ([pre + "frozen bytes unresolvable at freeze and "
+                         "no post-freeze genesis amendment governs it"],
+                        None)
+            return ([pre + "amendment chain is not a unique linear "
+                     "chain: a post-freeze file needs exactly one "
+                     "genesis amendment (from_sha null + "
+                     "added_after_freeze)"], None)
+        root = genesis[0].get("to_sha")
+        root_label = "genesis"
+        walk_edges = [(f, t) for (f, t) in links if f is not None]
+        if governed_sha != root and governed_sha not in {
+                t for (_, t) in walk_edges}:
+            return ([pre + "lock governed-sha is outside its post-freeze "
+                     "amendment chain (lock edited?)"], None)
+    if not walk_edges:
+        if disk_sha == root:
+            return ([], root)
+        return ([pre + f"drifted with no listed forward amendment "
+                 f"(disk {disk_sha[:12]} not in "
+                 f"{{{root_label},0 amendment(s)}})"], root)
+    out_of_root = [e for e in walk_edges if e[0] == root]
+    if not out_of_root:
+        return ([pre + "amendment chain is not a unique linear chain: "
+                 f"no edge continues the {root_label} node "
+                 f"{root[:12]} (an amendment from_sha outside the "
+                 f"chain?)"], None)
+    if len(out_of_root) > 1:
+        return ([pre + "amendment chain is not a unique linear chain: "
+                 f"{len(out_of_root)} edges leave the {root_label} "
+                 f"node {root[:12]} (exactly one edge may leave the "
+                 f"root)"], None)
+    indeg, outdeg = {}, {}
+    for (f, t) in walk_edges:
+        outdeg[f] = outdeg.get(f, 0) + 1
+        indeg[t] = indeg.get(t, 0) + 1
+    for node in sorted(indeg):
+        if node != root and indeg[node] > 1:
+            return ([pre + "amendment chain is not a unique linear "
+                     f"chain: node {node[:12]} has "
+                     f"{indeg[node]} incoming amendment edges "
+                     f"(no branching/merging)"], None)
+    if indeg.get(root, 0):
+        return ([pre + "amendment chain is not a unique linear chain: "
+                 f"an edge points back into the {root_label} node "
+                 f"{root[:12]}"], None)
+    for node in sorted(outdeg):
+        if outdeg[node] > 1:
+            return ([pre + "amendment chain is not a unique linear "
+                     f"chain: node {node[:12]} has "
+                     f"{outdeg[node]} outgoing amendment edges "
+                     f"(no forks)"], None)
+    by_from = {}
+    for (f, t) in walk_edges:
+        by_from.setdefault(f, []).append(t)
+    seen, cur = set(), root
+    while cur in by_from:
+        nxt = by_from[cur][0]
+        if (cur, nxt) in seen:
+            return ([pre + "amendment chain is not a unique linear "
+                     "chain: amendment cycle "
+                     f"at {cur[:12]}"], None)
+        seen.add((cur, nxt))
+        cur = nxt
+    if len(seen) != len(walk_edges):
+        return ([pre + "amendment chain is not a unique linear chain: "
+                 f"{len(walk_edges) - len(seen)} recorded edge(s) "
+                 f"never continue to the single tip (a dead-end or "
+                 f"disconnected edge: every non-tip node must be "
+                 f"continued)"], cur)
+    tip = cur
+    if disk_sha != tip:
+        return ([pre + f"drifted with no listed forward amendment "
+                 f"(disk {disk_sha[:12]} != the unique chain tip "
+                 f"{tip[:12]}; {len(walk_edges)} amendment(s) "
+                 f"chained)"], tip)
+    return ([], tip)
+
+
+def protocol_tips(fam_c_dir, freeze_commit):
+    """A12d slice D7: the validator-computed unique tip per governed
+    file, through the real V2 chain path (git-resolved frozen bytes +
+    validate_file_chain). Returns (tips, findings); `tips` maps each
+    governed file to its unique tip (absent when that file's chain
+    fails). A green file always satisfies
+    sha256(disk bytes) == tips[file] — computed here, never asserted
+    by callers."""
     try:
-        lock = json.load(open(lp))
-    except ValueError as e:
-        return [f"V2 PROTOCOL-LOCK: lock unparsable: {e}"]
-    if lock.get("freeze_commit") != freeze_commit:
-        out.append("V2 PROTOCOL-LOCK: lock freeze_commit != instance "
-                   "freeze (locks disagree on the freeze)")
+        lock = json.load(open(os.path.join(fam_c_dir,
+                                           "PROTOCOL-LOCK.json")))
+    except (ValueError, OSError) as e:
+        return ({}, [f"V2 PROTOCOL-LOCK: lock unparsable: {e}"])
+    try:
+        root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
+    except RuntimeError as e:
+        return ({}, [f"V2 PROTOCOL-LOCK: git unavailable: {e}"])
     governed = lock.get("governed", {})
     amendments = lock.get("amendments", [])
     by_file = {}
     for a in amendments:
         by_file.setdefault(a.get("file"), []).append(a)
-    try:
-        root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
-    except RuntimeError as e:
-        return out + [f"V2 PROTOCOL-LOCK: git unavailable: {e}"]
+    tips, findings = {}, []
+    if lock.get("freeze_commit") != freeze_commit:
+        findings.append("V2 PROTOCOL-LOCK: lock freeze_commit != instance "
+                        "freeze (locks disagree on the freeze)")
     for fn in PROTOCOL_GOVERNED:
-        want_frozen = governed.get(fn)
-        if not want_frozen:
-            out.append(f"V2 PROTOCOL-LOCK: {fn} not governed by lock")
+        want = governed.get(fn)
+        if not want:
+            findings.append(f"V2 PROTOCOL-LOCK: {fn} not governed by lock")
             continue
         try:
             frozen_bytes = subprocess.run(
@@ -168,51 +297,38 @@ def validate_protocol(fam_c_dir, freeze_commit):
             frozen_sha = hashlib.sha256(frozen_bytes.stdout).hexdigest()
         except RuntimeError:
             frozen_sha = None
-        if frozen_sha is not None and frozen_sha != want_frozen:
-            out.append(f"V2 PROTOCOL-LOCK: {fn} lock frozen-sha != git "
-                       f"truth (lock edited?)")
-            continue
         fp = os.path.join(fam_c_dir, fn)
         if not os.path.exists(fp):
-            out.append(f"V2 PROTOCOL-LOCK: {fn} missing on disk")
+            findings.append(f"V2 PROTOCOL-LOCK: {fn} missing on disk")
             continue
         disk = _sha(fp)
-        if frozen_sha is not None:
-            acceptable = {frozen_sha}
-            for a in by_file.get(fn, []):
-                if a.get("from_sha") in acceptable:
-                    acceptable.add(a.get("to_sha"))
-        else:
-            # A12b.5: a governed file added AFTER the instance freeze
-            # has no frozen bytes at the freeze commit. Its authority
-            # starts at an explicit genesis amendment (from_sha null +
-            # added_after_freeze), chained exactly like a frozen file
-            # from there; the lock's governed entry must itself sit on
-            # that chain (a lock that invents bytes outside the chain
-            # is edited). Without a genesis amendment the file is
-            # ungoverned.
-            acceptable = set()
-            for a in by_file.get(fn, []):
-                if a.get("from_sha") is None and \
-                        a.get("added_after_freeze") is True:
-                    acceptable.add(a.get("to_sha"))
-            if not acceptable:
-                out.append(f"V2 PROTOCOL-LOCK: {fn} frozen bytes "
-                           f"unresolvable at freeze and no post-freeze "
-                           f"genesis amendment governs it")
-                continue
-            for a in by_file.get(fn, []):
-                if a.get("from_sha") in acceptable:
-                    acceptable.add(a.get("to_sha"))
-            if want_frozen not in acceptable:
-                out.append(f"V2 PROTOCOL-LOCK: {fn} lock governed-sha "
-                           f"is outside its post-freeze amendment chain "
-                           f"(lock edited?)")
-                continue
-        if disk not in acceptable:
-            out.append(f"V2 PROTOCOL-LOCK: {fn} drifted with no listed "
-                       f"forward amendment (disk {disk[:12]} not in "
-                       f"{{frozen,{len(acceptable) - 1} amendment(s)}})")
+        f_find, tip = validate_file_chain(fn, frozen_sha,
+                                          by_file.get(fn, []), disk,
+                                          want)
+        findings.extend(f_find)
+        if tip is not None:
+            tips[fn] = tip
+    return (tips, findings)
+
+
+def validate_protocol(fam_c_dir, freeze_commit):
+    """V2 PROTOCOL-LOCK. Returns findings list (empty = green)."""
+    out = []
+    lp = os.path.join(fam_c_dir, "PROTOCOL-LOCK.json")
+    if not os.path.exists(lp):
+        return ["V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json missing"]
+    try:
+        json.load(open(lp))
+    except ValueError as e:
+        return [f"V2 PROTOCOL-LOCK: lock unparsable: {e}"]
+    # A12d slice D7: the per-file chain rule is the unique-linear-chain
+    # (validate_file_chain via protocol_tips: exactly one edge out of
+    # the frozen/genesis node, indegree/outdegree <= 1, no dead end but
+    # the single tip, disk bytes equal to that tip). The old
+    # reachable-set ("disk merely members of a set") is DELETED: branching,
+    # dead ends and multiple tips no longer pass.
+    _tips, chain_findings = protocol_tips(fam_c_dir, freeze_commit)
+    out += chain_findings
     # Item-7: the enumerated execution order is DERIVED from ORDER.md, so a
     # hand-edited or stale expansion is protocol drift by construction.
     for f in order_verify_expansion(fam_c_dir):

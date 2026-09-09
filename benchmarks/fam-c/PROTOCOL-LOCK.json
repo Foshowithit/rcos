@@ -46,7 +46,7 @@
   },
   {
    "file": "HARNESS-READINESS.md",
-   "from_sha": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
+   "from_sha": "3314fa9170ab0a8a8ecd372313306e5289508a7e62e79cd13a6354e6b9729081",
    "to_sha": "a0419cedc9a4c2534b7ec6e60303a1869d4ad0e6cf1f99ba3cf5d75bc6e086eb",
    "reason": "round-3 A11: A11.1 live-branch identity; A11.2 persisted request bytes + adapter/request binding; A11.3 byte-identity symmetry proof (legacy weaker fixture deleted); A11.4 full event-universe expansion; A11.5 derived per-universe namespaces; A11.6 validated cell state",
    "base": "a11-round3-close",
@@ -216,7 +216,7 @@
   },
   {
    "file": "PREREG.md",
-   "from_sha": "b732647f61f35808e0e07cb4221998e75c2851180fd44070e4b25ee5851437c6",
+   "from_sha": "7330a2f6b21ae9c5489b13ff842b54f9537da65107e8111423357fac66f85f49",
    "to_sha": "d5277d752c209765ce222e36af5c7d1fe5e13ba00d06514a8ea548b358b6dbb3",
    "reason": "A12d slice D5 (auditor D4-post P0/P1): forward amendment AMEND-2026-09-09-d5-atomic-conjunction freezing t4-conformance-v4 under atomic-conjunction-grammar-v4 and the capability-lock-v4 schema bump (declared_limitations_present rename)",
    "base": "a6cf516",
@@ -232,11 +232,27 @@
   },
   {
    "file": "PREREG.md",
-   "from_sha": "b732647f61f35808e0e07cb4221998e75c2851180fd44070e4b25ee5851437c6",
+   "from_sha": "d5277d752c209765ce222e36af5c7d1fe5e13ba00d06514a8ea548b358b6dbb3",
    "to_sha": "1fb9089161cee06d7e0d14971beaaba30209e8c298e4fe7c8d78550384dc23ae",
    "reason": "A12d slice D6 (auditor D5-post P0): forward amendment AMEND-2026-09-09-d6-vocabulary-role-split freezing t4-conformance-v5 under atomic-conjunction-grammar-v5 (promotion structural-only, recognized_conformance_atoms auditor-side, unknown atoms non-bearing never denied, T0 prompt reveals no values)",
    "base": "9530bb1",
    "slice": "a12d-slice-d6"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "1fb9089161cee06d7e0d14971beaaba30209e8c298e4fe7c8d78550384dc23ae",
+   "to_sha": "d073cf7042a529fff8f273f32dc2aab0efa85b6dd2ef3e40a82b0c7acf392d02",
+   "reason": "A12d slice D7 (auditor D6-post P0/P1): forward amendment AMEND-2026-09-09-d7-lineage-repair freezing the exact three-key producer contract schema (no contract alias, missing/extra key denied naming the key) and the unique-linear-lineage rule; three mis-recorded from_sha edges corrected from git content sha256 with no history entry deleted (PREREG D5 now continues 7330a2f6b21a, PREREG D6 now continues d5277d752c20, HARNESS-READINESS a11 now continues 3314fa9170ab; 9caf3d4fdd33 kept as an in-commit internal chain node)",
+   "base": "3033e38",
+   "slice": "a12d-slice-d7"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "to_sha": "3ba01b4b8e11199f7dcb576b1c6b884d0f6ed077ae5149ac427b6911a886f9ca",
+   "reason": "A12d slice D7 (auditor D6-post P1): forward amendment AMEND-2026-09-09-d7-lineage-repair tightening V2 to the unique-linear-chain rule (validate_file_chain per governed file: exactly one edge out of the frozen/genesis node, indegree/outdegree at most one, no dead end but the single tip, disk bytes equal to that tip; the reachable-set is deleted)",
+   "base": "3033e38",
+   "slice": "a12d-slice-d7"
   }
  ]
 }

@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "b6282587ab80c1be2ac1b56d41061c89b105f9e9f4d703ca6b741fd9ae626336",
+ "harness_manifest_sha256": "663e7e4b516f04b52f1ffbbdd03472f3da7eb503904d5aa9c660c70ed0636451",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -18,7 +18,7 @@
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "8d5144b47e8f5ecf97d7e2405ef696994ad5e6550bfc8b55404af9c4ac24a764",
+  "harness/promotion.py": "5ecee5b4c7dd87cfac298d3fbc36504e82a78e703dc4a7c1fe9688f503d1b3bb",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
   "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
@@ -673,6 +673,19 @@
    },
    "reason": "A12d slice D6 (auditor D5-post P0): vocabulary role split \u2014 promotion structural-only (no recognition-set read, docstrings name no key), conformance v5 recognition-only (recognized_conformance_atoms, unknown atoms non-bearing never denied), T0 prompt hygiene reword; H22/H24/H26/H27 re-pointed to the new semantics",
    "slice": "a12d-slice-d6",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "b6282587ab80c1be2ac1b56d41061c89b105f9e9f4d703ca6b741fd9ae626336",
+   "to_manifest": "663e7e4b516f04b52f1ffbbdd03472f3da7eb503904d5aa9c660c70ed0636451",
+   "files": {
+    "harness/promotion.py": {
+     "from_sha": "8d5144b47e8f5ecf97d7e2405ef696994ad5e6550bfc8b55404af9c4ac24a764",
+     "to_sha": "5ecee5b4c7dd87cfac298d3fbc36504e82a78e703dc4a7c1fe9688f503d1b3bb"
+    }
+   },
+   "reason": "A12d slice D7 (auditor D6-post P0/P1): exact three-key producer contract in promotion (contract alias deleted, missing/extra key denied naming the key, D6 unknown-atom semantics kept); V2 unique-linear-lineage rule in preflight (validate_file_chain, reachable-set deleted); H28 sealed suite added (tests stay outside the execution authority)",
+   "slice": "a12d-slice-d7",
    "status_after": "open-round2"
   }
  ],

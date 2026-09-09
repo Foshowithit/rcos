@@ -611,6 +611,49 @@ structural rules and reveals none of the 23 values, the recognition
 key name, or any allowed-token list. No estimand locks exist yet, so
 the transition is cheap.
 
+Forward amendment AMEND-2026-09-09-d7-lineage-repair (2026-09-09):
+two freezes BEFORE any estimand execution, plus a lineage repair with
+no history deleted.
+
+(a) Exact three-key producer contract schema. A T0 arrival's
+`execution_payload.capability_contract` must be a dict with EXACTLY
+the top-level keys {semantic_core, preconditions, limitations}. The
+undocumented `payload["contract"]` alias is gone: an arrival with no
+`capability_contract` is PROMOTION-DENY even when a `contract` object
+is present (no alias, no backward compatibility — no live promotion
+exists). A missing key is PROMOTION-DENY naming the missing key; an
+extra key (e.g. `also_supports`) is PROMOTION-DENY naming the extra
+key literally, never silently dropped. The denial messages name only
+key spellings, never vocabulary values. Every existing structural
+refusal is unchanged (bare-string precondition, retired `requires`
+key, extra precondition key, empty `requires_all`, non-atomic token,
+uppercase token, duplicate token), and an unknown atomic token still
+promotes verbatim (D6 semantics kept). The promoted lock records
+exactly the three keys.
+
+(b) Unique linear protocol lineage. For every governed file, the
+recorded amendments form ONE path from its frozen node (or its
+post-freeze genesis node) to exactly one tip: exactly one edge out
+of the root, at most one incoming and at most one outgoing edge per
+node, no dead-end node other than the single tip, and the on-disk
+bytes equal that tip (mere reachability no longer passes). V2
+enforces this per file in `validate_file_chain`
+(benchmarks/fam-c/preflight.py); deleting any single predecessor
+edge, reverting a `from_sha`, or retargeting a `to_sha` off-chain
+fails V2 naming the file.
+
+(c) Lineage repair. Three recorded `from_sha` edges were corrected
+from git content sha256, and no amendment entry was deleted: PREREG.md
+D5 (`d5277d752c20`) now continues `7330a2f6b21a` (was the freeze
+baseline `b732647f61f3`); PREREG.md D6 (`1fb9089161ce`) now continues
+`d5277d752c20` (was the freeze baseline); HARNESS-READINESS.md a11
+(`a0419cedc9a4`) now continues `3314fa9170ab` (was the freeze
+baseline `8e743e4c63f4`). The `9caf3d4fdd33` HARNESS-READINESS.md
+node appears at no commit: it is kept as an internal chain node (an
+in-commit intermediate of the A12 round-2 close, continued by
+`12dda20242b0`), so the chain stays linear and the tip equals the
+disk bytes. No estimand locks exist yet, so the repair is cheap.
+
 ---
 # 11. Manifest lifecycle
 

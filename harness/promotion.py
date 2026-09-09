@@ -222,26 +222,28 @@ def _producer_contract(t0_run_dir):
     declaration bytes copied exactly (no normalization: the governance
     validator compares them verbatim). This function never touches K.md.
 
-    A12d slice D6 (auditor D5-post P0): promotion validates STRUCTURAL
-    shape only and preserves arbitrary atomic producer tokens
-    verbatim. The v5 shape is
-    `{"semantic_core": <nonempty str>,
-      "preconditions": [{"requires_all": [<atomic tokens>]}, ...],
-      "limitations": [<str>, ...]}`.  Both lists MAY be empty (an empty
-    `preconditions` list means "no declared applicability requirement"
-    and is non-discriminating, never malformed). Each precondition must
-    be an object with EXACTLY the key `requires_all` carrying a list of
-    >=1 atomic tokens (`^[a-z0-9_.-]+$`, no duplicates). A bare-string
+    A12d slice D7 (auditor D6-post P0): the producer contract has ONE
+    schema and ONE key. `execution_payload.capability_contract` must be
+    a dict with EXACTLY the top-level keys {semantic_core,
+    preconditions, limitations} — the undocumented `payload["contract"]`
+    alias is DELETED (no alias, no backward compatibility: no live
+    promotion exists), a missing key and an extra key are each refused
+    with a PROMOTION-DENY naming the key literally, and nothing is ever
+    silently dropped. The structural v5 rules below are unchanged, and
+    an unknown atomic token still promotes verbatim (D6 semantics).
+
+    A12d slice D6 (auditor D5-post P0, kept): promotion validates
+    STRUCTURAL shape only and preserves arbitrary atomic producer tokens
+    verbatim. Both lists MAY be empty. Each precondition must be an
+    object with EXACTLY the key `requires_all` carrying a list of >=1
+    atomic tokens (`^[a-z0-9_.-]+$`, no duplicates). A bare-string
     precondition, the retired `requires` key, an object with any other
     key, an empty list, a non-atomic token, or a duplicate is refused
-    with a named PROMOTION-DENY under the atomic-conjunction-v5 shape
-    (backward compatibility is NOT offered: no live promotion exists
-    yet, and the failure is explicit, never silent). An unknown atom
-    (any token outside the auditor-side recognition set — e.g.
-    `manifest`, `when`) is NOT a promotion
-    defect: it promotes verbatim and is judged auditor-side by
-    conformance as non-conformance-bearing (zero supported ids).
-    Promotion never loads, reads, or consults the recognition set.
+    with a named PROMOTION-DENY (no backward compatibility, never
+    silent). An unknown atom is NOT a promotion defect: it promotes
+    verbatim and is judged auditor-side by conformance as
+    non-conformance-bearing. Promotion never loads, reads, or consults
+    the recognition set.
     """
     try:
         arrival = _read_json(os.path.join(t0_run_dir, "arrival.json"))
@@ -249,14 +251,28 @@ def _producer_contract(t0_run_dir):
         raise PermissionError(f"PROMOTION-DENY T0 arrival unreadable: {e}")
     payload = _arrival_payload(arrival)
     declared = payload.get("capability_contract")
-    if declared is None:
-        declared = payload.get("contract")
     if not isinstance(declared, dict):
         raise PermissionError(
             "PROMOTION-DENY T0 arrival declares no producer capability "
             "contract (execution_payload.capability_contract "
             "{semantic_core, preconditions, limitations} is required; the "
             "promoted contract is producer-authored, never synthesized)")
+    _want = {"semantic_core", "preconditions", "limitations"}
+    _got = set(declared)
+    _missing = sorted(_want - _got)
+    if _missing:
+        raise PermissionError(
+            "PROMOTION-DENY producer capability contract is missing the "
+            f"required top-level key {_missing[0]!r} (the exact three-key "
+            "shape {semantic_core, preconditions, limitations} is "
+            "required; nothing is defaulted, nothing is dropped)")
+    _extra = sorted(_got - _want)
+    if _extra:
+        raise PermissionError(
+            "PROMOTION-DENY producer capability contract carries an "
+            f"extra top-level key {_extra[0]!r} (the exact three-key "
+            "shape {semantic_core, preconditions, limitations} is "
+            "required; unlisted keys are refused, never silently dropped)")
     core = declared.get("semantic_core")
     if "preconditions" not in declared:
         raise PermissionError(
