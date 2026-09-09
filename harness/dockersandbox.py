@@ -156,6 +156,11 @@ class DockerSandbox:
     source. What IS guaranteed: either construction refuses with
     STABILITY-DENY, or the mounted tree has exact expected-byte
     identity with the frozen snapshot. Never "re-run until green".
+    In production terms this is the expected_task_snapshot binding:
+    task_snapshot must equal the expected source snapshot (the
+    pre-copy hash, the post-copy hash, and the quiescence
+    confirmation must all agree), and verify_task_snapshot re-proves
+    it from inside the jail before the first run.
 
     NOTE (abstraction-claim precision): the production constructor
     exposes no arbitrary-mount interface. Module-level helpers remain

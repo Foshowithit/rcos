@@ -317,10 +317,10 @@ check("D7.2 HARNESS-READINESS a11 edge corrected 8e743e4c63f4 -> "
       str(_e_a11))
 check("D7.2 no amendment entry deleted except the D8 hygiene pair, "
       "the D9 chronology pair, the D10 stability pair, and the D11 "
-      "authority pair "
+      "authority pairs "
       "(30 at D7 - 2 removed a12 edges + 1 D8 edge + 2 D8 forward "
-      "+ 2 D9 forward + 2 D10 forward + 2 D11 forward = 37)",
-      len(LIVE_LOCK["amendments"]) == 37, str(len(LIVE_LOCK["amendments"])))
+      "+ 2 D9 forward + 2 D10 forward + 4 D11 forward = 39)",
+      len(LIVE_LOCK["amendments"]) == 39, str(len(LIVE_LOCK["amendments"])))
 check("D7.2 repair recorded as its own forward amendment "
       "AMEND-2026-09-09-d7-lineage-repair (PREREG + preflight edges)",
       sum(1 for a in LIVE_LOCK["amendments"]

@@ -226,12 +226,63 @@ check("D11.1-GOV the append-only-forward lock policy is documented "
       "append-only" in open(os.path.join(FAMC, "PREREG.md")).read()
       and "committed with the" in
       open(os.path.join(FAMC, "PREREG.md")).read())
-check("D11.1-GOV no amendment entry deleted (35 at D10 + 2 D11 "
-      "forward = 37) and D11 recorded as its own forward amendment",
-      len(_LIVE_LOCK["amendments"]) == 37
+check("D11.1-GOV no amendment entry deleted (35 at D10 + 4 D11 "
+      "forward = 39) and D11 recorded as its own forward amendments",
+      len(_LIVE_LOCK["amendments"]) == 39
       and sum(1 for a in _LIVE_LOCK["amendments"]
-              if a.get("slice") == "a12l-slice-d11") == 2,
+              if a.get("slice") == "a12l-slice-d11") == 4,
       str(len(_LIVE_LOCK["amendments"])))
+
+# --- D11.1-HISTORY: append-only genesis (delete/edit old entries) ----
+import re as _re
+
+
+def _anchor_ok():
+    for fp in (os.path.join(FAMC, "preflight.py"),
+               os.path.join(FAMC, "PREREG.md")):
+        blob = open(fp, encoding="utf-8").read()
+        m = _re.search(r"PROTOCOL_LOCK_APPEND_ONLY_GENESIS(.{0,400})",
+                       blob, _re.S)
+        seg = m.group(1) if m else ""
+        if ("PROTOCOL_LOCK_APPEND_ONLY_GENESIS" in blob
+                and _re.search(r"\b[0-9a-f]{40}\b", seg)
+                and _re.search(r"\b[0-9a-f]{64}\b", seg)):
+            return True
+    return False
+
+
+check("D11.1-HISTORY append-only genesis anchor frozen outside the "
+      "lock (commit + lock sha256)", _anchor_ok())
+
+
+def _history_attack(tag, mutate):
+    c = _clone("hist-" + tag)
+    lp = os.path.join(c, "benchmarks", "fam-c", "PROTOCOL-LOCK.json")
+    lock = json.load(open(lp))
+    am = lock["amendments"]
+    idx = next(i for i, a in enumerate(am)
+               if a.get("file") == "PREREG.md")
+    if mutate == "delete":
+        del am[idx]
+    else:
+        am[idx]["reason"] = am[idx].get("reason", "") + " (edited)"
+    json.dump(lock, open(lp, "w"), indent=2, sort_keys=True)
+    _git(c, "add", "-A")
+    _git(c, "commit", "-qm", "lock history attack")
+    fnd = [f for f in PF.validate_protocol(
+        os.path.join(c, "benchmarks", "fam-c"), FREEZE)
+        if f.startswith("V2")]
+    return (bool(fnd) and any(w in " ".join(fnd).lower()
+                              for w in ("append", "prefix", "history",
+                                        "genesis", "immutable")), fnd)
+
+
+_ok_del, _f_del = _history_attack("delete", "delete")
+check("D11.1-HISTORY deleting an old amendment entry after genesis "
+      "is a named lock-history finding", _ok_del, str(_f_del[:1])[:200])
+_ok_ed, _f_ed = _history_attack("edit", "edit")
+check("D11.1-HISTORY editing an old amendment entry after genesis "
+      "is a named lock-history finding", _ok_ed, str(_f_ed[:1])[:200])
 
 # --- D11.2 STATIC: first-parent walk -----------------------------------
 _BSS = next(n for n in ast.walk(ast.parse(_SRC))
@@ -328,9 +379,9 @@ check("D11.2-LIVE first-parent sequences equal the old walk for all "
       "seven governed files (non-regression)",
       not _BAD, f"diverged={_BAD}")
 check("D11.2-LIVE live sequence lengths match the certified D11 "
-      "facts (PREREG 20, preflight 18, rest 5/5/12/1/7)",
-      _LENS == {"PREREG.md": 20, "ORDER.md": 5, "LANES.md": 5,
-                "HARNESS-READINESS.md": 12, "preflight.py": 18,
+      "facts (PREREG 21, preflight 19, rest 5/5/12/1/7)",
+      _LENS == {"PREREG.md": 21, "ORDER.md": 5, "LANES.md": 5,
+                "HARNESS-READINESS.md": 12, "preflight.py": 19,
                 "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str(_LENS))
 

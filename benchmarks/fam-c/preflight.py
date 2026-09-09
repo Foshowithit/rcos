@@ -155,6 +155,20 @@ def validate_instance(fam_c_dir, freeze_commit):
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
+# A12l slice D11.1, append-only history checkpoint. The D11
+# authority commit is the genesis from which lock history is
+# immutable: every older amendment entry must survive verbatim in
+# every later lock (new entries may only be appended).
+# PROTOCOL_LOCK_APPEND_ONLY_GENESIS
+# beceff56cb10a4449e53cb35e2b21fd1b3d94cc6
+# 21d9f79d9255d53771027b645ad5fb44076c72b4c999b06dec97131fac48183f
+# (genesis commit, then sha256 of its PROTOCOL-LOCK.json bytes;
+# the same anchor is recorded in the PREREG D11 stanza).
+_GENESIS_COMMIT = "beceff56cb10a4449e53cb35e2b21fd1b3d94cc6"
+_GENESIS_LOCK_SHA256 = \
+    "21d9f79d9255d53771027b645ad5fb44076c72b4c999b06dec97131fac48183f"
+
+
 def _lock_authority_findings(fam_c_dir):
     """A12l slice D11.1 (auditor D9-post P0): the lock authenticates
     itself. Git-aware helper (I/O belongs here, never in
@@ -201,6 +215,96 @@ def _lock_authority_findings(fam_c_dir):
             hashlib.sha256(proc.stdout).hexdigest():
         return ["V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json differs from "
                 "committed experiment-HEAD authority"]
+    return []
+
+
+def validate_lock_history(fam_c_dir):
+    """A12l slice D11.1, append-only history (git-aware; never raises:
+    every parse is guarded, so malformed locks still yield the
+    container findings, never a traceback). Returns findings.
+
+    From the genesis checkpoint above, lock history is immutable:
+    the genesis amendment multiset must survive verbatim in the
+    current lock (later slices only APPEND entries), and every
+    genesis governed root must survive unmoved. Deleting or
+    rewriting an old entry — even with the lock re-committed, so
+    the byte authority passes — fails here with a named
+    lock-history finding (append-only genesis violated).
+
+    Scope: the check applies only where the genesis resolves in
+    the enclosing history AND the lock is bound to the live
+    instance freeze. Synthetic hermetic universes (their own
+    freeze, or no genesis in history) have no anchor to violate:
+    [] there, while the chain/global rules still judge their
+    bytes on the merits.
+    """
+    try:
+        root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
+    except RuntimeError:
+        return []
+    try:
+        proc = subprocess.run(
+            ["git", "show",
+             f"{_GENESIS_COMMIT}:benchmarks/fam-c/PROTOCOL-LOCK.json"],
+            cwd=root, capture_output=True)
+    except FileNotFoundError:
+        return []
+    if proc.returncode != 0:
+        return []
+    if hashlib.sha256(proc.stdout).hexdigest() != _GENESIS_LOCK_SHA256:
+        return ["V2 PROTOCOL-LOCK: lock history violates append-only "
+                "genesis " + _GENESIS_COMMIT[:12] + " (the genesis lock "
+                "bytes do not match the checkpoint; history rewritten?)"]
+    try:
+        live_freeze = load_freeze(fam_c_dir)["freeze_commit"]
+    except Exception:  # noqa: BLE001 - hermetic dir without FREEZE.json
+        return []
+    try:
+        cur = json.load(open(os.path.join(fam_c_dir,
+                                          "PROTOCOL-LOCK.json")))
+    except (ValueError, OSError):
+        return []
+    if not isinstance(cur, dict):
+        return []
+    if cur.get("freeze_commit") != live_freeze:
+        return []
+    try:
+        gen = json.loads(proc.stdout.decode())
+    except ValueError:
+        return []
+    if not isinstance(gen, dict):
+        return []
+
+    def _canon(a):
+        return json.dumps(a, sort_keys=True)
+
+    want, have = {}, {}
+    gen_am = gen.get("amendments")
+    cur_am = cur.get("amendments")
+    for a in gen_am if isinstance(gen_am, list) else []:
+        if isinstance(a, dict):
+            k = _canon(a)
+            want[k] = want.get(k, 0) + 1
+    for a in cur_am if isinstance(cur_am, list) else []:
+        if isinstance(a, dict):
+            k = _canon(a)
+            have[k] = have.get(k, 0) + 1
+    missing = sum(n - have.get(k, 0) for k, n in want.items()
+                  if have.get(k, 0) < n)
+    gen_gov = gen.get("governed")
+    cur_gov = cur.get("governed")
+    moved = 0
+    if isinstance(gen_gov, dict) and isinstance(cur_gov, dict):
+        moved = sum(1 for k, v in gen_gov.items() if cur_gov.get(k) != v)
+    elif isinstance(gen_gov, dict):
+        moved = len(gen_gov)
+    if missing or moved:
+        return ["V2 PROTOCOL-LOCK: lock history violates append-only "
+                "genesis " + _GENESIS_COMMIT[:12] + f" ({missing} old "
+                f"amendment entr{'y' if missing == 1 else 'ies'} "
+                f"removed or rewritten, {moved} governed roots moved; "
+                f"old entries are immutable — append new entries, never "
+                f"rewrite history)"]
     return []
 
 
@@ -634,6 +738,11 @@ def validate_protocol(fam_c_dir, freeze_commit):
     # side-branch state never enters the sequence).
     _tips, chain_findings = protocol_tips(fam_c_dir, freeze_commit)
     out += chain_findings
+    # A12l slice D11.1, append-only history: even a re-committed lock
+    # must carry every older amendment entry verbatim (new entries
+    # only append). Synthetic universes skip silently here; the
+    # instance lineage is always judged.
+    out += validate_lock_history(fam_c_dir)
     # Item-7: the enumerated execution order is DERIVED from ORDER.md, so a
     # hand-edited or stale expansion is protocol drift by construction.
     for f in order_verify_expansion(fam_c_dir):

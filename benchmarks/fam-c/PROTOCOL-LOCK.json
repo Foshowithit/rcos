@@ -309,6 +309,22 @@
    "reason": "A12l slice D11 (auditor D9-post P0/P1/P1/P2): forward amendment AMEND-2026-09-09-d11-protocol-authority freezing lock self-authentication (on-disk PROTOCOL-LOCK.json bytes must equal the committed experiment-HEAD bytes before any consumer parses the lock, else V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json differs from committed experiment-HEAD authority with tips withheld; append-only-forward policy from D11 on, no retroactive ban), first-parent chronology (merged side-branch states never enter the sequence; measured identical for all seven governed files), the committed A13 canonical bar (adapted_input = F(frozen_capability_schema, exact_visible_task_snapshot) with identical-bytes-and-hash, weaker claim only), and stability contract B (byte-integrity, no event-detection guarantee)",
    "base": "a029b91",
    "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "98bd8f7a641a1a110c1890e74578f46c6e32f44be3abdd616fb48231a7d82266",
+   "to_sha": "1efcb8b3554c7ef65ac7171e0fb3a86c1566178b5f5f84b78a94746966a5a63f",
+   "reason": "A12l slice D11 second commit (general-seat gate precision): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 append-only genesis checkpoint (PROTOCOL_LOCK_APPEND_ONLY_GENESIS beceff5 + lock sha, old entries immutable, delete/rewrite fails V2 as a named lock-history finding), A13 precision (hash-pinned artifact+schema+snapshot to adapted_input_sha256, forbidden hidden F inputs, prerequisite-not-completion), canonical-source-manifest wording, and the expected_task_snapshot production binding name",
+   "base": "beceff5",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "ef52c5a25960b7785ba7f8f4d87b56a488548cb3e31363c88a59f045370ddbab",
+   "to_sha": "51797d5c800b933de6473b572d0a9da3c6e22acf9a1cd43a4c617bfd7335ff0b",
+   "reason": "A12l slice D11 second commit (general-seat gate precision): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 append-only genesis checkpoint (PROTOCOL_LOCK_APPEND_ONLY_GENESIS beceff5 + lock sha, old entries immutable, delete/rewrite fails V2 as a named lock-history finding), A13 precision (hash-pinned artifact+schema+snapshot to adapted_input_sha256, forbidden hidden F inputs, prerequisite-not-completion), canonical-source-manifest wording, and the expected_task_snapshot production binding name",
+   "base": "beceff5",
+   "slice": "a12l-slice-d11"
   }
  ]
 }

@@ -805,7 +805,14 @@ D11 on (no retroactive ban: the legitimate earlier repairs stand):
 lock amendment entries are append-only (an entry may be added, never
 rewritten or deleted) and the lock must be committed with the
 amendment it records — an uncommitted worktree lock is refused,
-never trusted.
+never trusted. Append-only genesis checkpoint, frozen outside the
+lock itself: PROTOCOL_LOCK_APPEND_ONLY_GENESIS
+beceff56cb10a4449e53cb35e2b21fd1b3d94cc6
+21d9f79d9255d53771027b645ad5fb44076c72b4c999b06dec97131fac48183f
+(the D11 authority commit, then sha256 of its PROTOCOL-LOCK.json
+bytes). From that commit on, every older amendment entry is
+immutable: deleting or rewriting one — even re-committed — fails
+V2 as a named lock-history finding; later slices only append.
 
 (b) First-parent chronology (P1). The branch walk is now `git log
 --first-parent --format=%H -- benchmarks/fam-c/<fn>`: a state that
@@ -828,10 +835,17 @@ exact_visible_task_snapshot)`, with `F` deterministic frozen code.
 The requirement binds the same task snapshot with the same
 capability under different model-authored mapping/order choices:
 those runs MUST yield identical adapted-input bytes AND
-an identical adapted-input hash. On failure the only permitted
+an identical adapted-input hash. The binding is hash-pinned:
+capability_artifact_sha256, capability_schema_sha256, and
+exact_visible_task_snapshot_sha256 determine adapted_input_sha256,
+and `F` must not consult any hidden input — not the model response
+bytes, not byte offsets, not ordering, not clock, not randomness,
+not enumeration order. On failure the only permitted
 weaker claim is `capability_causally_necessary_given_model_adapter
 = true`, and the material-contribution claim must never be upgraded
-from it.
+from it. This bar is a prerequisite for A13, not A13 completion:
+actual reuse still owes its own per-run causal receipt in that
+run's chain and ledger.
 
 (d) One honest stability contract (P2): contract B (byte-integrity).
 Source churn may occur, but no bytes influenced by it can enter the
@@ -842,7 +856,10 @@ detection of every concurrent mutation event. The smoke asserts
 refusal (`STABILITY-DENY`) OR exact expected-byte identity against
 an independently computed expected value — never "re-run until
 green", and the D10 quiescence read is a confirmation read, not an
-event-detection guarantee.
+event-detection guarantee. Sequential hash walks are not atomic
+snapshots: the constructor hashes the canonical source manifest
+before the copy, after the copy, and once more after a bounded
+settle, and mounts only what all three agree on.
 
 ---
 # 11. Manifest lifecycle
