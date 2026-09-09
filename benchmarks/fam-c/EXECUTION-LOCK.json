@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "4629510fcda9341eb5c5a4e51cf6c0085aec012ce824dc309f8f5a31096ff931",
+ "harness_manifest_sha256": "5fb159352435bca17d08e8f90b5e65a6d8537afea34a5d89f9f9e646aedcd3a2",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -11,9 +11,9 @@
   "harness/lock.py": "0213e6a5b128d9f0e4f8d239bc65c4bca667e9ae5400ee1283e99e5b13a16cd1",
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
-  "harness/dockersandbox.py": "495dcb443855b1429ad8f2f6cd3fb77e2b4518c3227a31b42225b31eef6e3a89",
+  "harness/dockersandbox.py": "713cddb62cf12e77e2493d69b7d8f696725a134b4ce1e07e9e8c2547dbabfc46",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "c543a2b4ce07d7264125f9f0e0f059624ee0248ad627da54585755692897ebac",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "9431a48f04bc677acad8571f60e1fcf76fdfbb00bfd10bc920f8376964d0a90b",
   "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
@@ -759,6 +759,23 @@
     }
    },
    "reason": "A12l slice D11 second commit: expected_task_snapshot production-binding name in the DockerSandbox contract-B docstring (no behavioral change)",
+   "slice": "a12l-slice-d11",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "4629510fcda9341eb5c5a4e51cf6c0085aec012ce824dc309f8f5a31096ff931",
+   "to_manifest": "5fb159352435bca17d08e8f90b5e65a6d8537afea34a5d89f9f9e646aedcd3a2",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "495dcb443855b1429ad8f2f6cd3fb77e2b4518c3227a31b42225b31eef6e3a89",
+     "to_sha": "713cddb62cf12e77e2493d69b7d8f696725a134b4ce1e07e9e8c2547dbabfc46"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "c543a2b4ce07d7264125f9f0e0f059624ee0248ad627da54585755692897ebac",
+     "to_sha": "9431a48f04bc677acad8571f60e1fcf76fdfbb00bfd10bc920f8376964d0a90b"
+    }
+   },
+   "reason": "A12l slice D11 third commit (auditor D10 verdict): expected_task_snapshot production binding in run_arm_h1.main + canonical-manifest wording in dockersandbox",
    "slice": "a12l-slice-d11",
    "status_after": "open-round2"
   }

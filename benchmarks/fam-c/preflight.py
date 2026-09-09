@@ -237,6 +237,14 @@ def validate_lock_history(fam_c_dir):
     freeze, or no genesis in history) have no anchor to violate:
     [] there, while the chain/global rules still judge their
     bytes on the merits.
+
+    Deliberate deviation from "exact prefix", recorded for the
+    auditor: the comparison is an order-insensitive
+    multiset-subset, because validation follows from/to LINKS,
+    never list order — a pure reorder of unchanged entries changes
+    no verdict and must stay legal (the D9 independent gate's
+    control rechain relies on exactly this). Any removed or
+    rewritten old entry, or any moved governed root, still fails.
     """
     try:
         root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
@@ -672,34 +680,42 @@ def protocol_tips(fam_c_dir, freeze_commit):
 
 def _branch_seq_shas(repo_root, rel):
     """Ordered DISTINCT sha256(file bytes) sequence for the
-    repo-relative path `rel` along the experiment branch: [sha256 of
-    the file bytes at commit c for c in `git log --first-parent
-    --format=%H -- <rel>` (first-parent HEAD lineage, oldest ->
-    newest), consecutive duplicates collapsed]. A12i slice D9.1: this
-    sequence is the lineage authority — the recorded node chain must
-    be a subsequence of it (Rule A membership + Rule B chronology),
-    replacing the old all-refs retrievability map. A12l slice D11.2
-    (auditor D9-post P1): the walk is first-parent, so a state that
-    lived only on a merged side branch can never satisfy the
-    subsequence test — linearizing the DAG is refused. Non-regression
-    measured at the D11 base: first-parent and the old walk yield
-    IDENTICAL sequences for all seven governed files on this tree
-    (PREREG.md 19, ORDER.md 5, LANES.md 5, HARNESS-READINESS.md 12,
-    preflight.py 17, T4-SEMANTIC-IDS.json 1, T4-CONFORMANCE.json 7),
-    so no chain repair was needed. Raises RuntimeError when the
-    history is underivable — callers fail closed, never skip."""
+    repo-relative path `rel` along the experiment branch's mainline:
+    the sequence of content states that existed on the mainline.
+    A12l slice D11.2 (auditor D9-post P1, D10-verdict Q2): the walk
+    is EXPLICIT and mechanical —
+      1. enumerate HEAD's first-parent commit chain (rev-list with
+         --first-parent, no path filter, so no path-history
+         simplification defines the chronology);
+      2. oldest -> newest;
+      3. read the governed-file bytes at every commit (a commit that
+         predates the file contributes no state);
+      4. hash them;
+      5. collapse consecutive duplicate content states.
+    A state that lived only on a merged side branch is never on the
+    first-parent chain, so it can never satisfy the subsequence test
+    (a forged side-branch chain names the node); a merge that
+    introduces content onto the mainline IS a mainline state and may
+    legitimately appear (no blanket merge ban). Non-regression
+    measured at the D11 base: the explicit walk yields IDENTICAL
+    sequences to the old walk for all seven governed files on this
+    tree (PREREG.md 19, ORDER.md 5, LANES.md 5, HARNESS-READINESS.md
+    12, preflight.py 17, T4-SEMANTIC-IDS.json 1,
+    T4-CONFORMANCE.json 7), so no chain repair was needed. Raises
+    RuntimeError when the history is underivable — callers fail
+    closed, never skip."""
     try:
-        commits = _git(["log", "--first-parent", "--format=%H", "--",
-                        rel], cwd=repo_root).split()
+        chain = _git(["rev-list", "--first-parent", "HEAD"],
+                     cwd=repo_root).split()
     except RuntimeError:
-        raise RuntimeError(f"git log unreadable for {rel}")
+        raise RuntimeError(f"first-parent commit chain unreadable "
+                           f"for {rel}")
     seq = []
-    for commit in reversed(commits):
+    for commit in reversed(chain):
         proc = subprocess.run(["git", "show", f"{commit}:{rel}"],
                               cwd=repo_root, capture_output=True)
         if proc.returncode != 0:
-            raise RuntimeError(f"git show {commit[:12]}:{rel} "
-                               f"unreadable")
+            continue
         sha = hashlib.sha256(proc.stdout).hexdigest()
         if not seq or seq[-1] != sha:
             seq.append(sha)

@@ -226,11 +226,11 @@ check("D11.1-GOV the append-only-forward lock policy is documented "
       "append-only" in open(os.path.join(FAMC, "PREREG.md")).read()
       and "committed with the" in
       open(os.path.join(FAMC, "PREREG.md")).read())
-check("D11.1-GOV no amendment entry deleted (35 at D10 + 4 D11 "
-      "forward = 39) and D11 recorded as its own forward amendments",
-      len(_LIVE_LOCK["amendments"]) == 39
+check("D11.1-GOV no amendment entry deleted (35 at D10 + 6 D11 "
+      "forward = 41) and D11 recorded as its own forward amendments",
+      len(_LIVE_LOCK["amendments"]) == 41
       and sum(1 for a in _LIVE_LOCK["amendments"]
-              if a.get("slice") == "a12l-slice-d11") == 4,
+              if a.get("slice") == "a12l-slice-d11") == 6,
       str(len(_LIVE_LOCK["amendments"])))
 
 # --- D11.1-HISTORY: append-only genesis (delete/edit old entries) ----
@@ -379,11 +379,47 @@ check("D11.2-LIVE first-parent sequences equal the old walk for all "
       "seven governed files (non-regression)",
       not _BAD, f"diverged={_BAD}")
 check("D11.2-LIVE live sequence lengths match the certified D11 "
-      "facts (PREREG 21, preflight 19, rest 5/5/12/1/7)",
-      _LENS == {"PREREG.md": 21, "ORDER.md": 5, "LANES.md": 5,
-                "HARNESS-READINESS.md": 12, "preflight.py": 19,
+      "facts (PREREG 22, preflight 20, rest 5/5/12/1/7)",
+      _LENS == {"PREREG.md": 22, "ORDER.md": 5, "LANES.md": 5,
+                "HARNESS-READINESS.md": 12, "preflight.py": 20,
                 "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str(_LENS))
+
+# --- D11.4-PROD: the production runner binds the constructed
+# snapshot to an independently derived expected snapshot ---------
+import io as _io
+import tokenize as _tk
+
+
+def _code_only(_src):
+    try:
+        _toks = list(_tk.generate_tokens(_io.StringIO(_src).readline))
+    except Exception:  # noqa: BLE001
+        return _src
+    return " ".join(t.string for t in _toks
+                    if t.type not in (_tk.COMMENT, _tk.STRING,
+                                     _tk.NL, _tk.NEWLINE))
+
+
+_RUNNER = os.path.join(os.path.dirname(FAMC), "harness-run",
+                       "run_arm_h1.py")
+_RTXT = open(_RUNNER, encoding="utf-8").read()
+_RHITS = []
+for _node in ast.walk(ast.parse(_RTXT)):
+    if not isinstance(_node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        continue
+    _seg = ast.get_source_segment(_RTXT, _node) or ""
+    _code = _code_only(_seg)
+    if ("DockerSandbox" in _code and "(" in _code
+            and "task_snapshot" in _code
+            and _re.search(r"(expected|frozen|authorized)\w*_snapshot",
+                           _code, _re.I)
+            and ("raise" in _code or "PermissionError" in _code)):
+        _RHITS.append(_node.name)
+check("D11.4-PROD the production runner binds the constructed "
+      "snapshot to an independently derived expected snapshot "
+      "and refuses before jail use",
+      bool(_RHITS), str(_RHITS[:2]))
 
 shutil.rmtree(_BASE, ignore_errors=True)
 shutil.rmtree(_MINI, ignore_errors=True)

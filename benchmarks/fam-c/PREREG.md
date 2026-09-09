@@ -776,10 +776,20 @@ deterministic injected-mutation refuse check (mutation guaranteed
 inside the window, passes 100%), a stable-source control, and an honest
 churn property (refused OR mounted tree equals two later source reads).
 
-(c) Residual limit (verbatim). The mounted tree equals a source state
-observed identical at two distinct times spanning the copy; a source
-frozen in a torn state for the entire window is indistinguishable from
-a stable source; the guard never proves "the source never changed".
+(c) Residual limit, corrected per the D10 verdict (cross-file ABA
+version — replaces the "frozen torn state" phrasing above, which
+described only the single-file case). Hash and copy walks are
+sequential, not atomic snapshots: a schedule that moves one file
+between that file's read in EVERY walk (x read at S0, y read at
+S1, in source_before, staged copy, source_after, and quiescence
+alike) presents one identical canonical source manifest H that
+never existed atomically, and the guard accepts it. What the
+binding proves is canonical-manifest equality — the mounted tree
+equals the canonical source manifest observed identically across
+the copy window — never atomicity and never "the source never
+changed". Under contract B this is acceptable once independent
+expected bytes are authoritative (D11.4): the expected snapshot,
+not the reads agreeing with themselves, is the authority.
 
 (d) D9 is unaffected: D9 touches no docker staging or isolation code,
 and the loop's clean-battery claim resumes on this fix.
@@ -812,20 +822,34 @@ beceff56cb10a4449e53cb35e2b21fd1b3d94cc6
 (the D11 authority commit, then sha256 of its PROTOCOL-LOCK.json
 bytes). From that commit on, every older amendment entry is
 immutable: deleting or rewriting one — even re-committed — fails
-V2 as a named lock-history finding; later slices only append.
+V2 as a named lock-history finding; later slices only append. The
+checkpoint comparison is an order-insensitive multiset-subset
+(recorded for the auditor as a deliberate deviation from "exact
+prefix"): validation follows from/to links, never list order, so a
+pure reorder of unchanged entries changes no verdict; any removed
+or rewritten old entry, or any moved governed root, still fails.
 
-(b) First-parent chronology (P1). The branch walk is now `git log
---first-parent --format=%H -- benchmarks/fam-c/<fn>`: a state that
-lived only on a merged side branch is never experiment chronology
-and can never satisfy the subsequence test, so linearizing the DAG
-is refused (a forged `v0 -> vX -> vC` names the side-branch node;
-a genuine first-parent chain stays clean). Non-regression measured
-at the D11 base (`a029b91`): first-parent and the old walk yield
-IDENTICAL sequences for all seven governed files (PREREG.md 19,
-ORDER.md 5, LANES.md 5, HARNESS-READINESS.md 12, preflight.py 17,
-T4-SEMANTIC-IDS.json 1, T4-CONFORMANCE.json 7), so no chain repair
-was needed; this slice adds two forward edges (preflight.py, this
-document) and deletes no entry.
+(b) First-parent chronology (P1). The branch walk is now explicit
+and mechanical: enumerate HEAD's first-parent commit chain
+(rev-list, no path filter), oldest to newest, read the governed
+file's bytes at every commit, hash them, collapse consecutive
+duplicates — no path-history simplification defines the
+chronology. A state that lived only on a merged side branch is
+never experiment chronology and can never satisfy the subsequence
+test, so linearizing the DAG is refused (a forged `v0 -> vX ->
+vC` names the side-branch node; a genuine first-parent chain
+stays clean). No blanket merge ban: a merge that introduces
+content onto the mainline IS a mainline state and may
+legitimately appear — governance middle ground: merges may
+exist, but a merge that changes governed-file bytes must itself
+produce a first-parent content state covered by the normal
+forward-amendment rules. Non-regression measured
+at the D11 base (`a029b91`): the explicit walk yields
+IDENTICAL sequences to the old walk for all seven governed files
+(PREREG.md 19, ORDER.md 5, LANES.md 5, HARNESS-READINESS.md 12,
+preflight.py 17, T4-SEMANTIC-IDS.json 1, T4-CONFORMANCE.json 7),
+so no chain repair was needed; this slice adds forward edges
+(preflight.py, this document) and deletes no entry.
 
 (c) The A13 canonical-adaptation bar, committed (P1). The D9 post's
 claim is corrected by committing the bar here, before any A13 code
@@ -840,7 +864,15 @@ capability_artifact_sha256, capability_schema_sha256, and
 exact_visible_task_snapshot_sha256 determine adapted_input_sha256,
 and `F` must not consult any hidden input — not the model response
 bytes, not byte offsets, not ordering, not clock, not randomness,
-not enumeration order. On failure the only permitted
+not enumeration order. Permitted inputs to `F`: frozen
+capability/schema bytes, exact task snapshot bytes,
+execution-locked constants and code — and strongest design, the
+model response is not even an argument to `F`. Recorded
+acceptance attack: response A (offsets 0:10 then 10:20, ordering
+[a,b], mapping M1) versus response B (offsets reversed, ordering
+[b,a], mapping M2), same immutable task and capability artifacts,
+MUST yield identical canonical adapted bytes — any byte
+difference fails the bar. On failure the only permitted
 weaker claim is `capability_causally_necessary_given_model_adapter
 = true`, and the material-contribution claim must never be upgraded
 from it. This bar is a prerequisite for A13, not A13 completion:

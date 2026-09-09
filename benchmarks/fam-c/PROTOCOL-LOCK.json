@@ -325,6 +325,22 @@
    "reason": "A12l slice D11 second commit (general-seat gate precision): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 append-only genesis checkpoint (PROTOCOL_LOCK_APPEND_ONLY_GENESIS beceff5 + lock sha, old entries immutable, delete/rewrite fails V2 as a named lock-history finding), A13 precision (hash-pinned artifact+schema+snapshot to adapted_input_sha256, forbidden hidden F inputs, prerequisite-not-completion), canonical-source-manifest wording, and the expected_task_snapshot production binding name",
    "base": "beceff5",
    "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "1efcb8b3554c7ef65ac7171e0fb3a86c1566178b5f5f84b78a94746966a5a63f",
+   "to_sha": "2b20c8408a51c120172f1f0de183a26eb780efb9070802b49b5d1f38f777f420",
+   "reason": "A12l slice D11 third commit (auditor D10 verdict): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 explicit first-parent commit walk (rev-list, no path filter; multiset-subset history documented as deliberate deviation from exact prefix), cross-file ABA residual wording (canonical source manifest), A13 permitted-inputs/model-response-not-an-argument/recorded A-B attack, merge-governance middle ground, and the production expected_task_snapshot runner binding",
+   "base": "dea7cdc",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "51797d5c800b933de6473b572d0a9da3c6e22acf9a1cd43a4c617bfd7335ff0b",
+   "to_sha": "8028f6bad01b8dfe8a6042b3810859829cbd6b3b1209b844e49b4e8b13d4e8fc",
+   "reason": "A12l slice D11 third commit (auditor D10 verdict): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 explicit first-parent commit walk (rev-list, no path filter; multiset-subset history documented as deliberate deviation from exact prefix), cross-file ABA residual wording (canonical source manifest), A13 permitted-inputs/model-response-not-an-argument/recorded A-B attack, merge-governance middle ground, and the production expected_task_snapshot runner binding",
+   "base": "dea7cdc",
+   "slice": "a12l-slice-d11"
   }
  ]
 }

@@ -175,19 +175,23 @@ class DockerSandbox:
         if work == vis:
             raise PermissionError("MOUNT-POLICY-DENY work == visible")
         # Source-stability binding (contract B — byte-integrity, not
-        # event detection): the staged copy must equal ONE stable
-        # source state. Hash before, copy, hash after; refuse on any
+        # event detection): the staged copy must equal ONE canonical
+        # source manifest. Hash before, copy, hash after; refuse on any
         # drift. A concurrent mutation that lands inside the staged
         # bytes is refused; a mutation the reads never observe is out
         # of scope by contract (see the class docstring).
         #
-        # REAL guarantee (exactly this, no more): the mounted tree equals a
-        # source state observed identical at two distinct times spanning the
-        # copy (the pre-copy source hash, the post-copy source hash, the
+        # REAL guarantee (exactly this, no more): the mounted tree equals
+        # the canonical source manifest observed identically across the
+        # copy window (the pre-copy manifest, the post-copy manifest, the
         # staged-copy hash against the CURRENT source, and a quiescence
-        # confirmation read). Residual limit: a source frozen in a torn
-        # state for the entire window is indistinguishable from a stable
-        # source; the guard never proves "the source never changed".
+        # confirmation read). Residual limit, cross-file ABA version:
+        # hash/copy walks are sequential, not atomic snapshots — a
+        # schedule that moves one file between that file's read in EVERY
+        # walk can present one identical manifest H that never existed
+        # atomically (x read at S0, y read at S1, in all four reads).
+        # The guard proves canonical-manifest equality, never atomicity
+        # and never "the source never changed".
         source_before = _hash_tree(vis)
         os.makedirs(work, exist_ok=True)
         os.chmod(work, 0o700)
