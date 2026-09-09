@@ -248,7 +248,7 @@ class DockerSandbox:
             import shutil as _sh4
             _sh4.rmtree(self.staged, ignore_errors=True)
             raise PermissionError(
-                "SNAPSHOT-DENY staged snapshot != expected frozen "
+                "SNAPSHOT-DENY staged snapshot != expected authorized "
                 "snapshot; refused")
         self.mounts = [(work, "/work", "rw"), (self.staged, "/task", "ro")]
         self.work = work
@@ -300,7 +300,11 @@ class DockerSandbox:
     def verify_task_snapshot(self):
         """Byte binding: hash /task INSIDE a fresh jail container and
         require equality with the construction-time snapshot. Proves the
-        bytes validated are the bytes consumed. Raises on mismatch."""
+        bytes validated are the bytes consumed. The construction-time
+        snapshot was itself bound to the same frozen expected snapshot
+        (SNAPSHOT-DENY otherwise), so this re-proof is transitive:
+        in-jail bytes equal the frozen expected bytes. Raises on
+        mismatch."""
         code = ("import hashlib,os;"
                 "d={}\n"
                 "for b,ds,fs in os.walk('/task'):\n"

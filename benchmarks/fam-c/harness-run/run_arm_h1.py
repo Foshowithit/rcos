@@ -2182,32 +2182,44 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
             "ACQUISITION-DECISION-DENY: no capability exists before "
             f"PROMOTION; the only legal decision at {acq_event} is fresh, "
             f"got {arrival.get('decision')!r}")
-    # A12l slice D11.4 (production contract-B binding): the expected
-    # snapshot is derived INDEPENDENTLY here — a direct hashlib walk
-    # over the authorized visible bytes, never the constructor's own
-    # reader — and the constructed snapshot must equal it before any
-    # jail use. The first jail run then re-proves the in-jail bytes
-    # against task_snapshot before executing, so in-jail bytes equal
-    # the expected snapshot transitively. A constructor that agrees
-    # with itself on bytes H != expected still refuses here.
+    # A12l slice D11.4 (production contract-B binding, auditor D10
+    # verdict): the expected snapshot is derived from the FROZEN
+    # authorized task bytes (taskdir), restricted to exactly the
+    # entries build_visible_root copied — never a fresh walk over
+    # the mutable `visible` dir (any sequential walk over mutable
+    # bytes shares the cross-file ABA weakness, so such a walk is
+    # never the authority here). Keys match _hash_tree's shape, so
+    # the constructor's equality test is exact. The first jail run
+    # then re-proves the in-jail bytes against task_snapshot before
+    # executing, so in-jail bytes equal the frozen expected
+    # snapshot transitively. A constructor that agrees with itself
+    # on bytes H != expected still refuses here.
     expected_task_snapshot = {}
-    for _b, _ds, _fs in os.walk(visible):
-        for _d in sorted(_ds):
-            _r = os.path.relpath(os.path.join(_b, _d), visible)
-            expected_task_snapshot["dir|" + _r] = hashlib.sha256(
-                b"").hexdigest()
-        for _fn in sorted(_fs):
-            _p = os.path.join(_b, _fn)
-            _r = os.path.relpath(_p, visible)
-            with open(_p, "rb") as _fh:
-                expected_task_snapshot["file|" + _r] = hashlib.sha256(
-                    _fh.read()).hexdigest()
+    for _name in sorted(copied):
+        _src = os.path.join(taskdir, _name.rstrip("/"))
+        if _name.endswith("/"):
+            for _b, _ds, _fs in os.walk(_src):
+                for _d in sorted(_ds):
+                    _r = os.path.relpath(os.path.join(_b, _d), taskdir)
+                    expected_task_snapshot["dir|" + _r] = \
+                        hashlib.sha256(b"").hexdigest()
+                for _fn in sorted(_fs):
+                    _p = os.path.join(_b, _fn)
+                    _r = os.path.relpath(_p, taskdir)
+                    with open(_p, "rb") as _fh:
+                        expected_task_snapshot["file|" + _r] = \
+                            hashlib.sha256(_fh.read()).hexdigest()
+        else:
+            with open(_src, "rb") as _fh:
+                expected_task_snapshot["file|" + _name] = \
+                    hashlib.sha256(_fh.read()).hexdigest()
     # DockerSandbox stages its own private copy of `visible` and refuses on
-    # drift; the constructor itself enforces the expected snapshot
+    # drift; the constructor itself enforces the frozen expected snapshot
     # passed below (SNAPSHOT-DENY on any mismatch, even one its own
     # reads agreed on), and its task_snapshot must additionally equal
     # the hash the context was built from, else refuse.
-    sb = DockerSandbox(work, visible, expected_task_snapshot)
+    sb = DockerSandbox(work, visible,
+                       expected_task_snapshot=expected_task_snapshot)
     if sb.task_snapshot != staged_tree:
         raise RuntimeError("CONTEXT-SNAPSHOT-DENY sandbox task_snapshot != "
                            "context_task_snapshot_hash source")

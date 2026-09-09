@@ -421,10 +421,14 @@ check("D11.4-PROD the production runner binds the constructed "
       "and refuses before jail use",
       bool(_RHITS), str(_RHITS[:2]))
 
-# --- D11.4-ABA: the auditor's acceptance — every internal read
-# agrees on H, but the independently derived expected value is
-# E != H, so construction must still DENY (no docker needed:
-# refusal happens in __init__ before any mount or jail use).
+# --- D11.4-ABA: the auditor's acceptance — the READER is
+# monkeypatched so source_before == source_after == staged ==
+# quiescence == H (every internal read agrees), while the expected
+# value is E != H: the constructor must still DENY with
+# SNAPSHOT-DENY before any jail use (no docker needed: refusal
+# happens in __init__ before any mount). Control: E == H
+# constructs with exact identity. Legacy: expected None behaves
+# as before (quiescence path only, constructs).
 sys.path.insert(0, HARNESS)
 import dockersandbox as _dsmod  # noqa: E402
 
@@ -442,25 +446,36 @@ def _aba_src(tag):
 
 
 _ABA_SRC, _ABA_W = _aba_src("aba")
-_H = _dsmod._hash_tree(_ABA_SRC)
-_E = dict(_H)
-_E["file|x.txt"] = "0" * 64
+_H_REAL = _dsmod._hash_tree(_ABA_SRC)
+_E_FORCED = dict(_H_REAL)
+_E_FORCED["file|x.txt"] = "0" * 64
+_REAL_HASH_TREE = _dsmod._hash_tree
+_dsmod._hash_tree = lambda _top: dict(_H_REAL)  # noqa: E731
 try:
-    _dsmod.DockerSandbox(_ABA_W, _ABA_SRC, _E)
-    _aba_denied = False
-except PermissionError as _e:
-    _aba_denied = "SNAPSHOT-DENY" in str(_e)
-check("D11.4-ABA forced H != E refused with SNAPSHOT-DENY even "
-      "though every internal read agrees on H", _aba_denied)
-_ABA_SRC2, _ABA_W2 = _aba_src("aba-good")
-_H2 = _dsmod._hash_tree(_ABA_SRC2)
-try:
-    _sb_aba = _dsmod.DockerSandbox(_ABA_W2, _ABA_SRC2, dict(_H2))
-    _aba_good = (_sb_aba.task_snapshot == _H2)
-except PermissionError:
-    _aba_good = False
-check("D11.4-ABA matching expected snapshot constructs with exact "
-      "identity (control)", _aba_good)
+    try:
+        _dsmod.DockerSandbox(_ABA_W, _ABA_SRC, _E_FORCED)
+        _aba_denied = False
+    except PermissionError as _e:
+        _aba_denied = "SNAPSHOT-DENY" in str(_e)
+    check("D11.4-ABA forced H != E refused with SNAPSHOT-DENY even "
+          "though every patched internal read agrees on H",
+          _aba_denied)
+    try:
+        _sb_aba = _dsmod.DockerSandbox(_ABA_W, _ABA_SRC, dict(_H_REAL))
+        _aba_good = (_sb_aba.task_snapshot == _H_REAL)
+    except PermissionError:
+        _aba_good = False
+    check("D11.4-ABA matching expected snapshot constructs with exact "
+          "identity (control)", _aba_good)
+    try:
+        _sb_legacy = _dsmod.DockerSandbox(_ABA_W, _ABA_SRC)
+        _aba_legacy = (_sb_legacy.task_snapshot == _H_REAL)
+    except PermissionError:
+        _aba_legacy = False
+    check("D11.4-ABA expected None keeps legacy behavior "
+          "(constructs, quiescence path only)", _aba_legacy)
+finally:
+    _dsmod._hash_tree = _REAL_HASH_TREE
 
 shutil.rmtree(_BASE, ignore_errors=True)
 shutil.rmtree(_MINI, ignore_errors=True)
