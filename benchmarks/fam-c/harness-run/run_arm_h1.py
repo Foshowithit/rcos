@@ -2188,38 +2188,44 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     # entries build_visible_root copied — never a fresh walk over
     # the mutable `visible` dir (any sequential walk over mutable
     # bytes shares the cross-file ABA weakness, so such a walk is
-    # never the authority here). Keys match _hash_tree's shape, so
-    # the constructor's equality test is exact. The first jail run
-    # then re-proves the in-jail bytes against task_snapshot before
-    # executing, so in-jail bytes equal the frozen expected
-    # snapshot transitively. A constructor that agrees with itself
-    # on bytes H != expected still refuses here.
-    expected_task_snapshot = {}
-    for _name in sorted(copied):
-        _src = os.path.join(taskdir, _name.rstrip("/"))
+    # never the authority here). Keys match _hash_tree's shape
+    # EXACTLY (including dir|<copied-dir> for each copied root
+    # itself, which copytree reproduces byte-identically), so the
+    # constructor's equality test is exact on legitimate runs. The
+    # first jail run then re-proves the in-jail bytes against
+    # task_snapshot before executing, so in-jail bytes equal the
+    # frozen expected snapshot transitively. A constructor that
+    # agrees with itself on bytes H != expected still refuses here.
+    frozen_expected = {}
+    for _name in copied:                       # e.g. "prompt.md", "pages/"
         if _name.endswith("/"):
-            for _b, _ds, _fs in os.walk(_src):
-                for _d in sorted(_ds):
-                    _r = os.path.relpath(os.path.join(_b, _d), taskdir)
-                    expected_task_snapshot["dir|" + _r] = \
-                        hashlib.sha256(b"").hexdigest()
+            _d = os.path.join(taskdir, _name.rstrip("/"))
+            for _b, _ds, _fs in os.walk(_d):
+                frozen_expected["dir|" + os.path.relpath(_b, taskdir)] = \
+                    hashlib.sha256(b"").hexdigest()
                 for _fn in sorted(_fs):
                     _p = os.path.join(_b, _fn)
-                    _r = os.path.relpath(_p, taskdir)
-                    with open(_p, "rb") as _fh:
-                        expected_task_snapshot["file|" + _r] = \
-                            hashlib.sha256(_fh.read()).hexdigest()
+                    frozen_expected["file|" + os.path.relpath(_p, taskdir)] = \
+                        hashlib.sha256(open(_p, "rb").read()).hexdigest()
         else:
-            with open(_src, "rb") as _fh:
-                expected_task_snapshot["file|" + _name] = \
-                    hashlib.sha256(_fh.read()).hexdigest()
+            _p = os.path.join(taskdir, _name)
+            frozen_expected["file|" + _name] = \
+                hashlib.sha256(open(_p, "rb").read()).hexdigest()
+    # Sanity belt: the frozen authority must agree with the staged
+    # snapshot from materialization time. A mismatch means churn
+    # during materialization (or an unfaithful copy) and must
+    # refuse here, never proceed into the constructor.
+    if frozen_expected != staged_tree:
+        raise PermissionError(
+            "STABILITY-DENY frozen authorized snapshot != staged "
+            "snapshot (churn during materialization); refused")
     # DockerSandbox stages its own private copy of `visible` and refuses on
     # drift; the constructor itself enforces the frozen expected snapshot
     # passed below (SNAPSHOT-DENY on any mismatch, even one its own
     # reads agreed on), and its task_snapshot must additionally equal
     # the hash the context was built from, else refuse.
     sb = DockerSandbox(work, visible,
-                       expected_task_snapshot=expected_task_snapshot)
+                       expected_task_snapshot=frozen_expected)
     if sb.task_snapshot != staged_tree:
         raise RuntimeError("CONTEXT-SNAPSHOT-DENY sandbox task_snapshot != "
                            "context_task_snapshot_hash source")

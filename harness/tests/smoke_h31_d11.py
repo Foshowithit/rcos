@@ -477,6 +477,23 @@ try:
 finally:
     _dsmod._hash_tree = _REAL_HASH_TREE
 
+# --- D11.4-FROZEN: the authority is frozen bytes, not a fresh walk.
+# Derive a frozen manifest from a source dir, then MUTATE the source:
+# the constructor's own reads now agree on the mutated state, but
+# the frozen manifest still refuses with SNAPSHOT-DENY.
+_FZ_SRC, _FZ_W = _aba_src("frozen")
+_FZ_E = _dsmod._hash_tree(_FZ_SRC)
+open(os.path.join(_FZ_SRC, "x.txt"), "w").write("MUTATED\n")
+open(os.path.join(_FZ_SRC, "y.txt"), "w").write("MUTATED\n")
+try:
+    _dsmod.DockerSandbox(_FZ_W, _FZ_SRC, dict(_FZ_E))
+    _fz_denied = False
+except PermissionError as _e:
+    _fz_denied = "SNAPSHOT-DENY" in str(_e)
+check("D11.4-FROZEN frozen manifest refuses post-freeze mutation "
+      "even though constructor reads agree on mutated state",
+      _fz_denied)
+
 shutil.rmtree(_BASE, ignore_errors=True)
 shutil.rmtree(_MINI, ignore_errors=True)
 bad = [n for n, ok_ in RESULTS if not ok_]

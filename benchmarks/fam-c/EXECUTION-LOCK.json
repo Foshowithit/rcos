@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "5c0d3d35fe88f22d5111d08d0a7aea6c86847a3e695cf32411c5ae089235ea2a",
+ "harness_manifest_sha256": "7661084b3ff976d7e9892a629b72d7250bd93e9148da21d72797e856afe9afff",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -13,7 +13,7 @@
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "cebd4c4f07e75b7ba81afa755d30f659a4423d3228b9856fd4b39f9d73581b43",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "329f2fecba818f19234478cc529d6b386772235cea5de9ac07b5ea7f4d4299ca",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "f78df3a9dc8535f1ec13c698570103c1de3e03d15ebb139d8a78599ad32a7e3b",
   "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
@@ -810,6 +810,19 @@
     }
    },
    "reason": "A12l slice D11 round-5 (general-seat review item 1): frozen-taskdir expected walk in run_arm_h1.main passed as expected_task_snapshot kwarg; SNAPSHOT-DENY authorized text; verify_task_snapshot transitivity note",
+   "slice": "a12l-slice-d11",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "5c0d3d35fe88f22d5111d08d0a7aea6c86847a3e695cf32411c5ae089235ea2a",
+   "to_manifest": "7661084b3ff976d7e9892a629b72d7250bd93e9148da21d72797e856afe9afff",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "329f2fecba818f19234478cc529d6b386772235cea5de9ac07b5ea7f4d4299ca",
+     "to_sha": "f78df3a9dc8535f1ec13c698570103c1de3e03d15ebb139d8a78599ad32a7e3b"
+    }
+   },
+   "reason": "A12l slice D11 round-6 (general-seat review final item): frozen-taskdir expected walk with copied-root dir entries + frozen==staged pre-refusal in run_arm_h1.main",
    "slice": "a12l-slice-d11",
    "status_after": "open-round2"
   }
