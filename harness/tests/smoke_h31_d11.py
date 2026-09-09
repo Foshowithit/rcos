@@ -226,11 +226,11 @@ check("D11.1-GOV the append-only-forward lock policy is documented "
       "append-only" in open(os.path.join(FAMC, "PREREG.md")).read()
       and "committed with the" in
       open(os.path.join(FAMC, "PREREG.md")).read())
-check("D11.1-GOV no amendment entry deleted (35 at D10 + 8 D11 "
-      "forward = 43) and D11 recorded as its own forward amendments",
-      len(_LIVE_LOCK["amendments"]) == 43
+check("D11.1-GOV no amendment entry deleted (35 at D10 + 9 D11 "
+      "forward = 44) and D11 recorded as its own forward amendments",
+      len(_LIVE_LOCK["amendments"]) == 44
       and sum(1 for a in _LIVE_LOCK["amendments"]
-              if a.get("slice") == "a12l-slice-d11") == 8,
+              if a.get("slice") == "a12l-slice-d11") == 9,
       str(len(_LIVE_LOCK["amendments"])))
 
 # --- D11.1-HISTORY: append-only genesis (delete/edit old entries) ----
@@ -314,6 +314,66 @@ _ok_re, _f_re = _history_reorder()
 check("D11.1-HISTORY reordering old entries after genesis is a "
       "named lock-history finding (exact prefix)", _ok_re,
       str(_f_re[:1])[:200])
+
+
+def _history_untrack_attack():
+    # The untrack variant: reorder two old entries, then remove the
+    # governed lock from the index and commit the removal. The
+    # worktree lock is forged but has no committed counterpart, so
+    # the byte authority skips — the history rule must still refuse
+    # (canonical governed path, genesis resolvable in the clone).
+    c = _clone("hist-untrack")
+    lp = os.path.join(c, "benchmarks", "fam-c", "PROTOCOL-LOCK.json")
+    lock = json.load(open(lp))
+    am = lock["amendments"]
+    i = next(i for i, a in enumerate(am)
+             if a.get("file") == "PREREG.md")
+    j = next(j for j, a in enumerate(am)
+             if a.get("file") == "preflight.py")
+    am[i], am[j] = am[j], am[i]
+    json.dump(lock, open(lp, "w"), indent=2, sort_keys=True)
+    _git(c, "rm", "--cached", "-q", "benchmarks/fam-c/PROTOCOL-LOCK.json")
+    _git(c, "commit", "-qm", "untrack the governed lock")
+    fnd = [f for f in PF.validate_protocol(
+        os.path.join(c, "benchmarks", "fam-c"), FREEZE)
+        if f.startswith("V2")]
+    return (bool(fnd) and any(w in " ".join(fnd).lower()
+                              for w in ("untracked", "lineage", "append")),
+            fnd)
+
+
+_ok_un, _f_un = _history_untrack_attack()
+check("D11.1-HISTORY reordered + untracked governed lock refused "
+      "with a named untracked-lineage finding", _ok_un,
+      str(_f_un[:1])[:200])
+
+
+def _history_genesisless():
+    # Synthetic repo whose history does NOT contain the genesis
+    # commit, canonical layout, lock UNTRACKED: both the byte
+    # authority and the history rule stay silent (nothing to anchor
+    # to); fixtures are unaffected.
+    r = os.path.join(_BASE, "genesisless")
+    os.makedirs(os.path.join(r, "benchmarks", "fam-c"), exist_ok=True)
+    famc = os.path.join(r, "benchmarks", "fam-c")
+    open(os.path.join(famc, "PREREG.md"), "w").write("genesisless\n")
+    shutil.copy2(os.path.join(FAMC, "FREEZE.json"),
+                 os.path.join(famc, "FREEZE.json"))
+    _git(r, "init", "-q")
+    _git(r, "add", "-A")
+    _git(r, "commit", "-qm", "synthetic freeze")
+    disk = _sha_file(os.path.join(famc, "PREREG.md"))
+    json.dump({"freeze_commit": FREEZE,
+               "governed": {"PREREG.md": disk},
+               "amendments": []},
+              open(os.path.join(famc, "PROTOCOL-LOCK.json"), "w"))
+    return (PF._lock_authority_findings(famc) == []
+            and PF.validate_lock_history(famc) == [])
+
+
+check("D11.1-HISTORY genesis-less synthetic repo with untracked "
+      "canonical lock stays silent (fixtures unaffected)",
+      _history_genesisless())
 _V2_APPEND = [f for f in PF.validate_protocol(FAMC, FREEZE)
               if f.startswith("V2")]
 check("D11.1-HISTORY control: pure append (live shape) stays V2 "
@@ -414,9 +474,9 @@ check("D11.2-LIVE first-parent sequences equal the old walk for all "
       "seven governed files (non-regression)",
       not _BAD, f"diverged={_BAD}")
 check("D11.2-LIVE live sequence lengths match the certified D11 "
-      "facts (PREREG 22, preflight 22, rest 5/5/12/1/7)",
+      "facts (PREREG 22, preflight 23, rest 5/5/12/1/7)",
       _LENS == {"PREREG.md": 22, "ORDER.md": 5, "LANES.md": 5,
-                "HARNESS-READINESS.md": 12, "preflight.py": 22,
+                "HARNESS-READINESS.md": 12, "preflight.py": 23,
                 "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str(_LENS))
 

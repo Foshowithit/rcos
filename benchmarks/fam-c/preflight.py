@@ -235,14 +235,15 @@ def validate_lock_history(fam_c_dir):
 
     Scope: the check applies only where the genesis resolves in
     the enclosing history AND the lock is bound to the live
-    instance freeze AND the lock path has a committed counterpart
-    at HEAD. Synthetic hermetic universes (their own freeze, no
-    genesis in history, or an uncommitted fixture lock path such
-    as an in-repo throwaway dir) carry no committed lineage of
-    their own and are skipped — exactly like the byte authority,
-    which compares against committed bytes only where they exist
-    — while the chain/global rules still judge their bytes on the
-    merits. Every real lineage (the live tree, committed clones)
+    instance freeze. An untracked lock path is exempt ONLY at
+    non-governed paths (synthetic fixture copies such as in-repo
+    throwaway dirs, which carry no committed lineage of their own
+    and are still judged by the chain/global rules). The canonical
+    governed path benchmarks/fam-c/PROTOCOL-LOCK.json, in a lineage
+    carrying the genesis anchor, must always be committed: an
+    uncommitted governed lock refuses here (no verifiable lineage),
+    because untracking would otherwise license silent reorder or
+    rewrite. Every real lineage (the live tree, committed clones)
     is always tracked and always judged.
 
     Order sensitivity (auditor D10 verdict): validation follows
@@ -265,7 +266,24 @@ def validate_lock_history(fam_c_dir):
     except FileNotFoundError:
         return []
     if _tr.returncode != 0:
-        return []
+        # An untracked lock is legitimate only for fixture copies at
+        # non-governed paths (the D9 gate's in-repo temp dirs). The
+        # GOVERNED lock path, in a lineage that carries the append-only
+        # genesis anchor, MUST be committed: an uncommitted lock has no
+        # verifiable lineage, so history could be reordered or rewritten
+        # without detection (untrack => reorder freely).
+        if _rel.replace(os.sep, "/") != "benchmarks/fam-c/PROTOCOL-LOCK.json":
+            return []
+        _gen = subprocess.run(["git", "cat-file", "-e",
+                               _GENESIS_COMMIT + "^{commit}"],
+                              cwd=root, capture_output=True)
+        if _gen.returncode != 0:
+            return []
+        return ["V2 PROTOCOL-LOCK: the governed lock path "
+                "benchmarks/fam-c/PROTOCOL-LOCK.json is UNTRACKED at HEAD: "
+                "an uncommitted lock has no verifiable append-only lineage "
+                "(history could be reordered or rewritten undetected); "
+                "commit the lock append-only before validation"]
     try:
         proc = subprocess.run(
             ["git", "show",

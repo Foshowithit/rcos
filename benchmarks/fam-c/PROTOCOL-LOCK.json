@@ -357,6 +357,14 @@
    "reason": "A12l slice D11 round-8 (general-seat ordered form): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 exact-prefix check in the ordered return-early form (multiset/governed belts fire first; pure reorder returns the position-for-position finding)",
    "base": "56ac7c0",
    "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "d47f59696cf246783a11cade41fce5797f481bfbe516b8ff631cacedb5e371eb",
+   "to_sha": "f0a8cbb3a1132e2f728c38d2b3ca7f3f3c2b200407c81bb8c840c09aa90f8ee5",
+   "reason": "A12l slice D11 round-9 (general-seat untrack hardening): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 canonical-path untracked-lock refusal (an uncommitted governed lock has no verifiable lineage; fixture copies at non-governed paths stay exempt)",
+   "base": "aaf570e",
+   "slice": "a12l-slice-d11"
   }
  ]
 }
