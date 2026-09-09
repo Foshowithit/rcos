@@ -14,11 +14,14 @@ C1-2 (auditor P0 #7): exact registry<->PREREG set equality lives in V2
 preflight (`validate_t4_registry`, wired into `validate_protocol`) —
 hermetic matrix: unmutated green; {drop fam03, add fam07, rename
 fam01's id, key/value family mismatch} each refuse naming the id.
-C1-3 (auditor A12c.8): the T4-CONFORMANCE-READINESS surface never
-silently skips a lock — corrupt/unreadable/symlinked locks are
-inadmissible naming path+reason and force ready False, even beside a
-good lock; a family whose only lock is corrupt is inadmissible, not
-absent; the previously-green discriminating case still passes.
+C1-3 (auditor A12c.8, reframed by A12d slice D3 / A12d.6): the
+order-derived T4-CONFORMANCE-READINESS surface never silently skips a
+lock — corrupt/unreadable/symlinked locks are inadmissible naming
+path+reason and force FAILURE, even beside a good lock; a family
+whose only lock is corrupt is inadmissible, not absent; the
+previously-green discriminating control still discriminates (a
+partial set reports INCOMPLETE, never READY and never a silent
+pass).
 
 Stdlib only. Hermetic fixtures in throwaway dirs (no live-tree
 mutation); live-tree reads are read-only. Prints
@@ -121,8 +124,12 @@ def hermetic(tag, families=("fam05",)):
     root = tempfile.mkdtemp(prefix="h21-" + tag + "-")
     for name in ("ORDER-EXPANSION.json", "PROTOCOL-LOCK.json",
                  "EXECUTION-LOCK.json", "FREEZE.json", "FREEZE-HASHES.sha256",
-                 "T4-SEMANTIC-IDS.json", "T4-CONFORMANCE.json", "PREREG.md"):
-        shutil.copy2(os.path.join(FAMC, name), os.path.join(root, name))
+                 "T4-SEMANTIC-IDS.json", "T4-CONFORMANCE.json", "PREREG.md",
+                 "ORDER.md", "STAGED.md", "FAMILIES.md", "LANES.md",
+                 "HARNESS-READINESS.md"):
+        src = os.path.join(FAMC, name)
+        if os.path.exists(src):
+            shutil.copy2(src, os.path.join(root, name))
     fam = os.path.join(root, "families")
     os.makedirs(fam)
     for f in families:
@@ -273,22 +280,32 @@ check("C1-2 key/value family mismatch refuses naming the id",
 # --- C1-3: corrupt/symlinked locks are inadmissible, never skipped -----
 # Two-lock sets use universes A+C of fam05 (the H20 pattern): the frozen
 # expansion orders fam05 before every other family, so a second family
-# cannot mint without fam05's full downstream; A+C exercises the same
-# discovery surface (two committed locks, worst-verdict-wins per family).
+# cannot mint without fam05's full downstream. Under the D3
+# order-derived contract a 2-lock set is INCOMPLETE (partial, never a
+# silent pass and never READY); a corrupted lock beside a good one is
+# FAILURE with the path named.
 root_g = hermetic("c13g")
 mint(root_g, "fam05", universe="A", producer_contract=LIMITATION_CONTRACT)
 mint(root_g, "fam05", universe="C", producer_contract=LIMITATION_CONTRACT)
 rep_g = SPEC.report(root_g)
-check("C1-3 discriminating control is contract-conformance-ready",
-      rep_g["verdict"] == "contract-conformance-ready"
-      and rep_g["contract_conformance_ready"] is True
-      and rep_g["discriminating"] == ["fam05"]
-      and rep_g["inadmissible"] == {}, str(rep_g))
+check("C1-3 discriminating control is INCOMPLETE (partial set, not "
+      "READY, not a silent pass)",
+      rep_g["verdict"] == "contract-conformance-INCOMPLETE"
+      and rep_g["present"] == 2 and len(rep_g["missing"]) == 22,
+      str({k: rep_g[k] for k in ("verdict", "present")}))
+check("C1-3 both present rows discriminate under the live v2 map",
+      sum(1 for x in rep_g["cells"] if x["present"]) == 2
+      and all(x["admissible"] and x["discriminating"]
+              for x in rep_g["cells"] if x["present"]),
+      str(rep_g["cells"][:2]))
 cli_g = run_cli(root_g)
-check("C1-3 CLI exits 0 on the discriminating control",
-      cli_g.returncode == 0, f"rc={cli_g.returncode}")
+check("C1-3 CLI exits 1 on the partial discriminating set",
+      cli_g.returncode == 1
+      and "contract-conformance-INCOMPLETE present=2 missing=22"
+      in cli_g.stdout,
+      f"rc={cli_g.returncode}")
 
-# Two-family-shaped set, one lock corrupted: failure listing that path.
+# One lock corrupted beside a good lock: FAILURE naming that path.
 root_c = hermetic("c13c")
 mint(root_c, "fam05", universe="A", producer_contract=LIMITATION_CONTRACT)
 mint(root_c, "fam05", universe="C", producer_contract=LIMITATION_CONTRACT)
@@ -296,22 +313,23 @@ bad_p = lock_path(root_c, "fam05", universe="C")
 good_bytes = open(bad_p, "rb").read()
 open(bad_p, "wb").write(b"NOT-JSON{{{corrupt lock bytes")
 rep_c = SPEC.report(root_c)
-check("C1-3 corrupt lock beside a good lock forces failure",
-      rep_c["verdict"] == "contract-conformance-failure"
-      and rep_c["contract_conformance_ready"] is False, rep_c["verdict"])
-bad_reasons = rep_c["inadmissible"].get("fam05") or []
+check("C1-3 corrupt lock beside a good lock forces FAILURE",
+      rep_c["verdict"] == "contract-conformance-FAILURE",
+      rep_c["verdict"])
 check("C1-3 corrupt lock is inadmissible naming path+reason",
-      any(bad_p in r and "unparsable" in r for r in bad_reasons),
-      "; ".join(bad_reasons)[:220])
-check("C1-3 good lock beside corruption still discriminates (not "
-      "hidden)",
-      rep_c["discriminating"] == ["fam05"])
-check("C1-3 corrupt lock is not counted as a lock (problems surface "
-      "it, discovery keeps the one good lock)",
-      set(SPEC.discover_locks(root_c)) == {"fam05"}
-      and len(SPEC.discover_problems(root_c).get("fam05") or []) == 1)
+      any(bad_p in r and "unparsable" in r for r in rep_c["problems"]),
+      "; ".join(rep_c["problems"])[:220])
+check("C1-3 good lock beside corruption is still present and "
+      "discriminating (not hidden)",
+      any(x["block"] == "PQ" and x["universe"] == "A"
+          and x["family"] == "fam05" and x["present"]
+          and x["discriminating"] for x in rep_c["cells"]))
+check("C1-3 corrupt lock is not counted present",
+      not any(x["block"] == "PQ" and x["universe"] == "C"
+              and x["family"] == "fam05" and x["present"]
+              for x in rep_c["cells"]))
 cli_c = run_cli(root_c)
-check("C1-3 CLI exits 1 on the corrupted set", cli_c.returncode == 1,
+check("C1-3 CLI exits 2 on the corrupted set", cli_c.returncode == 2,
       f"rc={cli_c.returncode}")
 check("C1-3 CLI names the corrupt path on stdout",
       bad_p in cli_c.stdout, cli_c.stdout[-200:])
@@ -324,15 +342,14 @@ link_p = lock_path(root_s, "fam05", universe="C")
 os.unlink(link_p)
 os.symlink(os.path.join(root_s, "PROTOCOL-LOCK.json"), link_p)
 rep_s = SPEC.report(root_s)
-check("C1-3 symlinked lock forces failure",
-      rep_s["verdict"] == "contract-conformance-failure"
-      and rep_s["contract_conformance_ready"] is False, rep_s["verdict"])
-link_reasons = rep_s["inadmissible"].get("fam05") or []
+check("C1-3 symlinked lock forces FAILURE",
+      rep_s["verdict"] == "contract-conformance-FAILURE",
+      rep_s["verdict"])
 check("C1-3 symlinked lock is inadmissible naming path+reason",
-      any(link_p in r and "symlink" in r for r in link_reasons),
-      "; ".join(link_reasons)[:220])
+      any(link_p in r and "symlink" in r for r in rep_s["problems"]),
+      "; ".join(rep_s["problems"])[:220])
 cli_s = run_cli(root_s)
-check("C1-3 CLI exits 1 on the symlinked set", cli_s.returncode == 1,
+check("C1-3 CLI exits 2 on the symlinked set", cli_s.returncode == 2,
       f"rc={cli_s.returncode}")
 
 # A family whose only lock is corrupt is inadmissible, not absent.
@@ -341,21 +358,33 @@ mint(root_o, "fam05")
 only_p = lock_path(root_o, "fam05")
 open(only_p, "wb").write(b"\x00\x01not a lock")
 rep_o = SPEC.report(root_o)
-check("C1-3 sole corrupt lock: family inadmissible, not absent",
-      "fam05" in rep_o["inadmissible"]
-      and "fam05" in rep_o["families"]
-      and rep_o["contract_conformance_ready"] is False, str(rep_o))
-only_reasons = rep_o["inadmissible"].get("fam05") or []
+check("C1-3 sole corrupt lock: FAILURE, tuple not present",
+      rep_o["verdict"] == "contract-conformance-FAILURE"
+      and not any(x["family"] == "fam05" and x["present"]
+                  for x in rep_o["cells"]),
+      str({k: rep_o[k] for k in ("verdict", "present")}))
 check("C1-3 sole corrupt lock names path+reason",
-      any(only_p in r for r in only_reasons),
-      "; ".join(only_reasons)[:220])
+      any(only_p in r for r in rep_o["problems"]),
+      "; ".join(rep_o["problems"])[:220])
 
 # Production-caller discipline guards on the reframed module.
 spec_src = open(SPEC_CLI, encoding="utf-8").read()
-check("specificity.py delegates to lock.specificity_gate",
-      "specificity_gate" in spec_src)
-check("specificity.py derives capability dirs via the order API",
-      "capability_dir" in spec_src)
+check("specificity.py derives readiness from order.expand(ORDER.md)",
+      "expand(" in spec_src and "ORDER.md" in spec_src)
+check("specificity.py uses order.cell_state as the sole "
+      "admissibility authority",
+      "cell_state" in spec_src and "SOLE admissibility authority"
+      in spec_src)
+check("specificity.py binds present locks to the live v2 map via "
+      "conformance.verdict",
+      "conformance.verdict" in spec_src and "conformance_map_sha256"
+      in spec_src)
+check("specificity.py walks disk ONLY for stray capability dirs",
+      "stray" in spec_src and "ONLY disk walk" in spec_src)
+check("specificity.py freezes the three verdict literals",
+      "contract-conformance-READY" in spec_src
+      and "contract-conformance-INCOMPLETE" in spec_src
+      and "contract-conformance-FAILURE" in spec_src)
 check("specificity.py has no hidden-contract reader (no K.md open)",
       _re.search(r"open\([^)]*K\.md", spec_src) is None)
 

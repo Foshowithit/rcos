@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "532476dce36d0b7d89523c9eabb5e5d3d72ef4042fa401273b307f02ed31b36b",
+ "harness_manifest_sha256": "78aeedfb3fb325a61f735783dec5355695020608af0ad2526e5bb0ef3b96d154",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -18,11 +18,11 @@
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "80d9a91b8c9cf8a95ebc5b39254455b23ff9e5170af056f211d00b92008a09e5",
+  "harness/promotion.py": "7bc2cae79e1fce911db154f797a13d89214a55b7cdad108d0528b83e0917e582",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
   "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
-  "harness/specificity.py": "57f6381249ef4bc82744e3244ad05653d6515743f18c58845efeb04bae30e5d1",
+  "harness/specificity.py": "740074c5e8c8f79d4ef573135ef7e7a6e476cd3eb0bd483c1824d6646f253c9f",
   "harness/conformance.py": "d9552ab32e6321b5ffa1625e10971c99645c58eb2e05efbe1496fbbc5ea6bf71"
  },
  "amendments": [
@@ -555,6 +555,36 @@
    },
    "reason": "A12d slice D2 (auditor A12d.3/A12d.4): producer contract schema v2 (preconditions as {requires} objects, empty lists legal) + affirmative-requires conformance bridge v2 (negation markers, requires_predicates, limitations never evidence) in harness/conformance.py, harness/promotion.py, harness/lock.py, harness/order.py; T0 prompt states the v2 shape (benchmarks/fam-c/harness-run/run_arm_h1.py)",
    "slice": "a12d-slice-d2",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "532476dce36d0b7d89523c9eabb5e5d3d72ef4042fa401273b307f02ed31b36b",
+   "to_manifest": "122fd709c0a44493a532ecadf52796d002068f2c958a4a4db4f3398135ce9b4e",
+   "files": {
+    "harness/promotion.py": {
+     "from_sha": "80d9a91b8c9cf8a95ebc5b39254455b23ff9e5170af056f211d00b92008a09e5",
+     "to_sha": "7bc2cae79e1fce911db154f797a13d89214a55b7cdad108d0528b83e0917e582"
+    },
+    "harness/specificity.py": {
+     "from_sha": "57f6381249ef4bc82744e3244ad05653d6515743f18c58845efeb04bae30e5d1",
+     "to_sha": "681e1bbf93465e6384158002e4970b25e74370471d0857616addc5d32371315e"
+    }
+   },
+   "reason": "A12d slice D3 (auditor A12d.5/A12d.6): consumer-minimal capability bytes (manifest key set minus block/universe, opaque cap-alias capability_id, namespace-free family label) + order-derived T4-conformance-readiness reporter (order.expand 24 lock cells, cell_state sole admissibility, live v2 map binding, stray as only disk walk); H20/H18 migrated to the new contract at grown counts, new H25 acceptance suite",
+   "slice": "a12d-slice-d3",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "122fd709c0a44493a532ecadf52796d002068f2c958a4a4db4f3398135ce9b4e",
+   "to_manifest": "78aeedfb3fb325a61f735783dec5355695020608af0ad2526e5bb0ef3b96d154",
+   "files": {
+    "harness/specificity.py": {
+     "from_sha": "681e1bbf93465e6384158002e4970b25e74370471d0857616addc5d32371315e",
+     "to_sha": "740074c5e8c8f79d4ef573135ef7e7a6e476cd3eb0bd483c1824d6646f253c9f"
+    }
+   },
+   "reason": "A12d slice D3 (auditor A12d.5/A12d.6): consumer-minimal capability bytes (manifest key set minus block/universe, opaque cap-alias capability_id, namespace-free family label) + order-derived T4-conformance-readiness reporter (order.expand 24 lock cells, cell_state sole admissibility, live v2 map binding, stray as only disk walk, path-naming inadmissible entries); H20/H21/H18 migrated to the new contract at grown counts, new H25 acceptance suite",
+   "slice": "a12d-slice-d3",
    "status_after": "open-round2"
   }
  ],

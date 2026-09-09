@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""H20 — A12c slice B: consumer-minimal capability + provenance invariance.
+"""H20 — A12c slice B: consumer-minimal capability + provenance invariance,
+as reframed by A12d slice D3 (auditor A12d.5).
 
 B1: the T0 acquisition prompt explicitly requests `capability_contract`
     {semantic_core, preconditions, limitations} in the producer's own
@@ -7,16 +8,25 @@ B1: the T0 acquisition prompt explicitly requests `capability_contract`
     unpromotable; every non-acquisition arm prompt is byte-unchanged
     (shared _OUT) and the T1 acquisition instruction is untouched.
 B2/B3/B4: the minted consumer manifest carries ONLY the minimal key set
-    (capability_id, version, block, universe, family, candidate_sha256,
-    interface, producer_contract, artifacts, usage); adapter_notes.md and
-    engine.py carry no acquisition provenance.
+    (capability_id, version, family, candidate_sha256, interface,
+    producer_contract, artifacts, usage) — block/universe REMOVED —
+    with capability_id as the opaque consumer alias
+    "cap-" + sha256(canonical_json({candidate_sha256,
+    producer_contract, version}))[:12]; adapter_notes.md and engine.py
+    carry no acquisition provenance and no namespace token.
 B5: the fixture stand-in authors its own wording (no K.md reader).
-B6: consumer-visible bytes are INVARIANT under provenance mutation —
+B6: consumer-visible bytes are EXACTLY byte-identical across universes —
     the same family minted in universes A (lane P) and C (lane Q) with
     different source cells, provider identities, evidence grades and
     chain tips, plus a second root with a different protocol-lock hash,
-    yields byte-identical consumer bytes after excluding
-    capability_id/block/universe/family; auditor-side records differ.
+    yields byte-identical engine.py AND manifest.json AND
+    adapter_notes.md with NO exclusion list and NO key stripping;
+    auditor-side records differ.
+A5: the manifest for A and C of the same family/contract is identical
+    when the candidate bytes are identical and differs when they
+    differ; two DIFFERENT families with the same candidate+contract
+    bytes produce the SAME opaque alias (opacity) while their
+    auditor-side lock ids still differ.
 
 Stdlib only. Hermetic fixtures in throwaway dirs (no live-tree
 mutation); live-tree reads are read-only. Prints
@@ -51,11 +61,14 @@ SOLVER = ("import json, os, sys\n"
           "ok = sorted(os.listdir(inp))\n"
           "json.dump({'ok': ok, 'bad': [], 'unverified': []},\n"
           "          open(outp, 'w'))\n")
+SOLVER_VARIANT = SOLVER + "# variant candidate\n"
 
-ALLOWED_MANIFEST_KEYS = {"capability_id", "version", "block", "universe",
-                         "family", "candidate_sha256", "interface",
+# A12d slice D3: the consumer-minimal key set (block/universe REMOVED).
+ALLOWED_MANIFEST_KEYS = {"capability_id", "version", "family",
+                         "candidate_sha256", "interface",
                          "producer_contract", "artifacts", "usage"}
-FORBIDDEN_MANIFEST_KEYS = {"source_cells", "acquisition_chain_tips",
+FORBIDDEN_MANIFEST_KEYS = {"block", "universe", "source_cells",
+                           "acquisition_chain_tips",
                            "protocol_lock_sha256", "execution_lock_sha256",
                            "evidence_grade", "producer_identity",
                            "t4_semantic_id", "t4_ratified", "conformance_cause",
@@ -65,7 +78,8 @@ FORBIDDEN_MANIFEST_KEYS = {"source_cells", "acquisition_chain_tips",
                            "candidate_provenance_sha256",
                            "promotion_receipt_sha256", "manifest_sha256",
                            "training_receipts", "builder_identity"}
-NAMESPACE_KEYS = {"capability_id", "block", "universe", "family"}
+NAMESPACE_TOKENS = ("PQ", "QP", "universe", "block", "A-K", "C-K",
+                    "fam0", "-PQ")
 NOTES_FORBIDDEN = ("arrival", "validated by", "chain", "grade", "protocol",
                    "evidence", "lock_sha", "LOCK", "cell", "K.md", "t4_",
                    "T4", "conformance", "ratif", "audit", "hidden",
@@ -73,6 +87,14 @@ NOTES_FORBIDDEN = ("arrival", "validated by", "chain", "grade", "protocol",
 T0_FORBIDDEN = ("K.md", "semantic_id", "semantic id", "conformance",
                 "ratif", "audit", "hidden", "evidence", "grade",
                 "DESIGN-T4", "chain tip", "protocol", "t4_")
+
+# A5 cross-family probe contract (test support ONLY): independently
+# written text, namespace-token-free, byte-identical for both families.
+A5_CONTRACT = {
+    "semantic_core": "Cross-family opacity probe: file listing audit.",
+    "preconditions": [{"requires": "only valid for local v1 sha256 "
+                                   "manifests"}],
+    "limitations": []}
 
 
 def check(name, cond, detail=""):
@@ -89,8 +111,9 @@ def hermetic(tag):
         shutil.copy2(os.path.join(FAMC, name), os.path.join(root, name))
     fam = os.path.join(root, "families")
     os.makedirs(fam)
-    shutil.copytree(os.path.join(FAMC, "families", "fam05"),
-                    os.path.join(fam, "fam05"))
+    for family in ("fam05", "fam03"):
+        shutil.copytree(os.path.join(FAMC, "families", family),
+                        os.path.join(fam, family))
     for dirpath, dirnames, _f in os.walk(root):
         os.chmod(dirpath, 0o755)
         for d in dirnames:
@@ -115,8 +138,8 @@ def mint(root, universe, grade):
     return res, res2
 
 
-def consumer_bytes(root, universe):
-    capdir = order.capability_dir(root, "PQ", universe, "fam05")
+def consumer_bytes(root, block, universe, family):
+    capdir = order.capability_dir(root, block, universe, family)
     out = {}
     for name in ("manifest.json", "adapter_notes.md", "engine.py"):
         with open(os.path.join(capdir, name), "rb") as f:
@@ -124,12 +147,20 @@ def consumer_bytes(root, universe):
     return out
 
 
+def canonical_alias(manifest):
+    payload = {"candidate_sha256": manifest["candidate_sha256"],
+               "producer_contract": manifest["producer_contract"],
+               "version": manifest["version"]}
+    blob = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return "cap-" + hashlib.sha256(blob.encode()).hexdigest()[:12]
+
+
 # ---- root1: A on lane P (harness-validation), C on lane Q (estimand) ----
 root1 = hermetic("r1")
 resA, _ = mint(root1, "A", "harness-validation")
 resC, _ = mint(root1, "C", "estimand")
-consA = consumer_bytes(root1, "A")
-consC = consumer_bytes(root1, "C")
+consA = consumer_bytes(root1, "PQ", "A", "fam05")
+consC = consumer_bytes(root1, "PQ", "C", "fam05")
 manA, manC = (json.loads(consA["manifest.json"]),
               json.loads(consC["manifest.json"]))
 recA = json.load(open(resA["receipt"]))
@@ -184,8 +215,9 @@ check("T1 acquisition prompt keeps the untouched adapter_py instruction",
       and "adapter_py" in t1prep["prompt"]
       and "capability_contract" not in t1prep["prompt"])
 
-# ---- B2: the consumer manifest is aggressively minimal ------------------
-check("manifest key set is exactly the minimal consumer set",
+# ---- B2: the consumer manifest is aggressively minimal (D3-A) ----------
+check("manifest key set is exactly the consumer-minimal set (no "
+      "block/universe)",
       set(manA) == ALLOWED_MANIFEST_KEYS
       and set(manC) == ALLOWED_MANIFEST_KEYS,
       sorted(set(manA) | set(manC)))
@@ -206,6 +238,26 @@ check("manifest producer_contract is {semantic_core, preconditions, "
       recC["semantic_core"],
       str(sorted((manA.get("producer_contract") or {}).keys())))
 
+# ---- A2: the opaque consumer alias -------------------------------------
+check("capability_id is the opaque alias (cap- + 12 hex, no block "
+      "letter, universe letter, family token, or order position)",
+      manA["capability_id"].startswith("cap-")
+      and len(manA["capability_id"]) == 16
+      and all(ch in "0123456789abcdef"
+              for ch in manA["capability_id"][4:])
+      and not [t for t in NAMESPACE_TOKENS
+               if t in manA["capability_id"]],
+      manA["capability_id"])
+check("alias is the frozen canonical recomputation over "
+      "{candidate_sha256, producer_contract, version}",
+      manA["capability_id"] == canonical_alias(manA)
+      and manC["capability_id"] == canonical_alias(manC),
+      f"{manA['capability_id']} vs {canonical_alias(manA)}")
+check("family stays only as the namespace-free taxonomy label",
+      manA["family"] == manC["family"] == "family-05"
+      and not [t for t in NAMESPACE_TOKENS if t in manA["family"]],
+      manA["family"])
+
 # ---- B3/B4: notes and engine carry no acquisition provenance ------------
 notesA = consA["adapter_notes.md"].decode()
 engA = consA["engine.py"].decode()
@@ -213,9 +265,11 @@ check("adapter_notes.md names no cell, chain, grade, lock, T4, or "
       "auditor wording",
       not [w for w in NOTES_FORBIDDEN if w in notesA],
       [w for w in NOTES_FORBIDDEN if w in notesA])
-check("adapter_notes.md keeps id, candidate sha, interface, contract, "
-      "and use",
-      "fam05-PQ-A-K" in notesA and recA["candidate"]["sha256"] in notesA
+check("adapter_notes.md keeps the opaque id, candidate sha, "
+      "interface, contract, and use (never the canonical cell id)",
+      manA["capability_id"] in notesA
+      and "fam05-PQ-A-K" not in notesA and "fam05-PQ-C-K" not in notesA
+      and recA["candidate"]["sha256"] in notesA
       and "engine.py <field_map.json> <records.json> <OUTPUT.json>"
       in notesA
       and recA["semantic_core"] in notesA)
@@ -237,44 +291,23 @@ check("stand-in declares independent text for all six families",
               and isinstance(v[1], list) and v[1]
               and v[2] == [] for v in FX.PRODUCER_CONTRACTS.values()))
 
-# ---- B6: provenance mutation must not move consumer bytes ---------------
-normA = {k: v for k, v in manA.items() if k not in NAMESPACE_KEYS}
-normC = {k: v for k, v in manC.items() if k not in NAMESPACE_KEYS}
-# The artifacts map binds the exact sibling bytes, which legitimately
-# differ by capability_id (notes header) — so it is compared structurally:
-# engine.py's locked hash must be identical, and every entry must equal
-# the sha256 of the bytes actually present in that universe's dir.
-artA, artC = normA.pop("artifacts"), normC.pop("artifacts")
-capA2 = order.capability_dir(root1, "PQ", "A", "fam05")
-capC2 = order.capability_dir(root1, "PQ", "C", "fam05")
-
-
-def _files_match(manifest, capdir):
-    arts = manifest.get("artifacts") or {}
-    if set(arts) != {"engine.py", "adapter_notes.md"}:
-        return False
-    for name, want in arts.items():
-        with open(os.path.join(capdir, name), "rb") as f:
-            if hashlib.sha256(f.read()).hexdigest() != want:
-                return False
-    return True
-
-
-check("manifest bytes identical across universes modulo "
-      "capability_id/block/universe/family",
-      normA == normC and artA.get("engine.py") == artC.get("engine.py")
-      and _files_match(manA, capA2) and _files_match(manC, capC2),
-      [k for k in normA if normA.get(k) != normC.get(k)] or
-      f"engine_sha={artA.get('engine.py') == artC.get('engine.py')}")
-norm_notesA = notesA.replace("fam05-PQ-A-K", "CAPID")
-norm_notesC = consC["adapter_notes.md"].decode().replace(
-    "fam05-PQ-C-K", "CAPID")
-check("adapter_notes.md identical across universes modulo "
-      "capability_id", norm_notesA == norm_notesC)
+# ---- B6: EXACT byte identity across universes (D3-A4, no modulo) --------
+check("manifest.json EXACTLY byte-identical across universes (no "
+      "exclusion list, no key stripping)",
+      consA["manifest.json"] == consC["manifest.json"],
+      f"{hashlib.sha256(consA['manifest.json']).hexdigest()[:12]} vs "
+      f"{hashlib.sha256(consC['manifest.json']).hexdigest()[:12]}")
+check("adapter_notes.md EXACTLY byte-identical across universes",
+      consA["adapter_notes.md"] == consC["adapter_notes.md"])
 check("engine.py byte-identical across universes",
       consA["engine.py"] == consC["engine.py"],
       f"{hashlib.sha256(consA['engine.py']).hexdigest()[:12]} vs "
       f"{hashlib.sha256(consC['engine.py']).hexdigest()[:12]}")
+check("the opaque alias is identical across universes for identical "
+      "candidate + contract bytes",
+      manA["capability_id"] == manC["capability_id"]
+      and manA["candidate_sha256"] == manC["candidate_sha256"],
+      f"{manA['capability_id']} vs {manC['capability_id']}")
 
 # auditor-side records MUST differ across the two provenances
 t0A = order.expected_event(exp1, "PQ", "fam05", "T0", "A")
@@ -283,7 +316,8 @@ tipA = order._chain_tip(os.path.join(order.run_dir(root1, t0A),
                                      "EVIDENCE-CHAIN.jsonl"))
 tipC = order._chain_tip(os.path.join(order.run_dir(root1, t0C),
                                      "EVIDENCE-CHAIN.jsonl"))
-check("auditor records differ: cells, tips, provider identity, grade",
+check("auditor records differ: cells, tips, provider identity, grade, "
+      "lock ids",
       recA["source_cells"] != recC["source_cells"]
       and tipA != tipC
       and recA["t0_evidence"]["identity"]["model_requested"] !=
@@ -292,8 +326,10 @@ check("auditor records differ: cells, tips, provider identity, grade",
       and recC["evidence_grade"] == "estimand"
       and json.load(open(os.path.join(
           order.capability_dir(root1, "PQ", "A", "fam05"),
-          "CAPABILITY_LOCK.json")))["evidence_grade"] ==
-      "harness-validation",
+          "CAPABILITY_LOCK.json")))["capability_id"] == "fam05-PQ-A-K"
+      and json.load(open(os.path.join(
+          order.capability_dir(root1, "PQ", "C", "fam05"),
+          "CAPABILITY_LOCK.json")))["capability_id"] == "fam05-PQ-C-K",
       f"grades={recA['evidence_grade']}/{recC['evidence_grade']}")
 
 # ---- B6: protocol-lock-hash mutation leaves consumer bytes still --------
@@ -306,19 +342,83 @@ assert (json.load(open(_pl)) == _pl_obj
         hashlib.sha256(open(os.path.join(root1, "PROTOCOL-LOCK.json"),
                             "rb").read()).hexdigest())
 resA2, _ = mint(root2, "A", "harness-validation")
-consA2 = consumer_bytes(root2, "A")
+consA2 = consumer_bytes(root2, "PQ", "A", "fam05")
 recA2 = json.load(open(resA2["receipt"]))
 check("different protocol-lock hash still mints byte-identical "
       "consumer artifacts (same universe, same solver)",
       consA2["engine.py"] == consA["engine.py"]
       and consA2["adapter_notes.md"] == consA["adapter_notes.md"]
-      and json.loads(consA2["manifest.json"]) == manA,
+      and consA2["manifest.json"] == consA["manifest.json"],
       [k for k in ("engine.py", "adapter_notes.md", "manifest.json")
        if consA2[k] != consA[k]])
 check("auditor receipt binds the mutated protocol-lock hash",
       recA2["protocol_lock_sha256"] != recA["protocol_lock_sha256"]
       and recA2["protocol_lock_sha256"] ==
       hashlib.sha256(open(_pl, "rb").read()).hexdigest())
+
+# ---- A5: cross-family opacity (D3-A5) -----------------------------------
+# fam05 full (20 cells) + fam03 A acquisition (4 cells) in expansion
+# order with the SAME solver and the SAME contract declaration, plus a
+# fam03 C acquisition with a DIFFERENT solver (different candidate).
+root3 = hermetic("r3")
+exp3 = order.load_expansion(root3)
+_t0sha = {}
+
+
+def _a5_build(c, solver):
+    if c["event"] == "T1":
+        return build_model_run(
+            root3, cell=c, freeze_commit=FREEZE, solver_py=SOLVER,
+            validates_candidate=_t0sha[(c["block"], c["universe"],
+                                        c["family"])])
+    d = build_model_run(root3, cell=c, freeze_commit=FREEZE,
+                        solver_py=solver,
+                        producer_contract=dict(A5_CONTRACT))
+    if c["event"] == "T0":
+        _t0sha[(c["block"], c["universe"], c["family"])] = \
+            t0_candidate_sha256(d)
+    return d
+
+
+for _c in exp3["cells"][:28]:
+    _b, _u, _f, _ev = (_c["block"], _c["universe"], _c["family"],
+                       _c["event"])
+    if _ev == "PROMOTION":
+        promotion.promote_universe(root3, _b, _f, _u, FREEZE,
+                                   "harness-validation")
+    elif _ev == "CAPABILITY_LOCK":
+        promotion.advance(root3, _b, _f, _u, FREEZE,
+                          "harness-validation")
+    elif _f == "fam03" and _u == "C":
+        _a5_build(_c, SOLVER_VARIANT)
+    else:
+        _a5_build(_c, SOLVER)
+_m5 = json.loads(consumer_bytes(root3, "PQ", "A", "fam05")
+                 ["manifest.json"])
+_m3 = json.loads(consumer_bytes(root3, "PQ", "A", "fam03")
+                 ["manifest.json"])
+_m3c = json.loads(consumer_bytes(root3, "PQ", "C", "fam03")
+                  ["manifest.json"])
+_lk5 = json.load(open(os.path.join(
+    order.capability_dir(root3, "PQ", "A", "fam05"),
+    "CAPABILITY_LOCK.json")))
+_lk3 = json.load(open(os.path.join(
+    order.capability_dir(root3, "PQ", "A", "fam03"),
+    "CAPABILITY_LOCK.json")))
+check("same candidate+contract bytes -> same opaque alias across "
+      "DIFFERENT families",
+      _m5["capability_id"] == _m3["capability_id"]
+      and _m5["candidate_sha256"] == _m3["candidate_sha256"]
+      and _m5["producer_contract"] == _m3["producer_contract"],
+      f"fam05={_m5['capability_id']} fam03={_m3['capability_id']}")
+check("auditor-side lock ids still differ across families",
+      _lk5.get("capability_id") == "fam05-PQ-A-K"
+      and _lk3.get("capability_id") == "fam03-PQ-A-K",
+      f"{_lk5.get('capability_id')} / {_lk3.get('capability_id')}")
+check("a different candidate yields a different alias/manifest",
+      _m3c["candidate_sha256"] != _m3["candidate_sha256"]
+      and _m3c["capability_id"] != _m3["capability_id"],
+      f"{_m3c['capability_id']} vs {_m3['capability_id']}")
 
 passed = sum(1 for _n, c, _d in CHECKS if c)
 total = len(CHECKS)

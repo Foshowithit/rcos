@@ -21,6 +21,27 @@ content-addressed and frozen; T1 may build a new local adapter and may
 invoke/test K, but may NOT alter K's semantic core or artifact bytes. T1
 SHIP -> promotion; T1 failure -> no promotion.
 
+A12d slice D3 (auditor A12d.5): the consumer-visible capability bytes
+are MINIMAL and opaque. The minted `manifest.json` carries EXACTLY the
+keys {artifacts, capability_id, candidate_sha256, family, interface,
+producer_contract, usage, version} — `block` and `universe` are REMOVED
+(they stay auditor-side in the lock, receipt, chain, and run manifest).
+`capability_id` in the consumer manifest is an OPAQUE alias,
+"cap-" + sha256(canonical_json({"candidate_sha256",
+"producer_contract", "version"}))[:12] with canonical_json =
+json.dumps(obj, sort_keys=True, separators=(",", ":")) — identical
+across blocks and universes for identical candidate + contract bytes,
+carrying no block letter, no universe letter, no family token, and no
+order position. `family` stays only as the benchmark's public
+task-category taxonomy (identical across blocks and universes; the
+label spells the word "family" plus the category number, e.g.
+"family-05", so it carries no namespace token). The canonical
+per-universe cell capability id (famNN-BLOCK-UNIVERSE-K) stays
+auditor-side (lock/receipt/chain/order) and is unchanged there. The
+manifest must not explain its own derivation (no provenance in
+consumer bytes); the alias rule lives here in code (see
+consumer_capability_alias() + consumer_family_label()).
+
 Stdlib only.
 """
 import hashlib
@@ -134,6 +155,38 @@ def _sha_file(p):
 
 def _canon(obj):
     return json.dumps(obj, sort_keys=True, separators=(",", ":"))
+
+
+def consumer_capability_alias(candidate_sha256, producer_contract, version):
+    """Opaque consumer capability alias (A12d slice D3 / A12d.5).
+
+    "cap-" + sha256(canonical_json({"candidate_sha256",
+    "producer_contract", "version"}))[:12] with canonical_json =
+    json.dumps(obj, sort_keys=True, separators=(",", ":")). Identical
+    across blocks and universes for identical candidate + contract
+    bytes; carries no block letter, no universe letter, no family
+    token, and no order position. The canonical cell capability id
+    stays auditor-side and is unchanged there.
+    """
+    payload = {"candidate_sha256": candidate_sha256,
+               "producer_contract": producer_contract,
+               "version": version}
+    blob = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return "cap-" + hashlib.sha256(blob.encode()).hexdigest()[:12]
+
+
+def consumer_family_label(family):
+    """Consumer-visible family taxonomy label (A12d slice D3 / A12d.5).
+
+    The benchmark's public task-category taxonomy, identical across
+    blocks and universes and encoding no arm/order information. The
+    label spells the word "family" plus the category number (e.g.
+    auditor family "fam05" -> consumer label "family-05") so the
+    consumer bytes carry no namespace token (the auditor-side
+    "fam0N" prefix would collide with one).
+    """
+    digits = family[3:] if family.startswith("fam") else family
+    return "family-" + digits
 
 
 def _read_json(p):
@@ -695,9 +748,18 @@ def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
     # chain/receipt pointer ride the auditor-side promotion receipt and
     # CAPABILITY_LOCK only — never these files. `cell`, `protocol_sha`,
     # `exec_sha`, `version`, `evidence_grade`, `t4_id`, `t4_ratified` are
-    # therefore accepted here for signature stability (and `version` plus
-    # the namespace fields ARE consumer-visible below) but no provenance
-    # beyond block/universe/family is written to these artifacts. The
+    # therefore accepted here for signature stability (and `version` IS
+    # consumer-visible below) but no provenance beyond the family taxonomy
+    # label is written to these artifacts.
+    #
+    # A12d slice D3 (auditor A12d.5): consumer-minimal bytes. The manifest
+    # key set is EXACTLY {artifacts, capability_id, candidate_sha256,
+    # family, interface, producer_contract, usage, version} — `block` and
+    # `universe` are REMOVED (auditor-side only). `capability_id` is the
+    # opaque consumer alias (see consumer_capability_alias()), identical
+    # across blocks/universes for identical candidate + contract bytes;
+    # `family` is the consumer taxonomy label (see
+    # consumer_family_label()), identical across blocks/universes. The
     # producer contract below comes from the SAME T0 arrival declaration
     # the promotion receipt uses (one source of truth).
     core, pre, lim = contract
@@ -706,7 +768,16 @@ def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
               .replace("__CANDIDATE_SHA256__", cand["sha256"])
               .replace("__CANDIDATE_SOURCE__", repr(cand["source"])))
     interface = ("engine.py <field_map.json> <records.json> <OUTPUT.json>")
-    contract_lines = [f"# {cell['capability_id']} — promoted capability",
+    # The producer-authored contract: rooted in THIS universe's own
+    # acquisition arrival payload (the T0 declaration the receipt
+    # uses), never in hidden auditor text. This exact object lands in
+    # the manifest AND feeds the opaque alias (one source of truth).
+    pcontract = {"semantic_core": core,
+                 "preconditions": list(pre),
+                 "limitations": list(lim)}
+    alias = consumer_capability_alias(cand["sha256"], pcontract, version)
+    flabel = consumer_family_label(cell["family"])
+    contract_lines = [f"# {alias} — promoted capability",
                       "",
                       f"candidate sha256: {cand['sha256']}",
                       "",
@@ -737,18 +808,14 @@ def _mint_artifacts(capdir, cand, contract, cell, protocol_sha, exec_sha,
         "Do not modify engine.py."])
     notes = "\n".join(contract_lines) + "\n"
     manifest = {
-        "capability_id": cell["capability_id"], "version": version,
-        "block": cell["block"], "universe": cell["universe"],
-        "family": cell["family"],
+        "capability_id": alias, "version": version,
+        "family": flabel,
         "candidate_sha256": cand["sha256"],
         "interface": interface,
         # The producer-authored contract: rooted in THIS universe's own
         # acquisition arrival payload (the T0 declaration the receipt
         # uses), never in hidden auditor text.
-        "producer_contract": {
-            "semantic_core": core,
-            "preconditions": list(pre),
-            "limitations": list(lim)},
+        "producer_contract": pcontract,
         "usage": ("Invoke the frozen engine as `python3 engine.py "
                   "<field_map.json> <records.json> <OUTPUT.json>`: the "
                   "field map describes the capability inputs, the records "
