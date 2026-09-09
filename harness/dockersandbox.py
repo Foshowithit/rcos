@@ -31,6 +31,7 @@ import json
 import os
 import stat
 import subprocess
+import time
 import uuid
 
 IMAGE = ("python:3.12-slim@sha256:"
@@ -159,6 +160,14 @@ class DockerSandbox:
         # Source-stability binding: the staged copy must equal ONE stable
         # source state. Hash before, copy, hash after; refuse on any drift.
         # Concurrent source mutation becomes fail-closed, never a hybrid.
+        #
+        # REAL guarantee (exactly this, no more): the mounted tree equals a
+        # source state observed identical at two distinct times spanning the
+        # copy (the pre-copy source hash, the post-copy source hash, the
+        # staged-copy hash against the CURRENT source, and a quiescence
+        # confirmation read). Residual limit: a source frozen in a torn
+        # state for the entire window is indistinguishable from a stable
+        # source; the guard never proves "the source never changed".
         source_before = _hash_tree(vis)
         os.makedirs(work, exist_ok=True)
         os.chmod(work, 0o700)
@@ -175,17 +184,33 @@ class DockerSandbox:
             shutil.copy2(vis, os.path.join(
                 self.staged, os.path.basename(vis)))
         os.chmod(self.staged, 0o700)
-        if _hash_tree(vis) != source_before:
-            import shutil as _sh
-            _sh.rmtree(self.staged, ignore_errors=True)
+        source_after = _hash_tree(vis)
+        if source_after != source_before:
+            import shutil as _sh0
+            _sh0.rmtree(self.staged, ignore_errors=True)
             raise PermissionError(
                 "STABILITY-DENY source mutated during staging; refused")
         self.task_snapshot = _hash_tree(self.staged)
-        if self.task_snapshot != source_before:
+        if self.task_snapshot != source_after:
             import shutil as _sh2
             _sh2.rmtree(self.staged, ignore_errors=True)
             raise PermissionError(
-                "STABILITY-DENY staged copy differs from stable source")
+                "STABILITY-DENY staged copy differs from current source; "
+                "refused")
+        # Quiescence confirmation: the source must still read as the same
+        # state after a bounded settle (total sleep <= 50 ms, at most 3
+        # attempts). A source that never settles is refused, never mounted.
+        _quiescent = False
+        for _attempt in range(3):
+            time.sleep(0.015)
+            if _hash_tree(vis) == source_after:
+                _quiescent = True
+                break
+        if not _quiescent:
+            import shutil as _sh3
+            _sh3.rmtree(self.staged, ignore_errors=True)
+            raise PermissionError(
+                "STABILITY-DENY source not quiescent; refused")
         self.mounts = [(work, "/work", "rw"), (self.staged, "/task", "ro")]
         self.work = work
         self.source = vis
