@@ -702,6 +702,48 @@ with no retrievable bytes in git. The unique-linear-chain topology
 rule from D7 is unchanged. No estimand locks exist yet, so the
 hygiene pass is cheap.
 
+Forward amendment AMEND-2026-09-09-d9-protocol-chronology (2026-09-09):
+experiment-branch protocol chronology plus named lock-container
+failures, frozen BEFORE any estimand execution.
+
+(a) Chronology rule. For every governed file V2 derives an ORDERED
+sequence of distinct committed content states from the EXPERIMENT
+BRANCH (`git log --format=%H -- benchmarks/fam-c/<fn>` from HEAD,
+oldest -> newest, consecutive duplicates collapsed; the plain
+HEAD-ancestry walk is chosen — `--first-parent` yields the same
+sequences for all seven governed files on this tree). The recorded
+node sequence, read root -> tip, must satisfy Rule A (every recorded
+node — governed value, from_sha, to_sha — appears in the branch
+sequence; this REPLACES the old all-refs retrievability membership
+test, which could certify a state committed only on a side branch)
+and Rule B (the recorded sequence is a SUBSEQUENCE of the branch
+sequence in that order). Collapsing several real commits into ONE
+recorded edge stays legal (that is exactly what a subsequence
+permits — the live PREREG and preflight chains are exactly that);
+recording two real states in swapped order fails as a non-monotonic
+protocol lineage, and recording a state committed only on another
+ref fails as not on the experiment-HEAD lineage. Both fail closed
+naming the file. The branch-sequence walk lives in the git-aware
+layer (`protocol_tips` via `_branch_seq_shas`) and is passed IN to
+the still-pure, I/O-free `validate_file_chain` (optional
+`branch_seq` argument; None selects the hermetic topology-only
+mode); when the sequence cannot be derived, V2 fails closed with a
+named finding, never silently skipping Rule A/B. No chain repair
+was needed: the live recorded chains were already valid
+subsequences of the experiment-branch content-sha sequence under
+both walks (PREREG.md 16, ORDER.md 5, LANES.md 5,
+HARNESS-READINESS.md 11, preflight.py 16, T4-SEMANTIC-IDS.json 1,
+T4-CONFORMANCE.json 7), so this slice adds two forward edges
+(preflight.py, this document) and deletes no entry.
+
+(b) Named lock-container failures. A non-object `governed`, a
+non-list `amendments`, or a non-object amendment entry each yields
+a NAMED V2 finding (naming the offending container or entry index),
+never a traceback: container types are normalized BEFORE any
+`.get()` is reached, in both `protocol_tips` and
+`validate_lock_global`. No estimand locks exist yet, so the pass is
+cheap.
+
 ---
 # 11. Manifest lifecycle
 

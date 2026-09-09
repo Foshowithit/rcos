@@ -261,6 +261,22 @@
    "reason": "A12d slice D8 (auditor D7-post P1): forward amendment AMEND-2026-09-09-d8-shared-lineage tightening V2 to the lineage authority hygiene rule (validate_lock_global: exact seven-file governed set, governed amendment files only; validate_file_chain: 64-lowercase-hex node shas, post-freeze governed sha must equal the genesis node never a descendant; protocol_tips: every recorded node backed by retrievable bytes in git; validate_file_chain stays pure and I/O-free)",
    "base": "3cbf244",
    "slice": "a12d-slice-d8"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "a59e2a56072cdf7342bff5ffb2f19c2e06a33321a54202bdb07267e4ede9e253",
+   "to_sha": "6bb11f26454a4761cdee6779b2fd1187ee6ed5b0356ee0e37addc1752f1cabfd",
+   "reason": "A12i slice D9 (auditor D8-post P0/P2): forward amendment AMEND-2026-09-09-d9-protocol-chronology freezing the experiment-branch chronology rule (recorded root->tip must be a subsequence of the HEAD-ancestry content-sha sequence: Rule A lineage membership replacing the all-refs retrievability test, Rule B chronology; collapsed multi-commit edges stay legal) and the named lock-container failures, with the measured fact that no chain repair was needed (live chains already valid subsequences: PREREG.md 16, ORDER.md 5, LANES.md 5, HARNESS-READINESS.md 11, preflight.py 16, T4-SEMANTIC-IDS.json 1, T4-CONFORMANCE.json 7)",
+   "base": "73d9d57",
+   "slice": "a12i-slice-d9"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "5162b1de95fd14e3c2e0acf4186aa6857ba5170e4ea47c8ac4649c79bb6a4c2d",
+   "to_sha": "500daaa4e0d68e784ce3b552a9394c82484d95b9d88b3c908af5f6c2b81d69a6",
+   "reason": "A12i slice D9 (auditor D8-post P0/P2): forward amendment AMEND-2026-09-09-d9-protocol-chronology tightening V2 to the experiment-branch chronology rule (validate_file_chain takes the git-derived branch_seq: Rule A every recorded node on the HEAD lineage, Rule B recorded order a subsequence; _branch_seq_shas replaces the all-refs map; validate_file_chain stays pure and I/O-free; protocol_tips and validate_lock_global normalize lock containers before any .get() so malformed containers fail closed with a named finding)",
+   "base": "73d9d57",
+   "slice": "a12i-slice-d9"
   }
  ]
 }

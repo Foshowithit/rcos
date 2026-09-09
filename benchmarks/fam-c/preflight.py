@@ -25,6 +25,10 @@ every refusal condition, or nothing runs.
       linear path from the frozen (or post-freeze genesis) node to
       exactly one tip, and the on-disk bytes must equal that tip
       (validate_file_chain; the old reachable-set is deleted).
+      A12i slice D9: that recorded path must additionally be a
+      SUBSEQUENCE of the file's committed content states on the
+      experiment branch (Rule A lineage membership + Rule B
+      chronology; the old all-refs retrievability test is deleted).
   V3 EXECUTION-LOCK — the executing harness bytes (8 modules + runner)
       match EXECUTION-LOCK.json. Status rides along: `open-round2`
       (placeholder, re-minted on every harness change) until round-2 #14
@@ -151,8 +155,18 @@ def validate_lock_global(lock):
     PROTOCOL_GOVERNED files (an extra key such as TYPO.md fails), and
     every amendment entry's `file` must name a governed file (a
     TYPO.md, missing, or None file fails).
+
+    A12i slice D9.2: malformed containers fail closed with a named
+    finding, never a traceback. A non-object lock, a non-object
+    `governed`, or a non-list `amendments` each fail naming the
+    container; a non-object amendment entry fails naming its index.
+    Container types are normalized BEFORE any `.get()` is reached.
     """
     out = []
+    if not isinstance(lock, dict):
+        return ["V2 PROTOCOL-LOCK: lock is not an object (the lock top "
+                "level must be a JSON object carrying governed and "
+                "amendments)"]
     governed = lock.get("governed", {})
     if not isinstance(governed, dict):
         return ["V2 PROTOCOL-LOCK: lock governed map is not an object"]
@@ -160,8 +174,18 @@ def validate_lock_global(lock):
         out.append(f"V2 PROTOCOL-LOCK: governed carries an ungoverned "
                    f"key {key!r} (the governed set must be exactly the "
                    f"seven PROTOCOL_GOVERNED files)")
-    for a in lock.get("amendments", []):
-        fn = a.get("file") if isinstance(a, dict) else None
+    amendments = lock.get("amendments", [])
+    if not isinstance(amendments, list):
+        return out + ["V2 PROTOCOL-LOCK: lock amendments list is not a "
+                      "list (every forward amendment must be an object "
+                      "in the amendments list)"]
+    for idx, a in enumerate(amendments):
+        if not isinstance(a, dict):
+            out.append(f"V2 PROTOCOL-LOCK: amendment entry #{idx} is "
+                       f"not an object (every amendment entry must be "
+                       f"an object naming a governed file)")
+            continue
+        fn = a.get("file")
         if fn not in PROTOCOL_GOVERNED:
             out.append(f"V2 PROTOCOL-LOCK: amendment names an ungoverned "
                        f"file {fn!r} (every amendment file must name a "
@@ -170,7 +194,7 @@ def validate_lock_global(lock):
 
 
 def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
-                        governed_sha):
+                        governed_sha, branch_seq=None):
     """A12d slice D7: the unique-linear-lineage rule for ONE governed
     file. Pure function of its arguments (no git, no disk reads): the
     hermetic unit under test, and the exact code path validate_protocol
@@ -199,6 +223,22 @@ def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
     (malformed shas fail naming the file), and for a post-freeze file
     the lock's governed sha must EQUAL the genesis node — a governed
     sha moved to any descendant (even the current tip) fails.
+
+    A12i slice D9.1 (same pure function, tightened): when the caller
+    passes `branch_seq` — the file's ORDERED distinct committed
+    content states on the experiment branch, oldest -> newest, derived
+    by the git-aware layer — the recorded root -> tip node sequence
+    must satisfy Rule A (every recorded node appears in `branch_seq`;
+    this replaces the old all-refs retrievability membership test) and
+    Rule B (the recorded sequence is a SUBSEQUENCE of `branch_seq` in
+    that order: collapsing several real commits into one recorded
+    edge stays legal, reordering two real states fails as
+    non-monotonic). Both fail closed naming the file. A
+    `branch_seq` of None selects the hermetic topology-only mode (the
+    historical unit-test surface); the git-aware caller
+    `protocol_tips` always derives the sequence and fails closed with
+    a named finding when derivation is impossible, so production
+    never silently skips Rule A/B.
     """
     pre = f"V2 PROTOCOL-LOCK: {fn} "
     for a in amendments:
@@ -306,6 +346,37 @@ def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
                  f"disconnected edge: every non-tip node must be "
                  f"continued)"], cur)
     tip = cur
+    if branch_seq is not None:
+        if not isinstance(branch_seq, list):
+            return ([pre + "experiment-branch lineage is not a "
+                     "sequence (fail closed: the recorded chain must "
+                     "be provable on the experiment branch)"], None)
+        recorded = [root]
+        walk = root
+        while walk in by_from:
+            walk = by_from[walk][0]
+            recorded.append(walk)
+        on_branch = set(branch_seq)
+        for node in recorded:
+            if node not in on_branch:
+                return ([pre + f"records node {node[:12]} with no "
+                         f"retrievable bytes on the experiment-HEAD "
+                         f"lineage (protocol history must be committed "
+                         f"on the experiment branch, not another ref)"],
+                        None)
+        pos, prev = -1, None
+        for node in recorded:
+            nxt = -1
+            for i in range(pos + 1, len(branch_seq)):
+                if branch_seq[i] == node:
+                    nxt = i
+                    break
+            if nxt == -1:
+                after = "" if prev is None else f" after {prev[:12]}"
+                return ([pre + f"records a non-monotonic protocol "
+                         f"lineage ({node[:12]}{after} on the "
+                         f"experiment branch)"], None)
+            pos, prev = nxt, node
     if disk_sha != tip:
         return ([pre + f"drifted with no listed forward amendment "
                  f"(disk {disk_sha[:12]} != the unique chain tip "
@@ -315,27 +386,43 @@ def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
 
 
 def protocol_tips(fam_c_dir, freeze_commit):
-    """A12d slice D7/D8.2: the validator-computed unique tip per governed
-    file, through the real V2 chain path (git-resolved frozen bytes +
-    validate_file_chain, plus the D8.2 lock-global hygiene and
-    retrievable-bytes rules). Returns (tips, findings); `tips` maps each
-    governed file to its unique tip (absent when that file's chain
-    fails). A green file always satisfies
-    sha256(disk bytes) == tips[file] — computed here, never asserted
-    by callers."""
+    """A12d slice D7/D8.2, A12i slice D9.1: the validator-computed
+    unique tip per governed file, through the real V2 chain path
+    (git-resolved frozen bytes + validate_file_chain, plus the D8.2
+    lock-global hygiene and the D9.1 experiment-branch chronology).
+    Returns (tips, findings); `tips` maps each governed file to its
+    unique tip (absent when that file's chain fails). A green file
+    always satisfies sha256(disk bytes) == tips[file] — computed
+    here, never asserted by callers.
+
+    A12i slice D9.2: the lock containers are normalized BEFORE any
+    `.get()` is reached on them, so a non-object `governed`, a
+    non-list `amendments`, or a non-object amendment entry yields a
+    named V2 finding (the canonical text rides with
+    validate_lock_global), never a traceback."""
     try:
         lock = json.load(open(os.path.join(fam_c_dir,
                                            "PROTOCOL-LOCK.json")))
     except (ValueError, OSError) as e:
         return ({}, [f"V2 PROTOCOL-LOCK: lock unparsable: {e}"])
+    if not isinstance(lock, dict):
+        return ({}, ["V2 PROTOCOL-LOCK: lock is not an object (the "
+                     "lock top level must be a JSON object carrying "
+                     "governed and amendments)"])
     try:
         root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
     except RuntimeError as e:
         return ({}, [f"V2 PROTOCOL-LOCK: git unavailable: {e}"])
     governed = lock.get("governed", {})
+    if not isinstance(governed, dict):
+        governed = {}
     amendments = lock.get("amendments", [])
+    if not isinstance(amendments, list):
+        amendments = []
     by_file = {}
     for a in amendments:
+        if not isinstance(a, dict):
+            continue
         by_file.setdefault(a.get("file"), []).append(a)
     tips, findings = {}, []
     if lock.get("freeze_commit") != freeze_commit:
@@ -360,60 +447,60 @@ def protocol_tips(fam_c_dir, freeze_commit):
             findings.append(f"V2 PROTOCOL-LOCK: {fn} missing on disk")
             continue
         disk = _sha(fp)
+        # A12i slice D9.1: the branch sequence is derived here, in the
+        # git-aware layer — validate_file_chain stays pure and
+        # I/O-free. When the sequence cannot be derived, fail closed
+        # with a named finding, never silently skip Rule A/B.
+        try:
+            seq = _branch_seq_shas(root, f"benchmarks/fam-c/{fn}")
+        except RuntimeError as e:
+            findings.append(
+                f"V2 PROTOCOL-LOCK: {fn} experiment-branch lineage "
+                f"underivable ({e}; fail closed — the recorded chain "
+                f"must be provable on the experiment branch)")
+            seq = None
         f_find, tip = validate_file_chain(fn, frozen_sha,
                                           by_file.get(fn, []), disk,
-                                          want)
+                                          want, seq)
         findings.extend(f_find)
         if tip is not None:
             tips[fn] = tip
-    # A12d slice D8.2: lock-global hygiene (pure: exact governed set,
-    # every amendment file names a governed file).
+    # A12d slice D8.2, A12i slice D9.2: lock-global hygiene (pure:
+    # exact governed set, governed amendment files only, named
+    # container failures).
     findings.extend(validate_lock_global(lock))
-    # A12d slice D8.2: every recorded node must be backed by
-    # retrievable bytes — each recorded node sha (governed, from_sha,
-    # to_sha) must resolve to committed file bytes in git. This stays
-    # in the git-aware layer; validate_file_chain keeps its pure,
-    # I/O-free signature (its hermetic unit tests stay meaningful).
-    for fn in PROTOCOL_GOVERNED:
-        want = governed.get(fn)
-        if not isinstance(want, str):
-            continue  # already a finding above
-        nodes = {want}
-        for a in by_file.get(fn, []):
-            if not isinstance(a, dict):
-                continue
-            for key in ("from_sha", "to_sha"):
-                val = a.get(key)
-                if isinstance(val, str) and _HEX64.match(val):
-                    nodes.add(val)
-        versions = _file_version_shas(root, f"benchmarks/fam-c/{fn}")
-        for sha in sorted(nodes):
-            if sha not in versions:
-                findings.append(
-                    f"V2 PROTOCOL-LOCK: {fn} records node {sha[:12]} "
-                    f"with no retrievable bytes in git (every chain "
-                    f"node must resolve to committed file bytes)")
     return (tips, findings)
 
 
-def _file_version_shas(repo_root, rel):
-    """Map sha256(file bytes) -> commit for every committed version of
-    the repo-relative path `rel` (git-aware helper for the D8.2
-    retrievable-bytes rule). Fail closed: an unreadable history maps
-    nothing, so every recorded node is refused."""
-    out = {}
+def _branch_seq_shas(repo_root, rel):
+    """Ordered DISTINCT sha256(file bytes) sequence for the
+    repo-relative path `rel` along the experiment branch: [sha256 of
+    the file bytes at commit c for c in `git log --format=%H -- <rel>`
+    (HEAD ancestry, oldest -> newest), consecutive duplicates
+    collapsed]. A12i slice D9.1: this sequence is the lineage
+    authority — the recorded node chain must be a subsequence of it
+    (Rule A membership + Rule B chronology), replacing the old
+    all-refs retrievability map. The plain HEAD-ancestry walk is
+    chosen over `--first-parent`: both yield the same sequences for
+    every governed file on this tree, and HEAD ancestry is the
+    experiment-branch definition. Raises RuntimeError when the
+    history is underivable — callers fail closed, never skip."""
     try:
-        commits = _git(["log", "--all", "--format=%H", "--", rel],
+        commits = _git(["log", "--format=%H", "--", rel],
                        cwd=repo_root).split()
     except RuntimeError:
-        return out
-    for commit in commits:
+        raise RuntimeError(f"git log unreadable for {rel}")
+    seq = []
+    for commit in reversed(commits):
         proc = subprocess.run(["git", "show", f"{commit}:{rel}"],
                               cwd=repo_root, capture_output=True)
-        if proc.returncode == 0:
-            out.setdefault(hashlib.sha256(proc.stdout).hexdigest(),
-                           commit)
-    return out
+        if proc.returncode != 0:
+            raise RuntimeError(f"git show {commit[:12]}:{rel} "
+                               f"unreadable")
+        sha = hashlib.sha256(proc.stdout).hexdigest()
+        if not seq or seq[-1] != sha:
+            seq.append(sha)
+    return seq
 
 
 def validate_protocol(fam_c_dir, freeze_commit):
@@ -434,9 +521,12 @@ def validate_protocol(fam_c_dir, freeze_commit):
     # dead ends and multiple tips no longer pass.
     # A12d slice D8.2: protocol_tips additionally enforces lock-global
     # hygiene (exact governed set, governed amendment files only,
-    # 64-hex node shas, immovable post-freeze genesis anchor) and the
-    # retrievable-bytes rule (every recorded node resolves to committed
-    # file bytes in git).
+    # 64-hex node shas, immovable post-freeze genesis anchor).
+    # A12i slice D9.1: protocol_tips additionally enforces the
+    # experiment-branch chronology (every recorded node on the HEAD
+    # lineage in the recorded order; the all-refs retrievability test
+    # is deleted) and D9.2 fails malformed lock containers closed
+    # with a named finding instead of a traceback.
     _tips, chain_findings = protocol_tips(fam_c_dir, freeze_commit)
     out += chain_findings
     # Item-7: the enumerated execution order is DERIVED from ORDER.md, so a
