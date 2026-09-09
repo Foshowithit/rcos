@@ -37,7 +37,7 @@ frozen fam05 T1 checker + truth, real promotion controller; not a claim):
   N5  adapter_sha256 mismatch (mutated committed value) -> DENY
       (controller re-derives from the chain, not the receipt)
   N6  adapter present but materializes no input dir -> validated=false
-      (candidate-input-missing)
+      (the empty tree stages; the candidate runs on it and fails)
   N7  positive control promotes: adapter materializes input, frozen T0
       candidate runs in the candidate-only jail, host checker passes ->
       eleven-key event + manifest lineage verify -> PROMOTION then
@@ -428,13 +428,27 @@ check("N5 mutated adapter_sha256 denies (controller re-derives from the "
       _n5_denied and _good_adapter != "00" * 32, _n5_why[:120])
 
 # ---- N6: adapter materializes no input dir -> validated=false ---------
+# (A12d D1: the empty tree stages and the candidate still RUNS against
+# it — its failure is the evidence. CAND_T0 needs /task/MANIFEST, so an
+# empty input fails it with candidate-failed; the lineage pair records
+# the observed empty tree, non-null.)
 _got6, _w6, _o6, _s6 = run_helper(ADAPTER_EMPTY, CAND_T0)
+_n6_man6 = {}
+try:
+    _n6_man6 = json.load(open(os.path.join(
+        _o6, "CANDIDATE-INPUT-MANIFEST.json")))
+except (OSError, ValueError):
+    pass
 _n6_failed = (_got6.get("validated") is False
-              and "candidate-input-missing" in
-              str(_got6.get("validation_failure")))
+              and "candidate-failed" in
+              str(_got6.get("validation_failure"))
+              and _n6_man6.get("entries") == []
+              and isinstance(
+                  _got6.get("candidate_input_manifest_sha256"), str))
 _n6_why = str(_got6.get("validation_failure"))[:200]
 check("N6 adapter materializes no input dir fails validation "
-      "(candidate-input-missing)",
+      "(candidate runs on the empty input and fails; empty lineage "
+      "manifested)",
       _n6_failed, _n6_why[:120])
 
 # ---- N7: positive control promotes then locks -------------------------------

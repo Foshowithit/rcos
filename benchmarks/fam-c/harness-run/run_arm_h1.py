@@ -636,12 +636,26 @@ def _stage_candidate_input(work_cand_in):
     staging_dir is the visible source (bytes the candidate jail will see),
     entries the manifest entry list over THOSE bytes, denial None on
     success or an experimental cause string. Filesystem errors creating
-    the staging directory itself propagate (infra)."""
+    the staging directory itself propagate (infra).
+
+    An adapter that exited 0 but materialized NO input tree (absent,
+    symlinked, or non-directory cand_in) stages an EMPTY input: the
+    candidate still runs against the empty tree and its failure is the
+    evidence (candidate-failed / checker-failed) — the validation must
+    execute the candidate, never skip it. Only a tree that EXISTS but
+    carries unsafe CONTENT fails closed with CANDIDATE-INPUT-DENY."""
+    try:
+        is_link = os.path.islink(work_cand_in)
+        is_dir = os.path.isdir(work_cand_in)
+    except OSError:
+        is_link, is_dir = False, False
+    staging = tempfile.mkdtemp(prefix="famc-candin-", dir=VISIBLE_ROOT)
+    os.chmod(staging, 0o700)
+    if is_link or not is_dir:
+        return staging, None, []
     entries, denial = _scan_candidate_input(work_cand_in)
     if denial is not None:
         return None, denial, None
-    staging = tempfile.mkdtemp(prefix="famc-candin-", dir=VISIBLE_ROOT)
-    os.chmod(staging, 0o700)
     denial = _copy_candidate_input(work_cand_in, staging)
     if denial is not None:
         return None, denial, None
@@ -894,15 +908,16 @@ def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
          `adapter-failed`;
       3. stage the adapter's output as a mountable candidate-input source
          (fail closed CANDIDATE-INPUT-DENY on any symlink, non-regular
-         file, or hardlink; `candidate-input-missing` when the adapter
-         produced no input tree);
+         file, or hardlink in an EXISTING tree; an adapter that produced
+         no input tree stages EMPTY — the candidate still runs, and its
+         failure is the evidence);
       4. materialize the deterministic candidate-input content manifest
          (CANDIDATE-INPUT-MANIFEST.json, schema
          candidate-input-manifest-v1) over the staged bytes;
          `candidate_input_manifest_sha256` = sha256 of the persisted
          manifest file bytes, `candidate_input_tree_sha256` = the
-         manifest's tree hash (null pair only when step 3 produced no
-         input tree);
+         manifest's tree hash (null pair only when the adapter never ran,
+         i.e. adapter-missing — an empty staged tree still manifests);
       5. write the frozen T0 candidate source to the candidate jail's own
          workdir and verify sha256 == frozen T0 candidate sha
          (`candidate-bytes-mismatch` on drift);
@@ -927,11 +942,15 @@ def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
 
     EXPERIMENTAL vs INFRASTRUCTURE (A12d.2 B1 — the boundary):
       experimental (RETURNED as validated=false + named cause, never
-        raised): adapter-missing, adapter-failed, candidate-input-missing,
-        candidate-input-deny (CANDIDATE-INPUT-DENY symlinks/specials/
-        hardlinks), candidate-input-unreadable, candidate-bytes-mismatch,
+        raised): adapter-missing, adapter-failed, candidate-input-deny
+        (CANDIDATE-INPUT-DENY symlinks/specials/hardlinks),
+        candidate-input-unreadable (incl. a tree that vanishes mid-flight:
+        candidate-input-missing), candidate-bytes-mismatch,
         candidate-failed, candidate-output-missing, checker-failed,
-        evaluator-provenance-absent, evaluator-drift.
+        evaluator-provenance-absent, evaluator-drift. A missing input
+        tree at stage time stages EMPTY (the candidate still runs; an
+        empty tree is observed evidence, so the lineage pair stays
+        non-null).
       infrastructure (RAISED, never converted): docker unavailable at exec
         time (daemon-unreachable rc 125), sandbox staging/stability denials
         from DockerSandbox construction (MOUNT-POLICY/STAGE/STABILITY-DENY
