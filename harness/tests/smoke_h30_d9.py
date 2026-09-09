@@ -113,10 +113,10 @@ def _live_branch_seq(fn):
 
 _SEQ = {fn: _live_branch_seq(fn) for fn in PF.PROTOCOL_GOVERNED}
 check("D9.1-LIVE branch-sequence lengths match the certified facts "
-      "(untouched files 5/5/11/1/7; the two D9-touched files grow "
-      "by exactly their one forward edge to 17/17)",
+      "(untouched files 5/5/11/1/7; preflight.py grows by its one "
+      "D9 edge to 17, PREREG.md by its two D9 commits to 18)",
       {fn: len(_SEQ[fn]) for fn in PF.PROTOCOL_GOVERNED} == {
-          "PREREG.md": 17, "ORDER.md": 5, "LANES.md": 5,
+          "PREREG.md": 18, "ORDER.md": 5, "LANES.md": 5,
           "HARNESS-READINESS.md": 11, "preflight.py": 17,
           "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str({fn: len(s) for fn, s in _SEQ.items()}))
