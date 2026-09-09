@@ -265,7 +265,7 @@
   {
    "file": "PREREG.md",
    "from_sha": "a59e2a56072cdf7342bff5ffb2f19c2e06a33321a54202bdb07267e4ede9e253",
-   "to_sha": "6bb11f26454a4761cdee6779b2fd1187ee6ed5b0356ee0e37addc1752f1cabfd",
+   "to_sha": "244c6d55967850f4cd74dc4a0de7d45cb6844d3b2f551e534a3d0061e9c3f162",
    "reason": "A12i slice D9 (auditor D8-post P0/P2): forward amendment AMEND-2026-09-09-d9-protocol-chronology freezing the experiment-branch chronology rule (recorded root->tip must be a subsequence of the HEAD-ancestry content-sha sequence: Rule A lineage membership replacing the all-refs retrievability test, Rule B chronology; collapsed multi-commit edges stay legal) and the named lock-container failures, with the measured fact that no chain repair was needed (live chains already valid subsequences: PREREG.md 16, ORDER.md 5, LANES.md 5, HARNESS-READINESS.md 11, preflight.py 16, T4-SEMANTIC-IDS.json 1, T4-CONFORMANCE.json 7)",
    "base": "73d9d57",
    "slice": "a12i-slice-d9"

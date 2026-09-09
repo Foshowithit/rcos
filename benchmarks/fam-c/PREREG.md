@@ -729,7 +729,8 @@ the still-pure, I/O-free `validate_file_chain` (optional
 `branch_seq` argument; None selects the hermetic topology-only
 mode); when the sequence cannot be derived, V2 fails closed with a
 named finding, never silently skipping Rule A/B. No chain repair
-was needed: the live recorded chains were already valid
+was needed: at the D9 base (`73d9d57`) the live recorded chains were
+already valid
 subsequences of the experiment-branch content-sha sequence under
 both walks (PREREG.md 16, ORDER.md 5, LANES.md 5,
 HARNESS-READINESS.md 11, preflight.py 16, T4-SEMANTIC-IDS.json 1,

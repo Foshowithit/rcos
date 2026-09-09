@@ -113,10 +113,11 @@ def _live_branch_seq(fn):
 
 _SEQ = {fn: _live_branch_seq(fn) for fn in PF.PROTOCOL_GOVERNED}
 check("D9.1-LIVE branch-sequence lengths match the certified facts "
-      "(16/5/5/11/16/1/7)",
+      "(untouched files 5/5/11/1/7; the two D9-touched files grow "
+      "by exactly their one forward edge to 17/17)",
       {fn: len(_SEQ[fn]) for fn in PF.PROTOCOL_GOVERNED} == {
-          "PREREG.md": 16, "ORDER.md": 5, "LANES.md": 5,
-          "HARNESS-READINESS.md": 11, "preflight.py": 16,
+          "PREREG.md": 17, "ORDER.md": 5, "LANES.md": 5,
+          "HARNESS-READINESS.md": 11, "preflight.py": 17,
           "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str({fn: len(s) for fn, s in _SEQ.items()}))
 
@@ -340,7 +341,7 @@ check("D9.1-PURE off-sequence node FAILs naming the node + "
       any("PREREG.md" in g and "experiment-HEAD lineage" in g
           for g in _F),
       str(_F[:1])[:200])
-_F, _ = _pure([(_HR, _HA), (_HA, _HC)], _SEQ4, seq="notalist")
+_F, _ = _pure([(_HR, _HA), (_HA, _HC)], "notalist")
 check("D9.1-PURE a non-list branch_seq fails closed naming PREREG.md",
       any("PREREG.md" in g for g in _F), str(_F[:1])[:160])
 _F5, _T5 = PF.validate_file_chain(
