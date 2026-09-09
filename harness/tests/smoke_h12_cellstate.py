@@ -88,7 +88,9 @@ for f in ("PROTOCOL-LOCK.json", "EXECUTION-LOCK.json"):
 # A12b.5: the T4 semantic id resolves through the frozen governed registry
 # inside the instance root (registry + the PREREG frozen block it must
 # equal), never through a hash-derived fallback.
-for f in ("T4-SEMANTIC-IDS.json", "PREREG.md"):
+# A12c slice C2: the conformance verdict resolves through the frozen
+# governed T4-CONFORMANCE.json map inside the instance root as well.
+for f in ("T4-SEMANTIC-IDS.json", "T4-CONFORMANCE.json", "PREREG.md"):
     shutil.copy2(os.path.join(FAMC, f), os.path.join(state_root, f))
 EXPANSION = json.load(open(os.path.join(FAMC, "ORDER-EXPANSION.json")))
 json.dump(EXPANSION, open(os.path.join(state_root,

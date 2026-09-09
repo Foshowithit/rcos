@@ -75,7 +75,7 @@ def hermetic(k_append=""):
     root = tempfile.mkdtemp(prefix="h18-")
     for name in ("ORDER-EXPANSION.json", "PROTOCOL-LOCK.json",
                  "EXECUTION-LOCK.json", "FREEZE.json", "FREEZE-HASHES.sha256",
-                 "T4-SEMANTIC-IDS.json", "PREREG.md"):
+                 "T4-SEMANTIC-IDS.json", "T4-CONFORMANCE.json", "PREREG.md"):
         shutil.copy2(os.path.join(FAMC, name), os.path.join(root, name))
     fam = os.path.join(root, "families")
     os.makedirs(fam)
@@ -184,8 +184,13 @@ from fixture_modelrun import PRODUCER_CONTRACTS as _STANDIN_CONTRACTS
 _b_core, _b_pre, _b_lim = _STANDIN_CONTRACTS["fam05"]
 LIMITATION_CONTRACT = {"semantic_core": _b_core,
                        "preconditions": list(_b_pre),
-                       "limitations": ["Synthetic H18 limitation: payloads "
-                                       "larger than 1 MiB are rejected."]}
+                       # A12c slice C2: discrimination is set membership
+                       # over the frozen bridge — the variant limitation
+                       # must NAME the T4's applicability condition (a
+                       # frozen fam05 predicate match), not merely exist.
+                       "limitations": ["Synthetic H18 limitation: only "
+                                       "valid for local v1 sha256 "
+                                       "manifests."]}
 root_b = hermetic(LIMITATION_APPEND)
 res_b, res2_b, cap_b, lock_b = mint_fam05(
     root_b, producer_contract=LIMITATION_CONTRACT)

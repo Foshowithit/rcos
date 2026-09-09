@@ -47,6 +47,11 @@ _EST = dict(
     limitation_present=True, non_discriminating=False,
     conformance_cause=("h3 fixture: synthetic limitation present, T4 "
                        "treated as discriminating"),
+    # A12c slice C2: the frozen bridge fields (the synthetic id is its
+    # own sole supported member, so the claimed discrimination is
+    # set-consistent).
+    supported_t4_ids=["T4-UNRATIFIED-fixture"],
+    conformance_map_sha256="7" * 64,
     t4_semantic_id="T4-UNRATIFIED-fixture",
     evidence_grade="harness-validation",
     candidate_sha256="4" * 64, candidate_provenance_sha256="5" * 64)

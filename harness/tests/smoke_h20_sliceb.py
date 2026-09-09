@@ -85,7 +85,7 @@ def hermetic(tag):
     root = tempfile.mkdtemp(prefix="h20-" + tag + "-")
     for name in ("ORDER-EXPANSION.json", "PROTOCOL-LOCK.json",
                  "EXECUTION-LOCK.json", "FREEZE.json", "FREEZE-HASHES.sha256",
-                 "T4-SEMANTIC-IDS.json", "PREREG.md"):
+                 "T4-SEMANTIC-IDS.json", "T4-CONFORMANCE.json", "PREREG.md"):
         shutil.copy2(os.path.join(FAMC, name), os.path.join(root, name))
     fam = os.path.join(root, "families")
     os.makedirs(fam)

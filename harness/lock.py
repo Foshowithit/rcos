@@ -43,6 +43,13 @@ LOCK_REQUIRED_FIELDS = (
     "non_discriminating",        # bool: the family's T4 cannot
                                  # discriminate on this contract
     "conformance_cause",         # nonempty str: the committed reason
+    # A12c slice C2 (auditor P0 #6: the frozen limitation->T4-id bridge):
+    "supported_t4_ids",          # sorted list[str]: T4 ids the locked
+                                 # contract supports (presence, not
+                                 # truthiness: [] is a real verdict)
+    "conformance_map_sha256",    # 64hex: sha256 of the governed
+                                 # T4-CONFORMANCE.json bytes the verdict
+                                 # was derived from
     "t4_semantic_id",            # auditor-side conformance id (nonempty str)
     "evidence_grade",            # "estimand" | "harness-validation"
     "candidate_sha256",          # 64hex: causal root of the capability
@@ -61,13 +68,16 @@ def _sha(path):
         return hashlib.sha256(f.read()).hexdigest()
 
 
-def verify_lock(lock, expect=None):
+def verify_lock(lock, expect=None, fam_c_dir=None):
     """Return a list of refusal reasons; empty means the lock is admissible.
 
     `expect` may pin {"capability_id", "block", "universe", "family",
     "protocol_lock_sha256", "execution_lock_sha256", "candidate_sha256",
     "promotion_receipt_sha256", "evidence_grade"}; every pinned value must
-    match exactly. Legacy / malformed locks produce a `LOCK-INADMISSIBLE`
+    match exactly. `fam_c_dir`, when given, additionally binds the lock's
+    `conformance_map_sha256` to the LIVE governed T4-CONFORMANCE.json
+    bytes (a map edited without re-minting the lock refuses here).
+    Legacy / malformed locks produce a `LOCK-INADMISSIBLE`
     reason naming the exact field, never a silent pass.
     """
     out = []
@@ -88,7 +98,8 @@ def verify_lock(lock, expect=None):
                    + ", ".join(sorted(missing)))
     for f in ("protocol_lock_sha256", "execution_lock_sha256",
               "candidate_sha256", "candidate_provenance_sha256",
-              "promotion_receipt_sha256", "manifest_sha256"):
+              "promotion_receipt_sha256", "manifest_sha256",
+              "conformance_map_sha256"):
         v = lock.get(f)
         if v is not None and not (isinstance(v, str) and _HEX64.match(v)):
             out.append(f"LOCK-INADMISSIBLE: {f} must be 64-hex, got {v!r}")
@@ -173,6 +184,56 @@ def verify_lock(lock, expect=None):
                    "(non_discriminating is False) while the locked "
                    "contract carries no limitations — an absent "
                    "limitation cannot discriminate")
+    # A12c slice C2 (auditor P0 #6): the frozen bridge. The verdict is
+    # set membership over the supported id set, never bare presence:
+    #   * supported_t4_ids must be a list of strings (an empty list is
+    #     a real verdict — presence, not truthiness);
+    #   * non_discriminating must equal (t4_semantic_id not in
+    #     supported_t4_ids);
+    #   * a lock claiming a discriminating T4 whose id is NOT in
+    #     supported_t4_ids is LOCK-INADMISSIBLE naming the id (this
+    #     generalizes the claim-without-limitation rule above: an
+    #     unrelated limitation supports nothing).
+    sup = lock.get("supported_t4_ids")
+    if sup is not None and (not isinstance(sup, list)
+                            or not all(isinstance(x, str) and x.strip()
+                                       for x in sup)):
+        out.append("LOCK-INADMISSIBLE: supported_t4_ids must be a list "
+                   f"of strings, got {sup!r}")
+    _tid = lock.get("t4_semantic_id")
+    if isinstance(sup, list) and isinstance(_tid, str) and _tid.strip() \
+            and isinstance(non_disc, bool):
+        if non_disc != (_tid not in sup):
+            out.append("LOCK-INADMISSIBLE: non_discriminating "
+                       f"{non_disc!r} != (t4_semantic_id {_tid!r} not in "
+                       f"supported_t4_ids {sorted(sup)!r}) (the frozen "
+                       f"bridge: discrimination is set membership)")
+        if non_disc is False and _tid not in sup:
+            out.append(f"LOCK-INADMISSIBLE: lock claims a discriminating "
+                       f"T4 {_tid!r} whose id is not in supported_t4_ids "
+                       f"{sorted(sup)!r} — an unsupported limitation "
+                       f"cannot discriminate")
+    # The lock's verdict is bound to the governed map bytes live on
+    # disk: a map edited without re-minting the lock refuses here
+    # (preflight V2 owns the before-any-model-call refusal; this is
+    # the at-consumption binding).
+    if fam_c_dir is not None:
+        mapp = os.path.join(fam_c_dir, "T4-CONFORMANCE.json")
+        try:
+            if os.path.islink(mapp):
+                raise OSError("is a symlink, not a committed map file")
+            with open(mapp, "rb") as f:
+                live = hashlib.sha256(f.read()).hexdigest()
+        except OSError as e:
+            out.append("LOCK-INADMISSIBLE: governed T4-CONFORMANCE.json "
+                       f"unreadable at {mapp}: {e}")
+        else:
+            want = lock.get("conformance_map_sha256")
+            if isinstance(want, str) and want != live:
+                out.append("LOCK-INADMISSIBLE: conformance_map_sha256 "
+                           f"{want[:12]} != the live governed "
+                           f"T4-CONFORMANCE.json {live[:12]} (the map "
+                           f"was edited without re-minting the lock)")
     tid = lock.get("t4_semantic_id")
     if tid is not None and not (isinstance(tid, str) and tid.strip()):
         out.append("LOCK-INADMISSIBLE: t4_semantic_id must be a nonempty "
@@ -202,6 +263,7 @@ def promote(out_dir, capability_id, version, artifact_paths,
             execution_lock_sha256=None, semantic_core=None, preconditions=None,
             limitations=None, limitation_present=None,
             non_discriminating=None, conformance_cause=None,
+            supported_t4_ids=None, conformance_map_sha256=None,
             t4_semantic_id=None, evidence_grade=None,
             candidate_sha256=None, candidate_provenance_sha256=None):
     """Write an immutable, estimand-aware CAPABILITY_LOCK. Returns path.
@@ -225,6 +287,8 @@ def promote(out_dir, capability_id, version, artifact_paths,
         ("limitation_present", limitation_present),
         ("non_discriminating", non_discriminating),
         ("conformance_cause", conformance_cause),
+        ("supported_t4_ids", supported_t4_ids),
+        ("conformance_map_sha256", conformance_map_sha256),
         ("t4_semantic_id", t4_semantic_id),
         ("evidence_grade", evidence_grade), ("candidate_sha256", candidate_sha256),
         ("candidate_provenance_sha256", candidate_provenance_sha256),
@@ -254,6 +318,8 @@ def promote(out_dir, capability_id, version, artifact_paths,
             "limitation_present": limitation_present,
             "non_discriminating": non_discriminating,
             "conformance_cause": conformance_cause,
+            "supported_t4_ids": list(supported_t4_ids),
+            "conformance_map_sha256": conformance_map_sha256,
             "t4_semantic_id": t4_semantic_id,
             "evidence_grade": evidence_grade,
             "candidate_sha256": candidate_sha256,

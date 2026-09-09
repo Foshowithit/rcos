@@ -72,8 +72,9 @@ C1A_CONTRACT = {"semantic_core": C1A_CORE, "preconditions": list(C1A_PRE),
 # length (measured max on this text is 8 chars).
 C1A_SUBSTRING_BAR = 24
 
-# C1-3 green control: the H18 limitation variant (real limitation ->
-# discriminating), through the reframed surface.
+# C1-3 green control: a predicate-matching fam05 limitation (the frozen
+# bridge: only a limitation naming the T4's applicability condition
+# supports the id) -> discriminating, through the reframed surface.
 _B_CORE = ("Audit a file listing: measure every named file on disk and "
            "match its byte count and digest against the listing, then file "
            "each entry as good or bad.")
@@ -83,8 +84,8 @@ _B_PRE = ["The listing follows the v1 layout of on-disk paths plus byte "
           "reading."]
 LIMITATION_CONTRACT = {
     "semantic_core": _B_CORE, "preconditions": list(_B_PRE),
-    "limitations": ["Synthetic H21 limitation: payloads larger than 1 MiB "
-                    "are rejected."]}
+    "limitations": ["Synthetic H21 limitation: only valid for local v1 "
+                    "sha256 manifests."]}
 
 
 def check(name, cond, extra=""):
@@ -114,7 +115,7 @@ def hermetic(tag, families=("fam05",)):
     root = tempfile.mkdtemp(prefix="h21-" + tag + "-")
     for name in ("ORDER-EXPANSION.json", "PROTOCOL-LOCK.json",
                  "EXECUTION-LOCK.json", "FREEZE.json", "FREEZE-HASHES.sha256",
-                 "T4-SEMANTIC-IDS.json", "PREREG.md"):
+                 "T4-SEMANTIC-IDS.json", "T4-CONFORMANCE.json", "PREREG.md"):
         shutil.copy2(os.path.join(FAMC, name), os.path.join(root, name))
     fam = os.path.join(root, "families")
     os.makedirs(fam)

@@ -74,7 +74,7 @@ def setup():
     root = tempfile.mkdtemp(prefix="h13-promo-")
     for name in ("ORDER-EXPANSION.json", "PROTOCOL-LOCK.json",
                  "EXECUTION-LOCK.json", "FREEZE.json", "FREEZE-HASHES.sha256",
-                 "T4-SEMANTIC-IDS.json", "PREREG.md"):
+                 "T4-SEMANTIC-IDS.json", "T4-CONFORMANCE.json", "PREREG.md"):
         src = os.path.join(FAMC, name)
         if os.path.exists(src):
             shutil.copy2(src, os.path.join(root, name))

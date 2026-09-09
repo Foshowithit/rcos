@@ -8,6 +8,9 @@ refuses to start on any lock failure before any model token is spent.
 A12c C1-2 (auditor P0 #7): V2 additionally enforces exact
 T4-SEMANTIC-IDS.json <-> PREREG set equality, so a wrong registry
 refuses here — naming the offending id — before any model call.
+A12c slice C2 (auditor P0 #6): V2 additionally enforces the frozen
+limitation->T4-id bridge — T4-CONFORMANCE.json must exist and satisfy
+every refusal condition, or nothing runs.
 
   V1 INSTANCE-FREEZE — the frozen instance bytes (families/** task inputs,
       checkers, truth + frozen meta STAGED.md/FAMILIES.md) are byte-identical
@@ -42,6 +45,7 @@ from admissibility import (frozen_manifest_bytes, verify_freeze_tree,
                            load_freeze)
 from order import verify_expansion as order_verify_expansion
 import t4_ids
+import conformance
 
 FREEZE_COMMIT = "d1292434a261f44ad910c556e18624cef1676f37"
 
@@ -49,7 +53,7 @@ FREEZE_COMMIT = "d1292434a261f44ad910c556e18624cef1676f37"
 # forward amendment, never unlisted drift.
 PROTOCOL_GOVERNED = ["PREREG.md", "ORDER.md", "LANES.md",
                      "HARNESS-READINESS.md", "preflight.py",
-                     "T4-SEMANTIC-IDS.json"]
+                     "T4-SEMANTIC-IDS.json", "T4-CONFORMANCE.json"]
 # Meta pointers: integrity rides on git history + lock records.
 META = {"FREEZE.json", "FREEZE-HASHES.sha256", "PROTOCOL-LOCK.json",
         "EXECUTION-LOCK.json", "FAMC-EXECUTION-STATUS.md",
@@ -217,6 +221,10 @@ def validate_protocol(fam_c_dir, freeze_commit):
     # a V2 gate, not a suite-only assertion — a missing/extra/renamed id
     # or key/value family mismatch refuses here, before any model call.
     out += validate_t4_registry(fam_c_dir)
+    # A12c slice C2 (auditor P0 #6): the frozen limitation->T4-id bridge
+    # is a V2 gate too — the governed map must exist and satisfy every
+    # refusal condition, or nothing runs.
+    out += validate_t4_conformance(fam_c_dir)
     return out
 
 
@@ -296,6 +304,26 @@ def validate_t4_registry(fam_c_dir):
                        f"family mismatch: key {fam!r} maps to id "
                        f"{tid!r} (the id prefix must equal its key)")
     return out
+
+
+def validate_t4_conformance(fam_c_dir):
+    """V2 T4-CONFORMANCE (A12c slice C2, auditor P0 #6). Returns findings.
+
+    The frozen limitation->T4-id bridge must exist and satisfy every
+    C2-3 refusal condition BEFORE any model call: missing file,
+    unparsable JSON, version/rule mismatch, wrong family keys, a
+    `t4_semantic_id` outside the registry resolver's value, empty
+    predicate lists, or a malformed predicate refuses here naming
+    T4-CONFORMANCE.json. A map edited without re-minting
+    PROTOCOL-LOCK refuses via the governed-chain check above (never a
+    silent substitution). Importable without git: needs only the map
+    (+ the registry + PREREG for the resolver cross-check) in
+    fam_c_dir (hermetic fixtures). Stdlib only; fails closed."""
+    try:
+        conformance.load(fam_c_dir)
+    except Exception as e:                                # noqa: BLE001
+        return [f"V2 PROTOCOL-LOCK: T4-CONFORMANCE.json refuses: {e}"]
+    return []
 
 
 def _harness_closure(root, entry_rel):

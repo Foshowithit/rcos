@@ -8,7 +8,8 @@
   "LANES.md": "cac7ca4600769a22b695c00da97f62fbedfe04cee0d9873bc067ce06e5f24be9",
   "HARNESS-READINESS.md": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
   "preflight.py": "dd07af5de705ac3ad943f37152f0e3d45439c345f8266dd1a17fd8a494617af0",
-  "T4-SEMANTIC-IDS.json": "f9feaedcef50f2940328692f9d9c5aa3865f0e7dc2f8870ffa4c3529af096d57"
+  "T4-SEMANTIC-IDS.json": "f9feaedcef50f2940328692f9d9c5aa3865f0e7dc2f8870ffa4c3529af096d57",
+  "T4-CONFORMANCE.json": "05a8e094e437f320ed7e9521b483dd98f1febf0f31851992125ccb2f95dbda40"
  },
  "amendments": [
   {
@@ -139,6 +140,31 @@
    "reason": "A12c slice C1 (auditor P0 #7): exact T4 registry<->PREREG set equality in V2 preflight (validate_t4_registry: exactly fam01..fam06 keys, value-set equality both directions, verbatim PREREG presence, key/value family-prefix match); a missing/extra/renamed id or mismatch refuses before any model call naming the offending id",
    "base": "64247a2",
    "slice": "a12c-slice-c1"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "29cde20953a1c92275766499aa9d6ce53ee51173a846e338f3e113f807baad4e",
+   "to_sha": "be76c0bbadc3142fb1a48f7d32f06c2c44ed5bc6222f59ab982ca926d7f98125",
+   "reason": "A12c slice C2 (auditor P0 #6): forward amendment AMEND-2026-09-08-t4-conformance freezing the limitation->T4-ID conformance bridge (governed T4-CONFORMANCE.json under normalize-token-all-present-v1) before execution; the six T4 ids are unchanged",
+   "base": "6a620d7",
+   "slice": "a12c-slice-c2"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "0d6bb91f072771f2f0a31e00b4e65dc4b87be4f0695264ac63cc5daad936c351",
+   "to_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "reason": "A12c slice C2 (auditor P0 #6): govern T4-CONFORMANCE.json under V2 plus validate_t4_conformance (map must exist and satisfy every refusal condition before any model call)",
+   "base": "6a620d7",
+   "slice": "a12c-slice-c2"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": null,
+   "to_sha": "05a8e094e437f320ed7e9521b483dd98f1febf0f31851992125ccb2f95dbda40",
+   "added_after_freeze": true,
+   "reason": "A12c slice C2 genesis: frozen governed six-family limitation->T4-ID conformance map (PREREG AMEND-2026-09-08-t4-conformance, rule normalize-token-all-present-v1; t4 ids resolved from the same harness/t4_ids.py registry)",
+   "base": "6a620d7",
+   "slice": "a12c-slice-c2"
   }
  ]
 }

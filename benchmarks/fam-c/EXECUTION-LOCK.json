@@ -3,26 +3,27 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "ceb04dece8615f2f23d981ffd153aa572a05b2d835280c756111bdc965d57077",
+ "harness_manifest_sha256": "c5d40fe43a4fda60b47ab9efb603c70c30d08403b463ec89794ae5c3a586e7ba",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
   "harness/chain.py": "cd5ba7b92c889e239d2513276a53483fd6007d3f147809cab583d039850a3df5",
-  "harness/lock.py": "2190551176ce817785e207d19fbdffe690eeb04c68af6dbdd66fbe3261cacb39",
+  "harness/lock.py": "a37a231cfe9b5bbcba837729c15ee7c3fd877d15b22d2a2f6118576607858fa2",
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "18fc105ed578f8b7ae0caae889e2a473bfd8341d41b7ab9db8312f21b9339dca",
-  "harness/order.py": "3cc2acf5c2ee15aa82b39c347d7fdff09dbeded4b394f575abc8c7ef73f905e7",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "dbb0108cc241978bca8a2ab034758ff0c9559f961a82c2627bb5190efb51b2df",
+  "harness/order.py": "d2231f52b495c01921a805f9c72169b8f6c6d24b525dcd3f6804d9f6716032af",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "4e4f385e612cc48bed0941a1b4e52ed2d43cce8ce70736694e6168af8e593e7a",
+  "harness/promotion.py": "509c10f981ad3edcd108451e626def671bc80ebd282e0531b8d50e2be00ad767",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
   "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
-  "harness/specificity.py": "57f6381249ef4bc82744e3244ad05653d6515743f18c58845efeb04bae30e5d1"
+  "harness/specificity.py": "57f6381249ef4bc82744e3244ad05653d6515743f18c58845efeb04bae30e5d1",
+  "harness/conformance.py": "dc49da6a0bea9418ce28da57b5901b0e6f6b7b72c4ab3dcf7121d5911154e507"
  },
  "amendments": [
   {
@@ -406,6 +407,44 @@
    },
    "reason": "A12c slice C1: order.py drops the last K.md comment coupling (C1-0, behavior-unchanged); specificity.py reframed as T4-CONFORMANCE-READINESS (contract_conformance_ready, renamed verdicts, corrupt/symlinked locks inadmissible never skipped)",
    "slice": "a12c-slice-c1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "ceb04dece8615f2f23d981ffd153aa572a05b2d835280c756111bdc965d57077",
+   "to_manifest": "9dc315bd354d783439cff3a21e7e3292ba44300895714794786ed115559f1b14",
+   "files": {
+    "harness/conformance.py": {
+     "from_sha": null,
+     "to_sha": "dc49da6a0bea9418ce28da57b5901b0e6f6b7b72c4ab3dcf7121d5911154e507"
+    },
+    "harness/lock.py": {
+     "from_sha": "2190551176ce817785e207d19fbdffe690eeb04c68af6dbdd66fbe3261cacb39",
+     "to_sha": "a37a231cfe9b5bbcba837729c15ee7c3fd877d15b22d2a2f6118576607858fa2"
+    },
+    "harness/order.py": {
+     "from_sha": "3cc2acf5c2ee15aa82b39c347d7fdff09dbeded4b394f575abc8c7ef73f905e7",
+     "to_sha": "d2231f52b495c01921a805f9c72169b8f6c6d24b525dcd3f6804d9f6716032af"
+    },
+    "harness/promotion.py": {
+     "from_sha": "4e4f385e612cc48bed0941a1b4e52ed2d43cce8ce70736694e6168af8e593e7a",
+     "to_sha": "509c10f981ad3edcd108451e626def671bc80ebd282e0531b8d50e2be00ad767"
+    }
+   },
+   "reason": "A12c slice C2 auditor P0 #6: new harness/conformance.py frozen bridge (load/normalize/matches/supported_t4_ids/verdict, fail closed); promotion.py verdict-derived receipt fields (supported_t4_ids/conformance_map_sha256); lock.py bridge consistency + live-map binding; order.py provenance re-derivation",
+   "slice": "a12c-slice-c2",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "9dc315bd354d783439cff3a21e7e3292ba44300895714794786ed115559f1b14",
+   "to_manifest": "c5d40fe43a4fda60b47ab9efb603c70c30d08403b463ec89794ae5c3a586e7ba",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "18fc105ed578f8b7ae0caae889e2a473bfd8341d41b7ab9db8312f21b9339dca",
+     "to_sha": "dbb0108cc241978bca8a2ab034758ff0c9559f961a82c2627bb5190efb51b2df"
+    }
+   },
+   "reason": "A12c slice C2 follow-up: runner wire-selfcheck fixture carries the frozen bridge fields (supported_t4_ids/conformance_map_sha256, set-consistent) so --selfcheck still mints its fixture lock",
+   "slice": "a12c-slice-c2",
    "status_after": "open-round2"
   }
  ],

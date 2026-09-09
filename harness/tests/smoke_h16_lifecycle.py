@@ -102,6 +102,11 @@ def write_lock(c, grade="harness-validation", engine="print('K')\n"):
                  conformance_cause=("h16 lifecycle fixture: synthetic "
                                     "limitation present, T4 treated as "
                                     "discriminating"),
+                 # A12c slice C2: the frozen bridge fields (the
+                 # synthetic id is its own sole supported member, so
+                 # the claimed discrimination is set-consistent).
+                 supported_t4_ids=["T4-UNRATIFIED-x"],
+                 conformance_map_sha256="8" * 64,
                  evidence_grade=grade, candidate_sha256="5" * 64,
                  candidate_provenance_sha256="6" * 64)
     return os.path.join(d, "CAPABILITY_LOCK.json")

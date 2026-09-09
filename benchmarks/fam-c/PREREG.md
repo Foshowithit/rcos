@@ -450,6 +450,25 @@ conformance semantic ID as the first entry of the frozen list above; the
 other five IDs are byte-identical and unchanged. The governed T4 registry
 (benchmarks/fam-c/T4-SEMANTIC-IDS.json) resolves fam01 to that ID from the
 runs this amendment governs onward.
+
+Forward amendment AMEND-2026-09-08-t4-conformance (2026-09-08): froze the
+limitation→T4-ID conformance bridge BEFORE execution. A limitation
+supports a T4 only if it names the T4's applicability condition, per the
+governed map benchmarks/fam-c/T4-CONFORMANCE.json evaluated under the
+frozen rule normalize-token-all-present-v1 (lowercase; every non-token
+character becomes a space; a predicate matches a limitation iff every
+predicate token is present as a whole token, order irrelevant, no
+stemming, no synonyms, no substring matching; a family T4 is supported
+iff any contract limitation matches any of its predicates;
+non-discriminating iff its T4 id is not in the supported set). The map
+and its rule are auditor-side and never consumer-visible: no predicate,
+no version/rule string, no T4 id, and no verdict field may enter the
+consumer manifest, adapter notes, engine, or prompts. Promotion derives
+the verdict from the producer's own T0 arrival declaration through the
+single governed implementation harness/conformance.py; the order
+validator re-derives it from the same declaration plus the live governed
+map and refuses on any mismatch. The six T4 semantic IDs frozen above
+are unchanged by this amendment (no ID added, removed, or renamed).
 Producer-visible capability contracts MUST NOT contain these IDs, and
 no ID may enter the consuming model's context, tool descriptions,
 registry descriptions shown to routers, router metadata, or capability

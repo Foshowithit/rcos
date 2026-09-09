@@ -989,6 +989,9 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     # promotion controller used (one source of truth) — never against
     # hidden capability text. A receipt that rewrites the producer's declared text
     # is refused here, exactly as a non-frozen contract was before.
+    # A12c slice C2 re-derives the conformance verdict from the same
+    # frozen declaration below (`_t0_lim`).
+    _t0_lim = None
     sc = r.get("semantic_core")
     if not isinstance(sc, str) or not sc.strip():
         out.append("promotion provenance: receipt has no semantic_core")
@@ -1006,6 +1009,7 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
             out.append("promotion provenance: T0 arrival unreadable for "
                        f"the contract cross-check: {e}")
         if isinstance(_t0_declared, dict):
+            _t0_lim = _t0_declared.get("limitations")
             for _k in ("semantic_core", "preconditions", "limitations"):
                 if r.get(_k) != _t0_declared.get(_k):
                     out.append(f"promotion provenance: receipt {_k} is not "
@@ -1046,6 +1050,61 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
     if isinstance(_lim, list) and not _lim and _nd is False:
         out.append("promotion provenance: receipt claims a discriminating "
                    "T4 while the locked contract carries no limitations")
+    # A12c slice C2 (auditor P0 #6): RE-DERIVE the conformance verdict
+    # from the T0 arrival declaration + the governed map (never trust
+    # the receipt): recomputed non_discriminating, supported_t4_ids,
+    # and conformance_map_sha256 must all equal the receipt's;
+    # mismatch -> deny naming the field. Both surfaces resolve through
+    # the SINGLE shared implementation (harness/conformance.py); there
+    # is no private predicate table here.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from conformance import load as _conf_load
+    from conformance import verdict as _conf_verdict
+    try:
+        _cmap = _conf_load(fam_c_dir)
+        _cmap_err = None
+    except Exception as e:                                # noqa: BLE001
+        _cmap, _cmap_err = None, str(e)
+    if _cmap_err is not None:
+        out.append("promotion provenance: governed T4-CONFORMANCE.json "
+                   f"refuses: {_cmap_err}")
+    elif _t0_lim is None:
+        out.append("promotion provenance: T0 arrival declares no "
+                   "limitation list (conformance verdict not "
+                   "re-derivable)")
+    else:
+        try:
+            _re = _conf_verdict(cell["family"], _t0_lim, _cmap)
+            _re_err = None
+        except Exception as e:                            # noqa: BLE001
+            _re, _re_err = None, str(e)
+        if _re_err is not None:
+            out.append("promotion provenance: conformance re-derivation "
+                       f"refuses: {_re_err}")
+        else:
+            if r.get("non_discriminating") != _re["non_discriminating"]:
+                out.append(
+                    "promotion provenance: receipt non_discriminating "
+                    f"{r.get('non_discriminating')!r} != re-derived "
+                    f"{_re['non_discriminating']!r} (recomputed "
+                    f"supported_t4_ids {_re['supported_t4_ids']!r} from "
+                    f"the T0 arrival declaration + governed map do not "
+                    f"support {cell['family']}'s T4 as claimed)")
+            if r.get("supported_t4_ids") != _re["supported_t4_ids"]:
+                out.append(
+                    "promotion provenance: receipt supported_t4_ids "
+                    f"{r.get('supported_t4_ids')!r} != recomputed "
+                    f"{_re['supported_t4_ids']!r} from the T0 arrival "
+                    f"declaration + governed map")
+            if r.get("conformance_map_sha256") != \
+                    _re["conformance_map_sha256"]:
+                out.append(
+                    "promotion provenance: receipt "
+                    f"conformance_map_sha256 "
+                    f"{str(r.get('conformance_map_sha256'))[:12]} != the "
+                    f"live governed map "
+                    f"{_re['conformance_map_sha256'][:12]} (the map was "
+                    f"edited without re-minting the promotion)")
     if r.get("evidence_grade") not in ("estimand", "harness-validation"):
         out.append("promotion provenance: evidence_grade "
                    f"{r.get('evidence_grade')!r} invalid")
@@ -1201,7 +1260,8 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
         for key in ("protocol_lock_sha256", "execution_lock_sha256",
                     "evidence_grade", "semantic_core", "t4_semantic_id",
                     "limitation_present", "non_discriminating",
-                    "conformance_cause"):
+                    "conformance_cause", "supported_t4_ids",
+                    "conformance_map_sha256"):
             if key in rec:
                 expect[key] = rec[key]
         for key in ("acquisition_chain_tips", "source_cells"):
@@ -1225,7 +1285,10 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
                                    "from the receipt")
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from lock import verify_lock as _verify_lock
-    reasons.extend(_verify_lock(lock, expect=expect))
+    # A12c slice C2: bind the lock's conformance verdict to the LIVE
+    # governed map bytes (a map edited without re-minting the lock
+    # refuses here, naming the sha mismatch).
+    reasons.extend(_verify_lock(lock, expect=expect, fam_c_dir=fam_c_dir))
     # the immutable lock: every locked artifact hash verifies against the
     # bytes present in that capability dir.
     for name, want in sorted((lock.get("artifacts") or {}).items()):
@@ -1370,12 +1433,14 @@ def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),
     need = ("acquisition_chain_tips", "source_cells", "candidate",
             "artifacts", "semantic_core", "preconditions", "limitations",
             "limitation_present", "non_discriminating", "conformance_cause",
+            "supported_t4_ids", "conformance_map_sha256",
             "t4_semantic_id", "evidence_grade", "producer_identity",
             "protocol_lock_sha256", "execution_lock_sha256")
     missing = [k for k in need if k not in receipt or receipt[k] is None]
     empty = [k for k in need if k not in ("preconditions", "limitations",
                                          "limitation_present",
-                                         "non_discriminating")
+                                         "non_discriminating",
+                                         "supported_t4_ids")
              and not receipt.get(k)]
     if missing or empty:
         raise PermissionError("LOCK-INADMISSIBLE: promotion receipt lacks "
@@ -1430,6 +1495,8 @@ def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),
         limitation_present=receipt["limitation_present"],
         non_discriminating=receipt["non_discriminating"],
         conformance_cause=receipt["conformance_cause"],
+        supported_t4_ids=receipt["supported_t4_ids"],
+        conformance_map_sha256=receipt["conformance_map_sha256"],
         t4_semantic_id=receipt["t4_semantic_id"],
         evidence_grade=receipt["evidence_grade"],
         candidate_sha256=receipt["candidate"]["sha256"],

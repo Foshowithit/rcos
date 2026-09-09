@@ -147,7 +147,7 @@ def hermetic(governed_mut=None):
     root = tempfile.mkdtemp(prefix="h17-pair-")
     for name in ("ORDER-EXPANSION.json", "PROTOCOL-LOCK.json",
                  "EXECUTION-LOCK.json", "FREEZE.json", "FREEZE-HASHES.sha256",
-                 "T4-SEMANTIC-IDS.json", "PREREG.md"):
+                 "T4-SEMANTIC-IDS.json", "T4-CONFORMANCE.json", "PREREG.md"):
         shutil.copy2(os.path.join(FAMC, name), os.path.join(root, name))
     if governed_mut:
         governed_mut(root)
@@ -493,9 +493,11 @@ check("specificity gate excludes the non-discriminating fam05 with cause",
       gate["discriminating"] == []
       and gate["non_discriminating"].get("fam05") == lk["conformance_cause"]
       and gate["verdict"] == "specificity-failure", str(gate))
-_disc = dict(lk, limitations=["synthetic limitation"],
+_disc = dict(lk, limitations=["only valid for local v1 sha256 "
+                             "manifests (synthetic H17 bridge check)"],
              limitation_present=True, non_discriminating=False,
-             conformance_cause="synthetic: limitation present")
+             conformance_cause="synthetic: frozen predicate matched",
+             supported_t4_ids=[lk["t4_semantic_id"]])
 check("synthetic discriminating lock passes its own contract",
       LOCK_MOD.verify_lock(_disc) == [])
 gate2 = LOCK_MOD.specificity_gate({"fam05": lk, "famXX": _disc})
