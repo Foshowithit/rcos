@@ -388,8 +388,8 @@ check("D8.2 the 9caf3d4f explanation lives in the D8 amendment "
       in open(os.path.join(FAMC, "PREREG.md")).read())
 check("D8.2 no other amendment entry deleted (30 at D7 - 2 removed "
       "a12 edges + 1 D8 edge + 2 D8 forward + 2 D9 forward "
-      "+ 2 D10 forward + 6 D11 forward = 41)",
-      len(LIVE_LOCK["amendments"]) == 41,
+      "+ 2 D10 forward + 7 D11 forward = 42)",
+      len(LIVE_LOCK["amendments"]) == 42,
       str(len(LIVE_LOCK["amendments"])))
 check("D8.2 D8 recorded as its own forward amendment "
       "AMEND-2026-09-09-d8-shared-lineage (PREREG + preflight edges)",

@@ -226,11 +226,11 @@ check("D11.1-GOV the append-only-forward lock policy is documented "
       "append-only" in open(os.path.join(FAMC, "PREREG.md")).read()
       and "committed with the" in
       open(os.path.join(FAMC, "PREREG.md")).read())
-check("D11.1-GOV no amendment entry deleted (35 at D10 + 6 D11 "
-      "forward = 41) and D11 recorded as its own forward amendments",
-      len(_LIVE_LOCK["amendments"]) == 41
+check("D11.1-GOV no amendment entry deleted (35 at D10 + 7 D11 "
+      "forward = 42) and D11 recorded as its own forward amendments",
+      len(_LIVE_LOCK["amendments"]) == 42
       and sum(1 for a in _LIVE_LOCK["amendments"]
-              if a.get("slice") == "a12l-slice-d11") == 6,
+              if a.get("slice") == "a12l-slice-d11") == 7,
       str(len(_LIVE_LOCK["amendments"])))
 
 # --- D11.1-HISTORY: append-only genesis (delete/edit old entries) ----
@@ -283,6 +283,41 @@ check("D11.1-HISTORY deleting an old amendment entry after genesis "
 _ok_ed, _f_ed = _history_attack("edit", "edit")
 check("D11.1-HISTORY editing an old amendment entry after genesis "
       "is a named lock-history finding", _ok_ed, str(_f_ed[:1])[:200])
+
+
+def _history_reorder():
+    # The auditor's exact-prefix attack: swap the positions of two old
+    # entries from DIFFERENT files. Every canonical dict and every
+    # from/to link survives (multiset identical), but the genesis
+    # prefix no longer matches elementwise.
+    c = _clone("hist-reorder")
+    lp = os.path.join(c, "benchmarks", "fam-c", "PROTOCOL-LOCK.json")
+    lock = json.load(open(lp))
+    am = lock["amendments"]
+    i = next(i for i, a in enumerate(am)
+             if a.get("file") == "PREREG.md")
+    j = next(j for j, a in enumerate(am)
+             if a.get("file") == "preflight.py")
+    assert i != j
+    am[i], am[j] = am[j], am[i]
+    json.dump(lock, open(lp, "w"), indent=2, sort_keys=True)
+    _git(c, "add", "-A")
+    _git(c, "commit", "-qm", "lock history reorder attack")
+    fnd = [f for f in PF.validate_protocol(
+        os.path.join(c, "benchmarks", "fam-c"), FREEZE)
+        if f.startswith("V2")]
+    return (bool(fnd) and any(w in " ".join(fnd).lower()
+                              for w in ("prefix", "reordered")), fnd)
+
+
+_ok_re, _f_re = _history_reorder()
+check("D11.1-HISTORY reordering old entries after genesis is a "
+      "named lock-history finding (exact prefix)", _ok_re,
+      str(_f_re[:1])[:200])
+_V2_APPEND = [f for f in PF.validate_protocol(FAMC, FREEZE)
+              if f.startswith("V2")]
+check("D11.1-HISTORY control: pure append (live shape) stays V2 "
+      "green", _V2_APPEND == [], str(_V2_APPEND[:1])[:200])
 
 # --- D11.2 STATIC: first-parent walk -----------------------------------
 _BSS = next(n for n in ast.walk(ast.parse(_SRC))
@@ -379,9 +414,9 @@ check("D11.2-LIVE first-parent sequences equal the old walk for all "
       "seven governed files (non-regression)",
       not _BAD, f"diverged={_BAD}")
 check("D11.2-LIVE live sequence lengths match the certified D11 "
-      "facts (PREREG 22, preflight 20, rest 5/5/12/1/7)",
+      "facts (PREREG 22, preflight 21, rest 5/5/12/1/7)",
       _LENS == {"PREREG.md": 22, "ORDER.md": 5, "LANES.md": 5,
-                "HARNESS-READINESS.md": 12, "preflight.py": 20,
+                "HARNESS-READINESS.md": 12, "preflight.py": 21,
                 "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str(_LENS))
 

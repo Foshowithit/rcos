@@ -341,6 +341,14 @@
    "reason": "A12l slice D11 third commit (auditor D10 verdict): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 explicit first-parent commit walk (rev-list, no path filter; multiset-subset history documented as deliberate deviation from exact prefix), cross-file ABA residual wording (canonical source manifest), A13 permitted-inputs/model-response-not-an-argument/recorded A-B attack, merge-governance middle ground, and the production expected_task_snapshot runner binding",
    "base": "dea7cdc",
    "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "8028f6bad01b8dfe8a6042b3810859829cbd6b3b1209b844e49b4e8b13d4e8fc",
+   "to_sha": "d712eacda17d9f96b67c4f140ef603bbf6324dade9b2a71e7fa0bb2129e91e17",
+   "reason": "A12l slice D11 round-7 (general-seat exact-prefix order): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 order-sensitive exact prefix in validate_lock_history (pure reorder fails naming the displaced position; multiset/governed belts kept), hermetic untracked-path scope mirroring the byte authority",
+   "base": "a05362f",
+   "slice": "a12l-slice-d11"
   }
  ]
 }

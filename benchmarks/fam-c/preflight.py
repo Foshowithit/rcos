@@ -224,31 +224,47 @@ def validate_lock_history(fam_c_dir):
     container findings, never a traceback). Returns findings.
 
     From the genesis checkpoint above, lock history is immutable:
-    the genesis amendment multiset must survive verbatim in the
-    current lock (later slices only APPEND entries), and every
-    genesis governed root must survive unmoved. Deleting or
-    rewriting an old entry — even with the lock re-committed, so
-    the byte authority passes — fails here with a named
-    lock-history finding (append-only genesis violated).
+    the genesis amendment list must survive as an EXACT
+    ORDER-SENSITIVE PREFIX of every later lock (later slices only
+    APPEND entries), every genesis governed root must survive
+    unmoved, and the genesis multiset must survive verbatim (belts).
+    Deleting, rewriting, or reordering an old entry — even with the
+    lock re-committed, so the byte authority passes — fails here
+    with a named lock-history finding (append-only genesis
+    violated).
 
     Scope: the check applies only where the genesis resolves in
     the enclosing history AND the lock is bound to the live
-    instance freeze. Synthetic hermetic universes (their own
-    freeze, or no genesis in history) have no anchor to violate:
-    [] there, while the chain/global rules still judge their
-    bytes on the merits.
+    instance freeze AND the lock path has a committed counterpart
+    at HEAD. Synthetic hermetic universes (their own freeze, no
+    genesis in history, or an uncommitted fixture lock path such
+    as an in-repo throwaway dir) carry no committed lineage of
+    their own and are skipped — exactly like the byte authority,
+    which compares against committed bytes only where they exist
+    — while the chain/global rules still judge their bytes on the
+    merits. Every real lineage (the live tree, committed clones)
+    is always tracked and always judged.
 
-    Deliberate deviation from "exact prefix", recorded for the
-    auditor: the comparison is an order-insensitive
-    multiset-subset, because validation follows from/to LINKS,
-    never list order — a pure reorder of unchanged entries changes
-    no verdict and must stay legal (the D9 independent gate's
-    control rechain relies on exactly this). Any removed or
-    rewritten old entry, or any moved governed root, still fails.
+    Order sensitivity (auditor D10 verdict): validation follows
+    from/to LINKS, so a pure reorder changes no chain verdict —
+    but it rewrites history, and history is append-only. The
+    prefix rule therefore fails a pure reorder naming the first
+    displaced position, while the multiset-subset and
+    governed-root belts keep delete/rewrite failing with their own
+    named findings.
     """
     try:
         root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
     except RuntimeError:
+        return []
+    try:
+        _lp = os.path.join(fam_c_dir, "PROTOCOL-LOCK.json")
+        _rel = os.path.relpath(os.path.abspath(_lp), root)
+        _tr = subprocess.run(["git", "show", f"HEAD:{_rel}"],
+                             cwd=root, capture_output=True)
+    except FileNotFoundError:
+        return []
+    if _tr.returncode != 0:
         return []
     try:
         proc = subprocess.run(
@@ -307,13 +323,37 @@ def validate_lock_history(fam_c_dir):
     elif isinstance(gen_gov, dict):
         moved = len(gen_gov)
     if missing or moved:
-        return ["V2 PROTOCOL-LOCK: lock history violates append-only "
-                "genesis " + _GENESIS_COMMIT[:12] + f" ({missing} old "
-                f"amendment entr{'y' if missing == 1 else 'ies'} "
-                f"removed or rewritten, {moved} governed roots moved; "
-                f"old entries are immutable — append new entries, never "
-                f"rewrite history)"]
-    return []
+        out = ["V2 PROTOCOL-LOCK: lock history violates append-only "
+               "genesis " + _GENESIS_COMMIT[:12] + f" ({missing} old "
+               f"amendment entr{'y' if missing == 1 else 'ies'} "
+               f"removed or rewritten, {moved} governed roots moved; "
+               f"old entries are immutable — append new entries, never "
+               f"rewrite history)"]
+    else:
+        out = []
+
+    def _canon_any(a):
+        return _canon(a) if isinstance(a, dict) else "\x00" + type(a).__name__
+
+    _g = [_canon_any(a) for a in (gen_am if isinstance(gen_am, list)
+                                  else [])]
+    _c = [_canon_any(a) for a in (cur_am if isinstance(cur_am, list)
+                                  else [])]
+    _bad_pos = None
+    if len(_c) < len(_g):
+        _bad_pos = len(_c)
+    else:
+        for _i, _gval in enumerate(_g):
+            if _c[_i] != _gval:
+                _bad_pos = _i
+                break
+    if _bad_pos is not None:
+        out.append("V2 PROTOCOL-LOCK: lock history violates append-only "
+                   "genesis " + _GENESIS_COMMIT[:12] +
+                   f" (old entries reordered: genesis entry {_bad_pos} "
+                   f"is no longer at position {_bad_pos}; history is "
+                   f"append-only — old amendments are an exact prefix)")
+    return out
 
 
 def validate_lock_global(lock):
