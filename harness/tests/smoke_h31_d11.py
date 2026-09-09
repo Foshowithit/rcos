@@ -226,11 +226,11 @@ check("D11.1-GOV the append-only-forward lock policy is documented "
       "append-only" in open(os.path.join(FAMC, "PREREG.md")).read()
       and "committed with the" in
       open(os.path.join(FAMC, "PREREG.md")).read())
-check("D11.1-GOV no amendment entry deleted (35 at D10 + 9 D11 "
-      "forward = 44) and D11 recorded as its own forward amendments",
-      len(_LIVE_LOCK["amendments"]) == 44
+check("D11.1-GOV no amendment entry deleted (35 at D10 + 10 D11 "
+      "forward = 45) and D11 recorded as its own forward amendments",
+      len(_LIVE_LOCK["amendments"]) == 45
       and sum(1 for a in _LIVE_LOCK["amendments"]
-              if a.get("slice") == "a12l-slice-d11") == 9,
+              if a.get("slice") == "a12l-slice-d11") == 10,
       str(len(_LIVE_LOCK["amendments"])))
 
 # --- D11.1-HISTORY: append-only genesis (delete/edit old entries) ----
@@ -346,6 +346,46 @@ _ok_un, _f_un = _history_untrack_attack()
 check("D11.1-HISTORY reordered + untracked governed lock refused "
       "with a named untracked-lineage finding", _ok_un,
       str(_f_un[:1])[:200])
+
+
+def _history_post_genesis(mutate):
+    # Post-genesis holes: swap (HOLE A) or rewrite (HOLE B) two
+    # entries appended AFTER the genesis checkpoint (positions 37
+    # and 38 on the 44-entry lock: a PREREG.md / preflight.py pair).
+    # The genesis prefix survives intact, so only the
+    # consecutive-pair walk can catch it.
+    c = _clone("hist-postgen-" + mutate)
+    lp = os.path.join(c, "benchmarks", "fam-c", "PROTOCOL-LOCK.json")
+    lock = json.load(open(lp))
+    am = lock["amendments"]
+    assert len(am) >= 40, len(am)
+    if mutate == "reorder":
+        assert am[37].get("file") != am[38].get("file"), \
+            (am[37].get("file"), am[38].get("file"))
+        am[37], am[38] = am[38], am[37]
+    else:
+        last_pre = max(i for i, a in enumerate(am)
+                       if a.get("file") == "PREREG.md")
+        am[last_pre]["reason"] = (am[last_pre].get("reason", "")
+                                  + " (post-genesis rewrite)")
+    json.dump(lock, open(lp, "w"), indent=2, sort_keys=True)
+    _git(c, "add", "-A")
+    _git(c, "commit", "-qm", "post-genesis lock attack " + mutate)
+    fnd = [f for f in PF.validate_protocol(
+        os.path.join(c, "benchmarks", "fam-c"), FREEZE)
+        if f.startswith("V2")]
+    return (bool(fnd) and any(w in " ".join(fnd).lower()
+                              for w in ("append", "prefix", "history",
+                                        "genesis", "immutable", "commit")),
+            fnd)
+
+
+_ok_pa, _f_pa = _history_post_genesis("reorder")
+check("D11.1-HISTORY post-genesis reorder refused with a named "
+      "lock-history finding", _ok_pa, str(_f_pa[:1])[:200])
+_ok_pb, _f_pb = _history_post_genesis("rewrite")
+check("D11.1-HISTORY post-genesis rewrite refused with a named "
+      "lock-history finding", _ok_pb, str(_f_pb[:1])[:200])
 
 
 def _history_genesisless():
@@ -474,9 +514,9 @@ check("D11.2-LIVE first-parent sequences equal the old walk for all "
       "seven governed files (non-regression)",
       not _BAD, f"diverged={_BAD}")
 check("D11.2-LIVE live sequence lengths match the certified D11 "
-      "facts (PREREG 22, preflight 23, rest 5/5/12/1/7)",
+      "facts (PREREG 22, preflight 24, rest 5/5/12/1/7)",
       _LENS == {"PREREG.md": 22, "ORDER.md": 5, "LANES.md": 5,
-                "HARNESS-READINESS.md": 12, "preflight.py": 23,
+                "HARNESS-READINESS.md": 12, "preflight.py": 24,
                 "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str(_LENS))
 

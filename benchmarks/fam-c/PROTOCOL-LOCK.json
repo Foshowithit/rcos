@@ -365,6 +365,14 @@
    "reason": "A12l slice D11 round-9 (general-seat untrack hardening): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 canonical-path untracked-lock refusal (an uncommitted governed lock has no verifiable lineage; fixture copies at non-governed paths stay exempt)",
    "base": "aaf570e",
    "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "f0a8cbb3a1132e2f728c38d2b3ca7f3f3c2b200407c81bb8c840c09aa90f8ee5",
+   "to_sha": "b06fae1a2facf4b2197cd5ec98fb93f895087e3aa2d005a90311fd09cad4f3ff",
+   "reason": "A12l slice D11 round-10 (general-seat post-genesis holes): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 lineage-wide consecutive-pair monotonicity walk over first-parent genesis..HEAD (post-genesis reorder/rewrite names the violating commit)",
+   "base": "94f9f09",
+   "slice": "a12l-slice-d11"
   }
  ]
 }

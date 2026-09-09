@@ -253,6 +253,13 @@ def validate_lock_history(fam_c_dir):
     position, never reordered/mutated/deleted), while the
     multiset-subset and governed-root belts keep delete/rewrite
     failing with their own named findings, first.
+
+    Lineage-wide monotonicity: the disk-vs-genesis comparisons
+    above only cover the genesis prefix, so a post-genesis reorder
+    or rewrite would survive them. The consecutive-pair walk over
+    the first-parent genesis..HEAD slice closes that hole: every
+    revision's amendment list must extend its predecessor by
+    append-only, and the first violating commit is named.
     """
     try:
         root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
@@ -359,6 +366,58 @@ def validate_lock_history(fam_c_dir):
                 "entries reordered: the genesis prefix no longer matches "
                 "position for position; history is append-only, never "
                 "reordered, mutated or deleted)"]
+    # Lineage-wide monotonicity (auditor: no prior entry mutated,
+    # reordered or deleted — not just genesis entries): walk every
+    # consecutive pair on the first-parent genesis..HEAD slice and
+    # require each revision's list to extend the previous one by
+    # append-only. A post-genesis reorder or rewrite passes every
+    # check above (the genesis prefix survives it) and fails here,
+    # naming the violating commit. Cost is one rev-list plus one
+    # git show per revision in the slice.
+    try:
+        _chain = _git(["rev-list", "--first-parent", "HEAD"],
+                      cwd=root).split()
+    except RuntimeError:
+        return []
+    _chain.reverse()
+    try:
+        _gi = _chain.index(_GENESIS_COMMIT)
+    except ValueError:
+        return []
+    _prev_list = None
+    for _rev in _chain[_gi:]:
+        _sp = subprocess.run(
+            ["git", "show",
+             f"{_rev}:benchmarks/fam-c/PROTOCOL-LOCK.json"],
+            cwd=root, capture_output=True)
+        if _sp.returncode != 0:
+            return ["V2 PROTOCOL-LOCK: lock history violates append-only "
+                    "genesis " + _GENESIS_COMMIT[:12] +
+                    f" at commit {_rev[:12]} (PROTOCOL-LOCK.json absent "
+                    f"at that revision; history is append-only — never "
+                    f"reordered, mutated or deleted)"]
+        try:
+            _lj = json.loads(_sp.stdout.decode())
+        except ValueError:
+            return ["V2 PROTOCOL-LOCK: lock history violates append-only "
+                    "genesis " + _GENESIS_COMMIT[:12] +
+                    f" at commit {_rev[:12]} (PROTOCOL-LOCK.json "
+                    f"unparsable at that revision; history is "
+                    f"append-only — never reordered, mutated or deleted)"]
+        _lam = _lj.get("amendments") if isinstance(_lj, dict) else None
+        _this = [_canon(a) for a in _lam
+                 if isinstance(_lam, list) and isinstance(a, dict)]
+        if _prev_list is not None and _this[:len(_prev_list)] != _prev_list:
+            _bad = next((_i for _i, (_p, _n) in
+                         enumerate(zip(_prev_list, _this)) if _p != _n),
+                        min(len(_prev_list), len(_this)))
+            return ["V2 PROTOCOL-LOCK: lock history violates append-only "
+                    "genesis " + _GENESIS_COMMIT[:12] +
+                    f" at commit {_rev[:12]} (amendment entry {_bad} "
+                    f"changed or moved: the previous revision's list is "
+                    f"no longer an exact prefix of it; history is "
+                    f"append-only — never reordered, mutated or deleted)"]
+        _prev_list = _this
     return []
 
 
