@@ -4,6 +4,7 @@ identity+usage path, CALIBRATION / NEVER-ESTIMAND). Offline only: no
 network, no model, no quota. Exit 0 only if every probe is closed."""
 import hashlib
 import hashlib
+import hashlib
 import json
 import os
 import subprocess
@@ -167,6 +168,84 @@ try:
     check("off-pattern echo fails the frozen prereg", False, "accepted")
 except ValueError:
     check("off-pattern echo fails the frozen prereg", True)
+
+# --- A11.1: the live codepath must hand the provider object to _compose ---
+import calibrate as CAL   # noqa: E402
+_calls = {"n": 0}
+
+
+def _stub_recorded(*a, **kw):
+    """Same signature as usage.recorded_call; asserts return_response=True
+    (the pushed live branch omitted it and lost the provider object)."""
+    _calls["n"] += 1
+    assert kw.get("return_response") is True, \
+        "live path must request the provider response object in ONE call"
+    return ("ACK", os.path.join(RUNDIR, "lane-P", "call-stub.json"),
+            {"id": "stub-1", "model": "minimax-m3", "usage": {}})
+
+
+_orig = CAL.UG.recorded_call
+CAL.UG.recorded_call = _stub_recorded
+try:
+    _reply, _rec, _obj = CAL._capture("P", "live")
+    check("A11.1 live capture returns the provider object", _obj is not None
+          and _calls["n"] == 1, str(_obj))
+    check("A11.1 live capture makes exactly one call", _calls["n"] == 1)
+except Exception as e:                                   # noqa: BLE001
+    check("A11.1 live capture returns the provider object", False, str(e))
+finally:
+    CAL.UG.recorded_call = _orig
+
+# --- A11.2: adapter binding is a lane binding, not a label ---
+import usage as UG2      # noqa: E402
+_d = os.path.join(RUNDIR, "lane-P")
+_rcp = json.load(open(os.path.join(
+    _d, [f for f in os.listdir(_d) if f.startswith("call-")
+         and f.endswith(".json") and "normalized" not in f
+         and "request" not in f and "tampered" not in f][0])))
+for name, kw, mutate in (
+        ("P receipt relabeled as the Q adapter",
+         {"lane": "P"}, lambda r: r.update(normalizer_id="kenari-openai-chat-v2")),
+        ("wrong endpoint for the bound adapter",
+         {"lane": "P"}, lambda r: r.update(endpoint="https://kenari.id/v1")),
+        ("wrong lane for the bound adapter",
+         {"lane": "Q"}, lambda r: None),
+        ("wrong model for the bound adapter",
+         {"lane": "P"}, lambda r: r.update(
+             model_requested="agnes-2-0-flash:free"))):
+    _r = json.loads(json.dumps(_rcp))
+    mutate(_r)
+    try:
+        UG2.verify_adapter_binding(_r["normalizer_id"], receipt=_r, **kw)
+        check(f"A11.2 {name} refused", False, "accepted")
+    except ValueError:
+        check(f"A11.2 {name} refused", True)
+
+# --- A11.2: mutating any generation param in any representation fails ---
+_req_name = _rcp.get("request_body_file")
+check("A11.2 receipt persists the exact request bytes",
+      bool(_req_name) and os.path.exists(os.path.join(_d, _req_name)))
+for field, value in (("temperature", 0.9), ("max_tokens", 123),
+                     ("model", "other-model")):
+    _b = json.load(open(os.path.join(_d, _req_name)))
+    _b[field] = value
+    _tmp = os.path.join(_d, "mut-req.json")
+    json.dump(_b, open(_tmp, "w"))
+    _raw = open(_tmp, "rb").read()
+    _mut = os.path.join(_d, "mut-receipt.json")
+    _rc2 = json.loads(json.dumps(_rcp))
+    _rc2.update(request_body_file="mut-req.json",
+                request_body_sha256=hashlib.sha256(_raw).hexdigest(),
+                request_body_file_sha256=hashlib.sha256(_raw).hexdigest())
+    json.dump(_rc2, open(_mut, "w"))
+    try:
+        UG2.verify_request_binding(_mut, os.path.join(_d, "identity.json"))
+        check(f"A11.2 {field} mutation in the request fails", False,
+              "accepted")
+    except ValueError:
+        check(f"A11.2 {field} mutation in the request fails", True)
+    os.remove(_tmp)
+    os.remove(_mut)
 
 # --- A11.1: the live codepath must hand the provider object to _compose ---
 import calibrate as CAL   # noqa: E402

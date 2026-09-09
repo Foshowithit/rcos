@@ -179,6 +179,28 @@ def auth_ev(block, family, event, universe, done=None):
                                done or {})
 
 
+def done_before(i):
+    """Every cell strictly earlier than index i — the only state in which
+    cell i may start."""
+    return {c["cell_id"]: "run-" + c["cell_id"] for c in CELLS
+            if c["index"] < i}
+
+
+def auth_ev(block, family, event, universe, done=None):
+    return ORD.authorize_event(EXP, block, family, event, universe,
+                               done or {})
+
+
+def auth_ev(block, family, event, universe, done=None):
+    return ORD.authorize_event(EXP, block, family, event, universe,
+                               done or {})
+
+
+def auth_ev(block, family, event, universe, done=None):
+    return ORD.authorize_event(EXP, block, family, event, universe,
+                               done or {})
+
+
 cell0, f0 = auth("PQ", "fam05", "T2", "P", "correct")
 check("downstream T2 refused with nothing done, naming the T0/A acquisition",
       cell0 is not None and any("out of order" in x and "fam05/T0/A" in x

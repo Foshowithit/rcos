@@ -33,12 +33,27 @@ import json
 import os
 import re
 import sys
+import sys
 import stat
 import sys
 import time
 
 BLOCKS = ("PQ", "QP")
 ARM_LETTERS = ("A", "B", "C", "D")
+# PREREG §2: A/B/C/D are separate experimental universes.
+UNIVERSES = ("A", "B", "C", "D")
+# Only the capability-bearing universes acquire/promote/lock K. B and D
+# solve fresh by design and never hold a registry.
+CAPABILITY_UNIVERSES = ("A", "C")
+ACQ_EVENTS = ("T0", "T1", "PROMOTION", "CAPABILITY_LOCK")
+DOWNSTREAM_EVENTS = ("T2", "T3", "T4")
+EVENT_KIND = {"T0": "acquisition-solve", "T1": "acquisition-solve",
+              "PROMOTION": "harness-event",
+              "CAPABILITY_LOCK": "harness-event",
+              "T2": "model-call", "T3": "model-call", "T4": "model-call"}
+MODEL_CALL_KINDS = ("acquisition-solve", "model-call")
+PRODUCER = {"PQ": "P", "QP": "Q"}
+OTHER_LANE = {"P": "Q", "Q": "P"}
 # PREREG §2: A/B/C/D are separate experimental universes.
 UNIVERSES = ("A", "B", "C", "D")
 # Only the capability-bearing universes acquire/promote/lock K. B and D
@@ -127,7 +142,36 @@ def parse_order(text):
     return {"seed": int(seed), "families": families, "block_order": block_order,
             "events": tasks,
             "events": tasks,
+            "events": tasks,
             "tasks": tasks, "sequences": seqs}
+
+
+def _cell(index, block, family, event, universe, kind):
+    """One enumerated event. `universe` is the A/B/C/D universe it belongs
+    to; for acquisition events the universe IS the capability universe."""
+    lane = PRODUCER[block]
+    consumer = CONSUMER[block][universe] if universe in CONSUMER[block] \
+        else lane
+    c = {"index": index,
+         "cell_id": cell_id(block, family, event, universe),
+         "block": block, "family": family, "event": event, "kind": kind,
+         "universe": universe,
+         "primed": block == "QP",
+         "producer_lane": lane, "lane": consumer,
+         "capability_id": capability_id(block, universe, family)}
+    if kind == "model-call":
+        cap = CAPABILITY[universe]
+        c.update({"task": event, "letter": universe,
+                  "arm": ARM_NAME[cap], "capability": cap,
+                  "lane_key": LANE_KEY[universe] + (
+                      " (primed)" if block == "QP" else "")})
+    else:
+        c.update({"task": event, "letter": universe,
+                  "arm": "acquisition" if kind == "acquisition-solve"
+                         else "harness",
+                  "capability": False, "lane_key": LANE_KEY[universe] +
+                  (" (primed)" if block == "QP" else "")})
+    return c
 
 
 def _cell(index, block, family, event, universe, kind):

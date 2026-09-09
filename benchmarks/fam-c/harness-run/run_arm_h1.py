@@ -443,6 +443,37 @@ def _first_diff(a, b):
     return f"length {len(a)} != {len(b)}"
 
 
+def strip_capability_block(prompt):
+    """Remove the delimited capability-access block (inclusive, plus the ONE
+    separator newline that frames it on each side). Returns the prompt
+    unchanged when no block is present.
+
+    The block is emitted as "\n" + BEGIN + ... + END + "\n", so the
+    treatment prompt minus the block still carries the framing newline that
+    precedes it; consuming that single adjacent newline is what makes the
+    stripped treatment bytes EQUAL the control bytes rather than control + a
+    stray blank line.
+    """
+    if _CAP_BEGIN not in prompt:
+        return prompt
+    i = prompt.index(_CAP_BEGIN)
+    j = prompt.index(_CAP_END, i) + len(_CAP_END)
+    head, tail = prompt[:i], prompt[j:]
+    if head.endswith("\n") and tail.startswith("\n"):
+        head = head[:-1]
+        tail = tail[1:]
+    return head + tail
+
+
+def _first_diff(a, b):
+    """Index + context of the first byte difference (diagnostics only)."""
+    for i, (x, y) in enumerate(zip(a, b)):
+        if x != y:
+            return (f"index {i}: {a[max(0, i - 20):i + 20]!r} != "
+                    f"{b[max(0, i - 20):i + 20]!r}")
+    return f"length {len(a)} != {len(b)}"
+
+
 def check_arm_symmetry(correct_prompt, disabled_prompt, envelope):
     """H-CTX-002 mechanical pair check (fail-closed findings list).
 
@@ -2454,6 +2485,10 @@ if __name__ == "__main__":
         if rc != 0:
             sys.exit(rc)
         sys.exit(selfcheck_prompt())
+    if "--block" in argv:
+        i = argv.index("--block")
+        opts["block"] = argv[i + 1].upper()
+        del argv[i:i + 2]
     if "--block" in argv:
         i = argv.index("--block")
         opts["block"] = argv[i + 1].upper()

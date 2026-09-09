@@ -200,6 +200,38 @@ def classify_run_dir(run_dir, freeze_commit):
                                 reason = (f"request binding invalid for "
                                           f"{r}: {e}")
                                 break
+            # A11.2: the declared adapter must be the LANE's adapter for the
+            # endpoint/model on the receipt, and the persisted request bytes
+            # must reproduce the receipt hash and agree with the identity
+            # record. A relabeled receipt (P bytes claiming the Q adapter),
+            # a wrong endpoint/model for that adapter, or a mutated
+            # generation param in ANY representation excludes the run.
+            if not reason:
+                for r in (m.get("usage_receipts") or []):
+                    try:
+                        rc = json.load(open(os.path.join(run_dir, r)))
+                    except (OSError, ValueError) as e:
+                        reason = f"usage receipt unreadable for {r}: {e}"
+                        break
+                    nid = rc.get("normalizer_id")
+                    try:
+                        verify_adapter_binding(
+                            nid, lane=m.get("lane"), receipt=rc)
+                    except ValueError as e:
+                        reason = f"adapter binding invalid for {r}: {e}"
+                        break
+                    if m.get("usage_receipts"):
+                        idf = m.get("identity_file")
+                        if idf and os.path.exists(
+                                os.path.join(run_dir, idf)):
+                            try:
+                                verify_request_binding(
+                                    os.path.join(run_dir, r),
+                                    os.path.join(run_dir, idf))
+                            except ValueError as e:
+                                reason = (f"request binding invalid for "
+                                          f"{r}: {e}")
+                                break
             # Item-3 (audit round 2): the identity record must cross-verify
             # against EVERY usage receipt (endpoint + model_requested +
             # request-body hash equal; echo + provider id nonempty) —
