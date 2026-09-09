@@ -756,7 +756,8 @@ def extract(raw):
     raise ValueError("CONTRACT-PARSE-DENY: arrival has no parseable envelope")
 
 
-def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
+def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
+                      jail_factory=None):
     """Run one validated A11b.2 arrival through the ONE H1 runtime path.
 
     The arrival's OWN "decision" selects the path (use_capability -> the
@@ -768,6 +769,13 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
       CONTRACT-DECISION-DENY  decision illegal for the arm (e.g. a disabled
                               arm returning "use_capability")
       CONTRACT-ENGINE-DENY    use_capability without a capability engine
+    `jail_factory` (A12d D1 clarification): the use_capability engine
+    jail is built as jail_factory(work, adapted_dir) — default None
+    builds the production DockerSandbox(work, adapted_dir); a test seam
+    may supply a shim factory with the same (work_dir, visible_root)
+    call shape returning .run(argv, timeout=...) + .task_snapshot (when
+    available). The fresh/solver path always uses the caller-supplied
+    raw-task jail `sb`.
     Returns {"verdict", "checker_returncode", "checker_output",
              "output_sha256", "decision", "execution_mode",
              "container_returncode", "checker_path", "checker_sha256",
@@ -811,13 +819,23 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
             raise RuntimeError("ADAPTED-INPUT-DENY: " + adapted_denial)
         adapted_input_sha256, _ = _manifest_tree_sha256(
             CANDIDATE_INPUT_MANIFEST_SCHEMA, adapted_entries)
-        engine_sb = DockerSandbox(work, adapted_dir)
+        engine_sb = (jail_factory or DockerSandbox)(work, adapted_dir)
         command = ["python3", "/work/engine.py", "/task/field_map.json",
                    "/task/records.json", "/work/OUTPUT.json"]
         execution_mode = "engine"
         p = engine_sb.run(command, timeout=120)
-        engine_jail = {"task_snapshot": engine_sb.task_snapshot,
-                       "mounts": engine_sb.manifest()["mounts"],
+        try:
+            _engine_mounts = engine_sb.manifest()["mounts"]
+        except AttributeError:
+            # Shim factories expose .run + .task_snapshot, not the full
+            # DockerSandbox manifest: record the equivalent two mounts.
+            _engine_mounts = [{"host": work, "container": "/work",
+                               "mode": "rw"},
+                              {"host": adapted_dir, "container": "/task",
+                               "mode": "ro"}]
+        engine_jail = {"task_snapshot": getattr(engine_sb, "task_snapshot",
+                                                None),
+                       "mounts": _engine_mounts,
                        "adapted_input_sha256": adapted_input_sha256}
     else:  # fresh — the only legal decision on the disabled arm
         open(os.path.join(work, "solver.py"), "w").write(
@@ -861,7 +879,7 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
 
 def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
                           work, taskdir, sb, checker_sha256, truth_sha256,
-                          outdir=None, candidate_jail_factory=None):
+                          outdir=None, jail_factory=None):
     """A12d D1 — T1 candidate validation path (two jails, evidence on
     failure, input lineage).
 
@@ -889,7 +907,11 @@ def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
          workdir and verify sha256 == frozen T0 candidate sha
          (`candidate-bytes-mismatch` on drift);
       6. run `python3 /work/candidate.py /task /work/CANDIDATE-OUTPUT.json`
-         in the SECOND jail — DockerSandbox(cand_work, cand_staging),
+         in the SECOND jail — jail_factory(cand_work, cand_staging)
+         (default jail_factory=None builds the production
+         DockerSandbox(cand_work, cand_staging); a test seam may supply
+         a shim factory with the same (work_dir, visible_root) call
+         shape returning .run(argv, timeout=...) + .task_snapshot),
          whose /task is the staged candidate input ONLY — never the raw
          task tree. Non-zero rc is experimental failure
          `candidate-failed`;
@@ -1042,7 +1064,7 @@ def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
             os.unlink(cand_out_work)
         except OSError:
             pass
-    factory = candidate_jail_factory or DockerSandbox
+    factory = jail_factory or DockerSandbox
     cand_sb = factory(cand_work, staging)
     candidate_p = cand_sb.run(["python3", "/work/candidate.py", "/task",
                                "/work/CANDIDATE-OUTPUT.json"], timeout=120)
@@ -1916,7 +1938,8 @@ def prepare_arm(lane, family, task, arm, capdir, wire, run_id,
             "symmetry": sym, "cap_info": cap_info, "cap_engine": cap_engine}
 
 
-def main(lane, family, task, arm, outdir, capdir=None, opts=None):
+def main(lane, family, task, arm, outdir, capdir=None, opts=None,
+           jail_factory=None):
     opts = opts or {}
     wire = opts.get("wire", True)
     if opts.get("promote_dir"):
@@ -2133,7 +2156,7 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     # arrival's own decision picks engine vs solver; the arm only gates
     # decision legality. No evaluator/truth/checker is mounted.
     execr = execute_arrival(arm, arrival, work, outdir, taskdir,
-                            cap_engine, sb)
+                            cap_engine, sb, jail_factory=jail_factory)
     verdict = execr["verdict"]
     output_sha = execr["output_sha256"]
 

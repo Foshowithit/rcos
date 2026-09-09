@@ -3,11 +3,17 @@
 committed experimental evidence (A12d.2) + candidate-input lineage
 (A12d.7).
 
-All acceptance cases run REAL production code — the real
-run_arm_h1.validate_t1_candidate / execute_arrival helpers, REAL docker
-jails (DockerSandbox, digest-pinned, --network none), the REAL frozen
-fam05 T1 checker + truth, and the REAL promotion/order controllers — in
-throwaway dirs (no live-tree mutation, no live model calls).
+Isolation cases run through the production `jail_factory` seam TWICE:
+hermetic two-jail shims (ShimJail: the adapter jail's /task is the raw
+task copy, the candidate/engine jail's /task is ONLY the staged adapted
+input — structural: the candidate factory closure never receives the raw
+path) as the primaries, plus real-DockerSandbox twins (A5-1D/A5-2D/A5-3D)
+that exercise the production default jail. The docker twins run whenever
+docker is genuinely available and are marked SKIP (explicitly reported,
+never silent) only when it is not. Everything else runs REAL production
+code — run_arm_h1.validate_t1_candidate / execute_arrival, the REAL
+frozen fam05 T1 checker + truth, the REAL promotion/order controllers —
+in throwaway dirs (no live-tree mutation, no live model calls).
 
   A5 (A12d.1 jail isolation, real in-jail docker):
     A5-1 ADAPTER CAN read a raw T1 filename (its bytes reach the
@@ -60,11 +66,14 @@ sys.path.insert(0, os.path.join(FAMC, "harness-run"))
 import order  # noqa: E402
 import promotion  # noqa: E402
 import run_arm_h1 as RA  # noqa: E402
-from dockersandbox import DockerSandbox, ensure_roots  # noqa: E402
+from dockersandbox import (DockerSandbox, ensure_roots,  # noqa: E402
+                           _hash_tree as _jail_hash_tree)
+import dockersandbox as _docker_mod  # noqa: E402
 from fixture_modelrun import (build_model_run,  # noqa: E402
                               t0_candidate_sha256)
 
 RESULTS = []
+SKIPS = []
 FREEZE = json.load(open(os.path.join(FAMC, "FREEZE.json")))["freeze_commit"]
 FAM05_T1 = os.path.join(FAMC, "families", "fam05", "T1")
 FAM05_CHECKER = os.path.join(FAMC, "families", "fam05", "check.py")
@@ -76,6 +85,96 @@ def check(name, cond, extra=""):
     RESULTS.append((name, bool(cond)))
     print(("PASS " if cond else "FAIL-OPEN ") + name +
           (f" [{extra}]" if extra and not cond else ""))
+
+
+def skip(name, why):
+    SKIPS.append((name, why))
+    print(f"SKIP {name} (docker unavailable: {why})")
+
+
+def _probe_docker():
+    """True iff the production DockerSandbox jail can actually run here
+    (daemon up AND the pinned image present — tests never pull)."""
+    try:
+        p = subprocess.run(["docker", "info"], capture_output=True,
+                           text=True, timeout=60)
+        if p.returncode != 0:
+            return False, f"docker info rc={p.returncode}"
+        q = subprocess.run(["docker", "image", "inspect",
+                            _docker_mod.IMAGE],
+                           capture_output=True, text=True, timeout=60)
+        if q.returncode != 0:
+            return False, "pinned image absent (tests never pull)"
+        return True, ""
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return False, f"{type(e).__name__}: {e}"
+
+
+HAVE_DOCKER, _DOCKER_WHY = _probe_docker()
+print(f"H23 docker available for real-jail twins: {HAVE_DOCKER}"
+      + ("" if HAVE_DOCKER else f" ({_DOCKER_WHY})"))
+
+
+class ShimJail:
+    """H23 two-jail shim (LocalJail-style): each instance binds exactly ONE
+    host visible root and executes real subprocesses with path mapping.
+    Adapter instances bind the raw task copy; candidate/engine instances
+    bind ONLY the staged adapted input — structural enforcement: the
+    candidate factory closure below never receives the raw path, so the
+    candidate shim CANNOT map /task to the raw tree. Exposes .run(argv,
+    timeout=...), .task_snapshot, and .attempt_read (same oracle shape as
+    the production jail) for the isolation asserts."""
+
+    def __init__(self, work, visible):
+        self.work = work
+        self.visible = visible
+        self.task_snapshot = _jail_hash_tree(visible)
+
+    def run(self, argv, timeout=120):
+        mapped = []
+        for a in argv:
+            if a == "/task":
+                mapped.append(self.visible)
+            elif a.startswith("/task/"):
+                mapped.append(os.path.join(self.visible, a[len("/task/"):]))
+            elif a == "/work":
+                mapped.append(self.work)
+            elif a.startswith("/work/"):
+                mapped.append(os.path.join(self.work, a[len("/work/"):]))
+            else:
+                mapped.append(a)
+        return subprocess.run(mapped, capture_output=True, text=True,
+                              timeout=timeout)
+
+    def attempt_read(self, host_path):
+        p = os.path.realpath(host_path)
+        for src, mnt in ((self.visible, "/task"), (self.work, "/work")):
+            src_r = os.path.realpath(src)
+            if p == src_r or p.startswith(src_r + os.sep):
+                rel = os.path.relpath(p, src_r)
+                if os.path.exists(p):
+                    return True, mnt + ("/" + rel if rel != "." else "")
+                return False, f"not found under {mnt}"
+        return False, "outside jail mounts"
+
+
+def _shim_factory(cand_work, staging):
+    return ShimJail(cand_work, staging)
+
+
+def shim_pair(tag):
+    """Hermetic two-jail pair: private raw task copy + adapter shim bound
+    to it (its /task IS the raw tree, legitimately)."""
+    work = tempfile.mkdtemp(prefix="h23-shim-work-" + tag + "-")
+    raw = tempfile.mkdtemp(prefix="h23-shim-raw-" + tag + "-")
+    for base, _dirs, files in os.walk(FAM05_T1):
+        for fn in files:
+            s = os.path.join(base, fn)
+            d = os.path.join(raw, os.path.relpath(s, FAM05_T1))
+            os.makedirs(os.path.dirname(d), exist_ok=True)
+            shutil.copy2(s, d)
+    outdir = tempfile.mkdtemp(prefix="h23-shim-out-" + tag + "-")
+    return work, ShimJail(work, raw), outdir, raw
 
 
 def sha_file(p):
@@ -196,12 +295,15 @@ def cell_for(root, event, universe="A"):
     return c
 
 
-# ================= A5: jail isolation (real docker) ========================
+# ================= A5: jail isolation (shim primaries) ==================
 # A5-1: the adapter CAN read the raw T1 file (its bytes reach the
-# candidate input and the candidate succeeds).
-_w1, _sb1, _o1 = docker_pair("a51")
+# candidate input and the candidate succeeds). Adapter shim's /task IS
+# the raw copy (legitimate); the candidate shim's /task is the staged
+# input only.
+_w1, _sb1, _o1, _raw1 = shim_pair("a51")
 _g1 = RA.validate_t1_candidate(adapter_py=ADAPTER_GOOD,
-                               **helper_kwargs(_w1, _sb1, _o1, CAND_T0))
+                               **helper_kwargs(_w1, _sb1, _o1, CAND_T0),
+                               jail_factory=_shim_factory)
 _a51 = (_g1.get("validated") is True
         and _g1.get("adapter_sha256") == sha_bytes(ADAPTER_GOOD))
 print(f"A5-1 adapter-can-read-raw: validated={_g1.get('validated')} "
@@ -211,24 +313,24 @@ print(f"A5-1 adapter-can-read-raw: validated={_g1.get('validated')} "
 check("A5-1 adapter CAN read the raw T1 file (bytes reach the candidate "
       "input, candidate succeeds)", _a51, str(_g1)[:200])
 
-# A5-2: the candidate CANNOT read the raw T1 file.
-_w2, _sb2, _o2 = docker_pair("a52")
-_cap = {}
+# A5-2: the candidate CANNOT read the raw T1 file (structural: the
+# capture factory binds staging only — the raw path is unaddressable).
+_w2, _sb2, _o2, _raw2 = shim_pair("a52")
+_cap2 = {}
 
 
-def _capture_factory(cand_work, staging):
-    jail = DockerSandbox(cand_work, staging)
-    _cap["jail"] = jail
-    _cap["staging"] = staging
+def _cap_factory(cand_work, staging):
+    jail = ShimJail(cand_work, staging)
+    _cap2["jail"] = jail
     return jail
 
 
 _g2 = RA.validate_t1_candidate(
     adapter_py=ADAPTER_GOOD,
     **helper_kwargs(_w2, _sb2, _o2, CAND_SNEAK),
-    candidate_jail_factory=_capture_factory)
-_jail2 = _cap["jail"]
-_oracle = _jail2.attempt_read(os.path.join(FAM05_T1, RAW_NAME))
+    jail_factory=_cap_factory)
+_jail2 = _cap2["jail"]
+_oracle = _jail2.attempt_read(os.path.join(_raw2, RAW_NAME))
 _in_task = _jail2.run(["python3", "-c",
                        "import os;print(sorted(os.listdir('/task')))"])
 _raw_probe = _jail2.run(["cat", "/task/" + RAW_NAME])
@@ -239,6 +341,7 @@ _man_files = {e["path"]: e["sha256"] for e in _man2["entries"]}
 _a52 = (_g2.get("validated") is False
         and isinstance(_g2.get("validation_failure"), str)
         and _g2["validation_failure"].startswith("candidate-failed")
+        and _jail2.visible != _raw2
         and _oracle[0] is False
         and _raw_probe.returncode != 0
         and _snap_files == _man_files)
@@ -252,56 +355,40 @@ check("A5-2 candidate CANNOT read the raw T1 file (ignores argv[1], "
       f"probe_rc={_raw_probe.returncode}")
 
 # A5-3: the engine jail sees ONLY the adapted payload.
-_w3, _sb3, _o3 = docker_pair("a53")
+_w3, _sb3, _o3, _raw3 = shim_pair("a53")
 _legit = os.path.join(_w3, "legit_engine.py")
 open(_legit, "w").write(ENGINE_LEGIT)
 _arr = {"decision": "use_capability",
         "execution_payload": {"field_map": {"out": "result"},
                               "records": {"n": 3}},
         "notes": "h23"}
-_e3 = RA.execute_arrival("correct", _arr, _w3, _o3, FAM05_T1, _legit, _sb3)
+_e3 = RA.execute_arrival("correct", _arr, _w3, _o3, FAM05_T1, _legit,
+                         _sb3, jail_factory=_shim_factory)
 _evil = os.path.join(_w3, "evil_engine.py")
 open(_evil, "w").write(ENGINE_EVIL)
-_w3b = tempfile.mkdtemp(prefix="h23-work-a53b-", dir="/tmp/rcos-runs")
-os.chmod(_w3b, 0o700)
+_w3b = tempfile.mkdtemp(prefix="h23-shim-work-a53b-")
 _e3b = RA.execute_arrival("correct", _arr, _w3b, _o3, FAM05_T1, _evil,
-                          _sb3)
+                          _sb3, jail_factory=_shim_factory)
 _ej = _e3.get("engine_jail") or {}
 _snap_keys = sorted((_ej.get("task_snapshot") or {}))
-# Rebuild the adapted-input bytes the production jail was mounted from
-# (same payload documents, fresh visible dir) and prove the production
-# snapshot EQUALS those bytes; a probe jail over the replica then proves
-# the raw file is unreachable from such a jail.
-_replica = tempfile.mkdtemp(prefix="h23-replica-", dir="/tmp/rcos-visible")
-os.chmod(_replica, 0o700)
-for _name in ("field_map", "records"):
-    with open(os.path.join(_replica, _name + ".json"), "w") as _f:
-        json.dump(_arr["execution_payload"][_name], _f, sort_keys=True,
-                  indent=1)
-        _f.write("\n")
-from dockersandbox import _hash_tree as _ht
-_replica_snap = _ht(_replica)
-_probe_work = tempfile.mkdtemp(prefix="h23-probe-", dir="/tmp/rcos-runs")
-os.chmod(_probe_work, 0o700)
-_probe = DockerSandbox(_probe_work, _replica)
-_probe_oracle = _probe.attempt_read(os.path.join(FAM05_T1, RAW_NAME))
-_probe_cat = _probe.run(["cat", "/task/" + RAW_NAME])
+_stage3 = [m["host"] for m in (_ej.get("mounts") or [])
+           if m["container"] == "/task"][0]
+_stage3_files = sorted(os.listdir(_stage3))
 _a53 = (_e3["container_returncode"] == 0
         and _e3b["container_returncode"] != 0
         and _snap_keys == ["file|field_map.json", "file|records.json"]
-        and (_ej.get("task_snapshot") or {}) == _replica_snap
+        and _stage3 != _raw3
+        and _stage3_files == ["field_map.json", "records.json"]
         and isinstance(_ej.get("adapted_input_sha256"), str)
-        and len(_ej["adapted_input_sha256"]) == 64
-        and _probe_oracle[0] is False
-        and _probe_cat.returncode != 0)
+        and len(_ej["adapted_input_sha256"]) == 64)
 print(f"A5-3 engine-jail: legit_rc={_e3['container_returncode']} "
       f"evil_rc={_e3b['container_returncode']} "
       f"snapshot={_snap_keys} adapted={str(_ej.get('adapted_input_sha256'))[:12]} "
-      f"oracle={_probe_oracle} raw_probe_rc={_probe_cat.returncode}")
+      f"stage_files={_stage3_files}")
 check("A5-3 engine CANNOT read the raw task file while a legitimate "
       "engine (only field_map+records) succeeds", _a53,
       f"legit={_e3['container_returncode']} evil={_e3b['container_returncode']} "
-      f"snap={_snap_keys} oracle={_probe_oracle}")
+      f"snap={_snap_keys} stage={_stage3_files}")
 
 # A5-4: the candidate jail's /task snapshot equals the candidate-input
 # tree hash (entry map + recomputed tree hash).
@@ -317,11 +404,81 @@ print(f"A5-4 snapshot-equals-input-tree: entries={len(_man_files)} "
 check("A5-4 candidate jail /task snapshot equals the candidate-input "
       "tree hash", _a54, f"snap={sorted(_snap_files)}")
 
+# ================= A5-D: real-DockerSandbox twins ==========================
+# The same isolation proofs through the production default jail
+# (DockerSandbox, digest-pinned, --network none). Run whenever docker is
+# genuinely available; marked SKIP (explicitly reported) only when not.
+if HAVE_DOCKER:
+    _dw1, _dsb1, _do1 = docker_pair("a51d")
+    _dg1 = RA.validate_t1_candidate(
+        adapter_py=ADAPTER_GOOD,
+        **helper_kwargs(_dw1, _dsb1, _do1, CAND_T0))
+    _a51d = (_dg1.get("validated") is True)
+    print(f"A5-1D docker-twin: validated={_dg1.get('validated')}")
+    check("A5-1D real-jail twin: adapter CAN read raw, candidate "
+          "succeeds", _a51d, str(_dg1)[:200])
+
+    _dw2, _dsb2, _do2 = docker_pair("a52d")
+    _dcap = {}
+
+
+    def _dcap_factory(cand_work, staging):
+        jail = DockerSandbox(cand_work, staging)
+        _dcap["jail"] = jail
+        return jail
+
+
+    _dg2 = RA.validate_t1_candidate(
+        adapter_py=ADAPTER_GOOD,
+        **helper_kwargs(_dw2, _dsb2, _do2, CAND_SNEAK),
+        jail_factory=_dcap_factory)
+    _djail2 = _dcap["jail"]
+    _doracle = _djail2.attempt_read(os.path.join(FAM05_T1, RAW_NAME))
+    _draw_probe = _djail2.run(["cat", "/task/" + RAW_NAME])
+    _a52d = (_dg2.get("validated") is False
+             and _doracle[0] is False
+             and _draw_probe.returncode != 0)
+    print(f"A5-2D docker-twin: validated={_dg2.get('validated')} "
+          f"cause={_dg2.get('validation_failure', '')[:60]!r} "
+          f"oracle={_doracle} raw_probe_rc={_draw_probe.returncode}")
+    check("A5-2D real-jail twin: sneak candidate fails, raw absent "
+          "from the candidate jail", _a52d,
+          f"cause={_dg2.get('validation_failure')} oracle={_doracle}")
+
+    _dw3, _dsb3, _do3 = docker_pair("a53d")
+    _dlegit = os.path.join(_dw3, "legit_engine.py")
+    open(_dlegit, "w").write(ENGINE_LEGIT)
+    _de3 = RA.execute_arrival("correct", _arr, _dw3, _do3, FAM05_T1,
+                              _dlegit, _dsb3)
+    _devil = os.path.join(_dw3, "evil_engine.py")
+    open(_devil, "w").write(ENGINE_EVIL)
+    _dw3b = tempfile.mkdtemp(prefix="h23-work-a53bd-", dir="/tmp/rcos-runs")
+    os.chmod(_dw3b, 0o700)
+    _de3b = RA.execute_arrival("correct", _arr, _dw3b, _do3, FAM05_T1,
+                               _devil, _dsb3)
+    _dej = _de3.get("engine_jail") or {}
+    _dsnap_keys = sorted((_dej.get("task_snapshot") or {}))
+    _a53d = (_de3["container_returncode"] == 0
+             and _de3b["container_returncode"] != 0
+             and _dsnap_keys == ["file|field_map.json",
+                                 "file|records.json"])
+    print(f"A5-3D docker-twin: legit_rc={_de3['container_returncode']} "
+          f"evil_rc={_de3b['container_returncode']} snapshot={_dsnap_keys}")
+    check("A5-3D real-jail twin: legit engine succeeds, raw-reading "
+          "engine fails", _a53d,
+          f"legit={_de3['container_returncode']} "
+          f"evil={_de3b['container_returncode']}")
+else:
+    skip("A5-1D real-jail twin", _DOCKER_WHY)
+    skip("A5-2D real-jail twin", _DOCKER_WHY)
+    skip("A5-3D real-jail twin", _DOCKER_WHY)
+
 # ================= B6: failed validation is evidence =======================
-# B6-1: wrong output, exit 0 -> validated=false (helper, real docker).
-_w4, _sb4, _o4 = docker_pair("b61")
+# B6-1: wrong output, exit 0 -> validated=false (helper, shim jails).
+_w4, _sb4, _o4, _raw4 = shim_pair("b61")
 _g4 = RA.validate_t1_candidate(adapter_py=ADAPTER_GOOD,
-                               **helper_kwargs(_w4, _sb4, _o4, CAND_WRONG))
+                               **helper_kwargs(_w4, _sb4, _o4, CAND_WRONG),
+                               jail_factory=_shim_factory)
 _b61 = (_g4.get("validated") is False
         and isinstance(_g4.get("validation_failure"), str)
         and _g4["validation_failure"].startswith("checker-failed")
@@ -643,5 +800,8 @@ check("C4-3 ordered lineage (adapter->input->candidate->output->"
       f"tree_tamper={_st11b['status']}")
 
 bad = [n for n, ok_ in RESULTS if not ok_]
-print(f"\nH23 D1 smoke: {len(RESULTS) - len(bad)}/{len(RESULTS)} closed")
+print(f"\nH23 D1 smoke: {len(RESULTS) - len(bad)}/{len(RESULTS)} closed"
+      + ("" if not SKIPS
+         else f" ({len(SKIPS)} skipped: "
+              + "; ".join(f"{n} [{w}]" for n, w in SKIPS) + ")"))
 sys.exit(1 if bad else 0)

@@ -64,6 +64,7 @@ sys.path.insert(0, os.path.join(FAMC, "harness-run"))
 import order  # noqa: E402
 import promotion  # noqa: E402
 import run_arm_h1 as RA  # noqa: E402
+from dockersandbox import _hash_tree as _jail_hash_tree  # noqa: E402
 from fixture_modelrun import (build_model_run,  # noqa: E402
                               t0_candidate_sha256)
 
@@ -157,11 +158,15 @@ class LocalJail:
     The production helper under test (run_arm_h1.validate_t1_candidate)
     still performs every step in order — write adapter, RUN adapter,
     verify+write candidate, RUN candidate, HOST checker — so execution (not
-    mere hashing) and the host-checker gate are proven with real bytes."""
+    mere hashing) and the host-checker gate are proven with real bytes.
+    Exposes .task_snapshot (the jail_factory contract) over the bound
+    visible root."""
 
     def __init__(self, work, task):
         self.work = work
         self.task = task
+        self.task_snapshot = _jail_hash_tree(task) \
+            if os.path.isdir(task) else None
 
     def run(self, argv, timeout=120):
         mapped = []
@@ -234,7 +239,7 @@ def run_helper(adapter_py, cand_src, task_src=FAM05_T1):
         adapter_py=adapter_py, candidate_source=cand_src,
         candidate_sha256=cand_sha, work=work, taskdir=taskdir, sb=sb,
         checker_sha256=checker_sha, truth_sha256=truth_sha, outdir=outdir,
-        candidate_jail_factory=_factory)
+        jail_factory=_factory)
     return got, work, outdir, cand_sha
 
 
