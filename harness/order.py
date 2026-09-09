@@ -216,7 +216,8 @@ def expected_event(expansion, block, family, event, universe):
     return None
 
 
-def authorize(expansion, block, family, task, lane, arm, done_ids):
+def authorize(expansion, block, family, task, lane, arm, done_ids,
+                fam_c_dir=None):
     """Pre-call authorization for a downstream model call. Returns
     (cell, findings). Empty findings = authorized to start. Because the
     expansion now starts at T0, a T2 cell cannot start before BOTH
@@ -244,6 +245,23 @@ def authorize(expansion, block, family, task, lane, arm, done_ids):
                    f"family={family} task={task} lane={lane} arm={arm} "
                    "(wrong lane for this arm/block)")
         return None, out
+    # A12d D1-B5 (needs fam_c_dir): a downstream cell of a NOT-PROMOTED
+    # universe is NOT-EVALUABLE — refuse with the named acquisition
+    # denial before any scheduling-order finding. The failed-acquisition
+    # predicate derives from the committed chains, so the denial holds
+    # whether or not the outcome has been recorded yet.
+    if fam_c_dir is not None and cell.get("universe") in \
+            CAPABILITY_UNIVERSES:
+        _failed, _cause = acquisition_failed(
+            fam_c_dir, block, family, cell["universe"])
+        if _failed:
+            out.append(
+                f"ACQUISITION-FAILED-DENY: universe {block}/{family}/"
+                f"{cell['universe']} T1 candidate validation failed "
+                f"({_cause}); downstream {task}/"
+                f"{cell['universe']} is NOT-EVALUABLE (no retry: the "
+                f"failed validation is an experimental outcome)")
+            return cell, out
     cid = cell["cell_id"]
     if cid in done_ids:
         out.append(f"ORDER-DENY: duplicate cell {cid} "
@@ -264,7 +282,8 @@ def authorize(expansion, block, family, task, lane, arm, done_ids):
     return cell, out
 
 
-def authorize_event(expansion, block, family, event, universe, done_ids):
+def authorize_event(expansion, block, family, event, universe, done_ids,
+                      fam_c_dir=None):
     """Authorization for an acquisition/promotion/lock event."""
     out = []
     if event not in ACQ_EVENTS:
@@ -281,6 +300,25 @@ def authorize_event(expansion, block, family, event, universe, done_ids):
         out.append(f"ORDER-DENY: no authorized event for block={block} "
                    f"family={family} event={event} universe={universe}")
         return None, out
+    # A12d D1-B3/B5 (needs fam_c_dir): a recorded NOT-PROMOTED outcome is
+    # terminal. Re-entering PROMOTION refuses as already-recorded (no
+    # repromotion, no deadlock); entering CAPABILITY_LOCK refuses because
+    # no lock may ever exist for a NOT-PROMOTED universe.
+    if fam_c_dir is not None and event in ("PROMOTION", "CAPABILITY_LOCK"):
+        _oc = promotion_outcome(fam_c_dir, block, family, universe)
+        if isinstance(_oc, dict) and _oc.get("outcome") == "NOT-PROMOTED":
+            if event == "PROMOTION":
+                out.append(
+                    f"PROMOTION-DENY: outcome already recorded for "
+                    f"{block}/{family}/{universe} (NOT-PROMOTED: "
+                    f"{_oc.get('reason')}); no repromotion of a failed "
+                    f"acquisition")
+            else:
+                out.append(
+                    f"LOCK-DENY: universe {block}/{family}/{universe} is "
+                    f"NOT-PROMOTED ({_oc.get('reason')}); no "
+                    f"CAPABILITY_LOCK may exist for it")
+            return cell, out
     if cell["cell_id"] in done_ids:
         out.append(f"ORDER-DENY: duplicate cell {cell['cell_id']}")
         return cell, out
@@ -504,7 +542,31 @@ def cell_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
 
     Any failure => not complete. INADMISSIBLE is used when the artifacts
     exist but fail validation (a distinction the retry machine needs).
+
+    A12d D1-B3/B5: two further TERMINAL statuses ride this entry point
+    (never _local_state, so the completed-cells prefix walk is
+    unaffected): a PROMOTION cell with a recorded, re-validated
+    failed-acquisition outcome is NOT-PROMOTED; any downstream
+    (T2/T3/T4) cell of a NOT-PROMOTED universe is NOT-EVALUABLE with the
+    reason naming the failed acquisition.
     """
+    if cell.get("kind") in MODEL_CALL_KINDS and cell.get("event") in \
+            DOWNSTREAM_EVENTS and cell.get("universe") in \
+            CAPABILITY_UNIVERSES:
+        _failed, _cause = acquisition_failed(
+            fam_c_dir, cell["block"], cell["family"], cell["universe"])
+        if _failed:
+            return {"cell_id": cell["cell_id"], "status": "NOT-EVALUABLE",
+                    "reasons": [
+                        f"ACQUISITION-FAILED-DENY: universe "
+                        f"{cell['block']}/{cell['family']}/"
+                        f"{cell['universe']} T1 cell is COMPLETE but its "
+                        f"candidate validation failed ({_cause}); "
+                        f"downstream {cell['event']}/"
+                        f"{cell['universe']} is NOT-EVALUABLE with "
+                        f"reason acquisition-failed (no retry: the "
+                        f"failed validation is an experimental outcome, "
+                        f"not an infrastructure-invalid run)"]}
     st = _local_state(fam_c_dir, cell, freeze_commit)
     if st["status"] != "COMPLETE":
         return st
@@ -777,6 +839,141 @@ def _chain_tip(chain_path):
     return tip
 
 
+def _not_promoted_state(fam_c_dir, cell, outcome, freeze_commit=None):
+    """A12d D1-B3: validate ONE recorded failed-acquisition outcome.
+
+    NOT-PROMOTED only when — with no fabricated model-run record and no
+    promotion receipt — the two REAL acquisition runs of the SAME (block,
+    family, universe) are each validated COMPLETE, the T1 chain carries
+    EXACTLY ONE candidate-validation event with validated=false, the
+    outcome's tips equal the REAL chain tips, the outcome's candidate
+    equals the event's candidate equals the frozen T0 arrival candidate,
+    and no CAPABILITY_LOCK exists for the universe. Any defect =>
+    INADMISSIBLE (artifact present but invalid)."""
+    reasons = []
+    d = run_dir(fam_c_dir, cell)
+    if os.path.islink(d) or not os.path.isdir(d):
+        return {"cell_id": cell["cell_id"], "status": "INCOMPLETE",
+                "reasons": [f"promotion run dir absent at the derived path "
+                            f"{d}"]}
+    if os.path.exists(os.path.join(d, "H1-RUN-MANIFEST.json")):
+        reasons.append("promotion event must not fabricate a model-run "
+                       "manifest (no identity/usage/chain is demanded of a "
+                       "promotion, and none may be forged)")
+    if os.path.exists(os.path.join(d, PROMOTION_RECEIPT_FILE)):
+        reasons.append("promotion conflict: a promotion receipt and a "
+                       "NOT-PROMOTED outcome both exist for this cell (a "
+                       "validated promotion cannot also be NOT-PROMOTED)")
+    for key, want in (("event", "PROMOTION"),
+                      ("cell_id", cell["cell_id"]),
+                      ("block", cell["block"]),
+                      ("family", cell["family"]),
+                      ("universe", cell["universe"]),
+                      ("outcome", "NOT-PROMOTED"),
+                      ("reason", "candidate-validation-failed"),
+                      ("created_from", "frozen-evidence")):
+        if outcome.get(key) != want:
+            reasons.append(f"not-promoted outcome {key} "
+                           f"{outcome.get(key)!r} != {want!r}")
+    tips, runs = {}, {}
+    for ev in ("T0", "T1"):
+        acq = _cell_for_event(fam_c_dir, cell, ev)
+        if acq is None:
+            reasons.append(f"no {ev} cell in the order for "
+                           f"{cell['block']}/{cell['family']}/"
+                           f"{cell['universe']}")
+            continue
+        st = _local_state(fam_c_dir, acq, freeze_commit)
+        if st["status"] != "COMPLETE":
+            reasons.append(f"not-promoted rule: {ev} acquisition cell "
+                           f"{acq['cell_id']} not validated COMPLETE "
+                           f"({st['status']}: {st['reasons'][:1]})")
+            continue
+        runs[ev] = run_dir(fam_c_dir, acq)
+        try:
+            tips[ev] = _chain_tip(os.path.join(runs[ev],
+                                               "EVIDENCE-CHAIN.jsonl"))
+        except (ValueError, OSError, json.JSONDecodeError) as e:
+            reasons.append(f"not-promoted rule: {ev} chain tip unreadable: "
+                           f"{e}")
+    for ev in ("T0", "T1"):
+        if ev in tips and outcome.get(ev.lower() + "_tip") != tips[ev]:
+            reasons.append(f"not-promoted outcome {ev.lower()}_tip "
+                           f"{str(outcome.get(ev.lower() + '_tip'))[:12]} "
+                           f"!= the validated {ev} chain tip "
+                           f"{tips[ev][:12]}")
+    want_sha = None
+    if "T0" in runs:
+        try:
+            arrival = _read_json(os.path.join(runs["T0"], "arrival.json"))
+            s = (arrival.get("execution_payload") or {}).get("solver_py")
+            if not isinstance(s, str) or not s.strip():
+                reasons.append("not-promoted rule: T0 arrival carries no "
+                               "execution_payload.solver_py candidate")
+            else:
+                want_sha = hashlib.sha256(s.encode()).hexdigest()
+        except (ValueError, OSError) as e:
+            reasons.append(f"not-promoted rule: T0 arrival unreadable: {e}")
+    if "T1" in runs:
+        try:
+            _links = [json.loads(line)
+                      for line in open(os.path.join(
+                          runs["T1"], "EVIDENCE-CHAIN.jsonl"))
+                      if line.strip()]
+        except (ValueError, OSError) as e:
+            reasons.append("not-promoted rule: T1 evidence chain "
+                           f"unreadable: {e}")
+            _links = None
+        if _links is not None:
+            _cvs = [l for l in _links
+                    if l.get("kind") == "candidate-validation"]
+            if len(_cvs) != 1:
+                reasons.append(f"not-promoted rule: T1 chain carries "
+                               f"{len(_cvs)} candidate-validation events, "
+                               f"need exactly one failed one "
+                               f"(validated=false)")
+            else:
+                _cv = _cvs[0].get("payload") or {}
+                if _cv.get("validated") is not False:
+                    reasons.append(
+                        "not-promoted rule: T1 candidate-validation event "
+                        f"is not a failed validation "
+                        f"(validated={_cv.get('validated')!r}; a passing "
+                        f"validation promotes, it is never NOT-PROMOTED)")
+                if want_sha is not None and \
+                        _cv.get("candidate_sha256") != want_sha:
+                    reasons.append(
+                        "not-promoted rule: T1 validated candidate "
+                        f"{str(_cv.get('candidate_sha256'))[:12]} != the "
+                        f"frozen T0 candidate {want_sha[:12]}")
+                if want_sha is not None and \
+                        outcome.get("candidate_sha256") != want_sha:
+                    reasons.append(
+                        "not-promoted rule: outcome candidate_sha256 "
+                        f"{str(outcome.get('candidate_sha256'))[:12]} != "
+                        f"the frozen T0 candidate {want_sha[:12]}")
+    capdir = capability_dir(fam_c_dir, cell["block"], cell["universe"],
+                            cell["family"])
+    if os.path.exists(os.path.join(capdir, "CAPABILITY_LOCK.json")):
+        reasons.append("not-promoted rule: a CAPABILITY_LOCK exists for a "
+                       "NOT-PROMOTED universe (no lock may ever exist for "
+                       "a failed acquisition)")
+    if reasons:
+        return _result(cell, reasons, True)
+    cause = _failed_acquisition_cause(fam_c_dir, cell["block"],
+                                      cell["family"], cell["universe"])
+    return {"cell_id": cell["cell_id"], "status": "NOT-PROMOTED",
+            "reasons": [f"NOT-PROMOTED: universe {cell['block']}/"
+                        f"{cell['family']}/{cell['universe']} T1 cell is "
+                        f"COMPLETE but its candidate validation failed "
+                        f"({cause}); no CAPABILITY_LOCK may exist for it, "
+                        f"every downstream cell of that universe (T2/T3/"
+                        f"T4) is NOT-EVALUABLE with reason "
+                        f"acquisition-failed, and there is no retry (the "
+                        f"failed validation is an experimental outcome, "
+                        f"not an infrastructure-invalid run)"]}
+
+
 def _promotion_state(fam_c_dir, cell, freeze_commit=None):
     """A12.1: completion of ONE PROMOTION harness-event cell.
 
@@ -788,7 +985,35 @@ def _promotion_state(fam_c_dir, cell, freeze_commit=None):
     arrival payload, the receipt-named artifact hashes verify on disk, the
     semantic core / contract / lock SHAs / source cells / authorization
     record are all cross-checked against the frozen instance. See
-    cell_state() for the full contract."""
+    cell_state() for the full contract.
+
+    A12d D1-B3: a recorded failed-acquisition outcome is TERMINAL. When
+    the promotion run dir carries PROMOTION-OUTCOME.json, the cell is
+    judged ONLY on that outcome (re-validated against the committed
+    chains) — never on the receipt path below."""
+    # A12d D1-B3: outcome-first dispatch (terminal, not an exception).
+    # A recorded outcome is validated strictly; with no outcome file the
+    # terminal status still derives from the committed chains (a failed
+    # validation is NOT-PROMOTED whether or not the controller has
+    # recorded it yet).
+    _oc = promotion_outcome(fam_c_dir, cell["block"], cell["family"],
+                            cell["universe"])
+    if _oc is not None:
+        return _not_promoted_state(fam_c_dir, cell, _oc, freeze_commit)
+    _failed, _cause = acquisition_failed(
+        fam_c_dir, cell["block"], cell["family"], cell["universe"])
+    if _failed:
+        return {"cell_id": cell["cell_id"], "status": "NOT-PROMOTED",
+                "reasons": [f"NOT-PROMOTED: universe {cell['block']}/"
+                            f"{cell['family']}/{cell['universe']} T1 cell "
+                            f"is COMPLETE but its candidate validation "
+                            f"failed ({_cause}); no CAPABILITY_LOCK may "
+                            f"exist for it, every downstream cell of that "
+                            f"universe (T2/T3/T4) is NOT-EVALUABLE with "
+                            f"reason acquisition-failed, and there is no "
+                            f"retry (the failed validation is an "
+                            f"experimental outcome, not an "
+                            f"infrastructure-invalid run)"]}
     reasons = []
     d = run_dir(fam_c_dir, cell)
     if os.path.islink(d) or not os.path.isdir(d):
@@ -921,8 +1146,9 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
             _cvs = [l for l in _t1_links
                     if l.get("kind") == "candidate-validation"]
             _cv = _cvs[0].get("payload") or {} if len(_cvs) == 1 else {}
-            # A12c D3: re-derive the same nine-field fail-closed predicate
-            # from the committed chain (no trust in the receipt).
+            # A12c D3 + A12d D1-C3: re-derive the same eleven-field
+            # fail-closed predicate from the committed chain (no trust in
+            # the receipt).
             _cv_reasons = []
             if len(_cvs) != 1:
                 _cv_reasons.append(
@@ -933,12 +1159,15 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
                            "adapter_sha256", "candidate_output_sha256",
                            "checker_sha256", "truth_sha256",
                            "checker_returncode", "validation_verdict",
-                           "validated"):
+                           "validated", "candidate_input_manifest_sha256",
+                           "candidate_input_tree_sha256"):
                     if _cv.get(_f) is None:
                         _cv_reasons.append(f"no {_f}")
                 for _f in ("candidate_sha256", "executed_sha256",
                            "adapter_sha256", "candidate_output_sha256",
-                           "checker_sha256", "truth_sha256"):
+                           "checker_sha256", "truth_sha256",
+                           "candidate_input_manifest_sha256",
+                           "candidate_input_tree_sha256"):
                     _v = _cv.get(_f)
                     if _v is not None and not (
                             isinstance(_v, str) and len(_v) == 64):
@@ -975,13 +1204,22 @@ def _promotion_provenance_reasons(fam_c_dir, cell, r, runs):
                            "adapter_sha256", "candidate_output_sha256",
                            "checker_sha256", "truth_sha256",
                            "checker_returncode", "validation_verdict",
-                           "validated"):
+                           "validated", "candidate_input_manifest_sha256",
+                           "candidate_input_tree_sha256"):
                     if _rec_cv.get(_k) != _cv.get(_k):
                         out.append("promotion provenance: receipt candidate "
                                    f"t1_validation[{_k}] != the committed "
                                    "T1 chain event "
                                    f"({_rec_cv.get(_k)!r} != {_cv.get(_k)!r})")
                         break
+                else:
+                    # A12d D1-C3: the input lineage is re-derived from the
+                    # COMMITTED artifacts (the persisted manifest file +
+                    # the chain event), never from the receipt. Any
+                    # mismatch denies naming the field.
+                    for _lr in candidate_input_lineage_reasons(
+                            runs["T1"], _cv):
+                        out.append("promotion provenance: " + _lr)
     # A12c slice B: the producer authors its own contract text from
     # visible information, so the receipt's contract is cross-checked
     # against the FROZEN T0 arrival declaration — verbatim equality on
@@ -1303,6 +1541,209 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
 
 
 # ---------------------------------------------------------------------------
+# A12d D1 — failed-acquisition terminal outcomes (auditor A12d.2) and
+# candidate-input lineage re-derivation (auditor A12d.7).
+# ---------------------------------------------------------------------------
+
+PROMOTION_OUTCOME_FILE = "PROMOTION-OUTCOME.json"
+PROMOTION_RECEIPT_FILE = "PROMOTION-RECEIPT.json"
+
+
+def promotion_outcome(fam_c_dir, block, family, universe):
+    """Read the recorded PROMOTION outcome for one universe, or None.
+
+    Returns the parsed PROMOTION-OUTCOME.json dict when the promotion run
+    dir carries one, else None (absent, unreadable, or unparsable — the
+    strict validators, not this reader, judge malformed outcomes). Never
+    raises for missing/corrupt files: callers treat None as "no recorded
+    outcome" and the cell-state validators fail closed on defects."""
+    try:
+        exp = load_expansion(fam_c_dir)
+    except (ValueError, OSError):
+        return None
+    prom = expected_event(exp, block, family, "PROMOTION", universe)
+    if prom is None:
+        return None
+    try:
+        denial = verify_namespace_ancestry(fam_c_dir, block, universe,
+                                           family,
+                                           tail=("runs", prom["cell_id"]))
+        if denial:
+            return None
+        op = os.path.join(run_dir(fam_c_dir, prom), PROMOTION_OUTCOME_FILE)
+        if os.path.islink(op) or not os.path.isfile(op):
+            return None
+        obj = _read_json(op)
+    except (OSError, ValueError):
+        return None
+    return obj if isinstance(obj, dict) else None
+
+
+def _failed_acquisition_cause(fam_c_dir, block, family, universe):
+    """Best-effort validation_failure cause of a NOT-PROMOTED universe's T1
+    chain event (for NOT-EVALUABLE reasons). Falls back to the outcome's
+    own reason, then to the fixed outcome reason."""
+    try:
+        exp = load_expansion(fam_c_dir)
+        t1 = expected_event(exp, block, family, "T1", universe)
+        if t1 is not None:
+            cp = os.path.join(run_dir(fam_c_dir, t1), "EVIDENCE-CHAIN.jsonl")
+            if not os.path.islink(cp) and os.path.isfile(cp):
+                links = [json.loads(line) for line in open(cp)
+                         if line.strip()]
+                cvs = [l for l in links
+                       if l.get("kind") == "candidate-validation"]
+                if len(cvs) == 1:
+                    vf = (cvs[0].get("payload") or {}).get(
+                        "validation_failure")
+                    if isinstance(vf, str) and vf.strip():
+                        return vf
+    except (OSError, ValueError):
+        pass
+    oc = promotion_outcome(fam_c_dir, block, family, universe)
+    if isinstance(oc, dict) and isinstance(oc.get("reason"), str) \
+            and oc["reason"].strip():
+        return oc["reason"]
+    return "candidate-validation-failed"
+
+
+def acquisition_failed(fam_c_dir, block, family, universe):
+    """A12d D1-B3/B4: the failed-acquisition predicate, derived from
+    COMMITTED evidence (never from the outcome file alone).
+
+    Returns (failed, cause): failed is True iff the universe's T0 and T1
+    acquisition runs are each validated COMPLETE, the T1 chain carries
+    EXACTLY ONE candidate-validation event with validated=false, and the
+    event's candidate_sha256 equals the frozen T0 arrival candidate. cause
+    is the event's validation_failure (or the fixed outcome reason).
+    Never raises: undecidable (missing/unreadable evidence) is (False,
+    reason). The recorded PROMOTION-OUTCOME.json corroborates this
+    predicate but never substitutes for it."""
+    try:
+        return _acquisition_failed_inner(fam_c_dir, block, family,
+                                         universe)
+    except Exception:                               # noqa: BLE001
+        return False, "candidate-validation-failed"
+
+
+def _acquisition_failed_inner(fam_c_dir, block, family, universe):
+    try:
+        exp = load_expansion(fam_c_dir)
+    except (ValueError, OSError):
+        return False, "candidate-validation-failed"
+    t0 = expected_event(exp, block, family, "T0", universe)
+    t1 = expected_event(exp, block, family, "T1", universe)
+    if t0 is None or t1 is None:
+        return False, "candidate-validation-failed"
+    if _local_state(fam_c_dir, t0, None)["status"] != "COMPLETE":
+        return False, "candidate-validation-failed"
+    if _local_state(fam_c_dir, t1, None)["status"] != "COMPLETE":
+        return False, "candidate-validation-failed"
+    try:
+        cp = os.path.join(run_dir(fam_c_dir, t1), "EVIDENCE-CHAIN.jsonl")
+        if os.path.islink(cp) or not os.path.isfile(cp):
+            return False, "candidate-validation-failed"
+        links = [json.loads(line) for line in open(cp) if line.strip()]
+    except (OSError, ValueError):
+        return False, "candidate-validation-failed"
+    cvs = [l for l in links if l.get("kind") == "candidate-validation"]
+    if len(cvs) != 1:
+        return False, "candidate-validation-failed"
+    pay = cvs[0].get("payload") or {}
+    if pay.get("validated") is not False:
+        return False, "candidate-validation-failed"
+    try:
+        arrival = _read_json(os.path.join(run_dir(fam_c_dir, t0),
+                                          "arrival.json"))
+        s = (arrival.get("execution_payload") or {}).get("solver_py")
+        if not isinstance(s, str) or not s.strip():
+            return False, "candidate-validation-failed"
+        frozen = hashlib.sha256(s.encode()).hexdigest()
+    except (OSError, ValueError):
+        return False, "candidate-validation-failed"
+    if pay.get("candidate_sha256") != frozen:
+        return False, "candidate-validation-failed"
+    vf = pay.get("validation_failure")
+    cause = vf if isinstance(vf, str) and vf.strip() \
+        else "candidate-validation-failed"
+    return True, cause
+
+
+def candidate_input_lineage_reasons(t1_run_dir, pay):
+    """A12d D1-C3: re-derive the candidate-input lineage from the COMMITTED
+    artifacts — the persisted CANDIDATE-INPUT-MANIFEST.json file bytes plus
+    the chain event — never from the receipt. Returns reasons (empty =
+    verified); every mismatch names the exact field:
+      manifest bytes sha256 != event `candidate_input_manifest_sha256`;
+      manifest recomputed tree hash != event `candidate_input_tree_sha256`.
+    The tree hash is recomputed exactly per C1 (sha256 of json.dumps of
+    the manifest WITHOUT tree_sha256, sort_keys=True, indent=1, plus a
+    trailing newline)."""
+    out = []
+    want_file = pay.get("candidate_input_manifest_sha256")
+    want_tree = pay.get("candidate_input_tree_sha256")
+    if not (isinstance(want_file, str) and len(want_file) == 64):
+        out.append("candidate_input_manifest_sha256 is not a 64-hex "
+                   f"lineage hash (got {want_file!r})")
+        return out
+    try:
+        int(want_file, 16)
+    except ValueError:
+        out.append("candidate_input_manifest_sha256 is not 64-hex "
+                   f"(got {want_file!r})")
+        return out
+    mf = os.path.join(t1_run_dir, "CANDIDATE-INPUT-MANIFEST.json")
+    try:
+        raw = open(mf, "rb").read()
+    except OSError as e:
+        out.append(f"candidate_input_manifest_sha256 unverifiable: the "
+                   f"persisted candidate-input manifest is absent or "
+                   f"unreadable at {mf} ({e})")
+        return out
+    if hashlib.sha256(raw).hexdigest() != want_file:
+        out.append(f"candidate_input_manifest_sha256 "
+                   f"{want_file[:12]} != sha256 of the persisted "
+                   f"CANDIDATE-INPUT-MANIFEST.json bytes "
+                   f"{hashlib.sha256(raw).hexdigest()[:12]} (tamper the "
+                   f"persisted manifest -> deny)")
+        return out
+    try:
+        manifest = json.loads(raw.decode())
+    except ValueError as e:
+        out.append(f"candidate_input_manifest_sha256 manifest unparsable "
+                   f"(file hash matches but content is not JSON: {e})")
+        return out
+    if not isinstance(manifest, dict) or manifest.get("schema") != \
+            "candidate-input-manifest-v1" or not isinstance(
+                manifest.get("entries"), list):
+        out.append("candidate_input_manifest_sha256 manifest is not a "
+                   "candidate-input-manifest-v1 object with an entries "
+                   "list (file hash matches but content is not a lineage "
+                   "manifest)")
+        return out
+    if not (isinstance(want_tree, str) and len(want_tree) == 64):
+        out.append("candidate_input_tree_sha256 is not a 64-hex lineage "
+                   f"hash (got {want_tree!r})")
+        return out
+    try:
+        int(want_tree, 16)
+    except ValueError:
+        out.append("candidate_input_tree_sha256 is not 64-hex "
+                   f"(got {want_tree!r})")
+        return out
+    canonical = json.dumps({"schema": manifest["schema"],
+                            "entries": manifest["entries"]},
+                           sort_keys=True, indent=1) + "\n"
+    recomputed = hashlib.sha256(canonical.encode()).hexdigest()
+    if recomputed != want_tree:
+        out.append(f"candidate_input_tree_sha256 {want_tree[:12]} != the "
+                   f"recomputed tree hash {recomputed[:12]} of the "
+                   f"persisted manifest entries (tamper one entry's sha "
+                   f"-> deny)")
+    return out
+
+
+# ---------------------------------------------------------------------------
 # A11.5 — production governance-event writers. The harness records a
 # PROMOTION and a CAPABILITY_LOCK through these writers (once each, fail
 # closed), so fixtures exercise the real machinery instead of hand-written
@@ -1374,6 +1815,74 @@ def emit_promotion_receipt(fam_c_dir, cell, t0_tip, t1_tip,
     with open(rp, "w") as f:
         json.dump(receipt, f, indent=1)
     return rp
+
+
+def emit_promotion_outcome(fam_c_dir, cell, t0_tip, t1_tip,
+                           candidate_sha256):
+    """Record the TERMINAL failed-acquisition outcome of (block, universe,
+    family) (A12d D1-B3): the universe's T1 cell is COMPLETE but its
+    candidate-validation event records validated=false, so promotion
+    completes as RECORDED NOT-PROMOTED — not an exception, not a deadlock,
+    and never a lock. Writes PROMOTION-OUTCOME.json once in the promotion
+    run dir (fail closed on repromotion or on a conflicting receipt).
+    `t0_tip`/`t1_tip` are the REAL chain-link tips of the two validated
+    acquisition runs; `candidate_sha256` is the frozen T0 candidate the
+    failed validation tested. Returns the outcome path."""
+    for tag, tip in (("T0", t0_tip), ("T1", t1_tip)):
+        if not isinstance(tip, str) or len(tip) != 64:
+            raise ValueError(f"PROMOTION-DENY {tag} chain tip must be a "
+                             f"64-hex link_hash, got {tip!r}")
+    if not (isinstance(candidate_sha256, str)
+            and len(candidate_sha256) == 64):
+        raise ValueError("PROMOTION-DENY candidate sha256 must be 64-hex, "
+                         f"got {candidate_sha256!r}")
+    try:
+        int(candidate_sha256, 16)
+    except ValueError:
+        raise ValueError("PROMOTION-DENY candidate sha256 must be 64-hex, "
+                         f"got {candidate_sha256!r}") from None
+    want = capability_id(cell["block"], cell["universe"], cell["family"])
+    if cell["capability_id"] != want:
+        raise ValueError(f"PROMOTION-DENY cell capability_id "
+                         f"{cell['capability_id']!r} != derived {want!r}")
+    if cell.get("event") != "PROMOTION":
+        raise ValueError(f"PROMOTION-DENY cell event {cell.get('event')!r} "
+                         "is not PROMOTION")
+    try:
+        exp = load_expansion(fam_c_dir)
+        done = completed_cells(fam_c_dir, None, exp)
+        auth_cell, reasons = authorize_event(
+            exp, cell["block"], cell["family"], "PROMOTION",
+            cell["universe"], done)
+    except (ValueError, OSError) as e:
+        raise PermissionError(f"PROMOTION-DENY authorization unreadable: {e}")
+    if reasons:
+        raise PermissionError(reasons[0])
+    if auth_cell is None or auth_cell["cell_id"] != cell["cell_id"]:
+        raise PermissionError("PROMOTION-DENY authorize_event resolved a "
+                              "different cell")
+    d = ensure_namespace(fam_c_dir, cell["block"], cell["universe"],
+                         cell["family"],
+                         tail=("runs", cell["cell_id"]))
+    rp = os.path.join(d, PROMOTION_RECEIPT_FILE)
+    if os.path.exists(rp):
+        raise PermissionError("PROMOTION-DENY promotion receipt already "
+                              "exists (a validated promotion cannot become "
+                              "NOT-PROMOTED)")
+    op = os.path.join(d, PROMOTION_OUTCOME_FILE)
+    if os.path.exists(op):
+        raise PermissionError("PROMOTION-DENY outcome already recorded "
+                              "(no repromotion of a failed acquisition)")
+    outcome = {"event": "PROMOTION", "cell_id": cell["cell_id"],
+               "block": cell["block"], "family": cell["family"],
+               "universe": cell["universe"], "outcome": "NOT-PROMOTED",
+               "reason": "candidate-validation-failed",
+               "t0_tip": t0_tip, "t1_tip": t1_tip,
+               "candidate_sha256": candidate_sha256,
+               "created_from": "frozen-evidence"}
+    with open(op, "w") as f:
+        json.dump(outcome, f, indent=1)
+    return op
 
 
 def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),

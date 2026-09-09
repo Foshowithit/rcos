@@ -43,7 +43,8 @@ import identity as ID         # noqa: E402
 import order                  # noqa: E402
 import reuse_log as RL        # noqa: E402
 import usage as UG            # noqa: E402
-from run_arm_h1 import LANES  # noqa: E402
+from run_arm_h1 import (LANES, _manifest_tree_sha256,  # noqa: E402
+                        CANDIDATE_INPUT_MANIFEST_SCHEMA)
 
 # Positive-work usage: 1500 total prompt tokens, 400 cached -> 1100 uncached,
 # 250 output -> primary_work 1350. ZERO-WORK (primary_work <= 0) must never
@@ -244,11 +245,42 @@ def t0_candidate_sha256(t0_run_dir):
     return hashlib.sha256(src.encode()).hexdigest()
 
 
+def default_candidate_input_entries(cell_id):
+    """Deterministic fixture candidate-input tree (A12d D1-C1 test
+    support): one synthetic input file whose bytes are derived from the
+    cell, so identical acquisitions reproduce. The entries describe the
+    tree the stand-in adapter materialized; the promotion re-derivation
+    checks manifest internal consistency (file hash + tree hash), never
+    the input files themselves."""
+    payload = json.dumps({"fixture": "fixture_modelrun",
+                          "role": "candidate-input",
+                          "cell_id": cell_id}, sort_keys=True).encode()
+    return [{"path": "input.json", "kind": "file", "size": len(payload),
+             "sha256": hashlib.sha256(payload).hexdigest()}]
+
+
+def write_candidate_input_manifest(run_dir, entries):
+    """Persist CANDIDATE-INPUT-MANIFEST.json with production
+    canonicalization (single implementation:
+    run_arm_h1._manifest_tree_sha256). Returns (manifest_sha256 of the
+    file bytes, tree_sha256)."""
+    tree_sha, _canonical = _manifest_tree_sha256(
+        CANDIDATE_INPUT_MANIFEST_SCHEMA, entries)
+    manifest = {"schema": CANDIDATE_INPUT_MANIFEST_SCHEMA,
+                "entries": entries, "tree_sha256": tree_sha}
+    raw = (json.dumps(manifest, sort_keys=True, indent=1) + "\n").encode()
+    with open(os.path.join(run_dir, "CANDIDATE-INPUT-MANIFEST.json"),
+              "wb") as f:
+        f.write(raw)
+    return hashlib.sha256(raw).hexdigest(), tree_sha
+
+
 def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                     decision="fresh", solver_py=None, capability=None,
                     reuse_overrides=None, manifest_overrides=None,
                     validates_candidate=None, adapter_py=None,
-                    candidate_validation=None, producer_contract=None):
+                    candidate_validation=None, producer_contract=None,
+                    candidate_input_tamper=None):
     """Build ONE hermetic, production-eligible model-run cell. Returns the
     derived run directory. `cell` is an expansion cell (or any dict with the
     same keys). Raises on any evidence defect (fail closed).
@@ -278,7 +310,14 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
     [str, ...]} for callers testing a non-default contract (e.g. a
     limitation-carrying variant). When absent, the stand-in declares its
     independently written per-family text (PRODUCER_CONTRACTS) — never
-    hidden K.md wording."""
+    hidden K.md wording.
+
+    `candidate_input_tamper`: None (default — the persisted manifest and
+    the event agree) or "entry-sha" (A12d D1-C4 test support — the
+    persisted manifest carries one flipped entry sha while the event's
+    manifest hash is re-hashed over the tampered file and the event's
+    tree hash stays stale: the file-hash check passes and only the tree
+    check denies, naming candidate_input_tree_sha256)."""
     d = order.ensure_namespace(root, cell["block"], cell["universe"],
                                cell["family"], tail=("runs", cell["cell_id"]))
     _clean_run_dir(d)
@@ -415,6 +454,11 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                 "capability": (cap or None),
                 "evidence_grade": "harness-validation",
                 "fixture": "fixture_modelrun (NOT evidence)"}
+    if validates_candidate is not None:
+        # A12d D1-B2 mirror: a validating T1 stamps its fresh-solver
+        # verdict as task_verdict (the cell verdict is evidence for the
+        # fresh solve; the validation event decides promotion).
+        manifest["task_verdict"] = verdict
     if manifest_overrides:
         manifest.update(manifest_overrides)
     with open(os.path.join(d, "H1-RUN-MANIFEST.json"), "w") as f:
@@ -442,10 +486,40 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
     # the validated flag. Overrides in `candidate_validation` thread real
     # host-checker evidence (A12c N7); defaults are hermetic passing
     # placeholders so pre-A12c callers stay green.
+    # A12d D1-C1/C2: the event carries the two input-lineage hashes and
+    # the run dir carries the deterministic CANDIDATE-INPUT-MANIFEST.json
+    # they re-derive from (production canonicalization, single
+    # implementation). `candidate_validation` overrides merge over the
+    # eleven computed keys, so failed-validation fixtures (validated
+    # False + validation_failure cause) model the committed experimental
+    # evidence the promotion controller records as NOT-PROMOTED.
     if validates_candidate is not None:
         _cv_over = dict(candidate_validation or {})
         _adapter_src = (adapter_py if isinstance(adapter_py, str)
                         else payload["solver_py"])
+        _entries = default_candidate_input_entries(cell["cell_id"])
+        if candidate_input_tamper == "entry-sha":
+            _tampered = [dict(e) for e in _entries]
+            _tampered[0]["sha256"] = "00" * 32
+            _tampered_raw = (json.dumps(
+                {"schema": CANDIDATE_INPUT_MANIFEST_SCHEMA,
+                 "entries": _tampered,
+                 "tree_sha256": _manifest_tree_sha256(
+                     CANDIDATE_INPUT_MANIFEST_SCHEMA,
+                     _entries)[0]},
+                sort_keys=True, indent=1) + "\n").encode()
+            with open(os.path.join(
+                    d, "CANDIDATE-INPUT-MANIFEST.json"), "wb") as f:
+                f.write(_tampered_raw)
+            _manifest_sha = hashlib.sha256(_tampered_raw).hexdigest()
+            _tree_sha = _manifest_tree_sha256(
+                CANDIDATE_INPUT_MANIFEST_SCHEMA, _entries)[0]
+        elif candidate_input_tamper is not None:
+            raise ValueError("fixture misuse: candidate_input_tamper must "
+                             "be None or 'entry-sha'")
+        else:
+            _manifest_sha, _tree_sha = write_candidate_input_manifest(
+                d, _entries)
         _cv = {"candidate_sha256": validates_candidate,
                "executed_sha256": validates_candidate,
                "adapter_sha256": hashlib.sha256(
@@ -458,7 +532,9 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                                                      cell["cell_id"]),
                "checker_returncode": 0,
                "validation_verdict": "ship",
-               "validated": True}
+               "validated": True,
+               "candidate_input_manifest_sha256": _manifest_sha,
+               "candidate_input_tree_sha256": _tree_sha}
         _cv.update(_cv_over)
         ch.append("candidate-validation", _cv)
     ev = ch.append("evaluator", {"evaluator": "fixture_modelrun",

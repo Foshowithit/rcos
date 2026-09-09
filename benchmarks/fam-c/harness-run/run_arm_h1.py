@@ -71,12 +71,40 @@ The model context and the docker /task mount are built from ONE staged
 visible snapshot, and the arm pair must pass the mechanical symmetry check
 (item 6) before any token is spent.
 No P/Q calls are made by smoke; use the script only after H1 smoke is green.
+
+A12d D1 (auditor A12d.1/A12d.2/A12d.7) — two jails, evidence-not-exception,
+input lineage. (a) The T1 adapter runs in the RAW-TASK jail (its /task is
+the staged T1 tree); the candidate runs in a SECOND jail whose /task is
+the materialized candidate-input directory ONLY (DockerSandbox(cand_work,
+cand_staging), argv python3 /work/candidate.py /task
+/work/CANDIDATE-OUTPUT.json). Downstream use_capability execution likewise
+runs in an adapted-input-only jail (engine argv python3 /work/engine.py
+/task/field_map.json /task/records.json /work/OUTPUT.json); fresh solves
+keep the raw-task jail. (b) validate_t1_candidate() NEVER raises on
+EXPERIMENTAL failure — it returns the full validation event with
+validated=false plus a named validation_failure cause, and the runner
+still commits the T1 cell COMPLETE. It raises ONLY on HARNESS/
+INFRASTRUCTURE failure: docker unavailable (daemon unreachable at
+exec time), sandbox staging/stability denials from DockerSandbox
+construction (MOUNT-POLICY/STAGE/STABILITY-DENY), and filesystem errors
+creating the jail directories themselves. The boundary rule: defects IN
+the experimental material (adapter/candidate bytes, return codes,
+outputs, checker verdicts, evaluator bytes presented for binding, the
+content of the adapter-materialized input tree) are experimental
+evidence; defects OF the harness mechanism (cannot build or enter a
+jail, cannot create jail dirs, daemon gone) are infrastructure and
+propagate. See validate_t1_candidate() for the per-cause table.
+(c) After the adapter run the helper materializes a deterministic
+candidate-input content manifest (CANDIDATE-INPUT-MANIFEST.json,
+schema candidate-input-manifest-v1) and commits its two hashes on the
+chain event; promotion/order re-derive both from the committed file.
 """
 import hashlib
 import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -87,7 +115,8 @@ BASE = "/home/chow/chow-work/rcos/benchmarks/fam-c"
 HARNESS = "/home/chow/chow-work/rcos/harness"
 ROOT = os.path.abspath(os.path.join(BASE, os.pardir, os.pardir))
 sys.path.insert(0, HARNESS)
-from dockersandbox import DockerSandbox, ensure_roots, _hash_tree
+from dockersandbox import (DockerSandbox, ensure_roots, _hash_tree,
+                            VISIBLE_ROOT, WORK_ROOT)
 from seal import build_visible_root
 from usage import (recorded_call, write_normalized_usage,
                    verify_normalized_usage, verify_request_binding,
@@ -105,10 +134,13 @@ from order import (verify_expansion as order_verify_expansion,
                    authorize as order_authorize,
                    authorize_event as order_authorize_event,
                    expected_event as order_expected_event,
+                   expected_cell as order_expected_cell,
                    run_dir as order_run_dir,
                    derive_paths as order_derive_paths,
                    check_namespace as order_check_namespace,
                    ensure_namespace as order_ensure_namespace,
+                   promotion_outcome as order_promotion_outcome,
+                   acquisition_failed as order_acquisition_failed,
                    cell_state as order_cell_state)
 # Item-4: three-authority preflight is importable (validate_all runs the
 # V1/V2/V3 validators without exiting); BASE on the path only exposes the
@@ -451,6 +483,189 @@ def h(path):
         return hashlib.sha256(f.read()).hexdigest()
 
 
+# ---------------------------------------------------------------------------
+# A12d D1 — candidate-input lineage (A12d.7) + jail input staging (A12d.1)
+# ---------------------------------------------------------------------------
+
+CANDIDATE_INPUT_MANIFEST_SCHEMA = "candidate-input-manifest-v1"
+
+# The single candidate-validation chain event carries exactly these eleven
+# keys on the success path (nine A12c keys + two lineage keys). On the
+# experimental-failure path the same eleven ride with validated=false,
+# observed values (null where unobserved), plus a twelfth key
+# `validation_failure` naming the cause.
+CV_ELEVEN = ("candidate_sha256", "executed_sha256", "adapter_sha256",
+             "candidate_output_sha256", "checker_sha256", "truth_sha256",
+             "checker_returncode", "validation_verdict", "validated",
+             "candidate_input_manifest_sha256",
+             "candidate_input_tree_sha256")
+
+
+def _manifest_tree_sha256(schema, entries):
+    """The deterministic tree hash (spec C1): sha256 of the canonical bytes
+    of the manifest WITHOUT the tree_sha256 field
+    (json.dumps(obj, sort_keys=True, indent=1) + trailing newline)."""
+    canonical = json.dumps({"schema": schema, "entries": entries},
+                           sort_keys=True, indent=1) + "\n"
+    return hashlib.sha256(canonical.encode()).hexdigest(), canonical
+
+
+def _scan_candidate_input(tree_dir):
+    """Lstat-walk a materialized candidate-input tree. Returns (entries,
+    denial): entries is the sorted manifest entry list; denial is None on
+    success or a CANDIDATE-INPUT-DENY / candidate-input-unreadable cause
+    string (EXPERIMENTAL failure — the adapter re-exposed raw bytes through
+    a symlink, a hardlink, or a special file, or the tree is unreadable).
+    Directories are not entries. No mtimes, no absolute paths. Raises
+    nothing for content defects (OSError on READ maps to unreadable);
+    OSError on jail-directory creation is raised by the caller, never
+    here, so infra stays infra."""
+    entries = []
+    try:
+        if os.path.islink(tree_dir) or not os.path.isdir(tree_dir):
+            return None, ("candidate-input-missing: the adapter exited 0 "
+                          "but materialized no candidate input directory "
+                          f"at {tree_dir}")
+        for base, dirs, files in os.walk(tree_dir, followlinks=False):
+            for d in sorted(dirs):
+                p = os.path.join(base, d)
+                try:
+                    st = os.lstat(p)
+                except OSError as e:
+                    return None, ("candidate-input-unreadable: cannot lstat "
+                                  f"directory {p!r}: {e}")
+                if stat.S_ISLNK(st.st_mode):
+                    return None, ("candidate-input-deny: CANDIDATE-INPUT-DENY "
+                                  f"symlinked directory in candidate input: "
+                                  f"{os.path.relpath(p, tree_dir)!r} (a "
+                                  f"symlink would let the adapter re-expose "
+                                  f"raw task bytes through the candidate "
+                                  f"jail)")
+                if not stat.S_ISDIR(st.st_mode):
+                    return None, ("candidate-input-deny: CANDIDATE-INPUT-DENY "
+                                  f"non-directory in candidate input: "
+                                  f"{os.path.relpath(p, tree_dir)!r}")
+            for fn in sorted(files):
+                p = os.path.join(base, fn)
+                rel = os.path.relpath(p, tree_dir)
+                try:
+                    st = os.lstat(p)
+                except OSError as e:
+                    return None, ("candidate-input-unreadable: cannot lstat "
+                                  f"candidate input file {rel!r}: {e}")
+                if stat.S_ISLNK(st.st_mode):
+                    return None, ("candidate-input-deny: CANDIDATE-INPUT-DENY "
+                                  f"symlink in candidate input: {rel!r} (a "
+                                  f"symlink would let the adapter re-expose "
+                                  f"raw task bytes through the candidate "
+                                  f"jail)")
+                if not stat.S_ISREG(st.st_mode):
+                    return None, ("candidate-input-deny: CANDIDATE-INPUT-DENY "
+                                  f"non-regular file in candidate input: "
+                                  f"{rel!r} (no fifos, sockets, devices)")
+                if st.st_nlink > 1:
+                    return None, ("candidate-input-deny: CANDIDATE-INPUT-DENY "
+                                  f"hardlinked file in candidate input: "
+                                  f"{rel!r} (nlink={st.st_nlink}; a hardlink "
+                                  f"would let the adapter re-expose raw "
+                                  f"task bytes through the candidate jail)")
+                try:
+                    with open(p, "rb") as f:
+                        data = f.read()
+                except OSError as e:
+                    return None, ("candidate-input-unreadable: cannot read "
+                                  f"candidate input file {rel!r}: {e}")
+                entries.append({"path": rel.replace(os.sep, "/"),
+                                "kind": "file", "size": len(data),
+                                "sha256": hashlib.sha256(data).hexdigest()})
+    except OSError as e:
+        return None, (f"candidate-input-unreadable: cannot walk candidate "
+                      f"input tree {tree_dir!r}: {e}")
+    entries.sort(key=lambda e: e["path"])
+    return entries, None
+
+
+def _copy_candidate_input(src, dst):
+    """Guarded copy of a validated candidate-input tree (no symlink
+    laundering: every source component is re-checked with lstat during the
+    copy; a violation returns a CANDIDATE-INPUT-DENY denial instead of
+    materializing attacker bytes). Returns None on success or a denial
+    string (experimental). OSError on WRITES/mkdirs propagates (infra:
+    the jail filesystem itself failed)."""
+    for base, dirs, files in os.walk(src, followlinks=False):
+        for d in sorted(dirs):
+            p = os.path.join(base, d)
+            try:
+                st = os.lstat(p)
+            except OSError as e:
+                return ("candidate-input-unreadable: cannot lstat directory "
+                        f"{p!r} during staging: {e}")
+            if stat.S_ISLNK(st.st_mode) or not stat.S_ISDIR(st.st_mode):
+                return ("candidate-input-deny: CANDIDATE-INPUT-DENY "
+                        f"non-directory {os.path.relpath(p, src)!r} appeared "
+                        f"in candidate input during staging")
+        for fn in sorted(files):
+            s = os.path.join(base, fn)
+            rel = os.path.relpath(s, src)
+            try:
+                st = os.lstat(s)
+            except OSError as e:
+                return ("candidate-input-unreadable: cannot lstat "
+                        f"{rel!r} during staging: {e}")
+            if stat.S_ISLNK(st.st_mode) or not stat.S_ISREG(st.st_mode) \
+                    or st.st_nlink > 1:
+                return ("candidate-input-deny: CANDIDATE-INPUT-DENY "
+                        f"unsafe file {rel!r} appeared in candidate input "
+                        f"during staging")
+            d = os.path.join(dst, rel)
+            os.makedirs(os.path.dirname(d) or dst, exist_ok=True)
+            try:
+                with open(s, "rb") as f:
+                    data = f.read()
+            except OSError as e:
+                return ("candidate-input-unreadable: cannot read "
+                        f"{rel!r} during staging: {e}")
+            with open(d, "wb") as f:  # noqa: PTH123 — infra writes raise
+                f.write(data)
+    return None
+
+
+def _stage_candidate_input(work_cand_in):
+    """Materialize the adapter's output as a mountable candidate-input
+    source under VISIBLE_ROOT. Returns (staging_dir, denial, entries):
+    staging_dir is the visible source (bytes the candidate jail will see),
+    entries the manifest entry list over THOSE bytes, denial None on
+    success or an experimental cause string. Filesystem errors creating
+    the staging directory itself propagate (infra)."""
+    entries, denial = _scan_candidate_input(work_cand_in)
+    if denial is not None:
+        return None, denial, None
+    staging = tempfile.mkdtemp(prefix="famc-candin-", dir=VISIBLE_ROOT)
+    os.chmod(staging, 0o700)
+    denial = _copy_candidate_input(work_cand_in, staging)
+    if denial is not None:
+        return None, denial, None
+    entries, denial = _scan_candidate_input(staging)
+    if denial is not None:  # cannot happen without a concurrent mutation
+        return None, denial, None
+    return staging, None, entries
+
+
+def _infra_down(p):
+    """True when a jail CompletedProcess shows the DOCKER mechanism itself
+    failed (daemon unreachable / engine error), as opposed to the program
+    inside the jail exiting non-zero. Only that case is infrastructure;
+    every in-jail non-zero rc is experimental evidence."""
+    if p.returncode == 0:
+        return False
+    if p.returncode == 125 and isinstance(getattr(p, "stderr", None), str) \
+            and ("daemon" in p.stderr.lower()
+                 or "cannot connect" in p.stderr.lower()
+                 or "docker: " in p.stderr.lower()):
+        return True
+    return False
+
+
 _ARRIVAL_KEYS = ("decision", "execution_payload", "notes")
 
 
@@ -558,9 +773,13 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
              "container_returncode", "checker_path", "checker_sha256",
              "truth_sha256"} — the two sha256s are the exact bytes THIS
     arrival's evaluation path used (checker_sha256 bound before the host-side
-    checker ran; truth_sha256 from the same frozen family dir)."""
+    checker ran; truth_sha256 from the same frozen family dir).
+    Plus "engine_jail" on the use_capability path: {"task_snapshot",
+    "mounts", "adapted_input_sha256"} describing the adapted-input-only
+    jail (A12d D1-A3/A4); None on the fresh/solver path."""
     decision = arrival["decision"]
     execution_mode = None
+    engine_jail = None
     if decision == "use_capability":
         if arm != "correct":
             raise RuntimeError("CONTRACT-DECISION-DENY: decision "
@@ -572,19 +791,40 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
                                "capability engine")
         shutil.copy2(cap_engine, os.path.join(work, "engine.py"))
         payload = arrival["execution_payload"]
-        json.dump(payload["records"],
-                  open(os.path.join(work, "records.json"), "w"))
-        json.dump(payload["field_map"],
-                  open(os.path.join(work, "field_map.json"), "w"))
-        command = ["python3", "/work/engine.py", "/work/field_map.json",
-                   "/work/records.json", "/work/OUTPUT.json"]
+        # A12d D1-A3: the engine jail's /task contains ONLY the adapted
+        # payload the model produced — never the raw task tree. The two
+        # payload documents are materialized into a fresh adapted-input
+        # directory under VISIBLE_ROOT and that directory ALONE is mounted
+        # as /task (DockerSandbox(work, adapted_dir)); the engine argv
+        # addresses /task paths. A fresh solve keeps the raw-task jail
+        # (it legitimately needs the task).
+        ensure_roots()
+        adapted_dir = tempfile.mkdtemp(prefix="famc-adapted-",
+                                       dir=VISIBLE_ROOT)
+        os.chmod(adapted_dir, 0o700)
+        for name in ("field_map", "records"):
+            with open(os.path.join(adapted_dir, name + ".json"), "w") as f:
+                json.dump(payload[name], f, sort_keys=True, indent=1)
+                f.write("\n")
+        adapted_entries, adapted_denial = _scan_candidate_input(adapted_dir)
+        if adapted_denial is not None:  # cannot happen: just-written files
+            raise RuntimeError("ADAPTED-INPUT-DENY: " + adapted_denial)
+        adapted_input_sha256, _ = _manifest_tree_sha256(
+            CANDIDATE_INPUT_MANIFEST_SCHEMA, adapted_entries)
+        engine_sb = DockerSandbox(work, adapted_dir)
+        command = ["python3", "/work/engine.py", "/task/field_map.json",
+                   "/task/records.json", "/work/OUTPUT.json"]
         execution_mode = "engine"
+        p = engine_sb.run(command, timeout=120)
+        engine_jail = {"task_snapshot": engine_sb.task_snapshot,
+                       "mounts": engine_sb.manifest()["mounts"],
+                       "adapted_input_sha256": adapted_input_sha256}
     else:  # fresh — the only legal decision on the disabled arm
         open(os.path.join(work, "solver.py"), "w").write(
             arrival["execution_payload"]["solver_py"])
         command = ["python3", "/work/solver.py", "/task", "/work/OUTPUT.json"]
         execution_mode = "solver"
-    p = sb.run(command, timeout=120)
+        p = sb.run(command, timeout=120)
     out = os.path.join(work, "OUTPUT.json")
     # Copy artifacts back to the committed outdir for auditability.
     if os.path.exists(out):
@@ -612,6 +852,7 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
             "output_sha256": h(out) if os.path.exists(out) else None,
             "decision": decision,
             "execution_mode": execution_mode,
+            "engine_jail": engine_jail,
             "container_returncode": p.returncode,
             "checker_path": checker,
             "checker_sha256": checker_sha256,
@@ -620,42 +861,93 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb):
 
 def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
                           work, taskdir, sb, checker_sha256, truth_sha256,
-                          outdir=None):
-    """A12c D2 — T1 candidate validation path (replace the former one).
+                          outdir=None, candidate_jail_factory=None):
+    """A12d D1 — T1 candidate validation path (two jails, evidence on
+    failure, input lineage).
 
-    In the T1 arm, after the T1 cell's own verdict is computed, the runner
-    must, in this exact order, in-jail:
+    Order of operations, in-jail where noted:
       1. write the T1 response's `adapter_py` to `<work>/adapter.py`;
-         `adapter_sha256` = sha256 of exactly those bytes;
-      2. run `python3 /work/adapter.py /task /work/cand_in` (jail); a
-         non-zero rc is a validation failure;
-      3. write the frozen T0 candidate source to `<work>/candidate.py` and
-         verify sha256(candidate.py) == frozen T0 candidate sha;
-      4. run `python3 /work/candidate.py /work/cand_in
-         /work/CANDIDATE-OUTPUT.json` (jail);
-      5. HOST-SIDE: run the FROZEN T1 evaluator — the same checker + truth
-         the T1 cell verdict uses (their sha256 recorded from the committed
-         evaluator link) — over `CANDIDATE-OUTPUT.json` against the frozen
-         T1 truth;
-      6. `validated = (adapter rc == 0) and (candidate rc == 0) and
-         (checker_returncode == 0) and (validation_verdict == "ship") and
-         (executed_sha == frozen T0 candidate sha)`;
-      7. the caller commits EXACTLY ONE `candidate-validation` chain event
-         carrying the nine keys (see _wire_chain).
+         `adapter_sha256` = sha256 of exactly those bytes (missing/empty
+         adapter_py is EXPERIMENTAL failure `adapter-missing`, never
+         silently validated);
+      2. run `python3 /work/adapter.py /task /work/cand_in` in the RAW-TASK
+         jail `sb` (its /task is the staged T1 tree; the adapter
+         legitimately reads raw T1). Non-zero rc is experimental failure
+         `adapter-failed`;
+      3. stage the adapter's output as a mountable candidate-input source
+         (fail closed CANDIDATE-INPUT-DENY on any symlink, non-regular
+         file, or hardlink; `candidate-input-missing` when the adapter
+         produced no input tree);
+      4. materialize the deterministic candidate-input content manifest
+         (CANDIDATE-INPUT-MANIFEST.json, schema
+         candidate-input-manifest-v1) over the staged bytes;
+         `candidate_input_manifest_sha256` = sha256 of the persisted
+         manifest file bytes, `candidate_input_tree_sha256` = the
+         manifest's tree hash (null pair only when step 3 produced no
+         input tree);
+      5. write the frozen T0 candidate source to the candidate jail's own
+         workdir and verify sha256 == frozen T0 candidate sha
+         (`candidate-bytes-mismatch` on drift);
+      6. run `python3 /work/candidate.py /task /work/CANDIDATE-OUTPUT.json`
+         in the SECOND jail — DockerSandbox(cand_work, cand_staging),
+         whose /task is the staged candidate input ONLY — never the raw
+         task tree. Non-zero rc is experimental failure
+         `candidate-failed`;
+      7. HOST-SIDE: run the FROZEN T1 evaluator — the same checker + truth
+         the T1 cell verdict uses (shas passed in from the committed
+         evaluator link) — over CANDIDATE-OUTPUT.json. Missing output is
+         `candidate-output-missing`; checker rc != 0 is `checker-failed`;
+      8. `validated` = the five-way conjunction (adapter rc 0, candidate
+         rc 0, checker rc 0, validation_verdict ship, executed == frozen).
+         The caller commits EXACTLY ONE `candidate-validation` chain event
+         carrying the eleven keys (success) or the eleven keys with
+         observed values plus `validation_failure` (failure).
 
-    On any failure this helper raises RuntimeError with a
-    CANDIDATE-VALIDATION-FAIL cause BEFORE any chain is wired (no chain, no
-    COMPLETE cell, no promotion) — the T1 cell's own SHIP verdict (computed
-    before this call) is unaffected. Stdlib only; never asserts.
+    EXPERIMENTAL vs INFRASTRUCTURE (A12d.2 B1 — the boundary):
+      experimental (RETURNED as validated=false + named cause, never
+        raised): adapter-missing, adapter-failed, candidate-input-missing,
+        candidate-input-deny (CANDIDATE-INPUT-DENY symlinks/specials/
+        hardlinks), candidate-input-unreadable, candidate-bytes-mismatch,
+        candidate-failed, candidate-output-missing, checker-failed,
+        evaluator-provenance-absent, evaluator-drift.
+      infrastructure (RAISED, never converted): docker unavailable at exec
+        time (daemon-unreachable rc 125), sandbox staging/stability denials
+        from DockerSandbox construction (MOUNT-POLICY/STAGE/STABILITY-DENY
+        PermissionErrors), timeouts, and filesystem errors creating the
+        jail/staging directories themselves (OSError). These propagate
+        untouched so a broken harness can never mint failed-experiment
+        evidence.
+    The returned dict keeps every A12c key and adds the two lineage keys;
+    stdlib only; never asserts.
     """
+    ensure_roots()
+    prov_checker = checker_sha256 if isinstance(checker_sha256, str) else None
+    prov_truth = truth_sha256 if isinstance(truth_sha256, str) else None
+
+    def _fail(cause, adapter_sha=None, executed_sha=None,
+              candidate_output_sha=None, checker_rc=None,
+              validation_verdict=None, manifest_sha=None, tree_sha=None):
+        return {"candidate_sha256": candidate_sha256,
+                "executed_sha256": executed_sha,
+                "adapter_sha256": adapter_sha,
+                "candidate_output_sha256": candidate_output_sha,
+                "checker_sha256": prov_checker,
+                "truth_sha256": prov_truth,
+                "checker_returncode": checker_rc,
+                "validation_verdict": validation_verdict,
+                "validated": False,
+                "candidate_input_manifest_sha256": manifest_sha,
+                "candidate_input_tree_sha256": tree_sha,
+                "validation_failure": cause}
+
     # 1. adapter bytes (fail closed when the T1 response omits adapter_py;
     #    never silently validate).
     if not isinstance(adapter_py, str) or not adapter_py.strip():
-        raise RuntimeError(
-            "CANDIDATE-VALIDATION-FAIL: T1 response omits adapter_py "
-            "(the T1 instruction requires adapter_py with the frozen ABI "
-            "python3 adapter.py <task_dir> <out_input_dir>; omitting it "
-            "makes the run unpromotable, never silently validated)")
+        return _fail("adapter-missing: T1 response omits adapter_py (the "
+                     "T1 instruction requires adapter_py with the frozen "
+                     "ABI python3 adapter.py <task_dir> <out_input_dir>; "
+                     "omitting it makes the run unpromotable, never "
+                     "silently validated)")
     adapter_path = os.path.join(work, "adapter.py")
     with open(adapter_path, "wb") as f:
         f.write(adapter_py.encode())
@@ -666,46 +958,99 @@ def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
         except OSError:
             pass
     # Fresh cand_in for this validation (an adapter that does not
-    # materialize the input dir fails closed at the candidate step).
+    # materialize the input dir fails closed at the staging step).
     cand_in = os.path.join(work, "cand_in")
     if os.path.lexists(cand_in):
         shutil.rmtree(cand_in, ignore_errors=True)
-    # 2. run the adapter IN-JAIL (the adapter is executed, not merely
-    #    hashed: adapter_sha256 above is the sha256 of exactly these bytes).
+    # 2. run the adapter IN the RAW-TASK jail `sb` (the adapter is
+    #    executed, not merely hashed: adapter_sha256 above is the sha256 of
+    #    exactly these bytes). Infrastructure failures propagate; an
+    #    in-jail non-zero rc is experimental evidence.
     adapter_p = sb.run(["python3", "/work/adapter.py", "/task",
                         "/work/cand_in"], timeout=120)
+    if _infra_down(adapter_p):
+        raise RuntimeError(
+            "CANDIDATE-INFRA-FAIL: docker unavailable during the adapter "
+            f"run (rc={adapter_p.returncode}): "
+            f"{(adapter_p.stderr or '')[:200]}")
     adapter_rc = adapter_p.returncode
     if adapter_rc != 0:
-        raise RuntimeError(
-            "CANDIDATE-VALIDATION-FAIL: adapter exited non-zero "
-            f"(rc={adapter_rc}); the candidate was not validated on this "
-            "T1 surface")
-    # 3. frozen T0 candidate bytes (hash-verified before execution,
-    #    engine-style — fail closed on mismatch).
-    cand_path = os.path.join(work, "candidate.py")
+        return _fail(f"adapter-failed: adapter exited non-zero "
+                     f"(rc={adapter_rc}); the candidate was not validated "
+                     f"on this T1 surface", adapter_sha=adapter_sha)
+    # 3. stage the adapter's output as the candidate jail's /task source.
+    #    A symlink/special/hardlink anywhere inside fails closed
+    #    (CANDIDATE-INPUT-DENY); a missing tree fails as missing input.
+    staging, denial, entries = _stage_candidate_input(cand_in)
+    if denial is not None:
+        return _fail(denial, adapter_sha=adapter_sha)
+    # 4. deterministic candidate-input content manifest over the staged
+    #    bytes (the exact bytes the candidate jail will see).
+    tree_sha, _canonical = _manifest_tree_sha256(
+        CANDIDATE_INPUT_MANIFEST_SCHEMA, entries)
+    manifest_obj = {"schema": CANDIDATE_INPUT_MANIFEST_SCHEMA,
+                    "entries": entries, "tree_sha256": tree_sha}
+    manifest_file_bytes = (json.dumps(manifest_obj, sort_keys=True,
+                                      indent=1) + "\n").encode()
+    manifest_sha = hashlib.sha256(manifest_file_bytes).hexdigest()
+    with open(os.path.join(work, "CANDIDATE-INPUT-MANIFEST.json"),
+              "wb") as f:
+        f.write(manifest_file_bytes)
+    if outdir is not None:
+        try:
+            with open(os.path.join(outdir, "CANDIDATE-INPUT-MANIFEST.json"),
+                      "wb") as f:
+                f.write(manifest_file_bytes)
+        except OSError:
+            pass
+    # The candidate jail's OWN writable /work: a fresh directory under
+    # WORK_ROOT, deliberately NOT inside the caller's `work` (which a
+    # shim/test caller may place anywhere — only the two jail mounts are
+    # policy-bound, never the scratch dir). Separating it also makes an
+    # adapter pre-place of the candidate's output path unaddressable by
+    # construction. Filesystem errors here are infrastructure: raise.
+    cand_work = tempfile.mkdtemp(prefix="famc-candwork-", dir=WORK_ROOT)
+    os.chmod(cand_work, 0o700)
+    # 5. frozen T0 candidate bytes (hash-verified before execution,
+    #    engine-style — drift is experimental, not infra).
+    cand_path = os.path.join(cand_work, "candidate.py")
     with open(cand_path, "wb") as f:
         f.write(candidate_source.encode()
                 if isinstance(candidate_source, str) else candidate_source)
     executed_sha = h(cand_path)
     if executed_sha != candidate_sha256:
-        raise RuntimeError(
-            "CANDIDATE-VALIDATION-FAIL: materialized candidate bytes "
-            f"{executed_sha[:12]} != frozen candidate "
-            f"{candidate_sha256[:12]}")
+        return _fail(f"candidate-bytes-mismatch: materialized candidate "
+                     f"bytes {executed_sha[:12]} != frozen candidate "
+                     f"{str(candidate_sha256)[:12]}",
+                     adapter_sha=adapter_sha, executed_sha=executed_sha,
+                     manifest_sha=manifest_sha, tree_sha=tree_sha)
     if outdir is not None:
         try:
             shutil.copy2(cand_path, os.path.join(outdir, "candidate.py"))
         except OSError:
             pass
-    # 4. run the EXACT T0 candidate bytes IN-JAIL on the adapter's input.
-    cand_out_work = os.path.join(work, "CANDIDATE-OUTPUT.json")
+    # 6. run the EXACT T0 candidate bytes in the SECOND jail, whose /task
+    #    is the staged candidate input ONLY (the raw task tree is not
+    #    mounted there). The candidate ABI keeps its frozen two-positional
+    #    shape; the input dir is now /task.
+    cand_out_work = os.path.join(cand_work, "CANDIDATE-OUTPUT.json")
     if os.path.lexists(cand_out_work):
+        # Pre-place guard: an adapter that wrote the candidate's output
+        # path into the shared work tree must not validate a candidate
+        # that writes nothing useful.
         try:
             os.unlink(cand_out_work)
         except OSError:
             pass
-    candidate_p = sb.run(["python3", "/work/candidate.py", "/work/cand_in",
-                          "/work/CANDIDATE-OUTPUT.json"], timeout=120)
+    factory = candidate_jail_factory or DockerSandbox
+    cand_sb = factory(cand_work, staging)
+    candidate_p = cand_sb.run(["python3", "/work/candidate.py", "/task",
+                               "/work/CANDIDATE-OUTPUT.json"], timeout=120)
+    if _infra_down(candidate_p):
+        raise RuntimeError(
+            "CANDIDATE-INFRA-FAIL: docker unavailable during the candidate "
+            f"run (rc={candidate_p.returncode}): "
+            f"{(candidate_p.stderr or '')[:200]}")
     candidate_rc = candidate_p.returncode
     if os.path.exists(cand_out_work) and outdir is not None:
         try:
@@ -713,60 +1058,73 @@ def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
                          os.path.join(outdir, "CANDIDATE-OUTPUT.json"))
         except OSError:
             pass
-    # 5. HOST-SIDE frozen T1 evaluator over CANDIDATE-OUTPUT.json. The
+    if candidate_rc != 0:
+        return _fail(f"candidate-failed: the frozen T0 candidate exited "
+                     f"non-zero (rc={candidate_rc}) on the adapter's "
+                     f"input",
+                     adapter_sha=adapter_sha, executed_sha=executed_sha,
+                     manifest_sha=manifest_sha, tree_sha=tree_sha)
+    # 7. HOST-SIDE frozen T1 evaluator over CANDIDATE-OUTPUT.json. The
     #    checker + truth are the SAME bytes the T1 cell verdict used: their
     #    shas must equal the committed evaluator link's shas (passed in as
-    #    checker_sha256 / truth_sha256); any drift or absence fails closed.
+    #    checker_sha256 / truth_sha256); any drift or absence is
+    #    experimental (the validation binds no frozen evaluator).
     checker = os.path.normpath(os.path.join(taskdir, "..", "check.py"))
     truth_path = os.path.normpath(os.path.join(taskdir, "..", "truth.json"))
     live_checker_sha = h(checker) if os.path.exists(checker) else None
     live_truth_sha = h(truth_path) if os.path.exists(truth_path) else None
     if not isinstance(checker_sha256, str) or not isinstance(truth_sha256,
-                                                             str):
-        raise RuntimeError(
-            "CANDIDATE-VALIDATION-FAIL: T1 evaluator provenance absent "
-            f"(checker_sha256={checker_sha256!r}, "
-            f"truth_sha256={truth_sha256!r}); the frozen T1 checker + "
-            "truth must bind the validation")
+                                                              str):
+        return _fail("evaluator-provenance-absent: T1 evaluator provenance "
+                     f"absent (checker_sha256={checker_sha256!r}, "
+                     f"truth_sha256={truth_sha256!r}); the frozen T1 "
+                     f"checker + truth must bind the validation",
+                     adapter_sha=adapter_sha, executed_sha=executed_sha,
+                     manifest_sha=manifest_sha, tree_sha=tree_sha)
     if live_checker_sha != checker_sha256 or live_truth_sha != truth_sha256:
-        raise RuntimeError(
-            "CANDIDATE-VALIDATION-FAIL: frozen T1 evaluator bytes drifted "
-            f"(checker {str(live_checker_sha)[:12]} != "
-            f"{checker_sha256[:12]} or truth {str(live_truth_sha)[:12]} != "
-            f"{truth_sha256[:12]}); validation runs only the frozen T1 "
-            "checker + truth the T1 cell verdict used")
+        return _fail("evaluator-drift: frozen T1 evaluator bytes drifted "
+                     f"(checker {str(live_checker_sha)[:12]} != "
+                     f"{checker_sha256[:12]} or truth "
+                     f"{str(live_truth_sha)[:12]} != "
+                     f"{truth_sha256[:12]}); validation runs only the "
+                     f"frozen T1 checker + truth the T1 cell verdict used",
+                     adapter_sha=adapter_sha, executed_sha=executed_sha,
+                     manifest_sha=manifest_sha, tree_sha=tree_sha)
     cand_out_committed = (os.path.join(outdir, "CANDIDATE-OUTPUT.json")
                           if outdir is not None and os.path.exists(
                               os.path.join(outdir, "CANDIDATE-OUTPUT.json"))
                           else cand_out_work)
+    if not os.path.exists(cand_out_committed):
+        return _fail("candidate-output-missing: the frozen T0 candidate "
+                     f"wrote no CANDIDATE-OUTPUT.json (candidate "
+                     f"rc={candidate_rc}); the T1 adapter cannot claim "
+                     f"validation it did not produce",
+                     adapter_sha=adapter_sha, executed_sha=executed_sha,
+                     manifest_sha=manifest_sha, tree_sha=tree_sha)
     task_name = os.path.basename(os.path.normpath(taskdir))
     chk = subprocess.run([sys.executable, checker, task_name,
                           cand_out_committed],
                          capture_output=True, text=True)
     checker_rc = chk.returncode
     validation_verdict = "ship" if checker_rc == 0 else "fail"
-    if os.path.exists(cand_out_committed):
-        candidate_output_sha = h(cand_out_committed)
-    else:
-        candidate_output_sha = None
-    # 6. validated predicate (all five) + nine-key non-null gate.
+    candidate_output_sha = h(cand_out_committed)
+    # 8. validated predicate (all five) + eleven-key evidence (the caller
+    #    wires exactly one chain event).
     validated = (adapter_rc == 0 and candidate_rc == 0
                  and checker_rc == 0 and validation_verdict == "ship"
                  and executed_sha == candidate_sha256)
-    if candidate_output_sha is None:
-        raise RuntimeError(
-            "CANDIDATE-VALIDATION-FAIL: the frozen T0 candidate wrote no "
-            f"CANDIDATE-OUTPUT.json (candidate rc={candidate_rc}); the T1 "
-            "adapter cannot claim validation it did not produce")
     if not validated:
-        raise RuntimeError(
-            "CANDIDATE-VALIDATION-FAIL: candidate output failed the host "
-            f"T1 checker (adapter rc={adapter_rc}, candidate "
-            f"rc={candidate_rc}, checker rc={checker_rc}, "
-            f"validation_verdict={validation_verdict!r}); the T1 SHIP is "
-            "evidence for the fresh T1 solver, not evidence that K works "
-            "on T1")
-    # 7. nine-key evidence (the caller wires exactly one chain event).
+        return _fail("checker-failed: candidate output failed the host "
+                     f"T1 checker (adapter rc={adapter_rc}, candidate "
+                     f"rc={candidate_rc}, checker rc={checker_rc}, "
+                     f"validation_verdict={validation_verdict!r}); the T1 "
+                     f"SHIP is evidence for the fresh T1 solver, not "
+                     f"evidence that K works on T1",
+                     adapter_sha=adapter_sha, executed_sha=executed_sha,
+                     candidate_output_sha=candidate_output_sha,
+                     checker_rc=checker_rc,
+                     validation_verdict=validation_verdict,
+                     manifest_sha=manifest_sha, tree_sha=tree_sha)
     return {"candidate_sha256": candidate_sha256,
             "executed_sha256": executed_sha,
             "adapter_sha256": adapter_sha,
@@ -775,8 +1133,9 @@ def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
             "truth_sha256": truth_sha256,
             "checker_returncode": checker_rc,
             "validation_verdict": validation_verdict,
-            "validated": True}
-
+            "validated": True,
+            "candidate_input_manifest_sha256": manifest_sha,
+            "candidate_input_tree_sha256": tree_sha}
 
 def call(lane, prompt, outdir, tag):
     cfg = LANES[lane]
@@ -1031,53 +1390,101 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
             "reuse_rejection_reason": ledger.get("reuse_rejection_reason"),
             "materially_contributed": contributed,
             "evidence": evidence})
-    # A12c D2/D4: exactly one candidate-validation event on a T1
-    # acquisition run — the nine-field host-checker evidence. The promotion
-    # controller re-derives this committed event from the chain (never the
-    # receipt); a T1 chain without it can never promote. Shape AND passing
+    # A12c D2/D4 + A12d D1: exactly one candidate-validation event on a T1
+    # acquisition run — the eleven-field host-checker + input-lineage
+    # evidence. The promotion controller re-derives this committed event
+    # from the chain (never the receipt); a T1 chain without it can never
+    # promote. On the success path (validated is True) shape AND passing
     # values are enforced here (fail closed); the candidate binding is
     # enforced at promotion time. adapter_sha256 is the sha256 of the exact
     # adapter bytes the runner executed (D4: executed, not merely hashed).
+    # On the experimental-failure path (validated is False, A12d D1-B2)
+    # the FULL event is committed with observed values (null where
+    # unobserved) plus the named `validation_failure` cause — the T1 cell
+    # still COMPLETES as committed experimental evidence, and promotion
+    # later records NOT-PROMOTED from this event (never a lock).
     if candidate_validation is not None:
         cv = candidate_validation
-        for f in ("candidate_sha256", "executed_sha256", "adapter_sha256",
-                  "candidate_output_sha256", "checker_sha256",
-                  "truth_sha256"):
-            if not (isinstance(cv.get(f), str) and len(cv[f]) == 64):
-                raise RuntimeError(f"CHAIN-CANDIDATE-DENY: {f} must be "
-                                   f"64-hex, got {cv.get(f)!r}")
-            try:
-                int(cv[f], 16)
-            except ValueError:
-                raise RuntimeError(f"CHAIN-CANDIDATE-DENY: {f} must be "
-                                   f"64-hex, got {cv[f]!r}") from None
-        if not isinstance(cv.get("checker_returncode"), int):
-            raise RuntimeError(
-                "CHAIN-CANDIDATE-DENY: checker_returncode must be an int "
-                f"(got {cv.get('checker_returncode')!r})")
-        if cv.get("checker_returncode") != 0:
-            raise RuntimeError(
-                "CHAIN-CANDIDATE-DENY: checker_returncode "
-                f"{cv.get('checker_returncode')!r} != 0 (the host T1 "
-                "checker must pass over CANDIDATE-OUTPUT.json)")
-        if cv.get("validation_verdict") != "ship":
-            raise RuntimeError(
-                "CHAIN-CANDIDATE-DENY: validation_verdict "
-                f"{cv.get('validation_verdict')!r} != 'ship' (the host T1 "
-                "checker must pass over CANDIDATE-OUTPUT.json)")
-        if cv.get("validated") is not True:
-            raise RuntimeError("CHAIN-CANDIDATE-DENY: an unvalidated "
-                               "candidate cannot be wired as validation")
-        c.append("candidate-validation", {
-            "candidate_sha256": cv["candidate_sha256"],
-            "executed_sha256": cv["executed_sha256"],
-            "adapter_sha256": cv["adapter_sha256"],
-            "candidate_output_sha256": cv["candidate_output_sha256"],
-            "checker_sha256": cv["checker_sha256"],
-            "truth_sha256": cv["truth_sha256"],
-            "checker_returncode": cv["checker_returncode"],
-            "validation_verdict": cv["validation_verdict"],
-            "validated": True})
+        if cv.get("validated") is True:
+            if set(cv) != set(CV_ELEVEN):
+                raise RuntimeError(
+                    "CHAIN-CANDIDATE-DENY: validated event must carry "
+                    f"exactly the eleven keys {sorted(CV_ELEVEN)}, got "
+                    f"{sorted(cv)}")
+            for f in ("candidate_sha256", "executed_sha256",
+                      "adapter_sha256", "candidate_output_sha256",
+                      "checker_sha256", "truth_sha256",
+                      "candidate_input_manifest_sha256",
+                      "candidate_input_tree_sha256"):
+                if not (isinstance(cv.get(f), str) and len(cv[f]) == 64):
+                    raise RuntimeError(f"CHAIN-CANDIDATE-DENY: {f} must be "
+                                       f"64-hex, got {cv.get(f)!r}")
+                try:
+                    int(cv[f], 16)
+                except ValueError:
+                    raise RuntimeError(f"CHAIN-CANDIDATE-DENY: {f} must be "
+                                       f"64-hex, got {cv[f]!r}") from None
+            if not isinstance(cv.get("checker_returncode"), int):
+                raise RuntimeError(
+                    "CHAIN-CANDIDATE-DENY: checker_returncode must be an "
+                    f"int (got {cv.get('checker_returncode')!r})")
+            if cv.get("checker_returncode") != 0:
+                raise RuntimeError(
+                    "CHAIN-CANDIDATE-DENY: checker_returncode "
+                    f"{cv.get('checker_returncode')!r} != 0 (the host T1 "
+                    "checker must pass over CANDIDATE-OUTPUT.json)")
+            if cv.get("validation_verdict") != "ship":
+                raise RuntimeError(
+                    "CHAIN-CANDIDATE-DENY: validation_verdict "
+                    f"{cv.get('validation_verdict')!r} != 'ship' (the host "
+                    "T1 checker must pass over CANDIDATE-OUTPUT.json)")
+            c.append("candidate-validation", {
+                k: cv[k] for k in CV_ELEVEN})
+        elif cv.get("validated") is False:
+            if set(cv) != set(CV_ELEVEN) | {"validation_failure"}:
+                raise RuntimeError(
+                    "CHAIN-CANDIDATE-DENY: failed-validation event must "
+                    "carry exactly the eleven keys plus "
+                    f"validation_failure, got {sorted(cv)}")
+            if not (isinstance(cv.get("validation_failure"), str)
+                    and cv["validation_failure"].strip()):
+                raise RuntimeError(
+                    "CHAIN-CANDIDATE-DENY: failed validation needs a named "
+                    f"validation_failure cause, got "
+                    f"{cv.get('validation_failure')!r}")
+            for f in ("candidate_sha256", "executed_sha256",
+                      "adapter_sha256", "candidate_output_sha256",
+                      "checker_sha256", "truth_sha256",
+                      "candidate_input_manifest_sha256",
+                      "candidate_input_tree_sha256"):
+                if cv.get(f) is not None and not (
+                        isinstance(cv[f], str) and len(cv[f]) == 64):
+                    raise RuntimeError(f"CHAIN-CANDIDATE-DENY: {f} must be "
+                                       f"64-hex-or-null, got {cv.get(f)!r}")
+                if isinstance(cv.get(f), str):
+                    try:
+                        int(cv[f], 16)
+                    except ValueError:
+                        raise RuntimeError(
+                            f"CHAIN-CANDIDATE-DENY: {f} must be 64-hex-or-"
+                            f"null, got {cv[f]!r}") from None
+            if cv.get("checker_returncode") is not None and not isinstance(
+                    cv.get("checker_returncode"), int):
+                raise RuntimeError(
+                    "CHAIN-CANDIDATE-DENY: checker_returncode must be an "
+                    "int-or-null "
+                    f"(got {cv.get('checker_returncode')!r})")
+            if cv.get("validation_verdict") is not None and cv.get(
+                    "validation_verdict") not in ("ship", "fail"):
+                raise RuntimeError(
+                    "CHAIN-CANDIDATE-DENY: validation_verdict must be "
+                    "ship/fail-or-null "
+                    f"(got {cv.get('validation_verdict')!r})")
+            c.append("candidate-validation", dict(cv))
+        else:
+            raise RuntimeError("CHAIN-CANDIDATE-DENY: validated must be "
+                               f"exactly True or False, got "
+                               f"{cv.get('validated')!r}")
     # evaluator link: sealed truth + checker hashes + host-side outcome.
     ev_link = c.append("evaluator", {
         "checker_sha256": checker_sha, "truth_sha256": truth_sha,
@@ -1597,6 +2004,26 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
         cell, order_findings = order_authorize_event(
             expansion, block, family, acq_event, acq_universe, done_cells)
     else:
+        # A12d D1-B5: a downstream cell of a NOT-PROMOTED universe is
+        # refused BEFORE any model call with the named acquisition denial
+        # (before the generic order authorization: the universe's failed
+        # acquisition is the operative reason, not scheduling order).
+        _pre_cell = order_expected_cell(expansion, block, family, task,
+                                        lane, arm)
+        if _pre_cell is not None and _pre_cell.get("universe") in ("A", "C"):
+            _failed, _cause = order_acquisition_failed(
+                BASE, block, family, _pre_cell["universe"])
+            if _failed:
+                raise RuntimeError(
+                    "ACQUISITION-FAILED-DENY: universe "
+                    f"{block}/{family}/{_pre_cell['universe']} T1 cell is "
+                    f"COMPLETE but its candidate validation failed "
+                    f"({_cause}); every downstream cell "
+                    f"of that universe (T2/T3/T4) is NOT-EVALUABLE — "
+                    f"refuse start of {task}/{_pre_cell['universe']} "
+                    f"before any model call (no retry: the failed "
+                    f"validation is an experimental outcome, not an "
+                    f"infrastructure-invalid run)")
         cell, order_findings = order_authorize(
             expansion, block, family, task, lane, arm, done_cells)
     if order_findings:
@@ -1710,24 +2137,21 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     verdict = execr["verdict"]
     output_sha = execr["output_sha256"]
 
-    # ---- A12c D2: candidate validation path (replace the former one) ----
-    # Required flow: T1 model -> candidate adapter description ->
-    # materialize T1 -> candidate input -> EXACT T0 candidate bytes ->
-    # candidate output -> HOST-SIDE T1 CHECKER -> SHIP. In this exact
-    # order, in-jail: (1) write adapter_py to <work>/adapter.py;
-    # adapter_sha256 = sha256 of exactly those bytes; (2) run
-    # python3 /work/adapter.py /task /work/cand_in (jail, non-zero rc is a
-    # validation failure); (3) write the frozen T0 candidate source to
-    # <work>/candidate.py and verify sha256 == frozen T0 candidate sha;
-    # (4) run python3 /work/candidate.py /work/cand_in
-    # /work/CANDIDATE-OUTPUT.json (jail); (5) HOST-SIDE: run the FROZEN T1
-    # evaluator — the same checker + truth the T1 cell verdict uses — over
-    # CANDIDATE-OUTPUT.json; (6) validated = five-way conjunction; (7)
-    # commit EXACTLY ONE candidate-validation chain event with all nine
-    # keys. On any failure: CANDIDATE-VALIDATION-FAIL BEFORE any chain is
-    # wired (no chain, no COMPLETE cell, no promotion) — the T1 cell's own
-    # SHIP verdict (computed above) is unaffected.
+    # ---- A12d D1: candidate validation path (two jails + evidence) ----
+    # Required flow: T1 model -> candidate adapter description -> run the
+    # adapter in the RAW-TASK jail -> stage the adapter's output as the
+    # candidate jail's /task -> materialize the candidate-input manifest ->
+    # EXACT T0 candidate bytes -> run the candidate in the SECOND
+    # (candidate-only) jail -> HOST-SIDE T1 CHECKER -> validated verdict.
+    # The helper RETURNS the validation result on experimental failure
+    # (validated=false + named validation_failure cause) and raises ONLY
+    # on harness/infrastructure failure. The runner still commits the T1
+    # cell COMPLETE with the failed validation as committed evidence
+    # (B2): the T1 SHIP verdict (computed above) is the cell's task
+    # verdict either way; the validation event decides promotion, not
+    # completion.
     candidate_validation = None
+    validation_failed = False
     if acq_event == "T1":
         candidate_validation = validate_t1_candidate(
             adapter_py=(arrival.get("execution_payload") or {}).get(
@@ -1738,6 +2162,13 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
             checker_sha256=execr["checker_sha256"],
             truth_sha256=execr["truth_sha256"],
             outdir=outdir)
+        if candidate_validation.get("validated") is not True:
+            validation_failed = True
+            print(f"CANDIDATE-VALIDATION-FAIL: "
+                  f"{candidate_validation.get('validation_failure')} "
+                  f"(T1 {family}/{task} task_verdict={verdict}; the failed "
+                  f"validation is committed experimental evidence, not an "
+                  f"infrastructure-invalid run)")
 
     # ---- H2/H3 wiring (skipped only under the unwired dev escape) ----
     # Reuse ledger: P0-2 — every lifecycle field is DERIVED from the actual
@@ -1873,7 +2304,19 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
                                ("capability_id", "capability_version",
                                 "lock_sha256", "engine_sha256")
                                if cap_info and k in cap_info} or None,
-                "capability_lock": None}
+                "capability_lock": None,
+                # A12d D1-A4: on the use_capability path the engine ran in
+                # an adapted-input-only jail — record its byte binding
+                # (task snapshot, mounts, adapted input sha) in the run
+                # manifest. None on the fresh/solver path (raw-task jail,
+                # bound by task_snapshot above).
+                "engine_jail": execr.get("engine_jail"),
+                # A12d D1-B2: on a T1 acquisition cell the manifest keeps
+                # the T1 fresh-solver verdict as `task_verdict`
+                # (ship/fix/blocked) even when candidate validation fails:
+                # the cell verdict is evidence for the fresh solve, and
+                # the validation event (wired below) decides promotion.
+                "task_verdict": (verdict if acq_event == "T1" else None)}
 
     # P0-3: the runner NEVER writes a promotion lock into an operator dir.
     # Promotion is the sole province of the A12.1 order-authorized promotion
@@ -1897,6 +2340,12 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None):
     print(f"{lane}/{family}/{task}/{arm}: {verdict} ({parse_mode}, "
           f"decision {execr['decision']}, container rc "
           f"{execr['container_returncode']})")
+    # A12d D1-B2: a committed failed candidate validation is experimental
+    # evidence, not an infrastructure failure — the T1 cell COMPLETED, so
+    # the run exits zero (promotion later records NOT-PROMOTED from the
+    # wired validated=false event; it never mints a lock).
+    if validation_failed:
+        return 0
     return 0 if verdict in ("ship", "fix") else 1
 
 

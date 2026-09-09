@@ -33,3 +33,21 @@ Lane key: A = P→P + K; B = P→P no K; C = P→Q + K; D = P→Q no K
 execution (Slice forced diagnostic is frozen evidence, not rerun here).
 Do not reorder after seeing results. Record actual order in run
 manifests; deviation voids the run.
+
+Forward amendment AMEND-2026-09-08-failed-acquisition (2026-09-08):
+froze the failed-acquisition continuation rule BEFORE live execution. A
+universe whose T1 cell is COMPLETE while its candidate-validation event
+records validated=false is NOT-PROMOTED : no CAPABILITY_LOCK may exist
+for it, every downstream cell of that universe (T2/T3/T4) is
+NOT-EVALUABLE with reason acquisition-failed, the universe contributes
+to the frozen INCONCLUSIVE / insufficient-reuse-exposure accounting, and
+there is no retry (the failed validation is an experimental outcome, not
+an infrastructure-invalid run). Promotion of such a universe completes
+as a recorded PROMOTION-OUTCOME.json terminal outcome, never a lock and
+never an exception; the runner refuses any downstream cell of that
+universe before any model call with ACQUISITION-FAILED-DENY. Jail
+isolation (the adapter in the raw-task jail, the candidate in a
+candidate-only jail, reuse engines in adapted-input-only jails) and the
+candidate-input lineage manifest are harness-enforced and change no
+ordering above: the per-family event sequence and the reciprocal block
+structure are unchanged by this amendment.

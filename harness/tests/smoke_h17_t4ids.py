@@ -413,8 +413,29 @@ def _cv_chain(payloads):
     return td
 
 
+def _cv_lineage(td):
+    """Deterministic candidate-input manifest in a hand-built chain dir
+    (A12d D1-C): persists CANDIDATE-INPUT-MANIFEST.json with production
+    canonicalization and returns the two lineage hashes for the event."""
+    entries = [{"path": "input.json", "kind": "file", "size": 3,
+                "sha256": hashlib.sha256(b"h17").hexdigest()}]
+    tree_sha, _canon = RA._manifest_tree_sha256(
+        RA.CANDIDATE_INPUT_MANIFEST_SCHEMA, entries)
+    manifest = {"schema": RA.CANDIDATE_INPUT_MANIFEST_SCHEMA,
+                "entries": entries, "tree_sha256": tree_sha}
+    raw = (json.dumps(manifest, sort_keys=True, indent=1) + "\n").encode()
+    with open(os.path.join(td, "CANDIDATE-INPUT-MANIFEST.json"),
+              "wb") as f:
+        f.write(raw)
+    return (hashlib.sha256(raw).hexdigest(), tree_sha)
+
+
 # A12c: the validation event carries all nine host-checker keys (D2/D3).
 # Pre-A12c four-key payloads are now fail-closed (missing keys deny).
+# A12d D1-C: the event carries the two input-lineage hashes, re-derived
+# from the persisted CANDIDATE-INPUT-MANIFEST.json in the same dir
+# (_cv_chain writes a deterministic manifest and threads its hashes, so
+# the precise gate proof below exercises the real lineage reader).
 _CV_OK = {"candidate_sha256": "aa" * 32, "executed_sha256": "aa" * 32,
           "adapter_sha256": "cc" * 32,
           "candidate_output_sha256": "dd" * 32,
@@ -435,17 +456,30 @@ try:
 except PermissionError as e:
     _t = "PROMOTION-DENY" in str(e) and "exactly one" in str(e)
 check("two candidate-validation events deny", _t)
-_td3 = _cv_chain([dict(_CV_OK, executed_sha256="bb" * 32)])
+_td3 = _cv_chain([])
+_m3, _t3 = _cv_lineage(_td3)
+CHAIN_MOD.Chain(os.path.join(_td3, "EVIDENCE-CHAIN.jsonl"), FREEZE,
+                {"fixture": "h17-cv"}).append(
+                    "candidate-validation",
+                    dict(_CV_OK, executed_sha256="bb" * 32,
+                         candidate_input_manifest_sha256=_m3,
+                         candidate_input_tree_sha256=_t3))
 try:
     promotion._t1_candidate_validation(_td3, "aa" * 32)
     _x = False
 except PermissionError as e:
     _x = "PROMOTION-DENY" in str(e) and "executed" in str(e)
 check("executed != candidate denies with the execution binding", _x)
-_td4 = _cv_chain([dict(_CV_OK)])
+_td4 = _cv_chain([])
+_m4, _t4 = _cv_lineage(_td4)
+_CV_OK11 = dict(_CV_OK, candidate_input_manifest_sha256=_m4,
+                candidate_input_tree_sha256=_t4)
+CHAIN_MOD.Chain(os.path.join(_td4, "EVIDENCE-CHAIN.jsonl"), FREEZE,
+                {"fixture": "h17-cv"}).append("candidate-validation",
+                                              dict(_CV_OK11))
 try:
     _got = promotion._t1_candidate_validation(_td4, "aa" * 32)
-    _v = _got == dict(_CV_OK)
+    _v = _got == dict(_CV_OK11)
 except PermissionError:
     _v = False
 check("matching validation evidence derives cleanly", _v)

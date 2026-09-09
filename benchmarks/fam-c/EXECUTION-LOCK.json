@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "c5d40fe43a4fda60b47ab9efb603c70c30d08403b463ec89794ae5c3a586e7ba",
+ "harness_manifest_sha256": "7a448cecb0ceab911adc6a72092fb9a3a56470f67c56b190d11d6da3547390e2",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -13,12 +13,12 @@
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
   "harness/admissibility.py": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "dbb0108cc241978bca8a2ab034758ff0c9559f961a82c2627bb5190efb51b2df",
-  "harness/order.py": "d2231f52b495c01921a805f9c72169b8f6c6d24b525dcd3f6804d9f6716032af",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "59d69c294e03b81807c0e2d05e5a273449e30ba8f7b0dc2c0e67b373b7bc6dbc",
+  "harness/order.py": "750dd29bcdcc55fff16fa6682cb2924612b11f753971f224d9611689295d6588",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
   "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
-  "harness/promotion.py": "509c10f981ad3edcd108451e626def671bc80ebd282e0531b8d50e2be00ad767",
+  "harness/promotion.py": "5f5b7a1c40656e6ef4a0678e469ebd5c650c3d4d80de1e7b4bf3dc571ed1b009",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
   "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
@@ -445,6 +445,61 @@
    },
    "reason": "A12c slice C2 follow-up: runner wire-selfcheck fixture carries the frozen bridge fields (supported_t4_ids/conformance_map_sha256, set-consistent) so --selfcheck still mints its fixture lock",
    "slice": "a12c-slice-c2",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "c5d40fe43a4fda60b47ab9efb603c70c30d08403b463ec89794ae5c3a586e7ba",
+   "to_manifest": "e1415642e14f4a2f8d5c0a3ccdaab4dff30ed1f36f6797c101f598a527ae1620",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "dbb0108cc241978bca8a2ab034758ff0c9559f961a82c2627bb5190efb51b2df",
+     "to_sha": "30c6299e87cb3c1ae4a91386e6d0a9dc25d4e7d253c4db8c20251a223b39c808"
+    },
+    "harness/order.py": {
+     "from_sha": "d2231f52b495c01921a805f9c72169b8f6c6d24b525dcd3f6804d9f6716032af",
+     "to_sha": "0e0af9a2deda788f6371653185e4be2c46b5468911c2fd8953a6556c3db66070"
+    },
+    "harness/promotion.py": {
+     "from_sha": "509c10f981ad3edcd108451e626def671bc80ebd282e0531b8d50e2be00ad767",
+     "to_sha": "64b77aa7966ce1b94d45d689009330c2ce69d1c48be3c1dd1641dbf36d07462a"
+    }
+   },
+   "reason": "A12d slice D1 (auditor A12d.1/A12d.2/A12d.7): two-jail T1 candidate validation (adapter raw-task jail + candidate-only jail) returning failed validation as committed evidence; adapted-input-only downstream engine jail with manifest engine_jail record; candidate-input lineage manifest (CANDIDATE-INPUT-MANIFEST.json) with chain + promotion/order re-derivation; NOT-PROMOTED terminal outcome + downstream NOT-EVALUABLE + ACQUISITION-FAILED-DENY; task_verdict on T1 manifests",
+   "slice": "a12d-slice-d1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "e1415642e14f4a2f8d5c0a3ccdaab4dff30ed1f36f6797c101f598a527ae1620",
+   "to_manifest": "7a005724e6d51c7d39cf24b3271082278643d55313e471f6a0cbc687482ad1b2",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "30c6299e87cb3c1ae4a91386e6d0a9dc25d4e7d253c4db8c20251a223b39c808",
+     "to_sha": "18032f867ab3b9e197675100c295cae59d1e378c57f943d87c149c5f0db6a6b0"
+    },
+    "harness/order.py": {
+     "from_sha": "0e0af9a2deda788f6371653185e4be2c46b5468911c2fd8953a6556c3db66070",
+     "to_sha": "750dd29bcdcc55fff16fa6682cb2924612b11f753971f224d9611689295d6588"
+    },
+    "harness/promotion.py": {
+     "from_sha": "64b77aa7966ce1b94d45d689009330c2ce69d1c48be3c1dd1641dbf36d07462a",
+     "to_sha": "5f5b7a1c40656e6ef4a0678e469ebd5c650c3d4d80de1e7b4bf3dc571ed1b009"
+    }
+   },
+   "reason": "A12d slice D1 record-then-refuse: acquisition_failed() predicate derived from committed chains (NOT-PROMOTED/NOT-EVALUABLE without requiring a prior controller call); promote_universe records PROMOTION-OUTCOME.json then refuses PROMOTION-DENY; runner/authorize use the predicate",
+   "slice": "a12d-slice-d1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "7a005724e6d51c7d39cf24b3271082278643d55313e471f6a0cbc687482ad1b2",
+   "to_manifest": "7a448cecb0ceab911adc6a72092fb9a3a56470f67c56b190d11d6da3547390e2",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "18032f867ab3b9e197675100c295cae59d1e378c57f943d87c149c5f0db6a6b0",
+     "to_sha": "59d69c294e03b81807c0e2d05e5a273449e30ba8f7b0dc2c0e67b373b7bc6dbc"
+    }
+   },
+   "reason": "A12d slice D1 hardening: candidate jail workdir decoupled to its own WORK_ROOT dir (mount policy still enforced at both jail constructions; scratch dir never policy-bound)",
+   "slice": "a12d-slice-d1",
    "status_after": "open-round2"
   }
  ],

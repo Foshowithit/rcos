@@ -38,10 +38,23 @@ def check(name, ok, extra=""):
 # Synthetic capability engine (real locked engines are capability-registry
 # files; here a frozen fixture file stands in, exactly as the harness would
 # copy one). argv: engine.py <field_map.json> <records.json> <OUTPUT.json>.
+# A12d D1-A3: the engine jail's /task carries ONLY the adapted payload, so
+# the engine renders its inputs from argv ALONE — it never reads the raw
+# task tree (no MANIFEST rides /task anymore).
 ENGINE_SRC = '''\
 import hashlib, json, os, sys
 fm_path, rec_path, out_path = sys.argv[1], sys.argv[2], sys.argv[3]
-d = "/task"
+fmap = json.load(open(fm_path))
+records = json.load(open(rec_path))
+indir = os.path.join(os.path.dirname(os.path.abspath(out_path)), "_h11_in")
+os.makedirs(indir, exist_ok=True)
+for rel, spec in sorted((fmap.get("files") or {}).items()):
+    p = os.path.join(indir, rel)
+    os.makedirs(os.path.dirname(p) or indir, exist_ok=True)
+    text = spec.get("literal", "") if isinstance(spec, dict) else spec
+    with open(p, "w") as f:
+        f.write(text if isinstance(text, str) else "")
+d = indir
 want = {}
 for line in open(os.path.join(d, "MANIFEST")).read().splitlines():
     p, size, sha = line.split(":")
@@ -102,8 +115,21 @@ def run_arrival(arm, arrival, tag):
     return RA.execute_arrival(arm, arrival, work, outdir, TASK, eng_path, sb)
 
 
+def _t0_field_map():
+    """The adapted capability input for the synthetic USE arrival: the
+    frozen fam05/T0 file bytes carried as argv literals (A12d D1-A3 —
+    the engine jail never sees the raw task tree, so the arrival must
+    carry the bytes the engine needs). Read-only live-tree reads."""
+    files = {}
+    for name in ("MANIFEST", "alpha.txt", "beta.txt"):
+        with open(os.path.join(TASK, name)) as f:
+            files[name] = {"literal": f.read()}
+    return {"files": files}
+
+
 USE_ARRIVAL = {"decision": "use_capability",
-               "execution_payload": {"field_map": {}, "records": {}},
+               "execution_payload": {"field_map": _t0_field_map(),
+                                     "records": {}},
                "notes": "use the locked capability"}
 FRESH_ARRIVAL = {"decision": "fresh",
                  "execution_payload": {"solver_py": SOLVER_SRC},

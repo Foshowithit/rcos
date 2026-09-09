@@ -474,17 +474,25 @@ def _producer_identity(t0_ev, t1_ev):
 
 def _t1_candidate_validation(t1_run_dir, t0_sha):
     """Re-derive the T1 candidate-validation evidence from the committed
-    T1 chain (fail closed). A12c D3: promotion requires exactly one
-    candidate-validation event with all nine fields present/non-null,
-    `validated is True`, `validation_verdict == "ship"`,
+    T1 chain (fail closed). A12c D3 + A12d D1-C3: promotion requires
+    exactly one candidate-validation event with all eleven fields
+    present/non-null, `validated is True`, `validation_verdict == "ship"`,
     `candidate_sha256 == executed_sha256 == T0 arrival candidate sha`,
     and a 64-hex `adapter_sha256` (plus 64-hex candidate-output / checker
     / truth shas and checker_returncode == 0 — the host-side T1 checker
-    over CANDIDATE-OUTPUT.json). Any deviation -> PROMOTION-DENY naming
-    the exact missing/mismatched field. The chain must carry EXACTLY ONE
-    such event binding the SAME frozen T0 candidate: a T1 with no such
-    event — a standalone fresh solve that never saw the candidate — can
-    NEVER promote."""
+    over CANDIDATE-OUTPUT.json), plus the two input-lineage hashes
+    re-derived from the COMMITTED artifacts: the persisted
+    CANDIDATE-INPUT-MANIFEST.json file bytes must hash to
+    `candidate_input_manifest_sha256` and the manifest's recomputed tree
+    hash must equal `candidate_input_tree_sha256` (never trusted from the
+    receipt), and the event's `candidate_sha256` must equal the frozen T0
+    candidate. Any deviation -> PROMOTION-DENY naming the exact
+    missing/mismatched field. The chain must carry EXACTLY ONE such event
+    binding the SAME frozen T0 candidate: a T1 with no such event — a
+    standalone fresh solve that never saw the candidate — can NEVER
+    promote; a T1 whose single event records validated=false promotes as
+    a RECORDED NOT-PROMOTED outcome (see promote_universe), never a lock.
+    """
     links = _read_chain_links(t1_run_dir)
     evs = [l for l in links if l.get("kind") == "candidate-validation"]
     if len(evs) != 1:
@@ -496,14 +504,18 @@ def _t1_candidate_validation(t1_run_dir, t0_sha):
     pay = evs[-1].get("payload") or {}
     for f in ("candidate_sha256", "executed_sha256", "adapter_sha256",
               "candidate_output_sha256", "checker_sha256", "truth_sha256",
-              "checker_returncode", "validation_verdict", "validated"):
+              "checker_returncode", "validation_verdict", "validated",
+              "candidate_input_manifest_sha256",
+              "candidate_input_tree_sha256"):
         if pay.get(f) is None:
             raise PermissionError(
                 f"PROMOTION-DENY T1 candidate-validation event carries "
-                f"no {f} (got {pay.get(f)!r}; all nine keys must be "
+                f"no {f} (got {pay.get(f)!r}; all eleven keys must be "
                 f"present and non-null)")
     for f in ("candidate_sha256", "executed_sha256", "adapter_sha256",
-              "candidate_output_sha256", "checker_sha256", "truth_sha256"):
+              "candidate_output_sha256", "checker_sha256", "truth_sha256",
+              "candidate_input_manifest_sha256",
+              "candidate_input_tree_sha256"):
         v = pay.get(f)
         if not (isinstance(v, str) and len(v) == 64):
             raise PermissionError(
@@ -541,6 +553,11 @@ def _t1_candidate_validation(t1_run_dir, t0_sha):
         raise PermissionError(
             f"PROMOTION-DENY T1 candidate-validation event is not "
             f"validated (validated={pay.get('validated')!r})")
+    # A12d D1-C3: the input lineage is re-derived from the COMMITTED
+    # artifacts (the persisted manifest file + this event), never from the
+    # receipt. Any mismatch denies naming the field.
+    for _lr in order.candidate_input_lineage_reasons(t1_run_dir, pay):
+        raise PermissionError(f"PROMOTION-DENY T1 {_lr}")
     return {"candidate_sha256": pay["candidate_sha256"],
             "executed_sha256": pay["executed_sha256"],
             "adapter_sha256": pay["adapter_sha256"],
@@ -549,7 +566,11 @@ def _t1_candidate_validation(t1_run_dir, t0_sha):
             "truth_sha256": pay["truth_sha256"],
             "checker_returncode": pay["checker_returncode"],
             "validation_verdict": pay["validation_verdict"],
-            "validated": True}
+            "validated": True,
+            "candidate_input_manifest_sha256": pay[
+                "candidate_input_manifest_sha256"],
+            "candidate_input_tree_sha256": pay[
+                "candidate_input_tree_sha256"]}
 
 
 def derive_candidate(t0_ev, t1_ev, t0_run_dir):
@@ -746,6 +767,51 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
             "PROMOTION-DENY estimand promotion derives producer identity "
             "exclusively from the validated T0/T1 identity records (no "
             "operator-supplied builder_identity)")
+    # A12d D1-B3: a T1 whose candidate validation FAILED still completed
+    # its cell — the failed acquisition is a RECORDED terminal outcome,
+    # not a deadlock: the controller records PROMOTION-OUTCOME.json and
+    # then REFUSES with a clean PROMOTION-DENY (never a lock). Anything
+    # else (no event, several events, an unreadable chain, an event that
+    # does not bind the frozen candidate) falls through to the normal
+    # path, which denies as before.
+    _failed, _cause = order.acquisition_failed(fam_c_dir, block, family,
+                                               universe)
+    if _failed:
+        _t1_dir = order.run_dir(fam_c_dir, t1)
+        _t0_dir = order.run_dir(fam_c_dir, t0)
+        try:
+            _t0_arr = _read_json(os.path.join(_t0_dir, "arrival.json"))
+            _t0_src = (_t0_arr.get("execution_payload") or {}).get(
+                "solver_py")
+            _frozen = (_sha_bytes(_t0_src.encode())
+                       if isinstance(_t0_src, str) and _t0_src.strip()
+                       else None)
+        except (ValueError, OSError):
+            _frozen = None
+        if _frozen is None:
+            raise PermissionError(
+                "PROMOTION-DENY T0 arrival carries no frozen candidate "
+                "(failed-acquisition outcome not recordable)")
+        _cap = order.capability_dir(fam_c_dir, block, universe, family)
+        if os.path.exists(os.path.join(_cap, "CAPABILITY_LOCK.json")):
+            raise PermissionError(
+                "PROMOTION-DENY universe "
+                f"{block}/{family}/{universe} has a CAPABILITY_LOCK but "
+                f"its T1 candidate validation failed ({_cause}; no lock "
+                f"may exist for a failed acquisition)")
+        _t0_tip = order._chain_tip(os.path.join(_t0_dir,
+                                                "EVIDENCE-CHAIN.jsonl"))
+        _t1_tip = order._chain_tip(os.path.join(_t1_dir,
+                                                "EVIDENCE-CHAIN.jsonl"))
+        _op = order.emit_promotion_outcome(fam_c_dir, cell, _t0_tip,
+                                           _t1_tip, _frozen)
+        raise PermissionError(
+            f"PROMOTION-DENY universe {block}/{family}/{universe} T1 "
+            f"candidate validation failed ({_cause}): promotion is "
+            f"NOT-PROMOTED (terminal outcome recorded at {_op}), no "
+            f"CAPABILITY_LOCK may exist for it, and every downstream "
+            f"cell of that universe is NOT-EVALUABLE (no retry: the "
+            f"failed validation is an experimental outcome)")
     t0_ev = run_evidence(fam_c_dir, t0, freeze_commit)
     t1_ev = run_evidence(fam_c_dir, t1, freeze_commit)
     producer_identity = _producer_identity(t0_ev, t1_ev)

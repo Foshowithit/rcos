@@ -165,6 +165,14 @@
    "reason": "A12c slice C2 genesis: frozen governed six-family limitation->T4-ID conformance map (PREREG AMEND-2026-09-08-t4-conformance, rule normalize-token-all-present-v1; t4 ids resolved from the same harness/t4_ids.py registry)",
    "base": "6a620d7",
    "slice": "a12c-slice-c2"
+  },
+  {
+   "file": "ORDER.md",
+   "from_sha": "ad33bb75eb365baa6044f14bc49ed94d1b4fb697236a3af87deab72a0ac66fe0",
+   "to_sha": "4510076a0550788806cb86683279613cd961a6a0bb336c933fad7fae8833f469",
+   "reason": "A12d slice D1 (auditor A12d.1/A12d.2/A12d.7): forward amendment AMEND-2026-09-08-failed-acquisition freezing the failed-acquisition continuation rule before live execution (T1 COMPLETE with validated=false is NOT-PROMOTED, no lock, downstream NOT-EVALUABLE, no retry); jail isolation and candidate-input lineage are harness-enforced and change no ordering",
+   "base": "790320f",
+   "slice": "a12d-slice-d1"
   }
  ]
 }
