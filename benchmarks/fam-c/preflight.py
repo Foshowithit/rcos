@@ -248,10 +248,10 @@ def validate_lock_history(fam_c_dir):
     Order sensitivity (auditor D10 verdict): validation follows
     from/to LINKS, so a pure reorder changes no chain verdict —
     but it rewrites history, and history is append-only. The
-    prefix rule therefore fails a pure reorder naming the first
-    displaced position, while the multiset-subset and
-    governed-root belts keep delete/rewrite failing with their own
-    named findings.
+    prefix rule therefore fails a pure reorder (position for
+    position, never reordered/mutated/deleted), while the
+    multiset-subset and governed-root belts keep delete/rewrite
+    failing with their own named findings, first.
     """
     try:
         root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
@@ -323,37 +323,25 @@ def validate_lock_history(fam_c_dir):
     elif isinstance(gen_gov, dict):
         moved = len(gen_gov)
     if missing or moved:
-        out = ["V2 PROTOCOL-LOCK: lock history violates append-only "
-               "genesis " + _GENESIS_COMMIT[:12] + f" ({missing} old "
-               f"amendment entr{'y' if missing == 1 else 'ies'} "
-               f"removed or rewritten, {moved} governed roots moved; "
-               f"old entries are immutable — append new entries, never "
-               f"rewrite history)"]
-    else:
-        out = []
-
-    def _canon_any(a):
-        return _canon(a) if isinstance(a, dict) else "\x00" + type(a).__name__
-
-    _g = [_canon_any(a) for a in (gen_am if isinstance(gen_am, list)
-                                  else [])]
-    _c = [_canon_any(a) for a in (cur_am if isinstance(cur_am, list)
-                                  else [])]
-    _bad_pos = None
-    if len(_c) < len(_g):
-        _bad_pos = len(_c)
-    else:
-        for _i, _gval in enumerate(_g):
-            if _c[_i] != _gval:
-                _bad_pos = _i
-                break
-    if _bad_pos is not None:
-        out.append("V2 PROTOCOL-LOCK: lock history violates append-only "
-                   "genesis " + _GENESIS_COMMIT[:12] +
-                   f" (old entries reordered: genesis entry {_bad_pos} "
-                   f"is no longer at position {_bad_pos}; history is "
-                   f"append-only — old amendments are an exact prefix)")
-    return out
+        return ["V2 PROTOCOL-LOCK: lock history violates append-only "
+                "genesis " + _GENESIS_COMMIT[:12] + f" ({missing} old "
+                f"amendment entr{'y' if missing == 1 else 'ies'} "
+                f"removed or rewritten, {moved} governed roots moved; "
+                f"old entries are immutable — append new entries, never "
+                f"rewrite history)"]
+    gen_list = [json.dumps(a, sort_keys=True)
+                for a in (gen_am if isinstance(gen_am, list) else [])
+                if isinstance(a, dict)]
+    cur_list = [json.dumps(a, sort_keys=True)
+                for a in (cur_am if isinstance(cur_am, list) else [])
+                if isinstance(a, dict)]
+    if cur_list[:len(gen_list)] != gen_list:
+        return ["V2 PROTOCOL-LOCK: lock history violates append-only "
+                "genesis " + _GENESIS_COMMIT[:12] + " (old amendment "
+                "entries reordered: the genesis prefix no longer matches "
+                "position for position; history is append-only, never "
+                "reordered, mutated or deleted)"]
+    return []
 
 
 def validate_lock_global(lock):

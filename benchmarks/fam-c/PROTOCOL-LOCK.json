@@ -349,6 +349,14 @@
    "reason": "A12l slice D11 round-7 (general-seat exact-prefix order): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 order-sensitive exact prefix in validate_lock_history (pure reorder fails naming the displaced position; multiset/governed belts kept), hermetic untracked-path scope mirroring the byte authority",
    "base": "a05362f",
    "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "d712eacda17d9f96b67c4f140ef603bbf6324dade9b2a71e7fa0bb2129e91e17",
+   "to_sha": "d47f59696cf246783a11cade41fce5797f481bfbe516b8ff631cacedb5e371eb",
+   "reason": "A12l slice D11 round-8 (general-seat ordered form): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 exact-prefix check in the ordered return-early form (multiset/governed belts fire first; pure reorder returns the position-for-position finding)",
+   "base": "56ac7c0",
+   "slice": "a12l-slice-d11"
   }
  ]
 }

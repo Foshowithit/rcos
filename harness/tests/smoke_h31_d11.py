@@ -226,11 +226,11 @@ check("D11.1-GOV the append-only-forward lock policy is documented "
       "append-only" in open(os.path.join(FAMC, "PREREG.md")).read()
       and "committed with the" in
       open(os.path.join(FAMC, "PREREG.md")).read())
-check("D11.1-GOV no amendment entry deleted (35 at D10 + 7 D11 "
-      "forward = 42) and D11 recorded as its own forward amendments",
-      len(_LIVE_LOCK["amendments"]) == 42
+check("D11.1-GOV no amendment entry deleted (35 at D10 + 8 D11 "
+      "forward = 43) and D11 recorded as its own forward amendments",
+      len(_LIVE_LOCK["amendments"]) == 43
       and sum(1 for a in _LIVE_LOCK["amendments"]
-              if a.get("slice") == "a12l-slice-d11") == 7,
+              if a.get("slice") == "a12l-slice-d11") == 8,
       str(len(_LIVE_LOCK["amendments"])))
 
 # --- D11.1-HISTORY: append-only genesis (delete/edit old entries) ----
@@ -414,9 +414,9 @@ check("D11.2-LIVE first-parent sequences equal the old walk for all "
       "seven governed files (non-regression)",
       not _BAD, f"diverged={_BAD}")
 check("D11.2-LIVE live sequence lengths match the certified D11 "
-      "facts (PREREG 22, preflight 21, rest 5/5/12/1/7)",
+      "facts (PREREG 22, preflight 22, rest 5/5/12/1/7)",
       _LENS == {"PREREG.md": 22, "ORDER.md": 5, "LANES.md": 5,
-                "HARNESS-READINESS.md": 12, "preflight.py": 21,
+                "HARNESS-READINESS.md": 12, "preflight.py": 22,
                 "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str(_LENS))
 
