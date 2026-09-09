@@ -6,7 +6,7 @@ path; remove legacy --promote", plus A12.2 grade-aware consumption.
 
 The suite drives the REAL production authorities (`order._local_state` over a
 real manifest + real evidence chain + real reuse_log records + a real
-capability-lock-v2 registry) through every legal and illegal decision shape:
+capability-lock-v3 registry) through every legal and illegal decision shape:
 
   USE            arrival use_capability + record all-true + locked hash match
   REJECT         fresh WITH a capability available + reuse_rejected + reason

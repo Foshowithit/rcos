@@ -5,7 +5,7 @@ requires->T4-id conformance bridge (auditor P0 #6, A12d.3).
 `non_discriminating = not bool(limitations)` is now wrong in general: an
 unrelated producer text must leave the T4 non-discriminating, and
 limitations NEVER drive conformance at all. The frozen bridge (governed
-T4-CONFORMANCE.json under normalize-affirmative-requires-v2, single
+T4-CONFORMANCE.json under atomic-requirement-grammar-v3, single
 implementation harness/conformance.py, wired through
 promotion/lock/order/preflight) maps ONLY affirmative
 preconditions[*].requires claims: a negated requires text is
@@ -135,10 +135,10 @@ def prom_cell(root, family="fam05", universe="A"):
 
 # --- K1-K5: verdict proofs on the live governed map ---------------------
 cmap = CONF.load(FAMC)
-check("live governed map loads (version t4-conformance-v2, rule "
-      "normalize-affirmative-requires-v2)",
-      cmap["version"] == "t4-conformance-v2"
-      and cmap["rule"] == "normalize-affirmative-requires-v2"
+check("live governed map loads (version t4-conformance-v3, rule "
+      "atomic-requirement-grammar-v3)",
+      cmap["version"] == "t4-conformance-v3"
+      and cmap["rule"] == "atomic-requirement-grammar-v3"
       and cmap["conformance_map_sha256"] == LIVE_MAP_SHA)
 
 v = CONF.verdict("fam05", [], cmap)

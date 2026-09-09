@@ -3,12 +3,12 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "78aeedfb3fb325a61f735783dec5355695020608af0ad2526e5bb0ef3b96d154",
+ "harness_manifest_sha256": "b1bd47b6cd4652412d1cc99445e2c24b6347e0158bc8878d88944c86efa79d56",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
   "harness/chain.py": "cd5ba7b92c889e239d2513276a53483fd6007d3f147809cab583d039850a3df5",
-  "harness/lock.py": "35f223238382a84331e255695118a2f5987bff32d3aa302126189e848aea9c07",
+  "harness/lock.py": "dc600e7a510fbd0bb396af74d669294e017ff28b5d68ce549bb17ae584af0608",
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
@@ -22,8 +22,8 @@
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
   "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
-  "harness/specificity.py": "740074c5e8c8f79d4ef573135ef7e7a6e476cd3eb0bd483c1824d6646f253c9f",
-  "harness/conformance.py": "d9552ab32e6321b5ffa1625e10971c99645c58eb2e05efbe1496fbbc5ea6bf71"
+  "harness/specificity.py": "4390b76f1dd1013a4e7c7050c0de97113abfd4185195f0391caf42efcda8a1ea",
+  "harness/conformance.py": "10ada2c99ed7f17514b6d22152d28f93cd3178db05ccf2740435bd119e252480"
  },
  "amendments": [
   {
@@ -585,6 +585,27 @@
    },
    "reason": "A12d slice D3 (auditor A12d.5/A12d.6): consumer-minimal capability bytes (manifest key set minus block/universe, opaque cap-alias capability_id, namespace-free family label) + order-derived T4-conformance-readiness reporter (order.expand 24 lock cells, cell_state sole admissibility, live v2 map binding, stray as only disk walk, path-naming inadmissible entries); H20/H21/H18 migrated to the new contract at grown counts, new H25 acceptance suite",
    "slice": "a12d-slice-d3",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "78aeedfb3fb325a61f735783dec5355695020608af0ad2526e5bb0ef3b96d154",
+   "to_manifest": "b1bd47b6cd4652412d1cc99445e2c24b6347e0158bc8878d88944c86efa79d56",
+   "files": {
+    "harness/lock.py": {
+     "from_sha": "35f223238382a84331e255695118a2f5987bff32d3aa302126189e848aea9c07",
+     "to_sha": "dc600e7a510fbd0bb396af74d669294e017ff28b5d68ce549bb17ae584af0608"
+    },
+    "harness/specificity.py": {
+     "from_sha": "740074c5e8c8f79d4ef573135ef7e7a6e476cd3eb0bd483c1824d6646f253c9f",
+     "to_sha": "4390b76f1dd1013a4e7c7050c0de97113abfd4185195f0391caf42efcda8a1ea"
+    },
+    "harness/conformance.py": {
+     "from_sha": "d9552ab32e6321b5ffa1625e10971c99645c58eb2e05efbe1496fbbc5ea6bf71",
+     "to_sha": "10ada2c99ed7f17514b6d22152d28f93cd3178db05ccf2740435bd119e252480"
+    }
+   },
+   "reason": "A12d slice D4 (auditor D3-post P0/P1): atomic-requirement grammar v3 (t4-conformance-v3, disjunction_markers [either,or] + structural_separators [/,comma], disjunctive requires INADMISSIBLE) + capability-lock-v3 schema bump + stray-symlink closure in _stray_capability_dirs; new H26 acceptance suite, H22/H3/H16/H24 synced",
+   "slice": "a12d-slice-d4",
    "status_after": "open-round2"
   }
  ],

@@ -517,6 +517,33 @@ map bytes are superseded, not edited in place; the v1-to-v2 transition
 is chained in PROTOCOL-LOCK.json. The six T4 semantic IDs frozen above
 are unchanged by this amendment (no ID added, removed, or renamed).
 
+Forward amendment AMEND-2026-09-09-d4-atomic-grammar (2026-09-09): the
+affirmative-requires bridge frozen above is superseded by the ATOMIC
+requires bridge BEFORE any run it governs. The governed map
+benchmarks/fam-c/T4-CONFORMANCE.json is version t4-conformance-v3
+under the frozen rule atomic-requirement-grammar-v3, with two new
+frozen top-level keys: `disjunction_markers` (`["either", "or"]`) and
+`structural_separators` (`["/", ","]`). A requires text is
+INADMISSIBLE iff it contains any disjunction marker as a whole word
+(TOKEN-level: split on whitespace, strip punctuation, compare — so
+`ordinary` and `for` never trip `or`) or any structural separator as
+a raw character (any literal `,` or `/` anywhere). An INADMISSIBLE
+requires text contributes NO conformance evidence: it never supports
+any T4 id and never acts as negation; the supported set is computed
+from admissible texts only, and with no admissible text the family is
+non-discriminating with a cause naming the grammar refusal
+(`atomic-grammar-inadmissible: ...`). Negation-marker processing,
+normalization of admissible texts, and `T4-SEMANTIC-IDS.json`
+support-set computation are unchanged (`T4-SEMANTIC-IDS.json` is not
+re-minted or edited). The v2 map bytes are superseded, not edited in
+place; the v2-to-v3 transition is chained in PROTOCOL-LOCK.json. The
+six T4 semantic IDs frozen above are unchanged by this amendment (no
+ID added, removed, or renamed). The capability lock schema bumps to
+capability-lock-v3 (the v2 identifier predates `preconditions`
+becoming `list[{"requires": ...}]` and no longer uniquely describes
+the shape); `verify_lock` refuses any other schema version. No
+estimand locks exist yet, so the bump is cheap.
+
 ---
 # 11. Manifest lifecycle
 

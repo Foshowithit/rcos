@@ -1,6 +1,6 @@
 {
- "version": "t4-conformance-v2",
- "rule": "normalize-affirmative-requires-v2",
+ "version": "t4-conformance-v3",
+ "rule": "atomic-requirement-grammar-v3",
  "negation_markers": [
   "absent",
   "arent",
@@ -51,6 +51,14 @@
   "void",
   "without",
   "wont"
+ ],
+ "disjunction_markers": [
+  "either",
+  "or"
+ ],
+ "structural_separators": [
+  "/",
+  ","
  ],
  "families": {
   "fam01": {

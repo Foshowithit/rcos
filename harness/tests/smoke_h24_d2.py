@@ -3,9 +3,9 @@
 limitation->T4 bridge is polarity-blind) + A12d.4 (`preconditions: []`
 must be legal consistently).
 
-Producer contract schema v2 + conformance bridge v2 (rule
-normalize-affirmative-requires-v2 over the governed
-T4-CONFORMANCE.json v2 map), driven through the REAL production path
+Producer contract schema v2 + conformance bridge v3 (rule
+atomic-requirement-grammar-v3 over the governed
+T4-CONFORMANCE.json v3 map), driven through the REAL production path
 (fixture T0/T1 builds -> promotion controller -> order provenance
 re-derivation -> CAPABILITY_LOCK), never a claim:
 

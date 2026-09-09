@@ -66,7 +66,7 @@ check("promotion writes lock", lp.endswith("CAPABILITY_LOCK.json"))
 _lk = json.load(open(lp))
 check("minted lock passes the estimand contract",
       verify_lock(_lk) == [] and
-      _lk["schema_version"] == "capability-lock-v2", str(verify_lock(_lk)[:1]))
+      _lk["schema_version"] == "capability-lock-v3", str(verify_lock(_lk)[:1]))
 check("verify_lock pins the bound universe/candidate",
       verify_lock(_lk, expect={"universe": "A",
                                "candidate_sha256": "4" * 64}) == [] and

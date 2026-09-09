@@ -189,6 +189,22 @@
    "reason": "auditor A12d.3 polarity: conformance now maps only affirmative requires claims",
    "base": "7639a45",
    "slice": "a12d-slice-d2"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": "42a07c594ea65eed6b95348d5d9f9425a87eff02d87e2cdf6f2e255abd2b8afc",
+   "to_sha": "9b2486daca23cc4c4d437ddc499bd46b3ebccbfa0c379abffd8cb00a22a32ef0",
+   "reason": "A12d slice D4 (auditor D3-post P0): forward amendment AMEND-2026-09-09-d4-atomic-grammar \u2014 governed map to t4-conformance-v3 under atomic-requirement-grammar-v3 (new frozen disjunction_markers [either,or] + structural_separators [/,comma]; disjunctive texts INADMISSIBLE, fail conservative) with the capability-lock-v3 schema bump",
+   "base": "d1d3fa2",
+   "slice": "a12d-slice-d4"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "5374b5c8c8ca65e13fb62374963f5ca623aad0d6905e3f21b28d9d5240739908",
+   "to_sha": "7330a2f6b21ae9c5489b13ff842b54f9537da65107e8111423357fac66f85f49",
+   "reason": "A12d slice D4 (auditor D3-post P0/P1): forward amendment AMEND-2026-09-09-d4-atomic-grammar freezing t4-conformance-v3 under atomic-requirement-grammar-v3 and the capability-lock-v3 schema bump",
+   "base": "d1d3fa2",
+   "slice": "a12d-slice-d4"
   }
  ]
 }

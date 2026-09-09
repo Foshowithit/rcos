@@ -17,7 +17,7 @@ import os
 import re
 import time
 
-LOCK_SCHEMA_VERSION = "capability-lock-v2"
+LOCK_SCHEMA_VERSION = "capability-lock-v3"
 
 # The complete estimand-aware field set (audit round-2 item #9). Every field
 # must be present AND carry the right shape; a lock missing any of them is
@@ -35,6 +35,14 @@ LOCK_REQUIRED_FIELDS = (
     "semantic_core",             # nonempty str
     # A12d slice D2 (auditor A12d.3/A12d.4): producer applicability
     # requirements in the structurally positive v2 form.
+    # A12d slice D4 (auditor D3-post P1): the lock schema is v3. The v2
+    # identifier predates `preconditions` becoming
+    # `list[{"requires": ...}]` and no longer uniquely describes the
+    # shape, so the bump is the explicit freeze: v2 meant the
+    # pre-`list[{"requires": ...}]` shape (the D2
+    # interpret-with-v2-shape note is superseded by this bump). The
+    # producer-contract shape itself stays v2; only the lock schema
+    # version moves.
     "preconditions",             # list[{"requires": nonempty str}]
                                  # (may be empty: no declared
                                  # applicability requirement)
@@ -158,7 +166,8 @@ def verify_lock(lock, expect=None, fam_c_dir=None):
                                       for x in v)):
                 out.append("LOCK-INADMISSIBLE: preconditions must be a "
                            "list of {\"requires\": nonempty str} objects "
-                           f"(v2 shape), got {v!r}")
+                           "(v3 lock schema; v2 contract shape), "
+                           f"got {v!r}")
         elif v is not None and (not isinstance(v, list)
                                 or not all(isinstance(x, str) for x in v)):
             out.append(f"LOCK-INADMISSIBLE: {f} must be a list of strings, "
