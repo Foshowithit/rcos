@@ -395,8 +395,28 @@ class DockerSandbox:
             __import__("tempfile").gettempdir(),
             "rcos-cid-%s-%s" % (self.name, uuid.uuid4().hex[:8]))
         full = cmd[:5] + ["--cidfile", cid_path] + cmd[5:]
+        # Popen (not run) so the host-side launcher pid is observed,
+        # never inferred: the A13 host ledger binds each container
+        # launch to the exact launcher process that performed it.
+        _po = subprocess.Popen(
+            full, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True,
+            stdin=(subprocess.PIPE
+                   if kw.get("input") is not None else None))
+        _launcher_pid = _po.pid
         _at = time.monotonic()
-        proc = _run(full, **kw)
+        try:
+            _out, _err = _po.communicate(input=kw.get("input"),
+                                         timeout=kw.get("timeout"))
+        except Exception:
+            try:
+                _po.kill()
+            except OSError:
+                pass
+            raise
+        proc = subprocess.CompletedProcess(
+            args=full, returncode=_po.returncode,
+            stdout=_out, stderr=_err)
         cid, note = None, None
         try:
             with open(cid_path) as _f:
@@ -414,6 +434,7 @@ class DockerSandbox:
         self.launches.append({"role": role, "argv": list(argv),
                               "container_id": cid,
                               "container_note": note,
+                              "launcher_pid": _launcher_pid,
                               "returncode": proc.returncode,
                               "at_monotonic": _at,
                               "completed_at_monotonic": time.monotonic()})

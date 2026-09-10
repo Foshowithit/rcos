@@ -178,6 +178,13 @@ GRADING_RULE_NOTE = ("mechanical grade = frozen checker returncode mapping "
                      "of the executed checker bytes")
 
 
+def _a13_canon_json(obj):
+    """Canonical JSON bytes for sealed ledgers (sorted keys, indent 1,
+    trailing newline -- the exact form the independent probe re-hashes
+    when no ledger file is present). Module level, data only."""
+    return (json.dumps(obj, sort_keys=True, indent=1) + "\n").encode()
+
+
 def _a13_sha_canon(obj):
     """Canonical sha over a JSON value (module level so the
     isolation traversal sees a named global, not a closure)."""
@@ -2843,8 +2850,32 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
         _stop_mono, _closed_mono = OB.close_journal()
         _obs_record["stop_requested_at_monotonic"] = _stop_mono
         _obs_record["observer_exited_at_monotonic"] = _closed_mono
+        # Host process ledger (seal-time half): one entry per OFF
+        # jail launch, bound to the launcher's OBSERVED pid/argv/
+        # start time from the jail history (same observed truth the
+        # launch records derive from -- never a parallel account).
+        # The post-region grading entries are appended in
+        # grade_a13_legs (the checkers have not run yet here); the
+        # receipt carries the grown ledger with a recomputed sha
+        # (same append-only pattern as the verdicts, which are None
+        # in the seal and graded in the receipt).
+        def _ledger_entry(hist_entry):
+            return {"pid": hist_entry.get("launcher_pid"),
+                    "argv": list(hist_entry.get("argv") or []),
+                    "started_at_monotonic": hist_entry.get(
+                        "at_monotonic"),
+                    "role": "jail-launch", "leg": "off-noop"}
+        _seal_ledger = [_ledger_entry(_sv_hist),
+                        _ledger_entry(_eng_hist)]
+        _seal_ledger_sha = hashlib.sha256(
+            _a13_canon_json(_seal_ledger)).hexdigest()
+        # Inline process journal: the harness-observed launch list
+        # (captured once, sealed in the journal file AND carried in
+        # the seal so the probe's inline-entries demand is fed by
+        # the producer, not injected by fixtures).
+        _plog = OB.region_process_log()
         _journal, _journal_bytes = OB.seal_journal(
-            entries=OB.region_process_log(),
+            entries=_plog,
             launch_records={"off-noop": off_launch_records},
             observer_record=_obs_record,
             daemon_events=_daemon,
@@ -2936,6 +2967,9 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
                 "process_journal_path": _journal_path,
                 "launch_records": {"off-noop": off_launch_records},
                 "jail_launches": _jail_launches,
+                "host_process_ledger": _seal_ledger,
+                "host_ledger_sha256": _seal_ledger_sha,
+                "process_journal": _plog,
                 "jail_config": AD.FROZEN_CONSTANTS["a13_jail_config"],
                 "daemon_container_events": _daemon.get("events") or [],
             },
@@ -3014,6 +3048,7 @@ def grade_a13_legs(*, seal, outdir, taskdir):
 
     _grades = {}
     _on_checker = None
+    _grading_ledger = []
     for _leg in ("on", "off-noop", "pass-through"):
         _block = _seal_legs.get(_leg) or {}
         # Seal legs are raw (program/ABI/consumers/adapted shas);
@@ -3074,14 +3109,28 @@ def grade_a13_legs(*, seal, outdir, taskdir):
                     "A13-CHECKER-MISMATCH pass-through sealed checker "
                     f"{str(_want_chk)[:12]} != the bytes that graded ON; "
                     "refusing to grade across checkers")
+        # Checker subprocess boundary (post-region only): Popen so
+        # the host ledger binds the OBSERVED checker pid/argv/start
+        # (same pid-capture discipline as the jail launches).
+        _checker_argv = [sys.executable, _cpath, task, _opath]
         try:
-            _chk = subprocess.run(
-                [sys.executable, _cpath, task, _opath],
-                capture_output=True, text=True)
+            _cpo = subprocess.Popen(
+                _checker_argv, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, text=True)
+            _cpid = _cpo.pid
+            _ct0 = time.monotonic()
+            _cout, _cerr = _cpo.communicate()
+            _chk = subprocess.CompletedProcess(
+                args=_checker_argv, returncode=_cpo.returncode,
+                stdout=_cout, stderr=_cerr)
         except OSError as e:
             raise RuntimeError(
                 "A13-CHECKER-UNAVAILABLE the frozen checker vanished "
                 f"post-region: {e}")
+        _grading_ledger.append(
+            {"pid": _cpid, "argv": list(_checker_argv),
+             "started_at_monotonic": _ct0, "role": "grading",
+             "leg": _leg})
         _text = ((_chk.stdout or "") + (_chk.stderr or ""))[:500]
         _verdict = ("ship" if _chk.returncode == 0 else
                     "fix" if _chk.returncode == 1 else "blocked")
@@ -3101,12 +3150,30 @@ def grade_a13_legs(*, seal, outdir, taskdir):
                          "checker_report_sha256": hashlib.sha256(
                              _text.encode()).hexdigest(),
                          "verdict": _verdict}
+    # Post-region grading attestation (auditor isolation gates):
+    # the frozen checker that graded the sealed bytes + when grading
+    # executed (monotonic, strictly after region close -- the probe
+    # requires it). The host ledger grows append-only here: the
+    # seal-time jail-launch entries plus one entry per checker that
+    # actually ran (a leg with no output grades nothing and appends
+    # nothing -- honest absence, never padding).
+    _grade_mono = time.monotonic()
+    _grade_checker = seal.get("frozen_checker_sha256")
+    _seal_isolation = seal.get("isolation") or {}
+    _seal_ledger = list(_seal_isolation.get("host_process_ledger") or [])
+    _receipt_ledger = _seal_ledger + _grading_ledger
+    _receipt_ledger_sha = hashlib.sha256(
+        _a13_canon_json(_receipt_ledger)).hexdigest()
+    _grading_attest = {"checker_sha256": _grade_checker,
+                       "executed_at_monotonic": _grade_mono}
     grading = {
         "grading_schema": "a13-grading-v1",
         "seal_sha256": seal.get("seal_sha256"),
         "seal_file": "A13-SEAL.json",
         "legs": {leg: dict(_grades[leg])
                  for leg in ("on", "off-noop", "pass-through")},
+        "checker_sha256": _grade_checker,
+        "executed_at_monotonic": _grade_mono,
     }
     grading_path = os.path.join(outdir, "A13-GRADING.json")
     with open(grading_path, "w") as _f:
@@ -3169,6 +3236,10 @@ def grade_a13_legs(*, seal, outdir, taskdir):
                 "process_journal_path"),
             "launch_records": _isolation.get("launch_records"),
             "jail_launches": _isolation.get("jail_launches"),
+            "host_process_ledger": _receipt_ledger,
+            "host_ledger_sha256": _receipt_ledger_sha,
+            "process_journal": (_isolation.get("process_journal")),
+            "grading": dict(_grading_attest),
             "jail_config": _isolation.get("jail_config"),
             "daemon_container_events": _isolation.get(
                 "daemon_container_events")},

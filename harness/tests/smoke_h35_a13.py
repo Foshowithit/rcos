@@ -370,7 +370,9 @@ check("A13-RECEIPT exact key sets (no smuggled content anywhere)",
            "frozen_expected_provider_calls", "process_observer",
            "process_journal_sha256", "process_journal_path",
            "launch_records", "jail_config",
-           "daemon_container_events", "jail_launches"))
+           "daemon_container_events", "jail_launches",
+           "host_process_ledger", "host_ledger_sha256",
+           "process_journal", "grading"))
       and sorted(_RCPT["legs"]) == ["off-noop", "on", "pass-through"]
       and sorted(_RCPT["legs"]["on"]) == sorted(
           ("program", "program_identity", "adapter_abi", "consumer",
@@ -447,7 +449,9 @@ check("A13-RECEIPT unexecuted legs bind identities but record "
       and all(_RCPT["isolation"][k] is None
               for k in ("process_observer", "launch_records",
                         "jail_config", "daemon_container_events",
-                        "jail_launches"))
+                        "jail_launches", "host_process_ledger",
+                        "host_ledger_sha256", "process_journal",
+                        "grading"))
       and _RCPT["legs"]["off-noop"]["target_capability_sha256"]
       == ARTIFACT_SHA
       and _RCPT["legs"]["off-noop"]["noop_abi_sha256"] not in (
@@ -544,16 +548,32 @@ class _ShimJail:
         self._snap_verified = False
 
     def verify_task_snapshot(self):
+        # Mirrors production (which runs the payload in its own
+        # container): the shim runs the real single-source payload
+        # mapped to the visible root, so launcher_pid/returncode are
+        # OBSERVED from a real child process, not recorded. The
+        # byte-proof comparison itself is production's job (the
+        # H23-shape shim asserts mechanism, not provenance).
         import dockersandbox as _DS
+        _argv = ["python3", "-c", _DS.snapshot_verify_code()]
+        _mapped = [self.visible if a == "/task" else
+                   os.path.join(self.visible, a[len("/task/"):])
+                   if a.startswith("/task/") else a for a in _argv]
+        _at = time.monotonic()
+        _po = subprocess.Popen(_mapped, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, text=True)
+        _pid = _po.pid
+        _out, _err = _po.communicate()
         self.launches.append({
             "role": "snapshot-verify",
-            "argv": ["python3", "-c", _DS.snapshot_verify_code()],
+            "argv": _argv,
             "container_id": _sha(
                 ("h35-shim-snapshot-verify-%d"
                  % _ShimJail._SEQ[0]).encode()),
             "container_note": "(test double placeholder)",
-            "returncode": 0,
-            "at_monotonic": time.monotonic(),
+            "launcher_pid": _pid,
+            "returncode": _po.returncode,
+            "at_monotonic": _at,
             "completed_at_monotonic": time.monotonic()})
         self._snap_verified = True
         return True
@@ -576,8 +596,13 @@ class _ShimJail:
             else:
                 mapped.append(a)
         _at = time.monotonic()
-        _proc = subprocess.run(mapped, capture_output=True, text=True,
-                              timeout=timeout)
+        _po = subprocess.Popen(mapped, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, text=True)
+        _pid = _po.pid
+        _out, _err = _po.communicate(timeout=timeout)
+        _proc = subprocess.CompletedProcess(
+            args=mapped, returncode=_po.returncode,
+            stdout=_out, stderr=_err)
         self.launches.append({
             "role": "engine",
             "argv": list(argv),
@@ -585,6 +610,7 @@ class _ShimJail:
                 ("h35-shim-engine-%d"
                  % _ShimJail._SEQ[0]).encode()),
             "container_note": "(test double placeholder)",
+            "launcher_pid": _pid,
             "returncode": _proc.returncode,
             "at_monotonic": _at,
             "completed_at_monotonic": time.monotonic()})
@@ -880,7 +906,8 @@ check("H35b-SEAL exact shape (no smuggled content; seal binds "
            "frozen_expected_provider_calls", "process_observer",
            "process_journal_sha256", "process_journal_path",
            "launch_records", "jail_launches", "jail_config",
-           "daemon_container_events")))
+           "daemon_container_events", "host_process_ledger",
+           "host_ledger_sha256", "process_journal")))
 check("H35b-LEGS post-region grading finalizes verdicts + receipt "
       "(grading references the seal, never inputs the receipt)",
       _g4["graded"] is True
@@ -1013,6 +1040,72 @@ check("H35b-RECEIPT canonical self-sha verifies + file "
       and os.path.basename(_g4["receipt_path"])
       == "A13-CAUSAL-RECEIPT.json"
       and _g4["receipt_sha256"] == _R4["receipt_sha256"])
+# Producer-side control for the four fail-RED isolation keys
+# (general-seat extension to finding #1): a green fixture battery
+# over injected keys proves the CHECK, never the PRODUCER. This
+# asserts on the REAL emitted receipt (real runner code path, shim
+# jail) that every isolation key q reads is present and well-typed
+# -- the natural control that would have caught all four gaps.
+_iso4r = _R4["isolation"]
+_seal_iso4 = _a4["seal"]["isolation"]
+_obs4r = _iso4r["process_observer"]
+_qcanon = lambda o: (json.dumps(o, sort_keys=True, indent=1) + "\n")
+_rclose = _obs4r["region_closed_at_monotonic"]
+_rled = _iso4r["host_process_ledger"]
+_rjl = _iso4r["jail_launches"]["off-noop"]
+_sled = _seal_iso4["host_process_ledger"]
+_ngrade_runs = sum(
+    1 for leg in ("on", "off-noop", "pass-through")
+    if _a4["seal"]["legs"][leg]["execution_evidence"][
+        "output_sha256"] is not None)
+# NOTE on the count: receipt isolation carries 18 evidence slots;
+# the 5 count/identity slots (captured_response_sha256, cell_id,
+# provider_call_delta, order_cell_delta,
+# enclosing_cell_provider_call_total) live at receipt top level and
+# per-leg by design (asserted by the H35b-RECEIPT checks above) --
+# they are not isolation evidence.
+check("H35b-ISOLATION-KEYS real receipt carries all 18 isolation "
+      "slots with well-typed ledger/journal/grading evidence",
+      sorted(_iso4r) == sorted(
+          ("tripwire_violations", "tripwire_first_event",
+           "frozen_expected_provider_calls", "process_observer",
+           "process_journal_sha256", "process_journal_path",
+           "launch_records", "jail_config",
+           "daemon_container_events", "jail_launches",
+           "host_process_ledger", "host_ledger_sha256",
+           "process_journal", "grading"))
+      and isinstance(_rled, list) and len(_rled) == 2 + _ngrade_runs
+      and all(isinstance(e, dict) and isinstance(e.get("pid"), int)
+              and not isinstance(e.get("pid"), bool)
+              and isinstance(e.get("argv"), list) and e["argv"]
+              and all(isinstance(a, str) for a in e["argv"])
+              and isinstance(e.get("started_at_monotonic"), float)
+              and e["role"] in ("jail-launch", "grading")
+              and e["leg"] in ("on", "off-noop", "pass-through")
+              for e in _rled)
+      and [e["role"] for e in _rled[:2]] == ["jail-launch"] * 2
+      and all(e["leg"] == "off-noop" for e in _rled[:2])
+      and sum(1 for e in _rled if e["role"] == "grading") \
+      == _ngrade_runs >= 1
+      and all(e["started_at_monotonic"] > _rclose
+              for e in _rled if e["role"] == "grading")
+      and _iso4r["host_ledger_sha256"] == _sha(
+          _qcanon(_rled).encode())
+      and _sled == _rled[:2]
+      and _seal_iso4["host_ledger_sha256"] == _sha(
+          _qcanon(_sled).encode())
+      and sum(1 for e in _seal_iso4.get("host_process_ledger")
+              or [] if e["role"] == "jail-launch"
+              and e["leg"] == "off-noop") == len(_rjl) == 2
+      and isinstance(_iso4r["process_journal"], list)
+      and len(_iso4r["process_journal"]) >= 1
+      and isinstance(_iso4r["grading"], dict)
+      and _iso4r["grading"]["checker_sha256"] == _EV2["checker_sha256"]
+      and isinstance(
+          _iso4r["grading"]["executed_at_monotonic"], float)
+      and _iso4r["grading"]["executed_at_monotonic"] > _rclose,
+      f"ledger={len(_rled) if isinstance(_rled, list) else _rled!r} "
+      f"grade_runs={_ngrade_runs}")
 _proven4, _detail4 = AD.derive_causal_contribution(
     determinant=_R4["determinant"],
     determinant_sha256=_R4["determinant_sha256"], legs=_R4["legs"],
@@ -1289,10 +1382,15 @@ check("H35b-ISOLATE leg path cannot become a provider call, an "
       and _grade_fn.args.kwarg is None
       and _ingress_hits_grade == [],
       str(_ingress_hits + _ingress_hits_grade))
+# The checker boundary is Popen (pid-observed for the host ledger),
+# never run() without a pid: either subprocess entry point proves the
+# checker executes post-region only.
 check("H35b-ISOLATE grading lives post-region (checker subprocess "
       "in the grade step only, never in the isolated helper)",
       "subprocess.run" not in _helper_src
-      and "subprocess.run" in _grade_src)
+      and "subprocess.Popen" not in _helper_src
+      and ("subprocess.run" in _grade_src
+           or "subprocess.Popen" in _grade_src))
 check("H35b-ISOLATE main() binds seal + grading + receipt into "
       "the manifest and the ledger",
       "execute_a13_legs" in _inspect3.getsource(_RA.main)
