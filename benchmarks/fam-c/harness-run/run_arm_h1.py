@@ -110,6 +110,7 @@ chain event; promotion/order re-derive both from the committed file.
 """
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -125,6 +126,7 @@ HARNESS = "/home/chow/chow-work/rcos/harness"
 ROOT = os.path.abspath(os.path.join(BASE, os.pardir, os.pardir))
 sys.path.insert(0, HARNESS)
 from dockersandbox import (DockerSandbox, ensure_roots, _hash_tree,
+                            snapshot_verify_code,
                             VISIBLE_ROOT, WORK_ROOT)
 from seal import build_visible_root
 from usage import (recorded_call, write_normalized_usage,
@@ -142,6 +144,11 @@ from frozen_visible import (manifest_of_dir as frozen_manifest_of_dir,
 # pass-through/derivation machinery (pure; no model, no docker,
 # no chain writes -- this runner supplies the evidence).
 import adaptation as AD
+# A13 isolation observer: harness-owned counters, external tripwire
+# (audit hook), per-leg sampling, launch records, process journal.
+# The isolated legs obtain jail builders and isolation observations
+# through this fixed module accessor -- never through parameters.
+import a13_observer as OB
 # Item-7: the frozen ORDER.md expansion + pre-call cell authorization.
 from order import (verify_expansion as order_verify_expansion,
                    load_expansion as order_load_expansion,
@@ -170,35 +177,45 @@ GRADING_RULE_NOTE = ("mechanical grade = frozen checker returncode mapping "
                      "(rc0=ship, rc1=fix, else blocked); rule hash = sha256 "
                      "of the executed checker bytes")
 
-# Runner-owned provider-call counter (A13 isolation artifact). Bumped
-# exactly once per cell at the single call() site in main(); read
-# before and after execute_a13_legs so the counterfactual-region
-# delta is a recomputed equality (after - before == 0), and the
-# enclosing-cell total is observed, never hardcoded. Plain int
-# data: provider-incapable by construction.
-_PROVIDER_CALLS_ISSUED = 0
 
-# Harness-owned engine-jail builder slot (A13 item 3): the isolated
-# legs obtain their jail factory through this accessor, never
-# through a parameter (no executable-capability ingress into the
-# isolated function). main() binds it per invocation from its
-# frozen A12d jail_factory seam; tests bind a shim (save/restore).
-# None means the production default (DockerSandbox). Plain
-# data-handle discipline: the slot holds the builder, the isolated
-# code only reads it via the fixed accessor name below.
-_A13_ENGINE_JAIL_BUILDER = None
+def _a13_sha_canon(obj):
+    """Canonical sha over a JSON value (module level so the
+    isolation traversal sees a named global, not a closure)."""
+    return hashlib.sha256(
+        json.dumps(obj, sort_keys=True).encode()).hexdigest()
 
 
-def set_a13_engine_jail_builder(builder):
-    """Bind the harness-owned jail builder for the A13 legs (or None
-    for the production default). Harness setup only -- never called
-    from inside the isolated region."""
-    global _A13_ENGINE_JAIL_BUILDER
-    _A13_ENGINE_JAIL_BUILDER = builder
-
-
-def _a13_engine_jail_builder():
-    return _A13_ENGINE_JAIL_BUILDER or DockerSandbox
+def _a13_bind_launch(hist_entry, daemon_ids, is_double, launcher):
+    """Per-role runtime binding for one jail history entry
+    (auditor Ruling 1 identity: container id, cgroup id, entry
+    pid/source each). Module level (named global, explicit data
+    parameters -- no closure over the isolated helper's locals,
+    so the static traversal proves each input). The entry pid is
+    the RUNTIME's own report (`docker inspect State.Pid`);
+    post-exit --rm containers cannot report, so a gone container
+    binds None with an honest source note (missing, never
+    invented). Test doubles record the same honest absence
+    without calling docker."""
+    _cid = hist_entry.get("container_id")
+    if is_double or not _cid:
+        _pid, _psrc = (None, "(test double: no runtime "
+                       "entry pid)" if is_double
+                       else "no container id recorded")
+    else:
+        _pid, _psrc = OB.docker_entry_pid(_cid)
+    _cg = OB.cgroup_path_for(_cid) if _cid else None
+    _quiescent, _qdetail = OB.cgroup_quiescent(_cid)
+    return {"container_id": _cid, "role": hist_entry.get(
+        "role"), "cgroup_id": _cg, "entry_pid": _pid,
+        "entry_pid_source": _psrc,
+        "launch_at_monotonic": hist_entry.get("at_monotonic"),
+        "termination_at_monotonic": hist_entry.get(
+            "completed_at_monotonic"),
+        "exit_status": hist_entry.get("returncode"),
+        "quiescent": _quiescent,
+        "quiescence_detail": _qdetail,
+        "daemon_match": (_cid in daemon_ids if _cid else False),
+        "launcher": launcher}
 
 
 def _a13_scalar_evidence(value, name):
@@ -207,9 +224,17 @@ def _a13_scalar_evidence(value, name):
     not a recursive closure). Parameters carry JSON scalars only --
     a callable, module, or other executable value anywhere in the
     sealed evidence refuses loudly, so no parameter can smuggle an
-    executable capability into the isolated region."""
+    executable capability into the isolated region. Floats are JSON
+    scalars (launcher-observed monotonic timestamps ride here);
+    non-finite floats refuse (they are not canonical JSON)."""
     if value is None or isinstance(value, (str, int, bool)):
         return
+    if isinstance(value, float):
+        if math.isfinite(value):
+            return
+        raise RuntimeError(
+            "A13-EVIDENCE-SHAPE sealed evidence carries a "
+            f"non-finite float at {name}: not canonical JSON")
     if isinstance(value, dict):
         for _k, _v in value.items():
             if not isinstance(_k, str):
@@ -975,7 +1000,24 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
         engine_jail = {"task_snapshot": getattr(engine_sb, "task_snapshot",
                                                 None),
                        "mounts": _engine_mounts,
-                       "adapted_input_sha256": adapted_input_sha256}
+                       "adapted_input_sha256": adapted_input_sha256,
+                       # A13 two-launch evidence (auditor Ruling 1):
+                       # the jail's own harness-side launch history
+                       # (role/argv/container-id per launch, observed
+                       # by the launcher, never inferred), the exact
+                       # engine argv this arrival executed, and the
+                       # sandbox identity/image. The seal phase
+                       # refuses when this history is not exactly
+                       # [snapshot-verify, engine] (harness defect:
+                       # no receipt on unbound launches). Test-double
+                       # jails expose the same surface (their
+                       # container ids are labeled placeholders).
+                       "sandbox_name": getattr(engine_sb, "name", None),
+                       "image": getattr(engine_sb, "image", None),
+                       "engine_argv": list(command),
+                       "launches": [dict(_le) for _le in
+                                    getattr(engine_sb, "launches", None)
+                                    or []]}
     else:  # fresh — the only legal decision on the disabled arm
         open(os.path.join(work, "solver.py"), "w").write(
             arrival["execution_payload"]["solver_py"])
@@ -2396,11 +2438,16 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
             f"{str(engine_sha)[:12]} != locked capability "
             f"{str(locked_sha)[:12]}; refusing to receipt legs for "
             "bytes that are not the locked K")
-    calls_before = _PROVIDER_CALLS_ISSUED
+    calls_before, _order_before = None, None
     cell_before = cell_id
     _saved_call, _saved_recorded_call = call, recorded_call
     call, recorded_call = _tripwire, _tripwire
     try:
+        OB.region_enter()
+        OB.mark_leg(None)
+        calls_before, _order_before = OB.sample()
+        _region_wall = time.time()
+        _region_mono = time.monotonic()
         # Frozen task bytes (freeze-commit git objects only -- never the
         # mutable tree, never captured bytes).
         try:
@@ -2441,6 +2488,8 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
         # ON leg: the cell's own execution (consumed-byte bindings from
         # the adapted-input-only jail snapshot + the sealed graded
         # output the checker consumed).
+        OB.mark_leg("on")
+        on_pb, on_ob = OB.sample()
         _snap = (on_exec.get("engine_jail") or {}).get("task_snapshot") or {}
         _fm_sha = _snap.get("file|field_map.json")
         _rc_sha = _snap.get("file|records.json")
@@ -2470,6 +2519,13 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
             "container_returncode": on_exec.get("container_returncode"),
             "verdict": on_exec.get("verdict"),
         }
+        on_pa, on_oa = OB.sample()
+        on_evidence.update({
+            "provider_calls_before": on_pb,
+            "provider_calls_after": on_pa,
+            "order_cells_before": on_ob,
+            "order_cells_after": on_oa,
+        })
         # OFF-noop leg: the NOOP pair through the SAME locked engine
         # (same argv ABI, same jail shape) + the same frozen checker.
         # The arrival here is synthesized from NOOP bytes only; the
@@ -2484,12 +2540,17 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
         off_out = os.path.join(outdir, "a13-offnoop")
         os.makedirs(off_work, exist_ok=True)
         os.makedirs(off_out, exist_ok=True)
+        OB.mark_leg("off-noop")
+        off_pb, off_ob = OB.sample()
         off_arrival = {
             "decision": "use_capability",
             "execution_payload": {
                 "field_map": off_payload["field_map.json"],
                 "records": off_payload["records.json"]},
         }
+        # Launch/exit wall times come from the jail's own
+        # launch history (observed per-role at the launcher, not
+        # wrapper timestamps around the whole arrival).
         off_exec = execute_arrival(
             # sb=None: the engine path never reads the raw-task jail
             # (fresh-path only); the OFF leg runs in its own
@@ -2497,7 +2558,7 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
             # builder slot (grade=False: execution without grading;
             # the frozen checker runs post-region over sealed bytes).
             "correct", off_arrival, off_work, off_out, taskdir, cap_engine,
-            None, jail_factory=_a13_engine_jail_builder(),
+            None, jail_factory=OB.build_engine_jail,
             evaluator_authority=evaluator_authority, grade=False)
         off_output = off_exec.get("output_sha256")
         # Ungraded by construction (grade=False above): the verdict,
@@ -2521,6 +2582,13 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
             "container_returncode": off_exec.get("container_returncode"),
             "verdict": None,
         }
+        off_pa, off_oa = OB.sample()
+        off_evidence.update({
+            "provider_calls_before": off_pb,
+            "provider_calls_after": off_pa,
+            "order_cells_before": off_ob,
+            "order_cells_after": off_oa,
+        })
         # Pass-through leg: F's exact canonical bytes through the ONE
         # frozen family-agnostic operation (K bypassed), executed
         # WITHOUT grading. A shape refusal here is deterministic
@@ -2528,6 +2596,8 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
         # post-region over these sealed bytes.
         pass_out = os.path.join(outdir, "a13-passthrough")
         os.makedirs(pass_out, exist_ok=True)
+        OB.mark_leg("pass-through")
+        pass_pb, pass_ob = OB.sample()
         try:
             pass_bytes = AD.passthrough_v1(dict(on_pair["files"]))
         except ValueError:
@@ -2559,12 +2629,247 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
             "container_returncode": None,
             "verdict": None,
         }
-
-        calls_after = _PROVIDER_CALLS_ISSUED
+        pass_pa, pass_oa = OB.sample()
+        pass_evidence.update({
+            "provider_calls_before": pass_pb,
+            "provider_calls_after": pass_pa,
+            "order_cells_before": pass_ob,
+            "order_cells_after": pass_oa,
+        })
+        OB.mark_leg(None)
+        # Seal phase (still inside the region): observer-observed
+        # samples, launch record, daemon history, quiescence, then
+        # the sealed journal. Nothing here creates a provider call
+        # or an ORDER cell (reads + local file writes only).
+        _prov_after, _order_after = OB.sample()
         cell_after = cell_id
-        region_delta = calls_after - calls_before
+        region_delta = _prov_after - calls_before
+        order_region_delta = _order_after - _order_before
         order_delta = (0 if cell_after == cell_before == cell_id
+                       and order_region_delta == 0
                        else 1)
+        _trip_count, _trip_first = OB.trip_slice()
+        _frozen_expected = AD.FROZEN_CONSTANTS[
+            "expected_provider_calls_per_cell"]
+        # OFF two-launch evidence (auditor Ruling 1): the OFF leg
+        # is exactly two authorized container launches in this
+        # order -- snapshot_verify -> engine_exec -- on the real
+        # fresh DockerSandbox.run() path (verify_task_snapshot()
+        # runs its own `docker run` container BEFORE the engine
+        # container). Each role is separately identity-bound
+        # below; extra, missing, reordered, or role-substituted
+        # histories refuse HERE (harness defect writes no receipt),
+        # and the independent probe enforces the same budgets a
+        # second time from these sealed bytes (never inferred).
+        _role_pins = AD.FROZEN_CONSTANTS["a13_role_identity"]
+        _sv_pin = _role_pins["snapshot_verify"]
+        _eng_pin = _role_pins["engine_exec"]
+        _hist = (off_exec.get("engine_jail") or {}).get("launches")
+        _hist_roles = [str(_le.get("role"))
+                       for _le in _hist] if isinstance(_hist, list) \
+            and all(isinstance(_le, dict) for _le in _hist) else None
+        if _hist_roles != [OB.SNAPSHOT_VERIFY_ROLE, OB.ENGINE_ROLE]:
+            raise RuntimeError(
+                "A13-LAUNCH-UNBOUND the OFF-leg jail history is not "
+                f"exactly [snapshot-verify, engine] ({_hist_roles!r}); "
+                "refusing to receipt unbound launches")
+        _sv_hist, _eng_hist = _hist[0], _hist[1]
+        # Frozen image: the observed jail image must equal the pin
+        # (a substituted jail image refuses here, not in prose).
+        _obs_image = (off_exec.get("engine_jail") or {}).get("image")
+        if _obs_image != _eng_pin["image"]:
+            raise RuntimeError(
+                "A13-JAIL-MISMATCH observed jail image "
+                f"{str(_obs_image)[:40]!r} != frozen pin "
+                f"{str(_eng_pin['image'])[:40]!r}; refusing")
+        # Frozen engine argv: the exact argv this arrival executed
+        # must equal the pin (execute_arrival owns the literal;
+        # any drift between the executed command and the frozen
+        # shape refuses here, never silently).
+        _eng_argv = (off_exec.get("engine_jail") or {}).get(
+            "engine_argv")
+        if not isinstance(_eng_argv, list) or \
+                _eng_argv != _eng_pin["argv_exact"]:
+            raise RuntimeError(
+                "A13-ARGV-MISMATCH executed engine argv "
+                f"{_eng_argv!r} != frozen pin "
+                f"{_eng_pin['argv_exact']!r}; refusing")
+        # Snapshot argv: ["python3", "-c", <payload>] with the
+        # payload from the single-source implementation (any drift
+        # between the executed verifier and the frozen source
+        # refuses here).
+        _sv_code = snapshot_verify_code()
+        _sv_argv = ["python3", "-c", _sv_code]
+        if list(_sv_hist.get("argv") or []) != _sv_argv:
+            raise RuntimeError(
+                "A13-ARGV-MISMATCH executed snapshot-verify argv != "
+                "frozen single-source argv; refusing")
+        _payload_sha = hashlib.sha256(
+            _sv_code.encode()).hexdigest()
+        # Jail environments (constructed minimal allowlists, never
+        # inherited): the engine launch additionally names its
+        # sandbox (per-run-opaque uuid inside DockerSandbox); the
+        # verifier launch carries only the fixed pair.
+        _sandbox_name = (off_exec.get("engine_jail") or {}).get(
+            "sandbox_name")
+        _engine_env = {
+            "fixed": ["PYTHONDONTWRITEBYTECODE=1",
+                      "PATH=/usr/local/bin:/usr/bin:/bin"],
+            "sandbox_name": _sandbox_name,
+        }
+        _sv_env = {
+            "fixed": ["PYTHONDONTWRITEBYTECODE=1",
+                      "PATH=/usr/local/bin:/usr/bin:/bin"],
+        }
+
+        _launcher = OB.jail_backend_name()
+        _is_double = "test double" in _launcher
+        _daemon_ids = set()
+        _daemon = OB.collect_docker_events(_region_wall - 2)
+        for _de in _daemon.get("events") or []:
+            try:
+                _actor = _de.get("Actor") or {}
+                if _actor.get("ID"):
+                    _daemon_ids.add(_actor.get("ID"))
+            except (AttributeError, TypeError):
+                continue
+        _sv_bind = _a13_bind_launch(_sv_hist, _daemon_ids, _is_double,
+                                    _launcher)
+        _eng_bind = _a13_bind_launch(_eng_hist, _daemon_ids, _is_double,
+                                     _launcher)
+        _jail_launches = {
+            "on": [], "pass-through": [],
+            "off-noop": [
+                {"container_id": _sv_bind["container_id"],
+                 "role": OB.SNAPSHOT_VERIFY_ROLE,
+                 "cgroup_id": _sv_bind["cgroup_id"],
+                 "entry_pid": _sv_bind["entry_pid"],
+                 "entry_pid_source": _sv_bind["entry_pid_source"],
+                 "launch_at_monotonic": _sv_bind[
+                     "launch_at_monotonic"],
+                 "termination_at_monotonic": _sv_bind[
+                     "termination_at_monotonic"]},
+                {"container_id": _eng_bind["container_id"],
+                 "role": OB.ENGINE_ROLE,
+                 "cgroup_id": _eng_bind["cgroup_id"],
+                 "entry_pid": _eng_bind["entry_pid"],
+                 "entry_pid_source": _eng_bind["entry_pid_source"],
+                 "launch_at_monotonic": _eng_bind[
+                     "launch_at_monotonic"],
+                 "termination_at_monotonic": _eng_bind[
+                     "termination_at_monotonic"]},
+            ],
+        }
+        # Per-role launch records (auditor Ruling 1
+        # authorization): the engine role binds interpreter SHA +
+        # /work/engine.py SHA + exact argv + the determinant-
+        # selected K + the same verified task snapshot at engine
+        # consumption; the snapshot role binds interpreter SHA +
+        # exact argv shape + locked -c payload hash + image +
+        # mount/config identity + the verified task snapshot.
+        off_launch_records = {
+            "snapshot-verify": {
+                "role": OB.SNAPSHOT_VERIFY_ROLE,
+                "launcher": _launcher,
+                "image": _obs_image,
+                "interpreter_path": "python3",
+                "interpreter_sha256": _sv_pin["interpreter_sha256"],
+                "argv": _sv_argv,
+                "argv_sha256": _a13_sha_canon(_sv_argv),
+                "payload_sha256": _payload_sha,
+                "environment_sha256": _a13_sha_canon(_sv_env),
+                "environment": _sv_env,
+                "cwd": "/work",
+                "task_snapshot_sha256": task_snapshot_sha256,
+                "exit_status": _sv_hist.get("returncode"),
+            },
+            "engine": {
+                "role": OB.ENGINE_ROLE,
+                "launcher": _launcher,
+                "image": _obs_image,
+                "interpreter_path": "python3",
+                "interpreter_sha256": _eng_pin["interpreter_sha256"],
+                "executable_sha256": engine_sha,
+                "argv": _eng_argv,
+                "argv_sha256": _a13_sha_canon(_eng_argv),
+                "environment_sha256": _a13_sha_canon(_engine_env),
+                "environment": _engine_env,
+                "cwd": "/work",
+                "task_snapshot_sha256": task_snapshot_sha256,
+                "input_sha256": off_evidence.get(
+                    "adapted_input_sha256"),
+                "exit_status": off_evidence.get(
+                    "container_returncode"),
+            },
+        }
+        _mono_now = time.monotonic()
+        _obs_record = {
+            "mechanism": ("audithook-region-tripwire + docker-events "
+                          "(host-side, unprivileged)"),
+            "armed_before_launch": True,
+            "armed_through_exit": True,
+            "creation_event_coverage":
+                "daemon container lifecycle (create/start/die); "
+                "in-container fork/clone without exec is NOT covered "
+                "unprivileged (no pid/tgid fabrication; see limits)",
+            "observer_clean_exit": None,
+            "clean_exit_note": ("region still open at seal time; "
+                                "upgraded at receipt time"),
+            "cgroup_quiescent_before_observer_shutdown": _eng_bind[
+                "quiescent"],
+            "quiescence_detail": _eng_bind["quiescence_detail"],
+            "quiescence_by_role": {
+                "snapshot-verify": {
+                    "quiescent": _sv_bind["quiescent"],
+                    "detail": _sv_bind["quiescence_detail"]},
+                "engine": {
+                    "quiescent": _eng_bind["quiescent"],
+                    "detail": _eng_bind["quiescence_detail"]},
+            },
+            "container_id": _eng_bind["container_id"],
+            "container_note": ("engine container; snapshot-verify "
+                               "container bound per-role in "
+                               "jail_launches"),
+            "cgroup_id": _eng_bind["cgroup_id"],
+            "armed_at_monotonic": _region_mono,
+            "launch_at_monotonic": _sv_bind["launch_at_monotonic"],
+            "termination_at_monotonic": _eng_bind[
+                "termination_at_monotonic"],
+            "cgroup_quiescent_at_monotonic": _mono_now,
+            "stop_requested_at_monotonic": None,
+            "observer_exited_at_monotonic": None,
+            "journal_sealed_at_monotonic": None,
+        }
+        _stop_mono, _closed_mono = OB.close_journal()
+        _obs_record["stop_requested_at_monotonic"] = _stop_mono
+        _obs_record["observer_exited_at_monotonic"] = _closed_mono
+        _journal, _journal_bytes = OB.seal_journal(
+            entries=OB.region_process_log(),
+            launch_records={"off-noop": off_launch_records},
+            observer_record=_obs_record,
+            daemon_events=_daemon,
+            quiescence={"quiescent": _eng_bind["quiescent"],
+                        "detail": _eng_bind["quiescence_detail"],
+                        "container_id": _eng_bind["container_id"],
+                        "by_role": {
+                            "snapshot-verify": {
+                                "container_id": _sv_bind[
+                                    "container_id"],
+                                "quiescent": _sv_bind["quiescent"],
+                                "detail": _sv_bind[
+                                    "quiescence_detail"]},
+                            "engine": {
+                                "container_id": _eng_bind[
+                                    "container_id"],
+                                "quiescent": _eng_bind["quiescent"],
+                                "detail": _eng_bind[
+                                    "quiescence_detail"]}}},
+            jail_launches=_jail_launches)
+        _journal_path = os.path.join(outdir, "A13-JOURNAL.json")
+        with open(_journal_path, "wb") as _jf:
+            _jf.write(_journal_bytes)
+        _obs_record = dict(_obs_record)
+        _obs_record["journal_sealed_at_monotonic"] = time.monotonic()
 
         def _leg(program, adapted_sha, file_shas, consumer, evidence):
             return {"program": program,
@@ -2622,9 +2927,17 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
                 "cell_id": cell_id,
                 "provider_call_delta": region_delta,
                 "order_cell_delta": order_delta,
-                "enclosing_cell_provider_call_total": calls_after,
-                "tripwire_violations": 0,
-                "tripwire_first_event": None,
+                "enclosing_cell_provider_call_total": _prov_after,
+                "tripwire_violations": _trip_count,
+                "tripwire_first_event": _trip_first,
+                "frozen_expected_provider_calls": _frozen_expected,
+                "process_observer": _obs_record,
+                "process_journal_sha256": _journal["journal_sha256"],
+                "process_journal_path": _journal_path,
+                "launch_records": {"off-noop": off_launch_records},
+                "jail_launches": _jail_launches,
+                "jail_config": AD.FROZEN_CONSTANTS["a13_jail_config"],
+                "daemon_container_events": _daemon.get("events") or [],
             },
         }
         seal["seal_sha256"] = hashlib.sha256(
@@ -2639,6 +2952,7 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
                 "seal_path": seal_path,
                 "seal_sha256": seal["seal_sha256"]}
     finally:
+        OB.region_exit()
         call, recorded_call = _saved_call, _saved_recorded_call
 
 
@@ -2811,6 +3125,18 @@ def grade_a13_legs(*, seal, outdir, taskdir):
 
     _det = seal.get("determinant") or {}
     _isolation = seal.get("isolation") or {}
+    # Time-phased honesty: the seal was written pre-close (clean
+    # exit unknowable then); this step runs only because the helper
+    # returned normally through a clean region exit, so the receipt
+    # upgrades those two fields. Everything else passes through
+    # verbatim from the seal (no post-region invention).
+    _exit_mono, _exit_wall = OB.region_exit_times()
+    _obs_final = dict(_isolation.get("process_observer") or {})
+    _obs_final["observer_clean_exit"] = True
+    _obs_final["clean_exit_note"] = ("helper returned normally; "
+                                     "region exit completed")
+    _obs_final["region_closed_at_monotonic"] = _exit_mono
+    _obs_final["region_closed_at_wall"] = _exit_wall
     receipt = AD.build_receipt(
         family=seal.get("family"), task=seal.get("task"),
         capability_id=seal.get("capability_id"),
@@ -2830,7 +3156,22 @@ def grade_a13_legs(*, seal, outdir, taskdir):
             "provider_call_delta": _isolation.get("provider_call_delta"),
             "order_cell_delta": _isolation.get("order_cell_delta"),
             "enclosing_cell_provider_call_total": _isolation.get(
-                "enclosing_cell_provider_call_total")},
+                "enclosing_cell_provider_call_total"),
+            "tripwire_violations": _isolation.get("tripwire_violations"),
+            "tripwire_first_event": _isolation.get(
+                "tripwire_first_event"),
+            "frozen_expected_provider_calls": _isolation.get(
+                "frozen_expected_provider_calls"),
+            "process_observer": _obs_final,
+            "process_journal_sha256": _isolation.get(
+                "process_journal_sha256"),
+            "process_journal_path": _isolation.get(
+                "process_journal_path"),
+            "launch_records": _isolation.get("launch_records"),
+            "jail_launches": _isolation.get("jail_launches"),
+            "jail_config": _isolation.get("jail_config"),
+            "daemon_container_events": _isolation.get(
+                "daemon_container_events")},
         seal_sha256=seal.get("seal_sha256"))
     receipt_path = os.path.join(outdir, "A13-CAUSAL-RECEIPT.json")
     with open(receipt_path, "w") as _f:
@@ -3171,12 +3512,12 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     # A13 isolation artifact: this is the SINGLE provider-invocation
     # site on any cell path (verified: no other call(/recorded_call(
     # invocation exists in this runner; all traffic funnels through
-    # call() -> recorded_call()). A future second site MUST bump
-    # this counter too, or the enclosing total under-reports --
-    # review invariant, enforced by the H35b tripwire + counter
-    # asserts, never by prose alone.
-    global _PROVIDER_CALLS_ISSUED
-    _PROVIDER_CALLS_ISSUED += 1
+    # call() -> recorded_call()). The count lives in the harness
+    # observer (never in the isolated code); a future second site
+    # MUST call note_provider_call() too, or the enclosing total
+    # under-reports -- review invariant, enforced by the H35b
+    # tripwire + counter asserts, never by prose alone.
+    OB.note_provider_call()
     arrival, parse_mode = extract(raw)
     arrival_path = os.path.join(outdir, "arrival.json")
     open(arrival_path, "w").write(json.dumps(arrival, indent=1))
@@ -3247,7 +3588,7 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     # grades the sealed bytes afterward, outside the region, and
     # finalizes the receipt. The grading artifact references the
     # seal and is never an input to the receipt.
-    set_a13_engine_jail_builder(jail_factory)
+    OB.set_engine_jail_builder(jail_factory)
     a13 = {"sealed": False, "reason": None, "seal": None,
            "seal_path": None, "seal_sha256": None}
     g13 = {"graded": False, "reason": None, "receipt": None,
@@ -3419,7 +3760,7 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                 # treatment verdict is the ON leg only (manifest
                 # verdict == ON verdict by construction: the ON leg
                 # IS the execution above).
-                # All seven are None when the legs did not run/grade.
+                # All eight are None when the legs did not run/grade.
                 "a13_receipt_file": (
                     os.path.basename(g13["receipt_path"])
                     if g13["graded"] else None),
@@ -3434,6 +3775,14 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                 "a13_grading_file": (
                     os.path.basename(g13["grading_path"])
                     if g13["graded"] else None),
+                "a13_journal_file": (
+                    os.path.basename(
+                        g13["receipt"]["isolation"][
+                            "process_journal_path"])
+                    if g13["graded"] and isinstance(
+                        g13["receipt"].get("isolation"), dict)
+                    and g13["receipt"]["isolation"].get(
+                        "process_journal_path") else None),
                 "a13_omitted_reason": a13["reason"],
                 # A12n slice D13 P0-2: the persisted graded-output link.
                 # graded_output_sha256 is the sha256 of the EXACT sealed
@@ -3587,6 +3936,10 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                     identity_family, cap_info, reuse_path, checker_sha,
                     truth_sha, verdict, output_sha, None,
                     candidate_validation)
+        # A13 isolation artifact: this cell completed and chained --
+        # record it in the harness-owned ORDER-cell counter (read by
+        # per-leg samples; the legs themselves complete no cells).
+        OB.note_cell_completed()
         # H1-RUN-MANIFEST.json must NOT be rewritten after _wire_chain:
         # genesis binds its hash and any rewrite would break the chain.
     print(f"{lane}/{family}/{task}/{arm}: {verdict} ({parse_mode}, "

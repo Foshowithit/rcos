@@ -66,6 +66,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -362,7 +363,14 @@ check("A13-RECEIPT exact key sets (no smuggled content anywhere)",
                                "seal_sha256",
                                "provider_call_delta", "order_cell_delta",
                                "enclosing_cell_provider_call_total",
+                               "isolation",
                                "receipt_sha256"))
+      and sorted(_RCPT["isolation"]) == sorted(
+          ("tripwire_violations", "tripwire_first_event",
+           "frozen_expected_provider_calls", "process_observer",
+           "process_journal_sha256", "process_journal_path",
+           "launch_records", "jail_config",
+           "daemon_container_events", "jail_launches"))
       and sorted(_RCPT["legs"]) == ["off-noop", "on", "pass-through"]
       and sorted(_RCPT["legs"]["on"]) == sorted(
           ("program", "program_identity", "adapter_abi", "consumer",
@@ -431,6 +439,15 @@ check("A13-RECEIPT unexecuted legs bind identities but record "
       and _RCPT["provider_call_delta"] is None
       and _RCPT["order_cell_delta"] is None
       and _RCPT["enclosing_cell_provider_call_total"] is None
+      and all(_RCPT["isolation"][k] is None
+              for k in ("tripwire_violations", "tripwire_first_event",
+                        "frozen_expected_provider_calls",
+                        "process_journal_sha256",
+                        "process_journal_path"))
+      and all(_RCPT["isolation"][k] is None
+              for k in ("process_observer", "launch_records",
+                        "jail_config", "daemon_container_events",
+                        "jail_launches"))
       and _RCPT["legs"]["off-noop"]["target_capability_sha256"]
       == ARTIFACT_SHA
       and _RCPT["legs"]["off-noop"]["noop_abi_sha256"] not in (
@@ -497,14 +514,53 @@ import inspect as _inspect3  # noqa: E402
 
 class _ShimJail:
     """Local engine-jail shim (H23 shape): binds exactly one host
-    visible root, runs real subprocesses with path mapping."""
+    visible root, runs real subprocesses with path mapping.
+
+    Mirrors the production DockerSandbox two-launch shape: the
+    FIRST run() on an instance records a snapshot-verify launch
+    (the /task byte-binding proof) before the engine launch, so
+    the seal phase observes the same [snapshot-verify, engine]
+    history it requires on the production path. Container ids are
+    deterministic test-double placeholders (sha of a fixed seed +
+    role + instance sequence -- stable, obviously not daemon
+    identities); the launcher label marks the double, and entry
+    pids stay honestly None (no runtime to report them)."""
+
+    _SEQ = [0]
 
     def __init__(self, work, visible):
         self.work = work
         self.visible = visible
         self.task_snapshot = _RA._hash_tree(visible)
+        _ShimJail._SEQ[0] += 1
+        self.name = "h35-shim-%d" % _ShimJail._SEQ[0]
+        # The image this double stands in for (the frozen pin --
+        # the production binding of image bytes to digest is
+        # proven by the real-docker scratch + H1-docker suite,
+        # not by this hermetic double).
+        self.image = AD.FROZEN_CONSTANTS["a13_role_identity"][
+            "engine_exec"]["image"]
+        self.launches = []
+        self._snap_verified = False
+
+    def verify_task_snapshot(self):
+        import dockersandbox as _DS
+        self.launches.append({
+            "role": "snapshot-verify",
+            "argv": ["python3", "-c", _DS.snapshot_verify_code()],
+            "container_id": _sha(
+                ("h35-shim-snapshot-verify-%d"
+                 % _ShimJail._SEQ[0]).encode()),
+            "container_note": "(test double placeholder)",
+            "returncode": 0,
+            "at_monotonic": time.monotonic(),
+            "completed_at_monotonic": time.monotonic()})
+        self._snap_verified = True
+        return True
 
     def run(self, argv, timeout=120):
+        if not self._snap_verified:
+            self.verify_task_snapshot()
         mapped = []
         for a in argv:
             if a == "/task":
@@ -519,8 +575,20 @@ class _ShimJail:
                                            a[len("/work/"):]))
             else:
                 mapped.append(a)
-        return subprocess.run(mapped, capture_output=True, text=True,
+        _at = time.monotonic()
+        _proc = subprocess.run(mapped, capture_output=True, text=True,
                               timeout=timeout)
+        self.launches.append({
+            "role": "engine",
+            "argv": list(argv),
+            "container_id": _sha(
+                ("h35-shim-engine-%d"
+                 % _ShimJail._SEQ[0]).encode()),
+            "container_note": "(test double placeholder)",
+            "returncode": _proc.returncode,
+            "at_monotonic": _at,
+            "completed_at_monotonic": time.monotonic()})
+        return _proc
 
 
 def _shim_factory(work, visible):
@@ -684,12 +752,14 @@ _FX_CELL = "H35B-FIXTURE-CELL"
 # (they would raise above), so the default observation is 0; the
 # green cell below presets 1 to simulate the enclosing cell's
 # single observed call (observed, never hardcoded by the builder).
-_saved_counter = _RA._PROVIDER_CALLS_ISSUED
-_RA._PROVIDER_CALLS_ISSUED = 1
+import a13_observer as _OB  # noqa: E402
+_S0 = _OB.sample()
+assert _S0 == (0, 0), f"fresh-process counters must start 0: {_S0}"
+_OB.note_provider_call()
+_saved_builder = _OB._ENGINE_JAIL_BUILDER
+_OB.set_engine_jail_builder(_shim_factory)
 # Harness-owned jail slot: the shim double (main() binds the real
 # seam per invocation; restored with the counter below).
-_saved_builder = _RA._A13_ENGINE_JAIL_BUILDER
-_RA.set_a13_engine_jail_builder(_shim_factory)
 # The receipt flow shares ONE outdir (as in production): the ON
 # execution writes its OUTPUT + frozen evaluator there, the helper
 # seals from those committed bytes, and grading re-reads them.
@@ -726,6 +796,70 @@ check("H35b-SEAL legs execute and seal WITHOUT grading (no model "
           os.path.join(_o4, "A13-CAUSAL-RECEIPT.json"))
       and _calls == [],
       f"{_a4['reason']} calls={len(_calls)}")
+# Auditor Ruling 1 (placement): the OFF leg seals exactly TWO
+# role-tagged launches in order (snapshot_verify -> engine_exec),
+# each with its own container identity, and per-role launch
+# records bound to the frozen role pins. This is the same shape
+# the independent probe grades (field-name bridge proven here:
+# seal -> receipt -> probe read the identical keys).
+_iso4 = _a4["seal"]["isolation"]
+_jl4 = _iso4["jail_launches"]
+_lr4 = _iso4["launch_records"]["off-noop"]
+_pins4 = AD.FROZEN_CONSTANTS["a13_role_identity"]
+_sv_hex = lambda v: (isinstance(v, str) and len(v) == 64 and all(
+    c in "0123456789abcdefABCDEF" for c in v))
+check("H35b-LAUNCH OFF seals exactly two role-tagged launches in "
+      "order (snapshot_verify -> engine_exec), each identity-bound",
+      sorted(_jl4) == ["off-noop", "on", "pass-through"]
+      and _jl4["on"] == [] and _jl4["pass-through"] == []
+      and [e["role"] for e in _jl4["off-noop"]]
+      == ["snapshot-verify", "engine"]
+      and all(_sv_hex(e["container_id"])
+              for e in _jl4["off-noop"])
+      and _jl4["off-noop"][0]["container_id"]
+      != _jl4["off-noop"][1]["container_id"]
+      and all(isinstance(e["cgroup_id"], str) and e["cgroup_id"]
+              for e in _jl4["off-noop"])
+      and all(isinstance(e["launch_at_monotonic"], float)
+              and isinstance(e["termination_at_monotonic"], float)
+              for e in _jl4["off-noop"])
+      and _jl4["off-noop"][0]["launch_at_monotonic"]
+      <= _jl4["off-noop"][0]["termination_at_monotonic"]
+      <= _jl4["off-noop"][1]["launch_at_monotonic"]
+      <= _jl4["off-noop"][1]["termination_at_monotonic"]
+      and AD.FROZEN_CONSTANTS["a13_process_plan"]
+      == {"on": 0, "off-noop": 1, "pass-through": 0}
+      and AD.FROZEN_CONSTANTS["a13_snapshot_verify_plan"]
+      == {"on": 0, "off-noop": 1, "pass-through": 0}
+      and len(_jl4["off-noop"]) == 2,
+      str([e["role"] for e in _jl4["off-noop"]]))
+import dockersandbox as _DS4  # noqa: E402
+check("H35b-LAUNCH per-role launch records bind the frozen role "
+      "pins (engine argv + K, verifier payload + image)",
+      sorted(_lr4) == ["engine", "snapshot-verify"]
+      and _lr4["engine"]["role"] == "engine"
+      and _lr4["engine"]["argv"]
+      == _pins4["engine_exec"]["argv_exact"]
+      and _lr4["engine"]["executable_sha256"] == _KSHA
+      and _lr4["engine"]["image"] == _pins4["engine_exec"]["image"]
+      and _lr4["engine"]["interpreter_sha256"]
+      == _pins4["engine_exec"]["interpreter_sha256"]
+      and _lr4["engine"]["task_snapshot_sha256"] == _SNAP
+      and _lr4["engine"]["exit_status"] == 0
+      and _lr4["snapshot-verify"]["role"] == "snapshot-verify"
+      and _lr4["snapshot-verify"]["argv"]
+      == ["python3", "-c", _DS4.snapshot_verify_code()]
+      and _lr4["snapshot-verify"]["payload_sha256"]
+      == _pins4["snapshot_verify"]["payload_sha256"]
+      == _sha(_DS4.snapshot_verify_code().encode())
+      and _lr4["snapshot-verify"]["image"]
+      == _pins4["snapshot_verify"]["image"]
+      and _lr4["snapshot-verify"]["interpreter_sha256"]
+      == _pins4["snapshot_verify"]["interpreter_sha256"]
+      and _lr4["snapshot-verify"]["task_snapshot_sha256"] == _SNAP
+      and _lr4["snapshot-verify"]["exit_status"] == 0
+      and "test double" in _lr4["engine"]["launcher"],
+      str(sorted(_lr4)))
 _g4 = _RA.grade_a13_legs(seal=_a4["seal"], outdir=_o4, taskdir=_T2DIR)
 check("H35b-SEAL exact shape (no smuggled content; seal binds "
       "everything grading needs)",
@@ -742,7 +876,11 @@ check("H35b-SEAL exact shape (no smuggled content; seal binds "
           ("captured_response_sha256", "cell_id",
            "provider_call_delta", "order_cell_delta",
            "enclosing_cell_provider_call_total",
-           "tripwire_violations", "tripwire_first_event")))
+           "tripwire_violations", "tripwire_first_event",
+           "frozen_expected_provider_calls", "process_observer",
+           "process_journal_sha256", "process_journal_path",
+           "launch_records", "jail_launches", "jail_config",
+           "daemon_container_events")))
 check("H35b-LEGS post-region grading finalizes verdicts + receipt "
       "(grading references the seal, never inputs the receipt)",
       _g4["graded"] is True
@@ -890,7 +1028,7 @@ check("H35b-DERIVE causal TRUE with every condition + relation "
 # leaves the derived outcome unchanged (the verifier, not the
 # builder, judges total-vs-delta consistency and one shared
 # response). The B4/B5 pair above proves the total is observed:
-# same helper records 1 vs 0 following the actual counter.
+# same helper records 1 vs 3 following the actual counter.
 _R4_mut = json.loads(json.dumps(_R4))
 _R4_mut["enclosing_cell_provider_call_total"] = 7
 _proven_mut, _ = AD.derive_causal_contribution(
@@ -982,7 +1120,8 @@ _w5c = tempfile.mkdtemp(prefix="h35b-shipcell-work-")
 # Counter at 0 here (vs 1 for the green cell above): the same
 # helper must then record total 0 -- the total is observed, never
 # hardcoded, and the derivation ignores it either way.
-_RA._PROVIDER_CALLS_ISSUED = 0
+_OB.note_provider_call()
+_OB.note_provider_call()
 _a5 = _RA.execute_a13_legs(
     family="fam01", task="T2",
     cap_info={"capability_id": "cap-h35-ship",
@@ -1004,7 +1143,7 @@ check("H35b-HONEST shipping OFF-noop derives causal FALSE "
                                   "pass-through": "fix"}
       and _g5["causal"] is False
       and _g5["receipt"]["causal_contribution_proven"] is False
-      and _g5["receipt"]["enclosing_cell_provider_call_total"] == 0
+      and _g5["receipt"]["enclosing_cell_provider_call_total"] == 3
       and _g5["receipt"]["provider_call_delta"] == 0
       and _proven5 is False
       and _calls == [],
@@ -1073,7 +1212,9 @@ check("H35b-MISSING crashing K records missing output (None, "
       and _g7["leg_verdicts"]["on"] == "blocked"
       and _g7["receipt"]["legs"]["on"]["output_sha256"] is None
       and _g7["receipt"]["legs"]["on"]["verdict"] == "blocked"
-      and _g7["receipt"]["causal_contribution_proven"] is False)
+      and _g7["receipt"]["causal_contribution_proven"] is False
+      and _g7["receipt"]["enclosing_cell_provider_call_total"] == 3
+      and _g7["receipt"]["provider_call_delta"] == 0)
 _SNAP50 = FV.derive_expected_visible(
     FAMC, FREEZE, "fam05", "T0")["manifest_sha256"]
 _w7c = tempfile.mkdtemp(prefix="h35b-omit-")
@@ -1158,12 +1299,13 @@ check("H35b-ISOLATE main() binds seal + grading + receipt into "
       and "grade_a13_legs" in _inspect3.getsource(_RA.main)
       and "a13_receipt_sha256" in _inspect3.getsource(_RA.main)
       and "a13_seal_sha256" in _inspect3.getsource(_RA.main)
-      and "set_a13_engine_jail_builder" in _inspect3.getsource(
+      and "OB.note_provider_call" in _inspect3.getsource(_RA.main)
+      and "OB.set_engine_jail_builder" in _inspect3.getsource(
           _RA.main)
+      and "OB.note_cell_completed" in _inspect3.getsource(_RA.main)
       and "capability_materially_contributed" in _inspect3.getsource(
           _RA.main))
-_RA._PROVIDER_CALLS_ISSUED = _saved_counter
-_RA.set_a13_engine_jail_builder(_saved_builder)
+_OB.set_engine_jail_builder(_saved_builder)
 for _d in (_KDIR, _w1, _o1, _w2, _o2, _pt_outdir, _w4, _o4, _KDIR5,
            _w5, _o5, _w5b, _o5b, _w5c, _wt, _ot, _KDIR7, _w7, _o7, _w7b,
            _o7b, _w7c, _o7c):

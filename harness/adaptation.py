@@ -182,6 +182,131 @@ def _norm_text(text):
 
 RECEIPT_SCHEMA = "a13-causal-receipt-v1"
 
+# Frozen A13 constants (auditor). SINGLE SOURCE for these values:
+# harness/mint_execution_lock.py mirrors this dict verbatim into
+# EXECUTION-LOCK.json["frozen_constants"] on every mint (and
+# --check enforces the mirror), so the independent probe reads
+# them from locked bytes while only one definition exists.
+#   expected_provider_calls_per_cell: the frozen experimental
+#     invariant (one provider call per cell).
+#   a13_process_plan: per-leg ENGINE_EXEC launch budgets
+#     (auditor Ruling 1: this plan counts engine executions ONLY --
+#     the snapshot-verify container is a separate infrastructure
+#     role with its own plan below, never folded into this one):
+#     on 0 (harvested from the cell's treatment execution, never
+#     rerun -- manufacturing an ON process to satisfy a journal is
+#     forbidden); off-noop 1 (one frozen engine over frozen input;
+#     engine threads share the leader's tgid and never count
+#     separately); pass-through 0 (pure host-side routing of
+#     already-canonical bytes -- no engine, no jail, no container;
+#     see passthrough_v1 + the runner PASS section).
+#   a13_snapshot_verify_plan: per-leg SNAPSHOT_VERIFY launch
+#     budgets (auditor Ruling 1 placement: the snapshot-
+#     verification container stays INSIDE the A13 isolation region
+#     as a frozen infrastructure role on the real fresh
+#     DockerSandbox.run() path -- moving it outside would make the
+#     isolation interval omit process activity necessary to realize
+#     the actual counterfactual leg): on 0 (no jail runs on the
+#     harvested leg); off-noop 1 (the /task byte-binding proof
+#     before OFF execution); pass-through 0. Combined OFF-noop
+#     Docker-launch budget is therefore exactly 2
+#     (snapshot_verify -> engine_exec, in that order).
+#   a13_role_identity: the frozen per-role authorization pins
+#     (auditor Rulings 1+2). snapshot_verify runs python3 -c, so
+#     it cannot satisfy a script-SHA rule: it is bound by
+#     interpreter sha + exact argv shape + locked sha256 of the -c
+#     payload + image digest + mount/config identity. engine_exec
+#     is bound by interpreter sha + /work/engine.py sha (which
+#     must equal the determinant-selected capability-artifact sha,
+#     which must equal the selected capability lock's engine sha)
+#     + exact argv + the same verified task snapshot at engine
+#     consumption. Image/payload values are DERIVED at import from
+#     harness/dockersandbox.py (the single source -- drift is
+#     unrepresentable); interpreter_sha256 is a measured literal
+#     (sha256 of /usr/local/bin/python3 inside the pinned image,
+#     method: `docker run --rm <image> sha256sum
+#     /usr/local/bin/python3`; re-measured at v2.3 author time --
+#     same digest pins same bytes, so the value follows the image
+#     and is re-verified whenever the image pin moves).
+#   a13_jail_config: the effective container security
+#     configuration, transcribed from harness/dockersandbox.py
+#     (DockerSandbox._base + IMAGE + WHO; pinned by the H35 suite
+#     against that source). --pids-limit stays 64 deliberately:
+#     the limit bounds task count (fork-bomb containment), it is
+#     not a descendant prohibition; the exfiltration control is the
+#     netns (--network none), and count enforcement is budget-vs-
+#     journal equality (extra process = FAIL). Tightening to 1
+#     would risk breaking legitimate engines with helper children
+#     for zero security gain (a single permitted process can
+#     already do everything the jail allows -- which excludes all
+#     egress). The jail shape itself is never silently changed.
+#     (Descendant prohibition for K's with no subprocess path is a
+#     SEPARATE probe-side narrowing grounded in the actual locked K
+#     bytes -- Ruling 2 -- not a pids-limit change.)
+def _frozen_role_identity():
+    """Build the frozen per-role authorization pins from single
+    sources (dockersandbox owners image + verifier payload; the
+    interpreter literal below was measured from the pinned image
+    and follows it). Computed, never hand-copied, so the mirror
+    cannot drift from its sources except by changing them (which
+    re-mints the lock and re-freezes v2.3)."""
+    import dockersandbox as _DS
+    _payload = _DS.snapshot_verify_code()
+    return {
+        "snapshot_verify": {
+            "image": _DS.IMAGE,
+            "interpreter_path": "python3",
+            "interpreter_sha256": (
+                "0e6475dfda68a9b2d93501449fc47593ca169010e8f4881577"
+                "b97463fd0c1263"),
+            "argv_head": ["python3", "-c"],
+            "payload_sha256": hashlib.sha256(
+                _payload.encode()).hexdigest(),
+            "mounts": [{"container": "/work", "mode": "rw"},
+                       {"container": "/task", "mode": "ro"}],
+            "network": "none",
+        },
+        "engine_exec": {
+            "image": _DS.IMAGE,
+            "interpreter_path": "python3",
+            "interpreter_sha256": (
+                "0e6475dfda68a9b2d93501449fc47593ca169010e8f4881577"
+                "b97463fd0c1263"),
+            "argv_exact": ["python3", "/work/engine.py",
+                           "/task/field_map.json", "/task/records.json",
+                           "/work/OUTPUT.json"],
+            "script_path": "/work/engine.py",
+            "mounts": [{"container": "/work", "mode": "rw"},
+                       {"container": "/task", "mode": "ro"}],
+            "network": "none",
+        },
+    }
+
+
+FROZEN_CONSTANTS = {
+    "expected_provider_calls_per_cell": 1,
+    "a13_process_plan": {"on": 0, "off-noop": 1, "pass-through": 0},
+    "a13_snapshot_verify_plan": {"on": 0, "off-noop": 1,
+                                 "pass-through": 0},
+    # The combined OFF-noop Docker-launch total (auditor Ruling 1:
+    # snapshot_verify + engine_exec = 2), mirrored into the lock so
+    # the probe agreement-checks it across lock/v2.3/receipt-lock
+    # sources instead of trusting any single copy.
+    "a13_off_combined_docker_budget": 2,
+    "a13_role_identity": _frozen_role_identity(),
+    "a13_jail_config": {
+        "network": "none",
+        "read_only": True,
+        "cap_drop": ["ALL"],
+        "pids_limit": 64,
+        "memory": "1g",
+        "tmpfs": ["/tmp:rw,noexec,nosuid,size=64m"],
+        "user": "WHO (invoking harness uid:gid)",
+        "image": ("python:3.12-slim@sha256:78387bc3881b8273120a12ebe6"
+                  "c1ab22b018ccc2c9adf565ae1ac9b536e184ea"),
+    },
+}
+
 # Frozen NOOP ABI declaration (the OFF-noop counterfactual runs the
 # identical adapter shape with unmapped behavior: same
 # (schema_table, task_files, policy) shape, same {files} return in
@@ -984,13 +1109,19 @@ def build_receipt(*, family, task, capability_id, determinant,
     exactly False. `isolation` is the treatment-isolation binding
     (or None when unrecorded): {"captured_response_sha256",
     "cell_id", "provider_call_delta", "order_cell_delta",
-    "enclosing_cell_provider_call_total"} -- the single captured
-    response and the single treatment cell all three legs are
-    downstream of; the counterfactual-region deltas (0 when the
-    region issued no provider call and created no ORDER cell);
-    and the enclosing cell's OBSERVED provider-call total as
-    runner-measured (whatever the cell issued -- never a hardcoded
-    1 -- against which the zero region delta is read).
+    "enclosing_cell_provider_call_total", "tripwire_violations",
+    "tripwire_first_event", "frozen_expected_provider_calls",
+    "process_observer", "process_journal_sha256",
+    "process_journal_path", "launch_records", "jail_config",
+    "daemon_container_events"} -- the single captured response and
+    the single treatment cell all three legs are downstream of
+    (copied identically into every leg: the common identity IS
+    these shared values); the region deltas; the enclosing total
+    as observed; the external tripwire record; the frozen
+    expectation (redundant provenance, must equal the lock); and
+    the harness-owned observer evidence (observer record, sealed
+    journal sha + path, per-leg launch records, jail config,
+    daemon container events).
     Recorded values a verifier recomputes from the receipt (shared
     response identity, total-vs-delta consistency) -- never prose,
     never a boolean standing in for a count, and never asserted by
@@ -1045,16 +1176,37 @@ def build_receipt(*, family, task, capability_id, determinant,
         isolation = {"captured_response_sha256": None, "cell_id": None,
                      "provider_call_delta": None,
                      "order_cell_delta": None,
-                     "enclosing_cell_provider_call_total": None}
+                     "enclosing_cell_provider_call_total": None,
+                     "tripwire_violations": None,
+                     "tripwire_first_event": None,
+                     "frozen_expected_provider_calls": None,
+                     "process_observer": None,
+                     "process_journal_sha256": None,
+                     "process_journal_path": None,
+                     "launch_records": None,
+                     "jail_launches": None,
+                     "jail_config": None,
+                     "daemon_container_events": None}
     if not isinstance(isolation, dict) or sorted(isolation) != sorted(
             ("captured_response_sha256", "cell_id",
              "provider_call_delta", "order_cell_delta",
-             "enclosing_cell_provider_call_total")):
+             "enclosing_cell_provider_call_total",
+             "tripwire_violations", "tripwire_first_event",
+             "frozen_expected_provider_calls", "process_observer",
+             "process_journal_sha256", "process_journal_path",
+             "launch_records", "jail_config",
+             "daemon_container_events", "jail_launches")):
         raise ValueError("ADAPTATION-MALFORMED-ISOLATION isolation "
-                         "must carry exactly captured_response_sha256, "
-                         "cell_id, provider_call_delta, "
-                         "order_cell_delta, "
-                         "enclosing_cell_provider_call_total")
+                         "must carry exactly the fifteen frozen slots "
+                         "(captured_response_sha256, cell_id, "
+                         "provider_call_delta, order_cell_delta, "
+                         "enclosing_cell_provider_call_total, "
+                         "tripwire_violations, tripwire_first_event, "
+                         "frozen_expected_provider_calls, "
+                         "process_observer, process_journal_sha256, "
+                         "process_journal_path, launch_records, "
+                         "jail_config, daemon_container_events, "
+                         "jail_launches)")
     _require_sha64_or_none(isolation["captured_response_sha256"],
                            "isolation.captured_response_sha256")
     if isolation["cell_id"] is not None and not isinstance(
@@ -1062,12 +1214,38 @@ def build_receipt(*, family, task, capability_id, determinant,
         raise ValueError("ADAPTATION-MALFORMED-ISOLATION cell_id must "
                          "be a string or None (missing)")
     for _dkey in ("provider_call_delta", "order_cell_delta",
-                  "enclosing_cell_provider_call_total"):
+                  "enclosing_cell_provider_call_total",
+                  "tripwire_violations",
+                  "frozen_expected_provider_calls"):
         if isolation[_dkey] is not None and not isinstance(
                 isolation[_dkey], int):
             raise ValueError(
                 f"ADAPTATION-MALFORMED-ISOLATION {_dkey} must be an "
                 "int or None (missing)")
+    if isolation["tripwire_first_event"] is not None and not isinstance(
+            isolation["tripwire_first_event"], str):
+        raise ValueError("ADAPTATION-MALFORMED-ISOLATION "
+                         "tripwire_first_event must be a string or "
+                         "None (missing)")
+    for _dkey in ("process_observer", "launch_records", "jail_config",
+                    "jail_launches"):
+        if isolation[_dkey] is not None and not isinstance(
+                isolation[_dkey], dict):
+            raise ValueError(
+                f"ADAPTATION-MALFORMED-ISOLATION {_dkey} must be an "
+                "object or None (missing)")
+    _require_sha64_or_none(isolation["process_journal_sha256"],
+                           "isolation.process_journal_sha256")
+    if isolation["process_journal_path"] is not None and not isinstance(
+            isolation["process_journal_path"], str):
+        raise ValueError("ADAPTATION-MALFORMED-ISOLATION "
+                         "process_journal_path must be a string or "
+                         "None (missing)")
+    if isolation["daemon_container_events"] is not None and not \
+            isinstance(isolation["daemon_container_events"], list):
+        raise ValueError("ADAPTATION-MALFORMED-ISOLATION "
+                         "daemon_container_events must be a list or "
+                         "None (missing)")
     _exp_identities = {LEG_ON: program_identity(F_VERSION_V1),
                        LEG_OFF_NOOP: program_identity(PROGRAM_NOOP_V1),
                        LEG_PASS_THROUGH: program_identity(F_VERSION_V1)}
@@ -1221,6 +1399,21 @@ def build_receipt(*, family, task, capability_id, determinant,
         "order_cell_delta": isolation["order_cell_delta"],
         "enclosing_cell_provider_call_total":
             isolation["enclosing_cell_provider_call_total"],
+        "isolation": {
+            "tripwire_violations": isolation["tripwire_violations"],
+            "tripwire_first_event": isolation["tripwire_first_event"],
+            "frozen_expected_provider_calls": isolation[
+                "frozen_expected_provider_calls"],
+            "process_observer": isolation["process_observer"],
+            "process_journal_sha256": isolation[
+                "process_journal_sha256"],
+            "process_journal_path": isolation["process_journal_path"],
+            "launch_records": isolation["launch_records"],
+            "jail_launches": isolation["jail_launches"],
+            "jail_config": isolation["jail_config"],
+            "daemon_container_events": isolation[
+                "daemon_container_events"],
+        },
     }
     receipt["receipt_sha256"] = _sha_hex(canonical_json(
         {k: v for k, v in receipt.items()

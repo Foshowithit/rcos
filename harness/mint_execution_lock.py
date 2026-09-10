@@ -26,6 +26,25 @@ ROOT = os.path.dirname(HERE)
 LOCK = os.path.join(ROOT, "benchmarks", "fam-c", "EXECUTION-LOCK.json")
 sys.path.insert(0, os.path.join(ROOT, "benchmarks", "fam-c"))
 from preflight import _harness_closure  # noqa: E402  (same closure rule)
+sys.path.insert(0, os.path.join(ROOT, "harness"))
+
+
+def _frozen_constants():
+    """Single-source frozen constants (harness/adaptation.py
+    FROZEN_CONSTANTS): mirrored verbatim into the lock so the
+    independent probe reads them from locked bytes. Returns
+    (dict, error-string-or-None)."""
+    try:
+        import adaptation as _AD
+    except (ImportError, SyntaxError) as e:
+        return None, f"cannot import adaptation: {e}"
+    consts = getattr(_AD, "FROZEN_CONSTANTS", None)
+    if not isinstance(consts, dict):
+        return None, "adaptation.FROZEN_CONSTANTS is not a mapping"
+    try:
+        return json.loads(json.dumps(consts, sort_keys=True)), None
+    except (TypeError, ValueError) as e:
+        return None, f"FROZEN_CONSTANTS not JSON-clean: {e}"
 
 
 def _sha(rel):
@@ -75,15 +94,30 @@ def main():
             changed[rel] = {"from_sha": files[rel], "to_sha": want}
             files[rel] = want
     new_manifest = _manifest_sha(files)
+    consts, consts_err = _frozen_constants()
+    consts_stale = (consts_err is not None
+                    or lock.get("frozen_constants") != consts)
     if a.check:
         stale = bool(changed) or new_manifest != lock["harness_manifest_sha256"]
         print("EXECUTION-LOCK: " + ("STALE" if stale else "current"))
         for rel, c in sorted(changed.items()):
             print(f"  changed: {rel}")
+        if consts_err is not None:
+            print(f"  frozen_constants unreadable: {consts_err}")
+            return 1
+        if consts_stale:
+            print("  frozen_constants mirror drift (re-mint to sync)")
+            return 1
         return 1 if stale else 0
-    if not changed:
+    if not changed and not consts_stale:
         print("EXECUTION-LOCK: no harness byte changed; nothing to mint")
         return 0
+    if consts_err is not None:
+        print(f"EXECUTION-LOCK-REFUSED {consts_err}")
+        return 1
+    lock["frozen_constants"] = consts
+    print(f"EXECUTION-LOCK frozen_constants synced "
+          f"({len(consts)} key(s))")
     lock["amendments"].append({
         "from_manifest": lock["harness_manifest_sha256"],
         "to_manifest": new_manifest, "files": changed,

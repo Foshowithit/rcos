@@ -49,6 +49,48 @@ BANNED_PREFIXES = ("/var/run", "/run/docker", "/home/chow/.agent-vault",
                    "/home/chow/.dsh", "/home/chow/.pi", "/home/chow/.ssh",
                    "/home/chow/chow-work/rcos/benchmarks")
 
+# In-region role identities (auditor Ruling 1): the OFF counterfactual
+# leg is exactly TWO authorized container launches on the fresh
+# DockerSandbox.run() path: snapshot_verify -> engine_exec. The
+# snapshot verifier is a SEPARATE infrastructure role (never folded
+# into the engine-execution budget) that runs the exact argv
+# ["python3", "-c", SNAPSHOT_VERIFY_CODE]. This constant is the
+# SINGLE SOURCE for that payload: verify_task_snapshot() executes
+# this exact string, the runner seals sha256(this exact string)
+# into the snapshot-verify launch record, and the independent probe
+# checks the sealed value against its locked pin. A straight-line
+# hasher (hash/walk/read/print only): no subprocess, no fork, no
+# dynamic execution path, so it has no legitimate descendants.
+SNAPSHOT_VERIFY_CODE = (
+    "import hashlib,os;"
+    "d={}\n"
+    "for b,ds,fs in os.walk('/task'):\n"
+    " for x in sorted(ds):\n"
+    "  d['dir|'+os.path.relpath(os.path.join(b,x),'/task')]"
+    "=hashlib.sha256(b'').hexdigest()\n"
+    " for fn in sorted(fs):\n"
+    "  p=os.path.join(b,fn)\n"
+    "  d['file|'+os.path.relpath(p,'/task')]"
+    "=hashlib.sha256(open(p,'rb').read()).hexdigest()\n"
+    "import json;print(json.dumps(d,sort_keys=True))")
+
+# Exact argv shapes per in-region role (auditor Ruling 1
+# authorization). The engine argv is owned by the harness-run
+# arrival path (execute_arrival's frozen command); the verifier
+# argv is owned here. Both are pinned by the independent probe
+# against its locked role identity, never inferred from a receipt.
+SNAPSHOT_VERIFY_ARGV_HEAD = ["python3", "-c"]
+
+
+def snapshot_verify_code():
+    """The exact `-c` payload the snapshot verifier executes."""
+    return SNAPSHOT_VERIFY_CODE
+
+
+def snapshot_verify_argv():
+    """The exact argv of a snapshot-verify launch."""
+    return ["python3", "-c", SNAPSHOT_VERIFY_CODE]
+
 
 def _run(cmd, **kw):
     return subprocess.run(cmd, capture_output=True, text=True, **kw)
@@ -268,6 +310,15 @@ class DockerSandbox:
             "-v", f"{self.staged}:/task:ro",
         ]
         self._snap_verified = False
+        # Harness-side launch evidence (auditor Ruling 1): every
+        # container this instance starts appends exactly one entry
+        # here in launch order -- {"role", "argv", "container_id",
+        # "container_note", "returncode", "at_monotonic",
+        # "completed_at_monotonic"} -- so the OFF leg's
+        # snapshot_verify -> engine_exec pair is OBSERVED, never
+        # inferred. A fresh instance performs exactly two launches
+        # on its first run() (verify, then the requested command).
+        self.launches = []
         # NOTE: IMAGE is appended by run(), AFTER all -e flags.
         # Docker treats everything after IMAGE as the command.
 
@@ -305,15 +356,7 @@ class DockerSandbox:
         (SNAPSHOT-DENY otherwise), so this re-proof is transitive:
         in-jail bytes equal the frozen expected bytes. Raises on
         mismatch."""
-        code = ("import hashlib,os;"
-                "d={}\n"
-                "for b,ds,fs in os.walk('/task'):\n"
-                " for x in sorted(ds):\n"
-                "  d['dir|'+os.path.relpath(os.path.join(b,x),'/task')]=hashlib.sha256(b'').hexdigest()\n"
-                " for fn in sorted(fs):\n"
-                "  p=os.path.join(b,fn)\n"
-                "  d['file|'+os.path.relpath(p,'/task')]=hashlib.sha256(open(p,'rb').read()).hexdigest()\n"
-                "import json;print(json.dumps(d,sort_keys=True))")
+        code = snapshot_verify_code()
         p = self._run_raw(["python3", "-c", code])
         if p.returncode != 0:
             raise PermissionError(
@@ -330,7 +373,51 @@ class DockerSandbox:
     def _run_raw(self, argv, **kw):
         env = ["-e", "PYTHONDONTWRITEBYTECODE=1",
                "-e", "PATH=/usr/local/bin:/usr/bin:/bin"]
-        return _run(self._base + env + [self.image] + argv, **kw)
+        return self._run_launch("snapshot-verify", argv,
+                                self._base + env + [self.image] + argv,
+                                **kw)
+
+    def _run_launch(self, role, argv, cmd, **kw):
+        """Run one container launch and record its harness-side
+        identity (auditor Ruling 1: every in-region launch is
+        recorded with its own bound identity -- role, exact argv,
+        container id -- never inferred later from a plan or from
+        daemon-event filtering). The container id is captured
+        exactly via --cidfile (the daemon writes it at creation;
+        `docker run --rm` prints only the command's own stdout, so
+        without --cidfile the id would have to be guessed from
+        daemon history). A launch the daemon refuses (or whose id
+        file is absent/unparseable) is recorded with container_id
+        None plus a note -- honestly missing, never invented; the
+        independent probe fails an unbound launch."""
+        import re as _re
+        cid_path = os.path.join(
+            __import__("tempfile").gettempdir(),
+            "rcos-cid-%s-%s" % (self.name, uuid.uuid4().hex[:8]))
+        full = cmd[:5] + ["--cidfile", cid_path] + cmd[5:]
+        _at = time.monotonic()
+        proc = _run(full, **kw)
+        cid, note = None, None
+        try:
+            with open(cid_path) as _f:
+                _raw = _f.read().strip()
+            if _re.fullmatch(r"[0-9a-fA-F]{64}", _raw):
+                cid = _raw
+            else:
+                note = "cidfile unparseable: %r" % (_raw[:32],)
+        except OSError as _e:
+            note = "no cidfile (%s)" % type(_e).__name__
+        try:
+            os.unlink(cid_path)
+        except OSError:
+            pass
+        self.launches.append({"role": role, "argv": list(argv),
+                              "container_id": cid,
+                              "container_note": note,
+                              "returncode": proc.returncode,
+                              "at_monotonic": _at,
+                              "completed_at_monotonic": time.monotonic()})
+        return proc
 
     def run(self, argv, input_text=None, timeout=120, extra_env=None):
         """Execute inside the jail. Returns CompletedProcess (host side).
@@ -347,8 +434,9 @@ class DockerSandbox:
             env += ["-e", f"{k}={v}"]
         if not self._snap_verified:
             self.verify_task_snapshot()
-        return _run(self._base + env + [self.image] + argv,
-                    input=input_text, timeout=timeout)
+        return self._run_launch("engine", argv,
+                                self._base + env + [self.image] + argv,
+                                input=input_text, timeout=timeout)
 
     def inspect_mounts(self):
         """Harness-side audit: prove ONLY the two declared binds exist."""
