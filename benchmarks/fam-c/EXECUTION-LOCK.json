@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "5e0bd6d65f7cca27f622ff896e7dfdc26692d1d4e27833a23930355b19851096",
+ "harness_manifest_sha256": "5895fe025653d0a7ed48c2446e1346334e855abc7de6feacfbbd5d517e98cc77",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -13,7 +13,7 @@
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "574558f77e8585a24fbb73113ace30195b1992201a209a6abdfa7a184eeb72cc",
   "harness/admissibility.py": "a37b34545a5e4250c53cf1bc9f6f67ded6bc7e880a958f1a627c1a3b0f49b713",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "d9b4801b7dcbe200db32f109e36a023044782d642606f8889246b0760806c4c9",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "d5677b65896cb57a02760e3d82f3c4f35724c6843f183a83d0c1172975589715",
   "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
@@ -26,7 +26,7 @@
   "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193",
   "harness/contract_shape.py": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2",
   "harness/frozen_visible.py": "9033d26c176d0dc3c681fecbdc8de111e057730032f2ad4dd671e2c4433e4dd9",
-  "harness/adaptation.py": "c19439963560c592eeb9aca5afa042ad33708e2adb0a3b83f437a76df3ec2fb4",
+  "harness/adaptation.py": "290fcefd5eabb35d94437e0eb245133211e4a1be384e533e6347ff807dbf2056",
   "harness/a13_observer.py": "2f77b0c2db57b713c9836d0d1e3ae5473cf61d126c9c43dfeb70212208de65bc"
  },
  "amendments": [
@@ -1167,6 +1167,23 @@
    },
    "reason": "Round-31/32 identity: runner seal-time identity bundle (fresh map + canonical manifest + lock sha) + seal grading slot; adaptation 20 slots; H35 identity control (commit 2f44ab6)",
    "slice": "a13-identity-bundle",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "5e0bd6d65f7cca27f622ff896e7dfdc26692d1d4e27833a23930355b19851096",
+   "to_manifest": "5895fe025653d0a7ed48c2446e1346334e855abc7de6feacfbbd5d517e98cc77",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "d9b4801b7dcbe200db32f109e36a023044782d642606f8889246b0760806c4c9",
+     "to_sha": "d5677b65896cb57a02760e3d82f3c4f35724c6843f183a83d0c1172975589715"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "c19439963560c592eeb9aca5afa042ad33708e2adb0a3b83f437a76df3ec2fb4",
+     "to_sha": "290fcefd5eabb35d94437e0eb245133211e4a1be384e533e6347ff807dbf2056"
+    }
+   },
+   "reason": "Closure digest (16 files incl observer) + top-level identity bundle copies on seal/receipt; H35 placements (commit HEAD)",
+   "slice": "a13-closure-digest-toplevel",
    "status_after": "open-round2"
   }
  ],
