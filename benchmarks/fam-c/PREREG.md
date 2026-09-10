@@ -1040,6 +1040,51 @@ fixtures:` — the fixture task dir holds only `prompt.md`), read
 from git objects, never disk; `FREEZE-HASHES.sha256` stays at
 exactly its 3 graded entries so `verified_files == 3`.
 
+Forward amendment AMEND-2026-09-10-d13-finite-closure
+(2026-09-10): pre-call prompt-snapshot binding (D12e) plus the
+finite provenance closure over FROZEN TASK -> MODEL REQUEST ->
+PROVIDER RESPONSE -> PARSED ARRIVAL -> EXECUTED SOLVER/LOCKED
+CAPABILITY -> EXACT GRADED OUTPUT -> FROZEN CHECKER+TRUTH ->
+VERDICT -> USAGE/IDENTITY/EVIDENCE CHAIN (auditor D13: three P0
+holes; nothing outside this boundary is in scope — the report
+parser stays harness code under the execution lock, no new
+generic filesystem hardening, no new lock layers). (D12e)
+prepare_arm() hashes the STAGED mutable visible tree and builds
+the prompt from it, so a staged-H/restored-E ABA passed the
+live-dir gate while the model saw H. Before any model token is
+spent, staged_tree must equal the frozen expected manifest AND
+context_task_snapshot_hash must equal the frozen task-snapshot
+sha (FROZEN-VISIBLE-DENY, MODEL_CALL_COUNT == 0). (P0-1)
+Capability artifacts were check-then-use: verified live capdir
+paths steered the prompt and the jail. The lock-verified bytes
+are now snapshotted into a run-private dir (re-hashed against
+the lock at snapshot time) and prompt + execution consume ONLY
+the snapshot (CAPABILITY-SNAPSHOT-DENY on the residual window);
+the snapshot (dir + per-file shas) rides the manifest and the
+chain capability-event. (P0-2) The checker read
+run_dir/OUTPUT.json while evidence hashed /work/OUTPUT.json. The
+committed output is now sealed into the run-private evaluation
+package (frozen check.py + frozen truth.json + SEALED
+OUTPUT.json), hashed pre-checker and re-hashed after; drift
+refuses with EVALUATOR-INPUT-DRIFT-DENY and never records a
+verdict. graded_output_sha256 names the persisted link (manifest
++ chain evaluator link; post-hoc readers re-hash the sealed
+artifact). The T1 candidate-output grading mirrors the seal as
+experimental evidence (validated=false naming
+evaluator-input-drift, never infrastructure failure). (P0-3)
+arrival.json was consumed by T1/promotion with no run-time
+binding. The runner now captures response_text_sha256 (provider
+response text; the usage receipt schema is frozen by its
+verifiers, so this rides manifest + chain, never the receipt) +
+arrival_sha256 (arrival.json file bytes as written) +
+execution_payload_sha256 (canonical payload) + solver_py_sha256
+into the manifest and the chain model-call link, and every later
+T1/promotion read requires the live bytes to equal the
+chain-bound value (ACQUISITION-CANDIDATE-DENY /
+PROMOTION-DENY naming arrival provenance; legacy/unverifiable
+chains deny, never consume). The protocol lock freezes THESE
+BINDING RULES; it never absorbs per-run values.
+
 ---
 # 11. Manifest lifecycle
 

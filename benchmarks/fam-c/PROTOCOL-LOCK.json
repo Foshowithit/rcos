@@ -405,6 +405,14 @@
    "reason": "A12n slice D12d (shielded-battery hermetic-fixture regression, repo-side): forward amendment AMEND-2026-09-10-d12d-hermetic-prefix (families/ prefix derived from the fam-c dir relative to the git top level in derive_expected_visible + derive_expected_evaluator \u2014 byte-identical at the canonical base; h3 miniature carries the frozen visibility declaration in its freeze commit with FREEZE-HASHES at 3 entries)",
    "base": "bd04f6e",
    "slice": "a12n-slice-d12d"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "91c0a5ea4c97cd8ab0161d145bc5b8960900019f3f08e00d88246c220108a17c",
+   "to_sha": "cfd403dd18086a57c096859093c9ec670c6234699415b0a9ba57e71f20751b32",
+   "reason": "A12n slice D13 finite provenance closure (auditor D13: D12e pre-call prompt-snapshot binding + P0-1 capability snapshot + P0-2 sealed graded output + P0-3 arrival provenance binding): forward amendment AMEND-2026-09-10-d13-finite-closure (staged_tree + context hash vs frozen authority pre-model; lock-verified capability snapshot consumed by prompt + execution; committed output sealed into the run-private evaluation package with pre/post checker hash; response/arrival/payload/solver shas captured at run time with T1/promotion re-read require; T1 candidate-output seal as experimental evidence)",
+   "base": "cb83f95",
+   "slice": "a12n-slice-d13"
   }
  ]
 }

@@ -250,9 +250,9 @@ def _producer_contract(t0_run_dir):
     the recognition set.
     """
     try:
-        arrival = _read_json(os.path.join(t0_run_dir, "arrival.json"))
-    except (ValueError, OSError) as e:
-        raise PermissionError(f"PROMOTION-DENY T0 arrival unreadable: {e}")
+        arrival, _arrival_blob = _bound_arrival(t0_run_dir, "T0")
+    except PermissionError:
+        raise
     payload = _arrival_payload(arrival)
     declared = payload.get("capability_contract")
     # A12d slice D8.1: the shape verdict comes from the SINGLE shared
@@ -341,6 +341,50 @@ def _read_chain_links(run_dir):
     if not links:
         raise PermissionError(f"PROMOTION-DENY evidence chain empty at {p}")
     return links
+
+
+def _bound_arrival(run_dir, event):
+    """Read arrival.json BYTES and require them to equal the
+    arrival_sha256 the run's own chain model-call link committed at
+    capture (A12n slice D13 P0-3). Returns (arrival_dict, file_bytes).
+
+    Every promotion-path consumer of arrival bytes goes through here
+    instead of a bare arrival.json read: a post-hoc arrival rewrite
+    (solver swap, contract swap) denies with PROMOTION-DENY naming
+    arrival provenance, and a chain with no run-time arrival binding
+    denies as legacy/unverifiable. The verified bytes ARE the
+    chain-bound immutable arrival artifact for this read (equality is
+    proven before anything is consumed). Mirrors the _identity_evidence
+    post-hoc-edit binding style."""
+    ap = os.path.join(run_dir, "arrival.json")
+    try:
+        blob = open(ap, "rb").read()
+    except OSError as e:
+        raise PermissionError(
+            f"PROMOTION-DENY {event} arrival unreadable at {ap}: {e}")
+    try:
+        arrival = json.loads(blob.decode())
+    except ValueError as e:
+        raise PermissionError(
+            f"PROMOTION-DENY {event} arrival unparseable at {ap}: {e}")
+    links = _read_chain_links(run_dir)
+    mcs = [l for l in links if l.get("kind") == "model-call"]
+    if not mcs:
+        raise PermissionError(
+            f"PROMOTION-DENY {event} chain commits no model-call "
+            f"arrival binding (no run-time arrival provenance -> deny)")
+    bound = (mcs[0].get("payload") or {}).get("arrival_sha256")
+    if not isinstance(bound, str):
+        raise PermissionError(
+            f"PROMOTION-DENY {event} chain model-call link commits no "
+            f"run-time arrival_sha256 (legacy/unverifiable -> deny)")
+    if _sha_bytes(blob) != bound:
+        raise PermissionError(
+            f"PROMOTION-DENY {event} arrival.json bytes "
+            f"{_sha_bytes(blob)[:12]} != the arrival sha {bound[:12]} "
+            f"the verified chain committed at capture (post-hoc "
+            f"arrival edit -> deny)")
+    return arrival, blob
 
 
 def _evaluator_evidence(run_dir, event):
@@ -471,7 +515,11 @@ def run_evidence(fam_c_dir, cell, freeze_commit=None):
     if not (os.path.isfile(mfp) and os.path.isfile(ap)):
         raise PermissionError(f"PROMOTION-DENY {cell['event']} run missing "
                               f"manifest/arrival at {d}")
-    mf, arrival = _read_json(mfp), _read_json(ap)
+    mf = _read_json(mfp)
+    # A12n slice D13 P0-3: the arrival is consumed ONLY through its
+    # chain-bound bytes (post-hoc arrival rewrite -> deny here,
+    # before any solver/contract/decision value is trusted).
+    arrival, _arrival_blob = _bound_arrival(d, cell["event"])
     chain = os.path.join(d, "EVIDENCE-CHAIN.jsonl")
     tip = order._chain_tip(chain)
     decision = arrival.get("decision")
@@ -651,8 +699,7 @@ def derive_candidate(t0_ev, t1_ev, t0_run_dir):
     no-declaration path is DELETED; a standalone fresh T1 may still SHIP
     its own cell, but it can never promote). If T1 declares a candidate
     hash in its arrival it must match exactly."""
-    ap = os.path.join(t0_run_dir, "arrival.json")
-    arrival = _read_json(ap)
+    arrival, _arrival_blob = _bound_arrival(t0_run_dir, "T0")
     payload = _arrival_payload(arrival)
     src = payload.get("solver_py")
     if not isinstance(src, str) or not src.strip():
@@ -670,7 +717,9 @@ def derive_candidate(t0_ev, t1_ev, t0_run_dir):
     t1_dir = t1_ev["run_dir"]
     t1_validation = _t1_candidate_validation(t1_dir, sha)
     declared = None
-    t1_arr = _read_json(os.path.join(t1_dir, "arrival.json"))
+    # A12n slice D13 P0-3: the T1 declaration is consumed ONLY from
+    # its chain-bound bytes as well (same post-hoc-edit binding).
+    t1_arr, _t1_blob = _bound_arrival(t1_dir, "T1")
     t1_payload = _arrival_payload(t1_arr)
     if isinstance(t1_payload.get("candidate_sha256"), str):
         declared = t1_payload["candidate_sha256"]

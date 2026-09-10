@@ -826,16 +826,20 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
     landing between the re-hash and the exec cannot substitute the
     grading bytes. Production main() always passes the authority.
     Returns {"verdict", "checker_returncode", "checker_output",
-             "output_sha256", "decision", "execution_mode",
+             "output_sha256", "graded_output_sha256",
+             "graded_output_path", "decision", "execution_mode",
              "container_returncode", "checker_path", "checker_sha256",
              "truth_sha256", "expected_checker_sha256",
              "expected_truth_sha256", "evaluator_source"} — the
     checker/truth sha256s are the exact bytes THIS arrival's
     evaluation path executed (the frozen-materialized copy on the
     authority path, bound before the host-side checker ran);
-    checker_path is the executed copy's path; evaluator_source
-    names which form graded the run ("frozen-materialized" vs
-    "live-legacy").
+    output_sha256 is the container-produced /work/OUTPUT.json bytes
+    while graded_output_sha256 is the sha256 of the EXACT sealed
+    bytes passed to the checker (D13 P0-2; None when no output was
+    produced or on the live-legacy path); checker_path is the
+    executed copy's path; evaluator_source names which form graded
+    the run ("frozen-materialized" vs "live-legacy").
     Plus "engine_jail" on the use_capability path: {"task_snapshot",
     "mounts", "adapted_input_sha256"} describing the adapted-input-only
     jail (A12d D1-A3/A4); None on the fresh/solver path."""
@@ -967,11 +971,40 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
             "bytes != freeze-derived authority; refused before "
             "any verdict is recorded")
     chk = None
+    # A12n slice D13 P0-2: the GRADED output is sealed. The checker
+    # must consume exactly the bytes the evidence hashes: on the
+    # authority path the committed OUTPUT.json is sealed into the
+    # run-private evaluation package (frozen check.py + frozen
+    # truth.json + SEALED OUTPUT.json) and hashed immediately before
+    # the checker runs; a post-checker re-hash must equal it, else
+    # EVALUATOR-INPUT-DRIFT-DENY is raised and no verdict is ever
+    # recorded. A substitution before the seal is harmless (the
+    # evidence follows the graded bytes); a substitution between the
+    # seal and the end of grading is denied.
+    graded_output_sha256 = None
+    graded_output_path = None
     if os.path.exists(out):
+        if evaluator_source == "frozen-materialized":
+            graded_output_path = os.path.join(
+                os.path.dirname(checker), "OUTPUT.json")
+            shutil.copy2(os.path.join(outdir, "OUTPUT.json"),
+                         graded_output_path)
+            graded_output_sha256 = h(graded_output_path)
+            checker_argv_output = graded_output_path
+        else:
+            checker_argv_output = os.path.join(outdir, "OUTPUT.json")
         chk = subprocess.run([sys.executable, checker,
                               os.path.basename(taskdir),
-                              os.path.join(outdir, "OUTPUT.json")],
+                              checker_argv_output],
                              capture_output=True, text=True)
+        if graded_output_sha256 is not None and \
+                h(graded_output_path) != graded_output_sha256:
+            raise RuntimeError(
+                "EVALUATOR-INPUT-DRIFT-DENY sealed graded output "
+                f"{h(graded_output_path)[:12]} != pre-checker seal "
+                f"{graded_output_sha256[:12]}; the checker consumed "
+                "bytes the evidence does not name — no verdict is "
+                "recorded")
     verdict = ("ship" if chk and chk.returncode == 0 else
                "fix" if chk and chk.returncode == 1 else "blocked")
     return {"verdict": verdict,
@@ -979,6 +1012,8 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
             "checker_output": ((chk.stdout or "") + (chk.stderr or ""))[:500]
                               if chk else "missing output",
             "output_sha256": h(out) if os.path.exists(out) else None,
+            "graded_output_sha256": graded_output_sha256,
+            "graded_output_path": graded_output_path,
             "decision": decision,
             "execution_mode": execution_mode,
             "engine_jail": engine_jail,
@@ -1243,10 +1278,25 @@ def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
                      adapter_sha=adapter_sha, executed_sha=executed_sha,
                      manifest_sha=manifest_sha, tree_sha=tree_sha)
     task_name = os.path.basename(os.path.normpath(taskdir))
+    # A12n slice D13 P0-2 (T1 mirror): the graded candidate output is
+    # sealed like the acquisition output — hash the exact bytes handed
+    # to the checker, re-hash afterwards, and fail the VALIDATION
+    # (experimental evidence, validated=false — never infra) on any
+    # drift, naming the sealed bytes that were actually graded.
+    _sealed_candidate_output_sha = h(cand_out_committed)
     chk = subprocess.run([sys.executable, checker, task_name,
                           cand_out_committed],
                          capture_output=True, text=True)
     checker_rc = chk.returncode
+    if h(cand_out_committed) != _sealed_candidate_output_sha:
+        return _fail("evaluator-input-drift: sealed candidate output "
+                     f"{h(cand_out_committed)[:12]} != pre-checker seal "
+                     f"{_sealed_candidate_output_sha[:12]}; the T1 checker "
+                     "consumed bytes the evidence does not name",
+                     adapter_sha=adapter_sha, executed_sha=executed_sha,
+                     candidate_output_sha=_sealed_candidate_output_sha,
+                     checker_rc=checker_rc,
+                     manifest_sha=manifest_sha, tree_sha=tree_sha)
     validation_verdict = "ship" if checker_rc == 0 else "fail"
     candidate_output_sha = h(cand_out_committed)
     # 8. validated predicate (all five) + eleven-key evidence (the caller
@@ -1420,6 +1470,45 @@ def _verify_capability(capdir, cell=None):
             "engine_sha256": lock["artifacts"]["engine.py"]}
 
 
+def _snapshot_verified_capability(cap_info, snapshot_dir):
+    """Run-private snapshot of lock-verified capability bytes (A12n
+    slice D13 P0-1 — the evaluator fix, applied to capabilities).
+
+    Copies every verified artifact into `snapshot_dir` (a run-private
+    dir), then re-hashes each written file against the lock's
+    artifact map: the snapshot is byte-identical to the LOCKED bytes
+    no matter when the live capability directory is mutated
+    afterwards. Prompt construction and jail execution must consume
+    ONLY these snapshot paths — _verify_capability() returns live
+    verified paths that must never be consumed after this point.
+    Returns {name: snapshot_path}. Raises PermissionError
+    (CAPABILITY-SNAPSHOT-DENY) on any mismatch or any prompt-consumed
+    file lacking a lock hash."""
+    os.makedirs(snapshot_dir, exist_ok=True)
+    lock = json.load(open(cap_info["lock_path"]))
+    want_map = lock.get("artifacts") or {}
+    snap = {}
+    for name, live in sorted(cap_info["verified"].items()):
+        want = want_map.get(name)
+        if want is None:
+            raise PermissionError(
+                "CAPABILITY-SNAPSHOT-DENY lock carries no artifact hash "
+                f"for {name!r}; refusing to snapshot unverifiable bytes")
+        dst = os.path.join(snapshot_dir, os.path.basename(name))
+        shutil.copy2(live, dst)
+        if h(dst) != want:
+            raise PermissionError(
+                "CAPABILITY-SNAPSHOT-DENY snapshotted "
+                f"{name} {h(dst)[:12]} != locked {want[:12]} "
+                "(live bytes changed under verification; refusing)")
+        snap[name] = dst
+    if "engine.py" not in snap:
+        raise PermissionError(
+            "CAPABILITY-SNAPSHOT-DENY snapshot has no engine.py "
+            "(the executed engine is always lock-bound)")
+    return snap
+
+
 def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
                 identity_family, cap_info, reuse_path, checker_sha, truth_sha,
                 verdict, output_sha, promote_info, candidate_validation=None):
@@ -1480,7 +1569,18 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
         "input_tokens_uncached": nu["input_tokens_uncached"],
         "output_tokens": nu["output_tokens"],
         "cached_tokens": nu["cached_tokens"],
-        "call_count": 1}
+        "call_count": 1,
+        # A12n slice D13 P0-3: the provider response text, the parsed
+        # arrival bytes, and the executed payload, as captured at run
+        # time (read from the genesis-bound manifest, never
+        # recomputed here) — later T1/promotion reads verify the
+        # live arrival.json against arrival_sha256.
+        "response_text_sha256": manifest.get("response_text_sha256"),
+        "arrival_sha256": manifest.get("arrival_sha256"),
+        "arrival_file": manifest.get("arrival_file"),
+        "execution_payload_sha256": manifest.get(
+            "execution_payload_sha256"),
+        "solver_py_sha256": manifest.get("solver_py_sha256")}
     if identity_path is not None:
         if not os.path.exists(identity_path):
             raise RuntimeError(f"CHAIN-IDENTITY-MISSING {identity_path}")
@@ -1521,6 +1621,10 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
             "capability_version": cap_info.get("capability_version"),
             "lock_sha256": cap_info["lock_sha256"],
             "engine_sha256": cap_info["engine_sha256"],
+            # A12n slice D13 P0-1: the snapshot that was actually
+            # consumed (prompt + execution), never the live dir.
+            "capability_snapshot": (dict(cap_info["snapshot"])
+                                    if cap_info.get("snapshot") else None),
             "verified_pre_execution": True,
             "loaded": loaded, "invoked": invoked,
             "output_consumed": consumed,
@@ -1627,9 +1731,12 @@ def _wire_chain(outdir, frozen, manifest, receipt, nu_path, identity_path,
                                f"exactly True or False, got "
                                f"{cv.get('validated')!r}")
     # evaluator link: sealed truth + checker hashes + host-side outcome.
+    # A12n slice D13 P0-2: the link also binds the sealed graded
+    # output bytes (read from the manifest, never recomputed here).
     ev_link = c.append("evaluator", {
         "checker_sha256": checker_sha, "truth_sha256": truth_sha,
         "output_sha256": output_sha,
+        "graded_output_sha256": manifest.get("graded_output_sha256"),
         "checker_returncode": manifest.get("checker_returncode"),
         "verdict": verdict})
     # promotion event (a capability ship) — before the terminal grade.
@@ -1967,14 +2074,39 @@ def prepare_arm(lane, family, task, arm, capdir, wire, run_id,
             # H-LOCK-008: resolve the executed engine by exact locked hash
             # BEFORE it enters the jail. Dev-escape (unwired) copies unverified.
             cap_info = _verify_capability(capdir, cell=cell)
-            cap_engine = cap_info["verified"]["engine.py"]
+            # A12n slice D13 P0-1: check-then-use closure. The verified
+            # live paths above are NEVER consumed afterwards: every
+            # verified artifact is snapshotted into a run-private dir
+            # (re-hashed against the lock at snapshot time) and the
+            # prompt plus the jail execution consume ONLY the snapshot
+            # — a capability dir rewritten after verification steers
+            # nothing and executes nothing.
+            cap_snapshot = _snapshot_verified_capability(
+                cap_info, os.path.join(work, "capability-snapshot"))
+            cap_info["snapshot"] = {
+                "dir": os.path.join(work, "capability-snapshot"),
+                "files": {n: h(p)
+                          for n, p in sorted(cap_snapshot.items())}}
+            cap_engine = cap_snapshot["engine.py"]
+            for _need in ("manifest.json", "adapter_notes.md"):
+                if _need not in cap_snapshot:
+                    raise PermissionError(
+                        "CAPABILITY-SNAPSHOT-DENY prompt-consumed "
+                        f"capability file {_need!r} has no lock-verified "
+                        "snapshot; the treatment prompt consumes ONLY "
+                        "snapshot bytes (refused)")
+            prompt = build_arm_prompt(
+                "correct", envelope,
+                open(cap_snapshot["manifest.json"]).read(),
+                open(cap_snapshot["adapter_notes.md"]).read(),
+                open(cap_engine).read())
         else:
             cap_engine = os.path.join(capdir, "engine.py")
-        prompt = build_arm_prompt(
-            "correct", envelope,
-            open(os.path.join(capdir, "manifest.json")).read(),
-            open(os.path.join(capdir, "adapter_notes.md")).read(),
-            open(cap_engine).read())
+            prompt = build_arm_prompt(
+                "correct", envelope,
+                open(os.path.join(capdir, "manifest.json")).read(),
+                open(os.path.join(capdir, "adapter_notes.md")).read(),
+                open(cap_engine).read())
         twin = build_arm_prompt("disabled", envelope)
         sym = check_arm_symmetry(prompt, twin, envelope)
     else:
@@ -2231,7 +2363,47 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                 f"T0 candidate cannot run")
         t0arr_p = os.path.join(order_run_dir(BASE, t0cell), "arrival.json")
         try:
-            t0arr = json.load(open(t0arr_p))
+            t0arr_bytes = open(t0arr_p, "rb").read()
+        except OSError as e:
+            raise SystemExit(
+                "ACQUISITION-CANDIDATE-DENY: T0 arrival unreadable at "
+                f"{t0arr_p}: {e}")
+        # A12n slice D13 P0-3: the T0 arrival is authority for the
+        # frozen candidate ONLY if its current bytes equal the
+        # arrival_sha256 the T0 chain's model-call link committed at
+        # capture. A post-hoc arrival rewrite (solver swap) denies
+        # here with a candidate-provenance deny — before any prompt
+        # is built and before any T1 model token is spent. A T0
+        # chain with no run-time arrival binding cannot source a
+        # candidate either (legacy/unverifiable -> deny, never
+        # consume).
+        t0chain_p = os.path.join(order_run_dir(BASE, t0cell), CHAIN_FILE)
+        try:
+            _t0_links = [json.loads(_l) for _l in open(t0chain_p)
+                         if _l.strip()]
+        except (OSError, ValueError) as e:
+            raise SystemExit(
+                "ACQUISITION-CANDIDATE-DENY: T0 evidence chain "
+                f"unreadable at {t0chain_p}: {e}; candidate provenance "
+                "unestablishable")
+        _t0_mc = [l for l in _t0_links if l.get("kind") == "model-call"]
+        _t0_bound = (_t0_mc[0].get("payload") or {}).get("arrival_sha256") \
+            if _t0_mc else None
+        if not isinstance(_t0_bound, str):
+            raise SystemExit(
+                "ACQUISITION-CANDIDATE-DENY: T0 chain commits no "
+                "run-time arrival_sha256; candidate provenance "
+                "unestablishable (refusing to source the frozen "
+                "candidate from unverifiable bytes)")
+        if hashlib.sha256(t0arr_bytes).hexdigest() != _t0_bound:
+            raise SystemExit(
+                "ACQUISITION-CANDIDATE-DENY: T0 arrival.json bytes "
+                f"{hashlib.sha256(t0arr_bytes).hexdigest()[:12]} != "
+                f"chain-committed arrival_sha256 {_t0_bound[:12]} "
+                "(post-hoc arrival edit -> deny; the frozen candidate "
+                "cannot be sourced from substituted bytes)")
+        try:
+            t0arr = json.loads(t0arr_bytes.decode())
             t0src = (t0arr.get("execution_payload") or {}).get("solver_py")
         except (ValueError, OSError) as e:
             raise SystemExit(
@@ -2241,6 +2413,16 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
             raise SystemExit(
                 "ACQUISITION-CANDIDATE-DENY: T0 arrival carries no "
                 "execution_payload.solver_py candidate")
+        _t0_bound_solver = (_t0_mc[0].get("payload") or {}).get(
+            "solver_py_sha256")
+        if not isinstance(_t0_bound_solver, str) or \
+                hashlib.sha256(t0src.encode()).hexdigest() \
+                != _t0_bound_solver:
+            raise SystemExit(
+                "ACQUISITION-CANDIDATE-DENY: T0 arrival solver_py bytes "
+                "!= chain-committed solver_py_sha256 (post-hoc solver "
+                "swap -> deny; the frozen candidate cannot be sourced "
+                "from substituted bytes)")
         candidate = {"sha256": hashlib.sha256(t0src.encode()).hexdigest(),
                      "source": t0src}
     # ---- Item-6 ONE SOURCE SNAPSHOT (audit round 2 item 6) -------------
@@ -2275,6 +2457,24 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
         raise PermissionError(
             "FROZEN-VISIBLE-DENY materialized visible bytes != frozen "
             "expected manifest; refused before model call")
+    # A12n slice D12e: pre-call frozen binding of the exact prompt
+    # snapshot. prepare_arm() hashes the STAGED mutable visible tree
+    # and builds the prompt from it — a pre-call ABA (staged H bytes,
+    # visible restored to E) would pass the live-dir gate above while
+    # the model still sees H, with refusal landing only after the
+    # model call. The staged snapshot and the context hash it
+    # determines must therefore equal the frozen authority
+    # THEMSELVES (the prompt is mechanically tied to staged_tree by
+    # the CONTEXT-SNAPSHOT-DENY check inside prepare_arm) — before
+    # prompt.txt is written and before any model token is spent.
+    if staged_tree != fro["expected_visible_manifest"]:
+        raise PermissionError(
+            "FROZEN-VISIBLE-DENY staged snapshot != frozen expected "
+            "manifest; refused before model call")
+    if context_task_snapshot_hash != fro["expected_task_snapshot_sha256"]:
+        raise PermissionError(
+            "FROZEN-VISIBLE-DENY context snapshot hash != frozen "
+            "expected task snapshot sha; refused before model call")
     # The SAME authority object threads into the sandbox binding
     # below (never a second read of taskdir after the model call).
     frozen_expected = fro["expected_visible_manifest"]
@@ -2312,8 +2512,27 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     raw, receipt, nu_path, id_path, identity_family = call(
         lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
     arrival, parse_mode = extract(raw)
-    open(os.path.join(outdir, "arrival.json"), "w").write(
-        json.dumps(arrival, indent=1))
+    arrival_path = os.path.join(outdir, "arrival.json")
+    open(arrival_path, "w").write(json.dumps(arrival, indent=1))
+    # A12n slice D13 P0-3: arrival provenance, captured at run time.
+    # response_text_sha256 binds the provider response TEXT itself
+    # (the usage receipt binds request/usage but never the returned
+    # text, and the receipt schema is frozen by the usage verifiers
+    # — so the binding rides the manifest + chain instead);
+    # arrival_sha256 binds the arrival.json FILE bytes as written
+    # (later T1 and promotion reads re-hash the file and require
+    # equality with the chain-committed value);
+    # execution_payload_sha256 binds the canonical executed payload
+    # and solver_py_sha256 binds the executed solver source (None
+    # when the payload carries no solver string).
+    arrival_file_sha256 = h(arrival_path)
+    response_text_sha256 = hashlib.sha256(raw.encode()).hexdigest()
+    _payload_obj = arrival.get("execution_payload") or {}
+    execution_payload_sha256 = hashlib.sha256(
+        json.dumps(_payload_obj, sort_keys=True).encode()).hexdigest()
+    _solver_src = _payload_obj.get("solver_py")
+    solver_py_sha256 = hashlib.sha256(_solver_src.encode()).hexdigest() \
+        if isinstance(_solver_src, str) else None
     # A12.0: no capability exists before PROMOTION, so the ONLY legal decision
     # on an acquisition cell is fresh. This is belt-and-braces behind
     # execute_arrival's arm gate (arm='acquisition' is not the capability
@@ -2452,6 +2671,14 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                 "checker_returncode": execr["checker_returncode"],
                 "checker_output": execr["checker_output"],
                 "verdict": verdict, "output_sha256": output_sha,
+                # A12n slice D13 P0-2: the persisted graded-output link.
+                # graded_output_sha256 is the sha256 of the EXACT sealed
+                # bytes the checker consumed (frozen-evaluator/OUTPUT.json
+                # on the authority path); a post-hoc reader re-hashes the
+                # persisted sealed artifact and requires equality.
+                # output_sha256 stays the container-produced bytes.
+                "graded_output_sha256": execr.get("graded_output_sha256"),
+                "graded_output_path": execr.get("graded_output_path"),
                 # A12n slice D12b: evaluator provenance, bound before
                 # evidence genesis so the chain covers it. checker_sha256
                 # / truth_sha256 are the EXECUTED bytes' shas (the
@@ -2540,6 +2767,16 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                                   else None),
                 "identity_prereg_family": (identity_family if wire
                                            else None),
+                # A12n slice D13 P0-3: arrival provenance, captured at
+                # run time and bound into evidence genesis (chain
+                # model-call link mirrors these). Later T1 and
+                # promotion reads require the live arrival.json bytes
+                # to hash to arrival_sha256.
+                "response_text_sha256": response_text_sha256,
+                "arrival_sha256": arrival_file_sha256,
+                "arrival_file": os.path.basename(arrival_path),
+                "execution_payload_sha256": execution_payload_sha256,
+                "solver_py_sha256": solver_py_sha256,
                 "chain": CHAIN_FILE if wire else None,
                 "reuse_record": os.path.basename(reuse_path) if reuse_path else None,
                 "capability": {k: cap_info[k] for k in
@@ -2547,6 +2784,15 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                                 "lock_sha256", "engine_sha256")
                                if cap_info and k in cap_info} or None,
                 "capability_lock": None,
+                # A12n slice D13 P0-1: the run-private snapshot of the
+                # lock-verified capability bytes that the prompt and
+                # the jail execution actually consumed (dir + per-file
+                # shas, each equal to the lock's artifact hash). None
+                # on paths without a snapshot (unwired dev escape,
+                # non-capability arms).
+                "capability_snapshot": (dict(cap_info["snapshot"])
+                                        if cap_info and cap_info.get(
+                                            "snapshot") else None),
                 # A12d D1-A4: on the use_capability path the engine ran in
                 # an adapted-input-only jail — record its byte binding
                 # (task snapshot, mounts, adapted input sha) in the run

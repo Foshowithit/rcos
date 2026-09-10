@@ -377,6 +377,31 @@ def build_model_run(root, *, cell, freeze_commit, verdict="ship",
                "notes": "fixture_modelrun (NOT evidence)"}
     with open(os.path.join(d, "arrival.json"), "w") as f:
         json.dump(arrival, f, indent=1)
+    # A12n slice D13 P0-3: the fixture is the atomic producer of
+    # arrival.json AND the chain in these synthetic scenarios, so it
+    # binds the same run-time arrival provenance production main()
+    # captures (file bytes as written + canonical payload + solver
+    # source). The bound values equal the bytes by construction;
+    # post-hoc arrival tamper in a scenario still denies at the
+    # promotion read, exactly like production.
+    _arr_path = os.path.join(d, "arrival.json")
+    _arr_file_sha = hashlib.sha256(open(_arr_path, "rb").read()).hexdigest()
+    _arr_payload_sha = hashlib.sha256(
+        json.dumps(payload, sort_keys=True).encode()).hexdigest()
+    _arr_solver = payload.get("solver_py")
+    _arr_solver_sha = hashlib.sha256(_arr_solver.encode()).hexdigest() \
+        if isinstance(_arr_solver, str) else None
+    model_call["response_text_sha256"] = hashlib.sha256(
+        json.dumps(arrival, sort_keys=True).encode()).hexdigest()
+    # NOTE: the fixture synthesizes the arrival directly (no provider
+    # wire text exists), so response_text_sha256 above stands in as
+    # the canonical-arrival sha; production binds the actual raw
+    # response text. Nothing enforces response_text_sha256 on read
+    # (evidence only); arrival_sha256 below is the enforced binding.
+    model_call["arrival_sha256"] = _arr_file_sha
+    model_call["arrival_file"] = "arrival.json"
+    model_call["execution_payload_sha256"] = _arr_payload_sha
+    model_call["solver_py_sha256"] = _arr_solver_sha
 
     # ---- reuse ledger: the actual decision drives every field ------------
     cap = dict(capability or {})
