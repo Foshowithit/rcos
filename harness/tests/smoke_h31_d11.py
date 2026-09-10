@@ -227,8 +227,8 @@ check("D11.1-GOV the append-only-forward lock policy is documented "
       and "committed with the" in
       open(os.path.join(FAMC, "PREREG.md")).read())
 check("D11.1-GOV no amendment entry deleted (35 at D10 + 10 D11 "
-      "+ 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward + 1 D13 forward + 1 D13c forward = 51) and D11+D12+D12b+D12c+D12d+D13+D13c recorded as forward amendments",
-      len(_LIVE_LOCK["amendments"]) == 51
+      "+ 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward + 1 D13 forward + 1 D13c forward + 1 A13 forward = 52) and D11+D12+D12b+D12c+D12d+D13+D13c+A13 recorded as forward amendments",
+      len(_LIVE_LOCK["amendments"]) == 52
       and sum(1 for a in _LIVE_LOCK["amendments"]
               if a.get("slice") == "a12l-slice-d11") == 10
       and sum(1 for a in _LIVE_LOCK["amendments"]
@@ -242,7 +242,9 @@ check("D11.1-GOV no amendment entry deleted (35 at D10 + 10 D11 "
       and sum(1 for a in _LIVE_LOCK["amendments"]
               if a.get("slice") == "a12n-slice-d13") == 1
       and sum(1 for a in _LIVE_LOCK["amendments"]
-              if a.get("slice") == "a12n-slice-d13c") == 1,
+              if a.get("slice") == "a12n-slice-d13c") == 1
+      and sum(1 for a in _LIVE_LOCK["amendments"]
+              if a.get("slice") == "a13-slice-a13") == 1,
       str(len(_LIVE_LOCK["amendments"])))
 
 # --- D11.1-HISTORY: append-only genesis (delete/edit old entries) ----
@@ -526,8 +528,8 @@ check("D11.2-LIVE first-parent sequences equal the old walk for all "
       "seven governed files (non-regression)",
       not _BAD, f"diverged={_BAD}")
 check("D11.2-LIVE live sequence lengths match the certified D11 "
-      "facts (PREREG 28, preflight 24, rest 5/5/12/1/7)",
-      _LENS == {"PREREG.md": 28, "ORDER.md": 5, "LANES.md": 5,
+      "facts (PREREG 29, preflight 24, rest 5/5/12/1/7)",
+      _LENS == {"PREREG.md": 29, "ORDER.md": 5, "LANES.md": 5,
                 "HARNESS-READINESS.md": 12, "preflight.py": 24,
                 "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str(_LENS))

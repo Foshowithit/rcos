@@ -1109,6 +1109,56 @@ jail-produced CANDIDATE-OUTPUT.json work file, never the mutable
 committed copy (same sourcing rule; the outdir copy stays as the
 audit artifact).
 
+Forward amendment AMEND-2026-09-10-a13-canonical-adaptation
+(2026-09-10): the A13 determinant, canonical F, and causal-receipt
+data contract land (auditor A13 bar; D12 left the bar with "no F
+implementation lands in this slice" — that sentence is now
+discharged for the determinant machinery). The frozen determinant
+is (capability_artifact_sha256, capability_schema_sha256,
+exact_visible_task_snapshot_sha256, adaptation_contract_sha256)
+-> adapted_input_sha256, with adaptation_contract_sha256 =
+H(canonical F implementation identity, adapter ABI declaration,
+canonical serialization policy, adaptation policy/version).
+Coordinate doctrine, frozen: schema + snapshot + contract are
+COMPUTATIONAL (F consumes exactly the schema table, the exact
+task-snapshot bytes, and the frozen policy — no model bytes in
+any argument position); capability_artifact_sha256 is a BINDING
+coordinate (the locked engine bytes do not enter F; the engine
+binds its candidate separately at mint). determinant_sha256
+names the tuple; adapted_input_sha256 is the content hash over
+the adapted pair computed with the production tree-hash formula
+and schema label (one meaning, pinned equal, never forked).
+F_v1 (harness/adaptation.py) maps the schema-declared record
+file to the canonical {field_map.json, records.json} pair
+(header-aware parse, frozen column projection, USD->cents +
+tag-split transforms, canonical-total-order records, MANIFEST of
+rendered files, canonical serialization); F_v2 is the frozen
+negative-control counterpart (identical mapping, v2
+serialization + manifest form); NOOP_v1 forwards unmapped bytes
+in valid engine shape under the identical ABI. F identity is the
+sha256 of the version function's source text in canonical normal
+form (trailing-newline-insensitive; self-contained bodies +
+stdlib only, structurally asserted). Frozen content boundary in
+this slice: schema registry carries fam01-psv-records-v1 only
+(other surfaces are future frozen entries under the same
+registry and mechanism). Leg semantics, frozen: ON = F_v1 bytes
+consumed by the locked engine, OUTPUT graded; OFF-noop =
+NOOP_v1 bytes consumed by the locked engine identically (same
+adapter ABI shape, same engine interface, same grading);
+pass-through = F_v1 bytes (SAME bytes and determinant as ON,
+stated explicitly) consumed by the checker directly, no engine.
+The per-run causal receipt (schema a13-causal-receipt-v1,
+self-hashed) binds determinant + determinant_sha256, the three
+legs (program/ABI/consumers/adapted shas), task + capability +
+checker identities, and execution_harness_manifest_sha256 as the
+enclosing execution authority. NOT in this slice by explicit
+auditor ruling (pending): per-run EXECUTION binding of the legs
+(engine runs + gradings) — execution_evidence slots are null;
+F-output downstream consumability is experimental, never
+asserted; no run wiring, no model calls, no new chain kinds.
+Recorded acceptance: F_v1/ABI_v1 -> bytes A and F_v2/ABI_v2 ->
+bytes B, A != B, MUST NOT count as the same determinant.
+
 ---
 # 11. Manifest lifecycle
 
