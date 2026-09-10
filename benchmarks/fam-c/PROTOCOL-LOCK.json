@@ -381,6 +381,14 @@
    "reason": "A12n slice D12 (auditor D11-post P0/P1/P1): forward amendments AMEND-2026-09-09-d12-frozen-authority (immutable expected-visible-manifest derivation rule from freeze-commit objects; FROZEN-VISIBLE-DENY; manifest provenance fields; rule frozen in lock, never per-run values), AMEND-2026-09-09-d12-adaptation-contract (4-tuple determinant with adaptation_contract_sha256; execution-harness binding in A13 receipt), AMEND-2026-09-09-d12-history-wording (multiset sentence SUPERSEDED; operative rule exact order-sensitive prefix over first-parent genesis..HEAD)",
    "base": "d3d6b4e",
    "slice": "a12n-slice-d12"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "357897e7397986815cb9933717cf753c9adb21c68ffb4d7ae96cbec30706a2a2",
+   "to_sha": "5bbbabc58fcc3a90475a0a237f4e71f9775600857f7fb5b0b7c5284c79093e60",
+   "reason": "A12n slice D12b (auditor D11-post P0, same false-positive class one directory up): forward amendment AMEND-2026-09-10-d12b-evaluator-authority (freeze-derived expected checker/truth sha256 in the verify authority object; pre-model EVALUATOR-DRIFT-DENY with MODEL_CALL_COUNT == 0; point-of-use re-hash that never records a verdict; run-private frozen-materialized evaluator execution; executed + expected evaluator provenance in the run manifest; EXCLUDE naming evaluator provenance on drift, marker-gated for legacy manifests)",
+   "base": "4248312",
+   "slice": "a12n-slice-d12b"
   }
  ]
 }

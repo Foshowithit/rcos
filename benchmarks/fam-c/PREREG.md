@@ -957,6 +957,38 @@ through HEAD (plus the consecutive-pair monotonicity walk for
 post-genesis entries). A reader of only the current PREREG
 determines the rule from THIS subsection.
 
+Forward amendment AMEND-2026-09-10-d12b-evaluator-authority
+(2026-09-10): grading-evaluator provenance, the same
+false-positive class as D12 one directory up (auditor D11-post
+P0). The acquisition grading path read
+`families/<family>/check.py` + `truth.json` from the MUTABLE
+working tree at grading time, after `verify_instance_frozen` had
+returned — a rewritten checker turned a wrong solver report from
+"fix" into "ship" with nothing in the run manifest naming the
+substituted bytes. From this amendment the EXPECTED sha256 of
+both evaluator files is derived from freeze-commit git objects
+(the `verify_instance_frozen` authority object carries
+`expected_checker_sha256` / `expected_truth_sha256`; the
+visible-set authority is unchanged), and three binds hold: (a)
+immediately after verification, before any model token is spent,
+the live evaluator bytes must equal the expectation
+(`EVALUATOR-DRIFT-DENY`, MODEL_CALL_COUNT == 0, nothing
+H-derived persisted); (b) immediately before the checker
+subprocess executes, the same re-hash refuses the same way and
+NEVER records a verdict; (c) the checker EXECUTED is a
+run-private copy materialized from the frozen blobs
+(`frozen-evaluator/`), safe because each family checker's input
+closure is exactly {check.py, `__file__`-sibling truth.json}.
+The run manifest carries, before evidence genesis, the EXECUTED
+`checker_sha256` + `truth_sha256` with the EXPECTED
+freeze-derived pair, `evaluator_freeze_commit`, and
+`evaluator_source`; `verify_expected_provenance`
+re-derives both and a run whose recorded executed sha differs
+from the frozen one is EXCLUDED naming evaluator provenance
+(marker-gated: manifests without the evaluator fields behave as
+before). The protocol lock freezes THIS BINDING RULE; it never
+absorbs per-run evaluator values.
+
 ---
 # 11. Manifest lifecycle
 

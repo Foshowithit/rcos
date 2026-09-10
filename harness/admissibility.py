@@ -296,7 +296,8 @@ def verify_instance_frozen(base, family, task, freeze_commit=None):
     mismatch; otherwise returns {"family", "task", "verified_files",
     "freeze_commit", "expected_visible_paths", "expected_visible_manifest",
     "expected_visible_manifest_sha256", "expected_visible_paths_sha256",
-    "expected_task_snapshot_sha256"}. freeze_commit is REQUIRED (no
+    "expected_task_snapshot_sha256", "expected_checker_sha256",
+    "expected_truth_sha256"}. freeze_commit is REQUIRED (no
     default, never HEAD).
 
     A12n slice D12 (auditor D11-post P0): the expected visible
@@ -305,6 +306,12 @@ def verify_instance_frozen(base, family, task, freeze_commit=None):
     object — callers must thread this object through materialization,
     the pre-model-call gate, and the sandbox binding, and must never
     re-derive authority from the mutable task dir afterwards.
+
+    A12n slice D12b: the same authority object additionally carries
+    the freeze-derived GRADING evaluator shas
+    (expected_checker_sha256 / expected_truth_sha256, from
+    frozen_visible.derive_expected_evaluator — never the mutable
+    tree). The visible-set authority above is unchanged.
     """
     if not freeze_commit:
         raise RuntimeError("FROZEN-INSTANCE-NO-COMMIT: freeze commit "
@@ -346,13 +353,17 @@ def verify_instance_frozen(base, family, task, freeze_commit=None):
     import frozen_visible
     exp = frozen_visible.derive_expected_visible(
         base, freeze_commit, family, task)
+    exp_ev = frozen_visible.derive_expected_evaluator(
+        base, freeze_commit, family)
     return {"family": family, "task": task, "verified_files": n,
             "freeze_commit": freeze_commit,
             "expected_visible_paths": exp["paths"],
             "expected_visible_manifest": exp["manifest"],
             "expected_visible_manifest_sha256": exp["manifest_sha256"],
             "expected_visible_paths_sha256": exp["paths_sha256"],
-            "expected_task_snapshot_sha256": exp["task_snapshot_sha256"]}
+            "expected_task_snapshot_sha256": exp["task_snapshot_sha256"],
+            "expected_checker_sha256": exp_ev["checker_sha256"],
+            "expected_truth_sha256": exp_ev["truth_sha256"]}
 
 
 def main(argv):

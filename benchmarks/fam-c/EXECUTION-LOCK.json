@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "c7cb7007dfecac58be4f3e1a4ef547054b7eb5200530601d4c8d4cbe8dacdf43",
+ "harness_manifest_sha256": "347e76e3cecbd3130a40fae14000ea3d389065808bd6a9920e8451de42b3fad5",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -12,8 +12,8 @@
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "cebd4c4f07e75b7ba81afa755d30f659a4423d3228b9856fd4b39f9d73581b43",
-  "harness/admissibility.py": "cfdbb0336f40476d848caacf8e67d5c32034ea168df7dc36d4b398c667a79b41",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "929f3ed0d0ff30ba528500188816f9854d50c191c209709bcd05126b0db50a9e",
+  "harness/admissibility.py": "00dfecaeb73e26ede4e77847bb51b4b711eb68a23b0081130eacaf90d615c387",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "1940bab22ce07e565883d82a0872471c073c43cfc295aef3312fc5f13b5b530a",
   "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
@@ -25,7 +25,7 @@
   "harness/specificity.py": "166ee886f77f07c37302891277b0832616a608548fbf0ac9042d24bfec9690b7",
   "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193",
   "harness/contract_shape.py": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2",
-  "harness/frozen_visible.py": "398e7dec6e8544ee126c06556b80e7b6d658ac071f9fd059c0023c12fed998e7"
+  "harness/frozen_visible.py": "a7b64b212a1d0aca24189f88f170e93c0971c5e5946fd6e2267385540e5d6f38"
  },
  "amendments": [
   {
@@ -846,6 +846,27 @@
    },
    "reason": "A12n slice D12 (auditor D11-post P0/P1/P1): frozen_visible.py new module (immutable expected-visible derivation + provenance helper), admissibility.py (verify returns manifest, marker-gated classify provenance), run_arm_h1.py main (pre-model FROZEN-VISIBLE gate, same-object sandbox binding, manifest provenance fields)",
    "slice": "a12n-slice-d12",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "c7cb7007dfecac58be4f3e1a4ef547054b7eb5200530601d4c8d4cbe8dacdf43",
+   "to_manifest": "347e76e3cecbd3130a40fae14000ea3d389065808bd6a9920e8451de42b3fad5",
+   "files": {
+    "harness/admissibility.py": {
+     "from_sha": "cfdbb0336f40476d848caacf8e67d5c32034ea168df7dc36d4b398c667a79b41",
+     "to_sha": "00dfecaeb73e26ede4e77847bb51b4b711eb68a23b0081130eacaf90d615c387"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "929f3ed0d0ff30ba528500188816f9854d50c191c209709bcd05126b0db50a9e",
+     "to_sha": "1940bab22ce07e565883d82a0872471c073c43cfc295aef3312fc5f13b5b530a"
+    },
+    "harness/frozen_visible.py": {
+     "from_sha": "398e7dec6e8544ee126c06556b80e7b6d658ac071f9fd059c0023c12fed998e7",
+     "to_sha": "a7b64b212a1d0aca24189f88f170e93c0971c5e5946fd6e2267385540e5d6f38"
+    }
+   },
+   "reason": "A12n slice D12b grading-evaluator provenance: freeze-derived expected checker/truth sha256 (frozen_visible.derive_expected_evaluator + materialize_frozen_evaluator + marker-gated verify_expected_provenance), evaluator shas in the verify_instance_frozen authority object, pre-model and point-of-use EVALUATOR-DRIFT-DENY with frozen-materialized execution in run_arm_h1.execute_arrival/main, executed + expected evaluator provenance in the run manifest",
+   "slice": "a12n-slice-d12b",
    "status_after": "open-round2"
   }
  ],

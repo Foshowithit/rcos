@@ -127,7 +127,8 @@ from chain import Chain
 from lock import promote as lock_promote, load_artifact
 from reuse_log import write_record as reuse_write_record
 from admissibility import verify_instance_frozen, verify_freeze_tree
-from frozen_visible import manifest_of_dir as frozen_manifest_of_dir
+from frozen_visible import (manifest_of_dir as frozen_manifest_of_dir,
+                            materialize_frozen_evaluator)
 # Item-7: the frozen ORDER.md expansion + pre-call cell authorization.
 from order import (verify_expansion as order_verify_expansion,
                    load_expansion as order_load_expansion,
@@ -789,7 +790,7 @@ def extract(raw):
 
 
 def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
-                      jail_factory=None):
+                      jail_factory=None, evaluator_authority=None):
     """Run one validated A11b.2 arrival through the ONE H1 runtime path.
 
     The arrival's OWN "decision" selects the path (use_capability -> the
@@ -801,6 +802,10 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
       CONTRACT-DECISION-DENY  decision illegal for the arm (e.g. a disabled
                               arm returning "use_capability")
       CONTRACT-ENGINE-DENY    use_capability without a capability engine
+      EVALUATOR-DRIFT-DENY    (authority path only) the live evaluator
+                              bytes differ from the freeze-derived
+                              authority at the point of use — refused
+                              before any verdict is recorded
     `jail_factory` (A12d D1 clarification): the use_capability engine
     jail is built as jail_factory(work, adapted_dir) — default None
     builds the production DockerSandbox(work, adapted_dir); a test seam
@@ -808,12 +813,29 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
     call shape returning .run(argv, timeout=...) + .task_snapshot (when
     available). The fresh/solver path always uses the caller-supplied
     raw-task jail `sb`.
+    `evaluator_authority` (A12n slice D12b): None keeps the legacy
+    live-tree grading path (hash-then-execute the family checker in
+    place). When given {"family", "freeze_commit",
+    "expected_checker_sha256", "expected_truth_sha256"} (the
+    verify_instance_frozen authority object — freeze-derived, never
+    the mutable tree), the arrival is graded ONLY by the frozen
+    bytes: the live checker/truth are re-hashed at the point of use
+    and any drift refuses with EVALUATOR-DRIFT-DENY, then the
+    evaluator is materialized from freeze-commit blobs into a
+    run-private dir and THAT copy is executed — so even a mutation
+    landing between the re-hash and the exec cannot substitute the
+    grading bytes. Production main() always passes the authority.
     Returns {"verdict", "checker_returncode", "checker_output",
              "output_sha256", "decision", "execution_mode",
              "container_returncode", "checker_path", "checker_sha256",
-             "truth_sha256"} — the two sha256s are the exact bytes THIS
-    arrival's evaluation path used (checker_sha256 bound before the host-side
-    checker ran; truth_sha256 from the same frozen family dir).
+             "truth_sha256", "expected_checker_sha256",
+             "expected_truth_sha256", "evaluator_source"} — the
+    checker/truth sha256s are the exact bytes THIS arrival's
+    evaluation path executed (the frozen-materialized copy on the
+    authority path, bound before the host-side checker ran);
+    checker_path is the executed copy's path; evaluator_source
+    names which form graded the run ("frozen-materialized" vs
+    "live-legacy").
     Plus "engine_jail" on the use_capability path: {"task_snapshot",
     "mounts", "adapted_input_sha256"} describing the adapted-input-only
     jail (A12d D1-A3/A4); None on the fresh/solver path."""
@@ -882,11 +904,68 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
     # Host-side evaluator only after container; truth/checker never entered jail.
     checker = os.path.join(taskdir, "..", "check.py")
     truth_path = os.path.join(taskdir, "..", "truth.json")
-    # Bind the EXACT bytes this arrival's evaluation path uses — before the
-    # checker subprocess runs — so the caller's evidence never recomputes a
-    # hash over a different path or a post-checker-modified file.
+    expected_checker_sha256 = None
+    expected_truth_sha256 = None
+    evaluator_source = "live-legacy"
+    if evaluator_authority is not None:
+        # A12n slice D12b — point-of-use evaluator bind. The live bytes
+        # about to grade this arrival must equal the freeze-derived
+        # authority; any drift (a checker/truth rewritten after
+        # verification, even after the pre-model gate) refuses here
+        # with EVALUATOR-DRIFT-DENY, before the checker subprocess
+        # runs, so no verdict is ever recorded for substituted bytes.
+        expected_checker_sha256 = evaluator_authority.get(
+            "expected_checker_sha256")
+        expected_truth_sha256 = evaluator_authority.get(
+            "expected_truth_sha256")
+        live_checker_sha = h(checker) if os.path.exists(checker) else None
+        live_truth_sha = h(truth_path) if os.path.exists(
+            truth_path) else None
+        if live_checker_sha != expected_checker_sha256 or \
+                live_truth_sha != expected_truth_sha256:
+            raise RuntimeError(
+                "EVALUATOR-DRIFT-DENY live evaluator bytes != "
+                "freeze-derived authority "
+                f"(checker {str(live_checker_sha)[:12]} != "
+                f"{str(expected_checker_sha256)[:12]} or truth "
+                f"{str(live_truth_sha)[:12]} != "
+                f"{str(expected_truth_sha256)[:12]}); refused at the "
+                "point of use before any verdict is recorded")
+        # Stronger form: grade with the FROZEN bytes, not the live
+        # tree. Materialize checker + truth from freeze-commit blobs
+        # into a run-private dir and execute THAT copy, so a mutation
+        # landing between the re-hash above and the exec still cannot
+        # substitute the grading bytes. Safe because the checker's
+        # input closure is exactly {check.py, sibling truth.json}
+        # (each family checker reads HERE/truth.json with stdlib-only
+        # imports — asserted per family by smoke_h33_d12b), and the
+        # materialized copy reads its own frozen sibling.
+        frozen_ev = materialize_frozen_evaluator(
+            BASE, evaluator_authority["freeze_commit"],
+            evaluator_authority["family"],
+            os.path.join(outdir, "frozen-evaluator"))
+        # The executed paths ARE the frozen copy from here on: the
+        # checker subprocess below runs the materialized check.py,
+        # which reads its materialized frozen sibling truth.json.
+        checker = frozen_ev["checker_path"]
+        truth_path = frozen_ev["truth_path"]
+        evaluator_source = "frozen-materialized"
+    # Bind the EXACT bytes this arrival's evaluation path executes —
+    # before the checker subprocess runs — so the caller's evidence
+    # never recomputes a hash over a different path or a
+    # post-checker-modified file. On the authority path these are the
+    # frozen-materialized bytes (belt-and-braces: they must equal
+    # the freeze-derived expectation, verified here again behind the
+    # post-write verification inside the materializer).
     checker_sha256 = h(checker) if os.path.exists(checker) else None
     truth_sha256 = h(truth_path) if os.path.exists(truth_path) else None
+    if evaluator_source == "frozen-materialized" and (
+            checker_sha256 != expected_checker_sha256
+            or truth_sha256 != expected_truth_sha256):
+        raise RuntimeError(
+            "EVALUATOR-DRIFT-DENY materialized frozen evaluator "
+            "bytes != freeze-derived authority; refused before "
+            "any verdict is recorded")
     chk = None
     if os.path.exists(out):
         chk = subprocess.run([sys.executable, checker,
@@ -906,7 +985,10 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
             "container_returncode": p.returncode,
             "checker_path": checker,
             "checker_sha256": checker_sha256,
-            "truth_sha256": truth_sha256}
+            "truth_sha256": truth_sha256,
+            "expected_checker_sha256": expected_checker_sha256,
+            "expected_truth_sha256": expected_truth_sha256,
+            "evaluator_source": evaluator_source}
 
 
 def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
@@ -2196,6 +2278,36 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     # The SAME authority object threads into the sandbox binding
     # below (never a second read of taskdir after the model call).
     frozen_expected = fro["expected_visible_manifest"]
+    # A12n slice D12b: the pre-model evaluator bind. The live grading
+    # bytes (the family checker + truth the host-side subprocess is
+    # about to be asked to execute) must equal the freeze-derived
+    # evaluator authority carried in `fro` — a checker rewritten
+    # after verify_instance_frozen returned refuses HERE with
+    # EVALUATOR-DRIFT-DENY, before prompt.txt is written and before
+    # any model token is spent (MODEL_CALL_COUNT == 0, nothing
+    # H-derived persisted — the D12 refusal property).
+    _ev_checker_live = os.path.join(taskdir, "..", "check.py")
+    _ev_truth_live = os.path.join(taskdir, "..", "truth.json")
+    _ev_live_c = h(_ev_checker_live) if os.path.exists(
+        _ev_checker_live) else None
+    _ev_live_t = h(_ev_truth_live) if os.path.exists(
+        _ev_truth_live) else None
+    if _ev_live_c != fro["expected_checker_sha256"] or \
+            _ev_live_t != fro["expected_truth_sha256"]:
+        raise PermissionError(
+            "EVALUATOR-DRIFT-DENY live evaluator bytes != "
+            "freeze-derived authority "
+            f"(checker {str(_ev_live_c)[:12]} != "
+            f"{str(fro['expected_checker_sha256'])[:12]} or truth "
+            f"{str(_ev_live_t)[:12]} != "
+            f"{str(fro['expected_truth_sha256'])[:12]}); refused "
+            "before model call")
+    evaluator_authority = {"family": family,
+                           "freeze_commit": instance_freeze_commit,
+                           "expected_checker_sha256":
+                               fro["expected_checker_sha256"],
+                           "expected_truth_sha256":
+                               fro["expected_truth_sha256"]}
     open(os.path.join(outdir, "prompt.txt"), "w").write(prompt)
     raw, receipt, nu_path, id_path, identity_family = call(
         lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
@@ -2228,7 +2340,8 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     # arrival's own decision picks engine vs solver; the arm only gates
     # decision legality. No evaluator/truth/checker is mounted.
     execr = execute_arrival(arm, arrival, work, outdir, taskdir,
-                            cap_engine, sb, jail_factory=jail_factory)
+                            cap_engine, sb, jail_factory=jail_factory,
+                            evaluator_authority=evaluator_authority)
     verdict = execr["verdict"]
     output_sha = execr["output_sha256"]
 
@@ -2339,6 +2452,24 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                 "checker_returncode": execr["checker_returncode"],
                 "checker_output": execr["checker_output"],
                 "verdict": verdict, "output_sha256": output_sha,
+                # A12n slice D12b: evaluator provenance, bound before
+                # evidence genesis so the chain covers it. checker_sha256
+                # / truth_sha256 are the EXECUTED bytes' shas (the
+                # frozen-materialized copy on the authority path);
+                # expected_* are the freeze-derived authority; a reader
+                # re-derives from evaluator_freeze_commit (==
+                # instance_freeze_commit) via
+                # frozen_visible.verify_expected_provenance and requires
+                # executed == expected == frozen.
+                "checker_sha256": execr["checker_sha256"],
+                "truth_sha256": execr["truth_sha256"],
+                "expected_checker_sha256": execr.get(
+                    "expected_checker_sha256"),
+                "expected_truth_sha256": execr.get(
+                    "expected_truth_sha256"),
+                "evaluator_freeze_commit": instance_freeze_commit,
+                "evaluator_source": execr.get("evaluator_source"),
+                "executed_checker_path": execr.get("checker_path"),
                 "wired": bool(wire),
                 "frozen_commit": frozen,
                 # Item-7 order binding: this manifest is the completion

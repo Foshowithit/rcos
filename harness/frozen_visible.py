@@ -22,6 +22,12 @@ here — asserted by the sealed suite). The declaration FORMAT is the
 frozen contract both implement; the materializer's OUTPUT never
 defines the expectation.
 
+A12n slice D12b adds the same discipline for the GRADING
+evaluator: derive_expected_evaluator() hashes the frozen
+check.py/truth.json blobs, materialize_frozen_evaluator() writes
+those bytes into a run-private dir for execution, and
+verify_expected_provenance() re-derives both (marker-gated).
+
 Stdlib only. All git reads are fail-closed RuntimeErrors.
 """
 
@@ -194,6 +200,79 @@ def manifest_of_dir(top):
     return out
 
 
+def derive_expected_evaluator(base, freeze_commit, family):
+    """Derive the immutable evaluator expectation from freeze-commit
+    git objects (A12n slice D12b — same authority discipline as
+    derive_expected_visible, never the mutable tree).
+
+    `base` is the fam-c dir (repo root is resolved from it via git).
+    Returns {"freeze_commit", "family", "checker_rel", "truth_rel",
+    "checker_sha256", "truth_sha256"} — sha256 over the frozen blob
+    bytes of families/<family>/check.py and families/<family>/
+    truth.json at `freeze_commit`. Raises RuntimeError (fail closed)
+    on anything unexpected: missing commit, unresolvable objects.
+    """
+    if not freeze_commit:
+        raise RuntimeError("FROZEN-EVALUATOR-NO-COMMIT: freeze commit "
+                           "required (never default, never HEAD)")
+    root = _git(["rev-parse", "--show-toplevel"],
+                cwd=base).decode().strip()
+    checker_rel = f"benchmarks/fam-c/families/{family}/check.py"
+    truth_rel = f"benchmarks/fam-c/families/{family}/truth.json"
+    checker_bytes = _git_bytes(root, freeze_commit, checker_rel)
+    truth_bytes = _git_bytes(root, freeze_commit, truth_rel)
+    return {"freeze_commit": freeze_commit, "family": family,
+            "checker_rel": checker_rel, "truth_rel": truth_rel,
+            "checker_sha256": hashlib.sha256(checker_bytes).hexdigest(),
+            "truth_sha256": hashlib.sha256(truth_bytes).hexdigest()}
+
+
+def materialize_frozen_evaluator(base, freeze_commit, family, dest_dir):
+    """Materialize the frozen evaluator into run-private `dest_dir`
+    (A12n slice D12b stronger form).
+
+    Writes check.py + truth.json DIRECTLY from freeze-commit git
+    blobs (never the mutable tree), verifies the written bytes equal
+    the freeze-derived expectation, and returns {"dir",
+    "checker_path", "truth_path", "checker_sha256", "truth_sha256"}.
+    Callers execute the returned checker_path so working-tree
+    mutation cannot affect grading at all.
+
+    Closure evidence (checked for every family by smoke_h33_d12b):
+    each family checker resolves its truth as a `__file__` sibling
+    (`HERE/truth.json`), imports stdlib only, and reads no other
+    family file — so the {check.py, truth.json} pair is the complete
+    grading closure, and the materialized copy grades identically
+    to the frozen tree bytes.
+    """
+    if not freeze_commit:
+        raise RuntimeError("FROZEN-EVALUATOR-NO-COMMIT: freeze commit "
+                           "required (never default, never HEAD)")
+    root = _git(["rev-parse", "--show-toplevel"],
+                cwd=base).decode().strip()
+    exp = derive_expected_evaluator(base, freeze_commit, family)
+    os.makedirs(dest_dir, exist_ok=True)
+    written = {}
+    for key, rel in (("check.py", exp["checker_rel"]),
+                     ("truth.json", exp["truth_rel"])):
+        blob = _git_bytes(root, freeze_commit, rel)
+        dst = os.path.join(dest_dir, key)
+        with open(dst, "wb") as f:
+            f.write(blob)
+        written[key] = hashlib.sha256(blob).hexdigest()
+    if written["check.py"] != exp["checker_sha256"]:
+        raise RuntimeError("FROZEN-EVALUATOR-MATERIALIZE-MISMATCH "
+                           "written check.py != freeze-derived sha")
+    if written["truth.json"] != exp["truth_sha256"]:
+        raise RuntimeError("FROZEN-EVALUATOR-MATERIALIZE-MISMATCH "
+                           "written truth.json != freeze-derived sha")
+    return {"dir": dest_dir,
+            "checker_path": os.path.join(dest_dir, "check.py"),
+            "truth_path": os.path.join(dest_dir, "truth.json"),
+            "checker_sha256": written["check.py"],
+            "truth_sha256": written["truth.json"]}
+
+
 def _resolve_repo(start):
     try:
         p = subprocess.run(["git", "rev-parse", "--show-toplevel"],
@@ -240,4 +319,39 @@ def verify_expected_provenance(run_dir, repo_root=None):
     if exp["manifest"] != m.get("task_snapshot"):
         raise ValueError("manifest.task_snapshot != re-derived expected "
                          "task snapshot")
+    # A12n slice D12b (evaluator provenance): runs that record the
+    # freeze-derived evaluator expectation must re-derive cleanly —
+    # the recorded EXPECTED shas must equal the frozen authority,
+    # and the recorded EXECUTED shas must equal it too (a run graded
+    # by substituted evaluator bytes is excluded, naming evaluator
+    # provenance). Manifests WITHOUT the evaluator fields predate
+    # the rule and return True here (marker-gated: legacy behavior
+    # unchanged).
+    if m.get("expected_checker_sha256") is None and \
+            m.get("expected_truth_sha256") is None:
+        return True
+    exp_ev = derive_expected_evaluator(
+        os.path.join(root, "benchmarks", "fam-c"), fc, fam)
+    if exp_ev["checker_sha256"] != m.get("expected_checker_sha256"):
+        raise ValueError(
+            "evaluator provenance mismatch: recorded "
+            "expected_checker_sha256 "
+            f"{str(m.get('expected_checker_sha256'))[:12]} != "
+            f"freeze-derived {exp_ev['checker_sha256'][:12]}")
+    if exp_ev["truth_sha256"] != m.get("expected_truth_sha256"):
+        raise ValueError(
+            "evaluator provenance mismatch: recorded "
+            "expected_truth_sha256 "
+            f"{str(m.get('expected_truth_sha256'))[:12]} != "
+            f"freeze-derived {exp_ev['truth_sha256'][:12]}")
+    if m.get("checker_sha256") != exp_ev["checker_sha256"]:
+        raise ValueError(
+            "evaluator provenance mismatch: recorded executed "
+            f"checker_sha256 {str(m.get('checker_sha256'))[:12]} != "
+            f"freeze-derived {exp_ev['checker_sha256'][:12]}")
+    if m.get("truth_sha256") != exp_ev["truth_sha256"]:
+        raise ValueError(
+            "evaluator provenance mismatch: recorded executed "
+            f"truth_sha256 {str(m.get('truth_sha256'))[:12]} != "
+            f"freeze-derived {exp_ev['truth_sha256'][:12]}")
     return True
