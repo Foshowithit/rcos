@@ -170,6 +170,7 @@ from order import (verify_expansion as order_verify_expansion,
 # stdlib-named modules live there).
 sys.path.insert(0, BASE)
 from preflight import validate_all as preflight_validate_all
+from preflight import _harness_closure as _preflight_harness_closure
 
 CHAIN_FILE = "EVIDENCE-CHAIN.jsonl"
 GRADING_RULE_VERSION = "checker-contract-v1"
@@ -1566,22 +1567,25 @@ def freeze_anchors():
 
 
 def harness_manifest_sha():
-    """sha256 over the executing harness code (paths + per-file sha256 of the
-    modules a run imports plus this runner). Pins the exact harness bytes
-    even when HEAD moves after the run. Item-5/round-2 #14: a listed
-    REQUIRED module that is missing FAILS (never silently skipped — a
-    skipped module would let a tampered harness pose as the pinned one)."""
-    names = ["usage.py", "identity.py", "chain.py", "lock.py",
-             "reuse_log.py", "seal.py", "dockersandbox.py",
-             "admissibility.py"]
-    files = [os.path.join(HARNESS, n) for n in names]
-    files.append(os.path.abspath(__file__))
+    """sha256 over the executing harness code: the run's ACTUAL import
+    closure from the runner entry point, by the repo's own rule
+    (preflight._harness_closure) -- never a hardcoded list. Pins the
+    exact harness bytes even when HEAD moves after the run. Every
+    module the run imports is covered, notably the A13 isolation
+    observer (harness/a13_observer.py: swapping the observer can no
+    longer leave this digest unchanged). Item-5/round-2 #14: a listed
+    REQUIRED module that is missing FAILS (never silently skipped --
+    a skipped module would let a tampered harness pose as the pinned
+    one)."""
+    entry = os.path.join("benchmarks", "fam-c", "harness-run",
+                         "run_arm_h1.py")
     lines = []
-    for f in files:
+    for rel in sorted(_preflight_harness_closure(ROOT, entry)):
+        f = os.path.join(ROOT, rel)
         if not os.path.exists(f):
             raise RuntimeError(f"HARNESS-MANIFEST-MISSING {f}: required "
                                "harness module absent — refuse start")
-        lines.append(f"{os.path.relpath(f, ROOT)}:{h(f)}")
+        lines.append(f"{rel}:{h(f)}")
     return hashlib.sha256("\n".join(sorted(lines)).encode()).hexdigest()
 
 
@@ -3024,6 +3028,13 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
                 "jail_config": AD.FROZEN_CONSTANTS["a13_jail_config"],
                 "daemon_container_events": _daemon.get("events") or [],
             },
+            # Top-level copy of the same bundle object: the shared
+            # identity verifier (a12u, called by the post-execution
+            # gate) reads whole proof documents, not the isolation
+            # sub-object the per-surface probe (a12q) parses. Both
+            # copies are one object here, so they cannot drift at
+            # emission; seal-vs-receipt drift is checked post-run.
+            "execution_identity": _identity_bundle,
         }
         seal["seal_sha256"] = hashlib.sha256(
             (json.dumps({k: v for k, v in seal.items()

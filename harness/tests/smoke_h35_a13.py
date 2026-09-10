@@ -363,8 +363,10 @@ check("A13-RECEIPT exact key sets (no smuggled content anywhere)",
                                "seal_sha256",
                                "provider_call_delta", "order_cell_delta",
                                "enclosing_cell_provider_call_total",
-                               "isolation",
+                               "isolation", "execution_identity",
                                "receipt_sha256"))
+      and _RCPT["execution_identity"] \
+      == _RCPT["isolation"]["execution_identity"]
       and sorted(_RCPT["isolation"]) == sorted(
           ("tripwire_violations", "tripwire_first_event",
            "frozen_expected_provider_calls", "process_observer",
@@ -465,6 +467,7 @@ check("A13-RECEIPT unexecuted legs bind identities but record "
       and _RCPT["determinism"]["model_response_argument_present"]
       is False
       and _RCPT["frozen_checker_sha256"] == _EV["checker_sha256"]
+      and _RCPT["execution_identity"] is None
       and _RCPT["causal_contribution_proven"] is False,
       str(_RCPT["causal_contribution_proven"]))
 
@@ -896,7 +899,10 @@ check("H35b-SEAL exact shape (no smuggled content; seal binds "
            "adapted_input_sha256", "determinism", "legs", "checker",
            "frozen_checker_sha256",
            "execution_harness_manifest_sha256", "isolation",
+           "execution_identity",
            "seal_sha256"))
+      and _a4["seal"]["execution_identity"] \
+      == _a4["seal"]["isolation"]["execution_identity"]
       and sorted(_a4["seal"]["legs"]) == ["off-noop", "on",
                                           "pass-through"]
       and sorted(_a4["seal"]["isolation"]) == sorted(

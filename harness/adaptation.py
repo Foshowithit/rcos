@@ -1413,6 +1413,12 @@ def build_receipt(*, family, task, capability_id, determinant,
             execution_harness_manifest_sha256,
         "causal_contribution_proven": proven,
         "seal_sha256": seal_sha256,
+        # Top-level mirror of the isolation bundle (same object
+        # values): document-level verifiers (a12u/a12r) read whole
+        # proof surfaces, while the per-surface probe reads the
+        # isolation copy. Lifted, never re-derived, so the two
+        # copies cannot disagree at emission.
+        "execution_identity": isolation["execution_identity"],
         "provider_call_delta": isolation["provider_call_delta"],
         "order_cell_delta": isolation["order_cell_delta"],
         "enclosing_cell_provider_call_total":
