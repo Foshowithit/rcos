@@ -127,6 +127,7 @@ from chain import Chain
 from lock import promote as lock_promote, load_artifact
 from reuse_log import write_record as reuse_write_record
 from admissibility import verify_instance_frozen, verify_freeze_tree
+from frozen_visible import manifest_of_dir as frozen_manifest_of_dir
 # Item-7: the frozen ORDER.md expansion + pre-call cell authorization.
 from order import (verify_expansion as order_verify_expansion,
                    load_expansion as order_load_expansion,
@@ -2112,8 +2113,14 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     # manifest is resolved from the freeze commit via git (the working-tree
     # copy is never trusted), and freeze_anchors() above already proved the
     # recorded freeze_tree equals that commit's tree of the frozen root.
-    verify_instance_frozen(BASE, family, task,
-                           freeze_commit=instance_freeze_commit)
+    # A12n slice D12 (auditor D11-post P0): the SINGLE immutable
+    # authority object for this run — expected visible paths +
+    # manifest derived from freeze-commit git objects (never the
+    # mutable task dir). Threaded through materialization, the
+    # pre-model-call gate, and the sandbox binding below; nothing
+    # re-derives authority from taskdir afterwards.
+    fro = verify_instance_frozen(BASE, family, task,
+                                 freeze_commit=instance_freeze_commit)
     frozen = instance_freeze_commit
     # A11.6: the scheduler creates the derived namespace itself, one
     # component at a time at 0755 (os.makedirs would leave 0775
@@ -2167,6 +2174,28 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     context_task_snapshot_hash = prep["context_task_snapshot_hash"]
     sym = prep["symmetry"]
     cap_info, cap_engine = prep["cap_info"], prep["cap_engine"]
+    # A12n slice D12 (auditor D11-post P0): the pre-model-call gate.
+    # The materializer must reproduce the frozen authority EXACTLY:
+    # its `copied` list must equal the independently determined
+    # expected path set (missing OR extra path refuses — `copied`
+    # never defines the expectation), and the materialized visible
+    # bytes must equal the frozen manifest. Anything else means the
+    # task bytes changed after verification (or an unfaithful
+    # materializer) — refuse BEFORE any model token is spent and
+    # before anything H-derived is persisted.
+    if sorted(copied) != sorted(fro["expected_visible_paths"]):
+        raise PermissionError(
+            "FROZEN-VISIBLE-DENY materializer copied list != frozen "
+            "expected path set "
+            f"(copied={sorted(copied)} expected={sorted(fro['expected_visible_paths'])}); "
+            "refused before model call")
+    if frozen_manifest_of_dir(visible) != fro["expected_visible_manifest"]:
+        raise PermissionError(
+            "FROZEN-VISIBLE-DENY materialized visible bytes != frozen "
+            "expected manifest; refused before model call")
+    # The SAME authority object threads into the sandbox binding
+    # below (never a second read of taskdir after the model call).
+    frozen_expected = fro["expected_visible_manifest"]
     open(os.path.join(outdir, "prompt.txt"), "w").write(prompt)
     raw, receipt, nu_path, id_path, identity_family = call(
         lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
@@ -2182,43 +2211,9 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
             "ACQUISITION-DECISION-DENY: no capability exists before "
             f"PROMOTION; the only legal decision at {acq_event} is fresh, "
             f"got {arrival.get('decision')!r}")
-    # A12l slice D11.4 (production contract-B binding, auditor D10
-    # verdict): the expected snapshot is derived from the FROZEN
-    # authorized task bytes (taskdir), restricted to exactly the
-    # entries build_visible_root copied — never a fresh walk over
-    # the mutable `visible` dir (any sequential walk over mutable
-    # bytes shares the cross-file ABA weakness, so such a walk is
-    # never the authority here). Keys match _hash_tree's shape
-    # EXACTLY (including dir|<copied-dir> for each copied root
-    # itself, which copytree reproduces byte-identically), so the
-    # constructor's equality test is exact on legitimate runs. The
-    # first jail run then re-proves the in-jail bytes against
-    # task_snapshot before executing, so in-jail bytes equal the
-    # frozen expected snapshot transitively. A constructor that
-    # agrees with itself on bytes H != expected still refuses here.
-    frozen_expected = {}
-    for _name in copied:                       # e.g. "prompt.md", "pages/"
-        if _name.endswith("/"):
-            _d = os.path.join(taskdir, _name.rstrip("/"))
-            for _b, _ds, _fs in os.walk(_d):
-                frozen_expected["dir|" + os.path.relpath(_b, taskdir)] = \
-                    hashlib.sha256(b"").hexdigest()
-                for _fn in sorted(_fs):
-                    _p = os.path.join(_b, _fn)
-                    frozen_expected["file|" + os.path.relpath(_p, taskdir)] = \
-                        hashlib.sha256(open(_p, "rb").read()).hexdigest()
-        else:
-            _p = os.path.join(taskdir, _name)
-            frozen_expected["file|" + _name] = \
-                hashlib.sha256(open(_p, "rb").read()).hexdigest()
-    # Sanity belt: the frozen authority must agree with the staged
-    # snapshot from materialization time. A mismatch means churn
-    # during materialization (or an unfaithful copy) and must
-    # refuse here, never proceed into the constructor.
-    if frozen_expected != staged_tree:
-        raise PermissionError(
-            "STABILITY-DENY frozen authorized snapshot != staged "
-            "snapshot (churn during materialization); refused")
+    # A12n slice D12: the post-call taskdir re-read is DELETED —
+    # frozen_expected above is the pre-model-call frozen authority
+    # object (never a second read of mutable taskdir bytes).
     # DockerSandbox stages its own private copy of `visible` and refuses on
     # drift; the constructor itself enforces the frozen expected snapshot
     # passed below (SNAPSHOT-DENY on any mismatch, even one its own
@@ -2379,6 +2374,22 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                     if acq_event else None),
                 "order_sha256": expansion["order_sha256"],
                 "instance_freeze_commit": instance_freeze_commit,
+                # A12n slice D12 (auditor D11-post P0): expected
+                # provenance, bound BEFORE evidence genesis so the
+                # chain covers it. The canonical expected manifest
+                # itself rides along (small: path->sha map), plus
+                # its sha, the task-snapshot sha, and the path-set
+                # sha. Post-hoc readers re-derive from
+                # instance_freeze_commit (see
+                # frozen_visible.verify_expected_provenance).
+                "expected_visible_manifest": fro["expected_visible_manifest"],
+                "expected_visible_manifest_sha256": fro[
+                    "expected_visible_manifest_sha256"],
+                "expected_task_snapshot_sha256": fro[
+                    "expected_task_snapshot_sha256"],
+                "expected_visible_paths": fro["expected_visible_paths"],
+                "expected_visible_paths_sha256": fro[
+                    "expected_visible_paths_sha256"],
                 "instance_freeze_tree": instance_freeze_tree,
                 "execution_harness_commit": execution_harness_commit,
                 "execution_harness_manifest_sha256": execution_harness_manifest_sha,

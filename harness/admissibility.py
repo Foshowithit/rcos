@@ -83,6 +83,19 @@ def classify_run_dir(run_dir, freeze_commit):
     elif m.get("instance_freeze_commit") != freeze_commit:
         reason = (f"instance anchor {str(m.get('instance_freeze_commit'))[:12]} "
                   f"!= freeze {freeze_commit[:12]}")
+    elif m.get("expected_visible_manifest_sha256") is not None:
+        # A12n slice D12 (auditor D11-post P0): runs that record
+        # expected provenance must re-derive cleanly — the recorded
+        # shas and task_snapshot must equal the frozen authority.
+        # Manifests WITHOUT the expected fields predate the rule and
+        # take the legacy path below (no behavior change for them).
+        try:
+            import frozen_visible
+            frozen_visible.verify_expected_provenance(run_dir)
+        except ValueError as e:
+            reason = f"expected provenance refused: {e}"
+        except RuntimeError as e:
+            reason = f"expected provenance unverifiable: {e}"
     elif not os.path.exists(os.path.join(run_dir, "identity.json")):
         reason = "no provider identity.json (echoed model id never recorded)"
     else:
@@ -281,7 +294,17 @@ def verify_instance_frozen(base, family, task, freeze_commit=None):
     FREEZE-HASHES manifest RESOLVED FROM freeze_commit VIA GIT (never the
     working-tree copy). Raises RuntimeError(FROZEN-INSTANCE-...) on any
     mismatch; otherwise returns {"family", "task", "verified_files",
-    "verified_bytes"}. freeze_commit is REQUIRED (no default, never HEAD).
+    "freeze_commit", "expected_visible_paths", "expected_visible_manifest",
+    "expected_visible_manifest_sha256", "expected_visible_paths_sha256",
+    "expected_task_snapshot_sha256"}. freeze_commit is REQUIRED (no
+    default, never HEAD).
+
+    A12n slice D12 (auditor D11-post P0): the expected visible
+    manifest/paths are derived from freeze-commit git objects (see
+    frozen_visible) and returned as the SINGLE immutable authority
+    object — callers must thread this object through materialization,
+    the pre-model-call gate, and the sandbox binding, and must never
+    re-derive authority from the mutable task dir afterwards.
     """
     if not freeze_commit:
         raise RuntimeError("FROZEN-INSTANCE-NO-COMMIT: freeze commit "
@@ -320,7 +343,16 @@ def verify_instance_frozen(base, family, task, freeze_commit=None):
             if rel not in expected:
                 raise RuntimeError(f"FROZEN-INSTANCE-EXTRA {rel}")
     n = len(expected)
-    return {"family": family, "task": task, "verified_files": n}
+    import frozen_visible
+    exp = frozen_visible.derive_expected_visible(
+        base, freeze_commit, family, task)
+    return {"family": family, "task": task, "verified_files": n,
+            "freeze_commit": freeze_commit,
+            "expected_visible_paths": exp["paths"],
+            "expected_visible_manifest": exp["manifest"],
+            "expected_visible_manifest_sha256": exp["manifest_sha256"],
+            "expected_visible_paths_sha256": exp["paths_sha256"],
+            "expected_task_snapshot_sha256": exp["task_snapshot_sha256"]}
 
 
 def main(argv):

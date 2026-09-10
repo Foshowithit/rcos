@@ -373,6 +373,14 @@
    "reason": "A12l slice D11 round-10 (general-seat post-genesis holes): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 lineage-wide consecutive-pair monotonicity walk over first-parent genesis..HEAD (post-genesis reorder/rewrite names the violating commit)",
    "base": "94f9f09",
    "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "2b20c8408a51c120172f1f0de183a26eb780efb9070802b49b5d1f38f777f420",
+   "to_sha": "357897e7397986815cb9933717cf753c9adb21c68ffb4d7ae96cbec30706a2a2",
+   "reason": "A12n slice D12 (auditor D11-post P0/P1/P1): forward amendments AMEND-2026-09-09-d12-frozen-authority (immutable expected-visible-manifest derivation rule from freeze-commit objects; FROZEN-VISIBLE-DENY; manifest provenance fields; rule frozen in lock, never per-run values), AMEND-2026-09-09-d12-adaptation-contract (4-tuple determinant with adaptation_contract_sha256; execution-harness binding in A13 receipt), AMEND-2026-09-09-d12-history-wording (multiset sentence SUPERSEDED; operative rule exact order-sensitive prefix over first-parent genesis..HEAD)",
+   "base": "d3d6b4e",
+   "slice": "a12n-slice-d12"
   }
  ]
 }

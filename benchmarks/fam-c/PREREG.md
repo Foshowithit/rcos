@@ -893,6 +893,70 @@ snapshots: the constructor hashes the canonical source manifest
 before the copy, after the copy, and once more after a bounded
 settle, and mounts only what all three agree on.
 
+Forward amendment AMEND-2026-09-09-d12-frozen-authority (2026-09-09):
+frozen-task TOCTOU closure and visible-set authority (auditor
+D11-post P0), frozen BEFORE any estimand execution. The mutable
+working-tree task directory is NEVER the source of authoritative
+bytes after verification. Instead the runner derives an immutable
+expected visible manifest DIRECTLY from freeze-commit git objects:
+the frozen visibility declaration
+(`families/<family>/<task>/VISIBLE.md` at the freeze commit, parsed
+as the frozen `task fixtures:` format) determines
+`expected_visible_paths`, and the frozen blobs listed by
+`git ls-tree` at the freeze commit determine
+`expected_visible_manifest` (dir entries plus per-file sha256 in
+task-snapshot shape) — by harness code that never routes through
+the materializer's own parse/copy path. `verify_instance_frozen`
+returns this manifest as the single authority object. The
+materializer's `copied` list is CHECKED against the independently
+determined path set (missing OR extra path refuses); immediately
+before the model call the materialized visible bytes must equal
+the frozen manifest; the SAME object (never a second taskdir
+read) binds the sandbox constructor. Refusal is named
+`FROZEN-VISIBLE-DENY`, before any model token is spent. The run
+manifest carries, before evidence genesis,
+`expected_visible_manifest` (canonical bytes),
+`expected_visible_manifest_sha256`,
+`expected_task_snapshot_sha256`, `expected_visible_paths`
+(+ `expected_visible_paths_sha256`), and `instance_freeze_commit`;
+a reader re-derives from the freeze commit
+(`verify_expected_provenance`) and requires sha equality plus
+`manifest.task_snapshot` equality. The protocol lock freezes THIS
+DERIVATION RULE; it never absorbs per-run snapshot values.
+
+Forward amendment AMEND-2026-09-09-d12-adaptation-contract
+(2026-09-09): the A13 determinant is a 4-tuple (auditor D11-post
+P1). The D11(c) triple (capability_artifact_sha256,
+capability_schema_sha256, exact_visible_task_snapshot_sha256) does
+not by itself determine the output while `F` may depend on
+execution-locked constants and code, so the fourth causal anchor
+is frozen here:
+`adaptation_contract_sha256 = H(canonical F implementation
+identity, adapter ABI declaration, canonical serialization
+policy, adaptation policy/version)`.
+The frozen determinant is (`capability_artifact_sha256`,
+`capability_schema_sha256`, `exact_visible_task_snapshot_sha256`,
+`adaptation_contract_sha256`) → `adapted_input_sha256`, and the
+A13 receipt must bind `execution_harness_manifest_sha256` (the
+final execution-lock identity) as the enclosing execution
+authority. Recorded acceptance: same artifact + same schema +
+same task snapshot with F_v1/ABI_v1 → bytes A and F_v2/ABI_v2 →
+bytes B, A != B, MUST NOT count as the same A13 determinant. No F
+implementation lands in this slice — this is the bar.
+
+Forward amendment AMEND-2026-09-09-d12-history-wording (2026-09-09):
+supersede notice (auditor D11-post P1). The D11(a) sentence "The
+checkpoint comparison is an order-insensitive multiset-subset" and
+its companion "a pure reorder of unchanged entries changes no
+verdict" are SUPERSEDED as descriptions of the operative rule
+(they remain above as history and are not edited). From D11 round
+7 onward the operative rule is: every prior amendment list is an
+exact, order-sensitive prefix of its successor, checked across
+every first-parent revision from the D11 genesis checkpoint
+through HEAD (plus the consecutive-pair monotonicity walk for
+post-genesis entries). A reader of only the current PREREG
+determines the rule from THIS subsection.
+
 ---
 # 11. Manifest lifecycle
 
