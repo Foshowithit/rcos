@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "2988c26b46bf8254e1613faf9660ca602adbc292819a9638141be4c86e1416f9",
+ "harness_manifest_sha256": "3e6394fbed32b72f37623836d98f796a0b905cea0b90be88a80bad38dbbd8ee1",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -13,7 +13,7 @@
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "cebd4c4f07e75b7ba81afa755d30f659a4423d3228b9856fd4b39f9d73581b43",
   "harness/admissibility.py": "a37b34545a5e4250c53cf1bc9f6f67ded6bc7e880a958f1a627c1a3b0f49b713",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "88fd697cf7ca301c89baeab3e13e71638ed7bccfb236487e92680d1738bd9a1c",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "0dd9b298a82c17518825d7e4439f68eb176dd3dd0a24889f41136612a1a3b6b0",
   "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
@@ -26,7 +26,7 @@
   "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193",
   "harness/contract_shape.py": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2",
   "harness/frozen_visible.py": "9033d26c176d0dc3c681fecbdc8de111e057730032f2ad4dd671e2c4433e4dd9",
-  "harness/adaptation.py": "d56a4d8ce51b4665bf0fff8afa078548858a7aef2c503aec530c6842dd0bca64"
+  "harness/adaptation.py": "af047c2164891595f0a0d24dfc0eec491bc1fcac693c21d474d60d69226bf961"
  },
  "amendments": [
   {
@@ -996,6 +996,109 @@
    },
    "reason": "Auditor binding rulings: canonical checker_report_sha256 evidence field (renamed from checker_output_sha256; auditor-named, apparatus-accepted) on all three legs; 15-marker crash scan mirroring the apparatus guard exactly; rerun-equality prose scoped to rerun identity for this pair (never proof F is deterministic under every execution)",
    "slice": "a13-slice2-auditor-rulings",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "2988c26b46bf8254e1613faf9660ca602adbc292819a9638141be4c86e1416f9",
+   "to_manifest": "9fead61fc53f41eb95f3f8dd8826187610436ddd466b57a8383b92d561fcd6ab",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "88fd697cf7ca301c89baeab3e13e71638ed7bccfb236487e92680d1738bd9a1c",
+     "to_sha": "041728227d508c87561397258117ea960c00354117a11937a3217ec804aa251e"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "d56a4d8ce51b4665bf0fff8afa078548858a7aef2c503aec530c6842dd0bca64",
+     "to_sha": "4a13e3aff881c70fefee576b6d75360db8eceeb415aa331eaab1ec7ad7050a02"
+    }
+   },
+   "reason": "Invariant-gap finding (ii): receipt records provider_call_count + order_cell_count (1 and 1 on a real single-call cell) beside the region deltas and the per-leg shared captured-response/cell bindings; recorded values for verifier equalities, never builder-asserted (derivation does not consume counts)",
+   "slice": "a13-slice2-counts-binding",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "9fead61fc53f41eb95f3f8dd8826187610436ddd466b57a8383b92d561fcd6ab",
+   "to_manifest": "6ef142d9fbf4ff00b3e597ae7158f7d1003e7192ee71c535a15ce97256b6de69",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "041728227d508c87561397258117ea960c00354117a11937a3217ec804aa251e",
+     "to_sha": "5987ef99a91c654ffd72f84fe561cd43516324a8966525111e64ee74e9558911"
+    }
+   },
+   "reason": "Invariant-gap static half: execute_a13_legs entry parameters renamed off capability-handle vocabulary (jail_builder/raw_jail/recorded_call_count) while forwarding to the frozen A12d seam names; no behavior change (params only); the counterfactual entry stays provably free of injected callables/handles",
+   "slice": "a13-slice2-ingress-clean",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "6ef142d9fbf4ff00b3e597ae7158f7d1003e7192ee71c535a15ce97256b6de69",
+   "to_manifest": "48a7c029021065942c15bb49b3847e12559fa3e74bb2dc6eb774ef91d628fcdc",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "5987ef99a91c654ffd72f84fe561cd43516324a8966525111e64ee74e9558911",
+     "to_sha": "5b39e007a4ad036e29d6966b1637f7d3d238c6174923f51f80f7b6287a079efd"
+    }
+   },
+   "reason": "Isolation-rule conformance (entry params only, no behavior change): off_leg_executor replaces jail_builder (forwards to the frozen A12d jail_factory seam); raw sb passthrough dropped (sb=None on the engine-only path, which never reads it); recorded_call_count replaces provider_call_count (same recorded count, handle-free name)",
+   "slice": "a13-slice2-ingress-names",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "48a7c029021065942c15bb49b3847e12559fa3e74bb2dc6eb774ef91d628fcdc",
+   "to_manifest": "69201cafc0013036869df2fc0a9c1126cfe4128afaf6b3ef427a8ac5df812489",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "5b39e007a4ad036e29d6966b1637f7d3d238c6174923f51f80f7b6287a079efd",
+     "to_sha": "5cfbd7e395aaaa9698244babc812b5810b13cb469d207bae7e6d1a7901535ffa"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "4a13e3aff881c70fefee576b6d75360db8eceeb415aa331eaab1ec7ad7050a02",
+     "to_sha": "60ba7e1a024eb2bfe8dfee8ba3362df20f40189d7faa8b5850b3b3edbedc4918"
+    }
+   },
+   "reason": "Corrected invariant-gap spec (deltas + observed total, no hardcoded counts): isolation carries enclosing_cell_provider_call_total (runner-observed, never hardcoded 1) with region-measured provider delta (runner-owned counter before/after) and cell-continuity order delta; runtime tripwire swaps the provider-call boundary to raise for the legs duration (try/finally restored); sb passthrough dropped; entry params handle-free",
+   "slice": "a13-slice2-delta-counter-tripwire",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "69201cafc0013036869df2fc0a9c1126cfe4128afaf6b3ef427a8ac5df812489",
+   "to_manifest": "877cc43c2de0ceb593c3e8cda7061b433e07d3427401debad7e9b71ddd5babfe",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "5cfbd7e395aaaa9698244babc812b5810b13cb469d207bae7e6d1a7901535ffa",
+     "to_sha": "13c2749fccd15e140aca49e5b073b12ec243d612c07cb66062af16570ba68ab2"
+    }
+   },
+   "reason": "Review-invariant comment at the single provider-invocation site (no behavior change): all cell provider traffic funnels through call() -> recorded_call(); any future second site must bump the runner-owned counter",
+   "slice": "a13-slice2-bump-comment",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "877cc43c2de0ceb593c3e8cda7061b433e07d3427401debad7e9b71ddd5babfe",
+   "to_manifest": "c97ad96076b469ba77ae7265666d3ceeb3e7a19c10d4b035b36f091973c06910",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "13c2749fccd15e140aca49e5b073b12ec243d612c07cb66062af16570ba68ab2",
+     "to_sha": "6b3b28354eb4c222dcd426cd99b542111745f79efe48beed419d8d6b492bcb9b"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "60ba7e1a024eb2bfe8dfee8ba3362df20f40189d7faa8b5850b3b3edbedc4918",
+     "to_sha": "af047c2164891595f0a0d24dfc0eec491bc1fcac693c21d474d60d69226bf961"
+    }
+   },
+   "reason": "Auditor region/post-region split: execute_arrival gains grade=False execution-without-grading (default-preserving); OFF leg runs ungraded in-region via the harness-owned jail-builder slot (no callable params); helper seals artifacts+isolation (A13-SEAL.json) without grading or receipt; new grade_a13_legs verifies seal, grades sealed bytes post-region (ON re-grade must equal harvested), writes separate grading artifact, finalizes receipt with seal binding; main wires seal->grade->ledger->manifest; no verdict-domain change",
+   "slice": "a13-slice2-region-postgrade",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "c97ad96076b469ba77ae7265666d3ceeb3e7a19c10d4b035b36f091973c06910",
+   "to_manifest": "3e6394fbed32b72f37623836d98f796a0b905cea0b90be88a80bad38dbbd8ee1",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "6b3b28354eb4c222dcd426cd99b542111745f79efe48beed419d8d6b492bcb9b",
+     "to_sha": "0dd9b298a82c17518825d7e4439f68eb176dd3dd0a24889f41136612a1a3b6b0"
+    }
+   },
+   "reason": "Isolation-traversal hygiene (no behavior change): evidence shape validator hoisted from recursive closure to module-level named global so the transitive static proof resolves it; seal/grade split unchanged",
+   "slice": "a13-slice2-seal-validator-hoist",
    "status_after": "open-round2"
   }
  ],

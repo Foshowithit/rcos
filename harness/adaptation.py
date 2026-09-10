@@ -955,7 +955,7 @@ def build_receipt(*, family, task, capability_id, determinant,
                   determinant_sha256, on, off_noop, pass_through,
                   checker_sha256, truth_sha256,
                   execution_harness_manifest_sha256,
-                  determinism=None, isolation=None):
+                  determinism=None, isolation=None, seal_sha256=None):
     """Pure A13 causal-receipt builder (schema a13-causal-receipt-v1).
 
     Binds the determinant, the three legs (program/ABI/consumers/
@@ -983,11 +983,19 @@ def build_receipt(*, family, task, capability_id, determinant,
     its captured-slot flag is always re-verified live and must be
     exactly False. `isolation` is the treatment-isolation binding
     (or None when unrecorded): {"captured_response_sha256",
-    "cell_id", "provider_call_delta", "order_cell_delta"} -- the
-    single captured response and the single treatment cell all
-    three legs are downstream of, plus the recorded call/cell
-    deltas for the counterfactual region (0 when the region
-    issued no provider call and created no ORDER cell).
+    "cell_id", "provider_call_delta", "order_cell_delta",
+    "enclosing_cell_provider_call_total"} -- the single captured
+    response and the single treatment cell all three legs are
+    downstream of; the counterfactual-region deltas (0 when the
+    region issued no provider call and created no ORDER cell);
+    and the enclosing cell's OBSERVED provider-call total as
+    runner-measured (whatever the cell issued -- never a hardcoded
+    1 -- against which the zero region delta is read).
+    Recorded values a verifier recomputes from the receipt (shared
+    response identity, total-vs-delta consistency) -- never prose,
+    never a boolean standing in for a count, and never asserted by
+    this
+    builder (it copies caller-supplied observations).
     causal_contribution_proven has NO caller
     override: it is always derived here by
     derive_causal_contribution over the assembled receipt (false
@@ -999,6 +1007,7 @@ def build_receipt(*, family, task, capability_id, determinant,
             ("execution_harness_manifest_sha256",
              execution_harness_manifest_sha256)):
         _require_sha64(value, name)
+    _require_sha64_or_none(seal_sha256, "seal_sha256")
     if not isinstance(determinant, dict) or sorted(determinant) != sorted(
             _DETERMINANT_KEYS):
         raise ValueError("ADAPTATION-MALFORMED-DETERMINANT determinant "
@@ -1035,21 +1044,25 @@ def build_receipt(*, family, task, capability_id, determinant,
     if isolation is None:
         isolation = {"captured_response_sha256": None, "cell_id": None,
                      "provider_call_delta": None,
-                     "order_cell_delta": None}
+                     "order_cell_delta": None,
+                     "enclosing_cell_provider_call_total": None}
     if not isinstance(isolation, dict) or sorted(isolation) != sorted(
             ("captured_response_sha256", "cell_id",
-             "provider_call_delta", "order_cell_delta")):
+             "provider_call_delta", "order_cell_delta",
+             "enclosing_cell_provider_call_total")):
         raise ValueError("ADAPTATION-MALFORMED-ISOLATION isolation "
                          "must carry exactly captured_response_sha256, "
                          "cell_id, provider_call_delta, "
-                         "order_cell_delta")
+                         "order_cell_delta, "
+                         "enclosing_cell_provider_call_total")
     _require_sha64_or_none(isolation["captured_response_sha256"],
                            "isolation.captured_response_sha256")
     if isolation["cell_id"] is not None and not isinstance(
             isolation["cell_id"], str):
         raise ValueError("ADAPTATION-MALFORMED-ISOLATION cell_id must "
                          "be a string or None (missing)")
-    for _dkey in ("provider_call_delta", "order_cell_delta"):
+    for _dkey in ("provider_call_delta", "order_cell_delta",
+                  "enclosing_cell_provider_call_total"):
         if isolation[_dkey] is not None and not isinstance(
                 isolation[_dkey], int):
             raise ValueError(
@@ -1203,8 +1216,11 @@ def build_receipt(*, family, task, capability_id, determinant,
         "execution_harness_manifest_sha256":
             execution_harness_manifest_sha256,
         "causal_contribution_proven": proven,
+        "seal_sha256": seal_sha256,
         "provider_call_delta": isolation["provider_call_delta"],
         "order_cell_delta": isolation["order_cell_delta"],
+        "enclosing_cell_provider_call_total":
+            isolation["enclosing_cell_provider_call_total"],
     }
     receipt["receipt_sha256"] = _sha_hex(canonical_json(
         {k: v for k, v in receipt.items()

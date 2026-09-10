@@ -170,6 +170,63 @@ GRADING_RULE_NOTE = ("mechanical grade = frozen checker returncode mapping "
                      "(rc0=ship, rc1=fix, else blocked); rule hash = sha256 "
                      "of the executed checker bytes")
 
+# Runner-owned provider-call counter (A13 isolation artifact). Bumped
+# exactly once per cell at the single call() site in main(); read
+# before and after execute_a13_legs so the counterfactual-region
+# delta is a recomputed equality (after - before == 0), and the
+# enclosing-cell total is observed, never hardcoded. Plain int
+# data: provider-incapable by construction.
+_PROVIDER_CALLS_ISSUED = 0
+
+# Harness-owned engine-jail builder slot (A13 item 3): the isolated
+# legs obtain their jail factory through this accessor, never
+# through a parameter (no executable-capability ingress into the
+# isolated function). main() binds it per invocation from its
+# frozen A12d jail_factory seam; tests bind a shim (save/restore).
+# None means the production default (DockerSandbox). Plain
+# data-handle discipline: the slot holds the builder, the isolated
+# code only reads it via the fixed accessor name below.
+_A13_ENGINE_JAIL_BUILDER = None
+
+
+def set_a13_engine_jail_builder(builder):
+    """Bind the harness-owned jail builder for the A13 legs (or None
+    for the production default). Harness setup only -- never called
+    from inside the isolated region."""
+    global _A13_ENGINE_JAIL_BUILDER
+    _A13_ENGINE_JAIL_BUILDER = builder
+
+
+def _a13_engine_jail_builder():
+    return _A13_ENGINE_JAIL_BUILDER or DockerSandbox
+
+
+def _a13_scalar_evidence(value, name):
+    """Fail-closed JSON-scalar shape check for sealed evidence dicts
+    (module level so the isolation traversal sees a named global,
+    not a recursive closure). Parameters carry JSON scalars only --
+    a callable, module, or other executable value anywhere in the
+    sealed evidence refuses loudly, so no parameter can smuggle an
+    executable capability into the isolated region."""
+    if value is None or isinstance(value, (str, int, bool)):
+        return
+    if isinstance(value, dict):
+        for _k, _v in value.items():
+            if not isinstance(_k, str):
+                raise RuntimeError(
+                    "A13-EVIDENCE-SHAPE sealed evidence carries a "
+                    f"non-string key at {name}")
+            _a13_scalar_evidence(_v, name + "." + _k)
+        return
+    if isinstance(value, list):
+        for _i, _v in enumerate(value):
+            _a13_scalar_evidence(_v, f"{name}[{_i}]")
+        return
+    raise RuntimeError(
+        "A13-EVIDENCE-SHAPE sealed evidence carries a non-scalar "
+        f"value at {name} ({type(value).__name__}): parameters "
+        "carry JSON scalars only, never executable capabilities")
+
 # Frozen per-lane identity prereg (mirrors LANES.md § identity prereg).
 # acceptable_echoed_ids: the provider-echoed model ids this lane may show.
 # Patterns are exact ids or trailing-* prefixes; no bare wildcards. Echo
@@ -803,7 +860,8 @@ def extract(raw):
 
 
 def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
-                      jail_factory=None, evaluator_authority=None):
+                      jail_factory=None, evaluator_authority=None,
+                      grade=True):
     """Run one validated A11b.2 arrival through the ONE H1 runtime path.
 
     The arrival's OWN "decision" selects the path (use_capability -> the
@@ -838,6 +896,16 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
     run-private dir and THAT copy is executed — so even a mutation
     landing between the re-hash and the exec cannot substitute the
     grading bytes. Production main() always passes the authority.
+    `grade` (A13 leg path): True keeps the frozen checker
+    subprocess + verdict mapping above (every existing caller).
+    False runs execution-without-grading for a counterfactual leg:
+    the engine/solver still executes in its jail, artifacts are
+    still copied, the evaluator is still bound (checker/truth shas
+    recorded) and the graded-output seal copy is still enforced --
+    but the checker subprocess never runs here (no verdict, no
+    return code, no report text recorded). Grading happens in a
+    separate post-region step over the sealed bytes, so the
+    isolated region creates no grading process.
     Returns {"verdict", "checker_returncode", "checker_output",
              "output_sha256", "graded_output_sha256",
              "graded_output_path", "decision", "execution_mode",
@@ -1017,32 +1085,37 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
             checker_argv_output = graded_output_path
         else:
             checker_argv_output = os.path.join(outdir, "OUTPUT.json")
-        chk = subprocess.run([sys.executable, checker,
-                              os.path.basename(taskdir),
-                              checker_argv_output],
-                             capture_output=True, text=True)
-        if graded_output_sha256 is not None:
-            if h(graded_output_path) != graded_output_sha256 or \
-                    h(out) != output_sha256:
-                raise RuntimeError(
-                    "EVALUATOR-INPUT-DRIFT-DENY sealed graded output "
-                    f"{h(graded_output_path)[:12]} != pre-checker seal "
-                    f"{graded_output_sha256[:12]} (or committed bytes "
-                    "changed under grading); the checker consumed "
-                    "bytes the evidence does not name — no verdict is "
-                    "recorded")
-            if graded_output_sha256 != output_sha256:
-                raise RuntimeError(
-                    "EVALUATOR-INPUT-DRIFT-DENY graded output "
-                    f"{graded_output_sha256[:12]} != container output "
-                    f"{str(output_sha256)[:12]} on the authority path; "
-                    "the two must never diverge")
-    verdict = ("ship" if chk and chk.returncode == 0 else
-               "fix" if chk and chk.returncode == 1 else "blocked")
+        if grade:
+            chk = subprocess.run([sys.executable, checker,
+                                  os.path.basename(taskdir),
+                                  checker_argv_output],
+                                 capture_output=True, text=True)
+            if graded_output_sha256 is not None:
+                if h(graded_output_path) != graded_output_sha256 or \
+                        h(out) != output_sha256:
+                    raise RuntimeError(
+                        "EVALUATOR-INPUT-DRIFT-DENY sealed graded output "
+                        f"{h(graded_output_path)[:12]} != pre-checker seal "
+                        f"{graded_output_sha256[:12]} (or committed bytes "
+                        "changed under grading); the checker consumed "
+                        "bytes the evidence does not name — no verdict is "
+                        "recorded")
+                if graded_output_sha256 != output_sha256:
+                    raise RuntimeError(
+                        "EVALUATOR-INPUT-DRIFT-DENY graded output "
+                        f"{graded_output_sha256[:12]} != container output "
+                        f"{str(output_sha256)[:12]} on the authority path; "
+                        "the two must never diverge")
+        else:
+            chk = None
+    verdict = (("ship" if chk and chk.returncode == 0 else
+                "fix" if chk and chk.returncode == 1 else "blocked")
+               if grade else None)
     return {"verdict": verdict,
             "checker_returncode": chk.returncode if chk else None,
-            "checker_output": ((chk.stdout or "") + (chk.stderr or ""))[:500]
-                              if chk else "missing output",
+            "checker_output": (((chk.stdout or "") + (chk.stderr or ""))
+                               [:500] if chk else ("missing output"
+                                                  if grade else None)),
             "output_sha256": output_sha256,
             "graded_output_sha256": graded_output_sha256,
             "graded_output_path": graded_output_path,
@@ -2235,42 +2308,78 @@ def _a13_looks_sha(value):
 def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
                      freeze_commit, famc_dir, taskdir, work, outdir,
                      task_snapshot_sha256, evaluator_authority,
-                     captured_response_sha256=None, cell_id=None,
-                     jail_factory=None, sb=None):
+                     captured_response_sha256=None, cell_id=None):
     """A13 executed counterfactual legs (auditor ruling, A13_CAUSAL).
 
     Three deterministic counterfactual sub-executions INSIDE the one
     real treatment cell, all downstream of the single already-captured
     arrival: ON (the cell's own locked-engine execution, evidence
     harvested -- never re-run), OFF-noop (the frozen NOOP_v1 pair
-    through the SAME locked engine behind the same ABI, graded by
-    the same frozen checker), pass-through (F's exact canonical
-    bytes through the ONE frozen family-agnostic pass-through
-    operation, K bypassed, graded by the same frozen checker). No
-    ORDER surface is touched, no provider is invoked (a provider
-    invocation anywhere on this path is a harness defect, never a
-    leg), no usage artifact is written, and the captured arrival
-    bytes are never an argument to F (F sees frozen task bytes
-    only). The ON verdict stays the treatment verdict; OFF and
-    pass-through verdicts are causal diagnostics that can never
-    alter it. A leg that cannot construct its input, or yields no
-    gradable output, is recorded missing (None slots) -- missing
-    evidence never counts as the desired outcome and never causes
-    follow-up provider action or cell invalidation.
+    through the SAME locked engine behind the same ABI, executed
+    WITHOUT grading), pass-through (F's exact canonical bytes
+    through the ONE frozen family-agnostic pass-through operation,
+    K bypassed, executed WITHOUT grading). No ORDER surface is
+    touched, no provider is invoked (a provider invocation anywhere
+    on this path is a harness defect, never a leg), no usage
+    artifact is written, and the captured arrival bytes are never
+    an argument to F (F sees frozen task bytes only). The legs
+    produce artifacts and STOP: this function seals them (hashes
+    the leg artifact bytes plus the isolation evidence into
+    A13-SEAL.json) and closes the region WITHOUT grading -- the
+    frozen checker runs afterward, outside the region, over the
+    sealed bytes (see grade_a13_legs). During A13 causal execution,
+    zero subprocess execution is permitted beyond the sealed jail
+    boundary (pending the auditor's A/B/C ruling on engine
+    execution mechanisms, the OFF engine jail is the only
+    process-creating step and runs sealed by argv/env hash).
+    The seal records the single captured-response identity shared
+    by all legs, the enclosing cell's observed provider-call total,
+    and the counterfactual region deltas -- recorded values for
+    the verifier's equalities, never prose.
 
-    Returns {"executed": True, "receipt", "receipt_path",
-    "receipt_sha256", "causal", "leg_verdicts"} on success, or
-    {"executed": False, "reason", ...} when the legs cannot be
-    constructed (never a verdict). Raises ONLY on harness/
-    infrastructure failure (jail construction, evaluator drift,
-    executed-bytes != locked-bytes): experimental outcomes
-    (checker fix/blocked, absent output) are data, never
-    exceptions.
+    Parameters are data only (frozen scalars and sealed-evidence
+    dicts of JSON scalars -- validated fail-closed below, so no
+    parameter can carry an executable capability): no callables,
+    no jails, no *args/**kwargs. The OFF engine jail comes from
+    the harness-owned builder slot (set_a13_engine_jail_builder),
+    never from a parameter.
+
+    Runtime tripwire: for the duration of the sub-executions the
+    runner's provider-call boundary (call, recorded_call) is
+    replaced with a stub that raises immediately, so even an
+    overlooked route cannot successfully invoke the provider; the
+    originals are restored in a finally. Three independent layers
+    therefore guard the one-response invariant: the transitive
+    static proof (no reachable model-call capability), this
+    runtime tripwire, and the artifact equalities (one shared
+    response, enclosing total consistent, region deltas zero).
+
+    Returns {"sealed": True, "seal", "seal_path", "seal_sha256"}
+    on success, or {"sealed": False, "reason", ...} when the legs
+    cannot be constructed (never a verdict, never a receipt).
+    Raises ONLY on harness/infrastructure failure (jail
+    construction, evaluator drift, executed-bytes != locked-bytes,
+    provider tripwire, seal mismatch): experimental outcomes
+    (absent output) are data, never exceptions.
     """
+    global call, recorded_call
+
     def _omit(reason):
-        return {"executed": False, "reason": reason, "receipt": None,
-                "receipt_path": None, "receipt_sha256": None,
-                "causal": False, "leg_verdicts": None}
+        return {"sealed": False, "reason": reason, "seal": None,
+                "seal_path": None, "seal_sha256": None}
+
+    def _tripwire(*_a, **_k):
+        raise RuntimeError(
+            "A13-PROVIDER-TRIPWIRE a provider invocation was attempted "
+            "inside the counterfactual region; failing the A13 "
+            "execution immediately")
+
+    for _ename, _evalue in (("cap_info", cap_info),
+                            ("on_exec", on_exec),
+                            ("evaluator_authority", evaluator_authority)):
+        if not isinstance(_evalue, dict):
+            return _omit(f"a13-omitted: {_ename} is not an object")
+        _a13_scalar_evidence(_evalue, _ename)
 
     if not cap_info or not cap_engine or not os.path.exists(cap_engine):
         return _omit("a13-omitted: no locked capability engine staged")
@@ -2287,222 +2396,455 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
             f"{str(engine_sha)[:12]} != locked capability "
             f"{str(locked_sha)[:12]}; refusing to receipt legs for "
             "bytes that are not the locked K")
-    # Frozen task bytes (freeze-commit git objects only -- never the
-    # mutable tree, never captured bytes).
+    calls_before = _PROVIDER_CALLS_ISSUED
+    cell_before = cell_id
+    _saved_call, _saved_recorded_call = call, recorded_call
+    call, recorded_call = _tripwire, _tripwire
     try:
-        task_files, _task_manifest = AD.frozen_task_files(
-            famc_dir, freeze_commit, family, task)
-    except (OSError, RuntimeError, ValueError):
-        return _omit("a13-omitted: frozen task bytes unreadable")
-    # Schema resolution: exactly one registry schema must cover the
-    # surface (ambiguous or uncovered surfaces cannot run legs).
-    resolved = []
-    for sid in AD.SCHEMA_IDS:
+        # Frozen task bytes (freeze-commit git objects only -- never the
+        # mutable tree, never captured bytes).
         try:
-            AD.adapt_task(sid, dict(task_files), AD.F_VERSION_V1)
-        except (ValueError, RuntimeError):
-            continue
-        resolved.append(sid)
-    if len(resolved) != 1:
-        return _omit("a13-omitted: schema coverage != exactly one "
-                     f"(got {resolved})")
-    schema_id = resolved[0]
-    schema = AD.get_schema(schema_id)
-    schema_sha = hashlib.sha256(
-        AD.canonical_json(schema).encode()).hexdigest()
-    contract_sha = AD.contract_sha_for(AD.F_VERSION_V1)
-    if not _a13_looks_sha(task_snapshot_sha256):
-        return _omit("a13-omitted: task snapshot binding malformed")
-    # The canonical F pair (pass-through adapted bytes) and the
-    # NOOP pair (OFF-noop adapted bytes), both over frozen bytes.
-    on_pair = AD.adapt_task(schema_id, dict(task_files),
-                            AD.F_VERSION_V1)
-    off_pair = AD.adapt_task(schema_id, dict(task_files),
-                             AD.PROGRAM_NOOP_V1)
-
-    def _file_shas(pair):
-        return {name: hashlib.sha256(data).hexdigest()
-                for name, data in sorted(pair["files"].items())}
-
-    # ON leg: the cell's own execution (consumed-byte bindings from
-    # the adapted-input-only jail snapshot + the sealed graded
-    # output the checker consumed).
-    _snap = (on_exec.get("engine_jail") or {}).get("task_snapshot") or {}
-    _fm_sha = _snap.get("file|field_map.json")
-    _rc_sha = _snap.get("file|records.json")
-    if not (_a13_looks_sha(_fm_sha) and _a13_looks_sha(_rc_sha)):
-        return _omit("a13-omitted: on-leg jail snapshot malformed")
-    on_adapted_sha = (on_exec.get("engine_jail") or {}).get(
-        "adapted_input_sha256")
-    if not _a13_looks_sha(on_adapted_sha):
-        return _omit("a13-omitted: on-leg adapted binding malformed")
-    on_output = on_exec.get("graded_output_sha256") or on_exec.get(
-        "output_sha256")
-    _on_text = on_exec.get("checker_output")
-    on_evidence = {
-        "task_snapshot_sha256": task_snapshot_sha256,
-        "capability_schema_sha256": schema_sha,
-        "adaptation_contract_sha256": contract_sha,
-        "adapted_input_sha256": on_adapted_sha,
-        "executable_sha256": engine_sha,
-        "output_sha256": on_output,
-        "output_present": on_output is not None,
-        "checker_sha256": on_exec.get("checker_sha256"),
-        "checker_returncode": on_exec.get("checker_returncode"),
-        "checker_output": _on_text if isinstance(_on_text, str) else None,
-        "checker_report_sha256": (
-            hashlib.sha256(_on_text.encode()).hexdigest()
-            if isinstance(_on_text, str) else None),
-        "container_returncode": on_exec.get("container_returncode"),
-        "verdict": on_exec.get("verdict"),
-    }
-    # OFF-noop leg: the NOOP pair through the SAME locked engine
-    # (same argv ABI, same jail shape) + the same frozen checker.
-    # The arrival here is synthesized from NOOP bytes only; the
-    # captured arrival is never read on this path.
-    try:
-        off_payload = {
-            name: json.loads(data.decode("utf-8"))
-            for name, data in sorted(off_pair["files"].items())}
-    except (UnicodeDecodeError, ValueError):
-        return _omit("a13-omitted: noop pair not JSON-shaped")
-    off_work = os.path.join(work, "a13-offnoop")
-    off_out = os.path.join(outdir, "a13-offnoop")
-    os.makedirs(off_work, exist_ok=True)
-    os.makedirs(off_out, exist_ok=True)
-    off_arrival = {
-        "decision": "use_capability",
-        "execution_payload": {
-            "field_map": off_payload["field_map.json"],
-            "records": off_payload["records.json"]},
-    }
-    off_exec = execute_arrival(
-        "correct", off_arrival, off_work, off_out, taskdir, cap_engine,
-        sb, jail_factory=jail_factory,
-        evaluator_authority=evaluator_authority)
-    off_output = off_exec.get("graded_output_sha256") or off_exec.get(
-        "output_sha256")
-    _off_text = off_exec.get("checker_output")
-    off_evidence = {
-        "task_snapshot_sha256": task_snapshot_sha256,
-        "capability_schema_sha256": schema_sha,
-        "adaptation_contract_sha256": contract_sha,
-        "adapted_input_sha256": (off_exec.get("engine_jail") or {}).get(
-            "adapted_input_sha256"),
-        "target_capability_sha256": locked_sha,
-        "executable_sha256": engine_sha,
-        "output_sha256": off_output,
-        "output_present": off_output is not None,
-        "checker_sha256": off_exec.get("checker_sha256"),
-        "checker_returncode": off_exec.get("checker_returncode"),
-        "checker_output": _off_text if isinstance(_off_text, str) else None,
-        "checker_report_sha256": (
-            hashlib.sha256(_off_text.encode()).hexdigest()
-            if isinstance(_off_text, str) else None),
-        "container_returncode": off_exec.get("container_returncode"),
-        "verdict": off_exec.get("verdict"),
-    }
-    # Pass-through leg: F's exact canonical bytes through the ONE
-    # frozen family-agnostic operation (K bypassed), graded by the
-    # exact checker bytes that graded ON. A shape refusal here is
-    # deterministic missing-output evidence, never synthesis.
-    pass_out = os.path.join(outdir, "a13-passthrough")
-    os.makedirs(pass_out, exist_ok=True)
-    try:
-        pass_bytes = AD.passthrough_v1(dict(on_pair["files"]))
-    except ValueError:
-        pass_bytes = None
-    pass_output_sha, pass_rc, pass_verdict = None, None, None
-    pass_text = None
-    if pass_bytes is not None:
-        pass_out_path = os.path.join(pass_out, "OUTPUT.json")
-        with open(pass_out_path, "wb") as _f:
-            _f.write(pass_bytes)
-        pass_output_sha = h(pass_out_path)
-        pass_checker = on_exec.get("checker_path")
-        if pass_checker is not None and os.path.exists(pass_checker):
+            task_files, _task_manifest = AD.frozen_task_files(
+                famc_dir, freeze_commit, family, task)
+        except (OSError, RuntimeError, ValueError):
+            return _omit("a13-omitted: frozen task bytes unreadable")
+        # Schema resolution: exactly one registry schema must cover the
+        # surface (ambiguous or uncovered surfaces cannot run legs).
+        resolved = []
+        for sid in AD.SCHEMA_IDS:
             try:
-                _chk = subprocess.run(
-                    [sys.executable, pass_checker,
-                     os.path.basename(taskdir), pass_out_path],
-                    capture_output=True, text=True)
-            except OSError as e:
+                AD.adapt_task(sid, dict(task_files), AD.F_VERSION_V1)
+            except (ValueError, RuntimeError):
+                continue
+            resolved.append(sid)
+        if len(resolved) != 1:
+            return _omit("a13-omitted: schema coverage != exactly one "
+                         f"(got {resolved})")
+        schema_id = resolved[0]
+        schema = AD.get_schema(schema_id)
+        schema_sha = hashlib.sha256(
+            AD.canonical_json(schema).encode()).hexdigest()
+        contract_sha = AD.contract_sha_for(AD.F_VERSION_V1)
+        if not _a13_looks_sha(task_snapshot_sha256):
+            return _omit("a13-omitted: task snapshot binding malformed")
+        # The canonical F pair (pass-through adapted bytes) and the
+        # NOOP pair (OFF-noop adapted bytes), both over frozen bytes.
+        on_pair = AD.adapt_task(schema_id, dict(task_files),
+                                AD.F_VERSION_V1)
+        off_pair = AD.adapt_task(schema_id, dict(task_files),
+                                 AD.PROGRAM_NOOP_V1)
+
+        def _file_shas(pair):
+            return {name: hashlib.sha256(data).hexdigest()
+                    for name, data in sorted(pair["files"].items())}
+
+        # ON leg: the cell's own execution (consumed-byte bindings from
+        # the adapted-input-only jail snapshot + the sealed graded
+        # output the checker consumed).
+        _snap = (on_exec.get("engine_jail") or {}).get("task_snapshot") or {}
+        _fm_sha = _snap.get("file|field_map.json")
+        _rc_sha = _snap.get("file|records.json")
+        if not (_a13_looks_sha(_fm_sha) and _a13_looks_sha(_rc_sha)):
+            return _omit("a13-omitted: on-leg jail snapshot malformed")
+        on_adapted_sha = (on_exec.get("engine_jail") or {}).get(
+            "adapted_input_sha256")
+        if not _a13_looks_sha(on_adapted_sha):
+            return _omit("a13-omitted: on-leg adapted binding malformed")
+        on_output = on_exec.get("graded_output_sha256") or on_exec.get(
+            "output_sha256")
+        _on_text = on_exec.get("checker_output")
+        on_evidence = {
+            "task_snapshot_sha256": task_snapshot_sha256,
+            "capability_schema_sha256": schema_sha,
+            "adaptation_contract_sha256": contract_sha,
+            "adapted_input_sha256": on_adapted_sha,
+            "executable_sha256": engine_sha,
+            "output_sha256": on_output,
+            "output_present": on_output is not None,
+            "checker_sha256": on_exec.get("checker_sha256"),
+            "checker_returncode": on_exec.get("checker_returncode"),
+            "checker_output": _on_text if isinstance(_on_text, str) else None,
+            "checker_report_sha256": (
+                hashlib.sha256(_on_text.encode()).hexdigest()
+                if isinstance(_on_text, str) else None),
+            "container_returncode": on_exec.get("container_returncode"),
+            "verdict": on_exec.get("verdict"),
+        }
+        # OFF-noop leg: the NOOP pair through the SAME locked engine
+        # (same argv ABI, same jail shape) + the same frozen checker.
+        # The arrival here is synthesized from NOOP bytes only; the
+        # captured arrival is never read on this path.
+        try:
+            off_payload = {
+                name: json.loads(data.decode("utf-8"))
+                for name, data in sorted(off_pair["files"].items())}
+        except (UnicodeDecodeError, ValueError):
+            return _omit("a13-omitted: noop pair not JSON-shaped")
+        off_work = os.path.join(work, "a13-offnoop")
+        off_out = os.path.join(outdir, "a13-offnoop")
+        os.makedirs(off_work, exist_ok=True)
+        os.makedirs(off_out, exist_ok=True)
+        off_arrival = {
+            "decision": "use_capability",
+            "execution_payload": {
+                "field_map": off_payload["field_map.json"],
+                "records": off_payload["records.json"]},
+        }
+        off_exec = execute_arrival(
+            # sb=None: the engine path never reads the raw-task jail
+            # (fresh-path only); the OFF leg runs in its own
+            # adapted-input-only jail from the harness-owned
+            # builder slot (grade=False: execution without grading;
+            # the frozen checker runs post-region over sealed bytes).
+            "correct", off_arrival, off_work, off_out, taskdir, cap_engine,
+            None, jail_factory=_a13_engine_jail_builder(),
+            evaluator_authority=evaluator_authority, grade=False)
+        off_output = off_exec.get("output_sha256")
+        # Ungraded by construction (grade=False above): the verdict,
+        # return code and report do not exist yet -- grading happens
+        # post-region over these sealed bytes. checker_sha256 names
+        # the frozen bytes that will grade them.
+        off_evidence = {
+            "task_snapshot_sha256": task_snapshot_sha256,
+            "capability_schema_sha256": schema_sha,
+            "adaptation_contract_sha256": contract_sha,
+            "adapted_input_sha256": (off_exec.get("engine_jail") or {}).get(
+                "adapted_input_sha256"),
+            "target_capability_sha256": locked_sha,
+            "executable_sha256": engine_sha,
+            "output_sha256": off_output,
+            "output_present": off_output is not None,
+            "checker_sha256": off_exec.get("checker_sha256"),
+            "checker_returncode": None,
+            "checker_output": None,
+            "checker_report_sha256": None,
+            "container_returncode": off_exec.get("container_returncode"),
+            "verdict": None,
+        }
+        # Pass-through leg: F's exact canonical bytes through the ONE
+        # frozen family-agnostic operation (K bypassed), executed
+        # WITHOUT grading. A shape refusal here is deterministic
+        # missing-output evidence, never synthesis. Grading happens
+        # post-region over these sealed bytes.
+        pass_out = os.path.join(outdir, "a13-passthrough")
+        os.makedirs(pass_out, exist_ok=True)
+        try:
+            pass_bytes = AD.passthrough_v1(dict(on_pair["files"]))
+        except ValueError:
+            pass_bytes = None
+        pass_output_sha = None
+        pass_out_path = None
+        if pass_bytes is not None:
+            pass_out_path = os.path.join(pass_out, "OUTPUT.json")
+            with open(pass_out_path, "wb") as _f:
+                _f.write(pass_bytes)
+            pass_output_sha = h(pass_out_path)
+        pass_evidence = {
+            "task_snapshot_sha256": task_snapshot_sha256,
+            "capability_schema_sha256": schema_sha,
+            "adaptation_contract_sha256": contract_sha,
+            "adapted_input_sha256": on_pair["adapted_input_sha256"],
+            "passthrough_implementation_sha256":
+                AD.passthrough_identity(),
+            "output_sha256": pass_output_sha,
+            "output_present": pass_output_sha is not None,
+            "checker_sha256": (h(on_exec["checker_path"])
+                               if pass_output_sha is not None
+                               and on_exec.get("checker_path")
+                               and os.path.exists(
+                                   on_exec["checker_path"]) else None),
+            "checker_returncode": None,
+            "checker_output": None,
+            "checker_report_sha256": None,
+            "container_returncode": None,
+            "verdict": None,
+        }
+
+        calls_after = _PROVIDER_CALLS_ISSUED
+        cell_after = cell_id
+        region_delta = calls_after - calls_before
+        order_delta = (0 if cell_after == cell_before == cell_id
+                       else 1)
+
+        def _leg(program, adapted_sha, file_shas, consumer, evidence):
+            return {"program": program,
+                    "program_identity": AD.program_identity(program),
+                    "adapter_abi": AD.VERSION_WIRING[program]["abi"],
+                    "consumer": consumer,
+                    "adapted_input_sha256": adapted_sha,
+                    "adapted_files": dict(file_shas),
+                    "execution_evidence": evidence}
+
+        det = AD.build_determinant(locked_sha, schema_sha,
+                                   task_snapshot_sha256, contract_sha)
+        det_block = AD.prove_determinism(schema_id, task_files)
+        # Seal before close: hash the sealed leg artifact bytes plus
+        # the isolation evidence INSIDE the region and record them
+        # here. No verdicts exist yet for OFF/PASS (ungraded by
+        # construction -- grading happens post-region over these
+        # sealed bytes); the ON verdict below is the pre-region
+        # harvested treatment verdict, kept for the post-region
+        # consistency check. The causal receipt is finalized
+        # post-region from this seal plus grading outputs (see
+        # grade_a13_legs); the grading artifact references the seal
+        # and is never an input to the receipt.
+        seal = {
+            "seal_schema": "a13-seal-v1",
+            "family": family,
+            "task": task,
+            "capability_id": cap_info.get("capability_id"),
+            "determinant": det["determinant"],
+            "determinant_sha256": det["determinant_sha256"],
+            "adapted_input_sha256": on_adapted_sha,
+            "determinism": det_block,
+            "legs": {
+                "on": _leg(AD.F_VERSION_V1, on_adapted_sha,
+                           {"field_map.json": _fm_sha,
+                            "records.json": _rc_sha},
+                           "locked-engine-then-checker", on_evidence),
+                "off-noop": _leg(AD.PROGRAM_NOOP_V1,
+                                 off_pair["adapted_input_sha256"],
+                                 _file_shas(off_pair),
+                                 "locked-engine-then-checker",
+                                 off_evidence),
+                "pass-through": _leg(AD.F_VERSION_V1,
+                                     on_pair["adapted_input_sha256"],
+                                     _file_shas(on_pair), "checker-direct",
+                                     pass_evidence),
+            },
+            "checker": {"checker_sha256": on_exec.get("checker_sha256"),
+                        "truth_sha256": on_exec.get("truth_sha256")},
+            "frozen_checker_sha256": on_exec.get("checker_sha256"),
+            "execution_harness_manifest_sha256":
+                harness_manifest_sha(),
+            "isolation": {
+                "captured_response_sha256": captured_response_sha256,
+                "cell_id": cell_id,
+                "provider_call_delta": region_delta,
+                "order_cell_delta": order_delta,
+                "enclosing_cell_provider_call_total": calls_after,
+                "tripwire_violations": 0,
+                "tripwire_first_event": None,
+            },
+        }
+        seal["seal_sha256"] = hashlib.sha256(
+            (json.dumps({k: v for k, v in seal.items()
+                         if k != "seal_sha256"},
+                        sort_keys=True, indent=1) + "\n").encode()
+            ).hexdigest()
+        seal_path = os.path.join(outdir, "A13-SEAL.json")
+        with open(seal_path, "w") as _f:
+            _f.write(json.dumps(seal, sort_keys=True, indent=1) + "\n")
+        return {"sealed": True, "reason": None, "seal": seal,
+                "seal_path": seal_path,
+                "seal_sha256": seal["seal_sha256"]}
+    finally:
+        call, recorded_call = _saved_call, _saved_recorded_call
+
+
+def grade_a13_legs(*, seal, outdir, taskdir):
+    """Grade sealed A13 leg artifacts post-region (auditor ruling).
+
+    Verifies the in-region seal (self-sha + artifact re-hash: any
+    tampering between seal and grading refuses loudly), runs the
+    frozen checker over each sealed artifact OUTSIDE the isolated
+    region, writes the separate grading artifact (verdicts
+    referencing sealed hashes -- never an input to the receipt),
+    then finalizes the causal receipt from sealed inputs plus
+    grading observations. The ON re-grade must equal the
+    pre-region harvested verdict (deterministic checker, sealed
+    bytes) or the run refuses: grading cannot alter the evidence
+    it grades, and a divergence means tampering or instability.
+    Data-only parameters (seal dict, paths); no callables.
+    Returns {"graded": True, "receipt", ..., "grading", ...}.
+    Raises ONLY on harness/infrastructure failure (seal mismatch,
+    checker drift/vanish, ON divergence): fix/blocked verdicts
+    and absent outputs are experimental data (missing evidence),
+    never exceptions.
+    """
+    if not isinstance(seal, dict) or \
+            seal.get("seal_schema") != "a13-seal-v1":
+        raise ValueError("A13-SEAL-MALFORMED seal is not an a13-seal-v1 "
+                         "object")
+    _seal_body = {k: v for k, v in seal.items() if k != "seal_sha256"}
+    if hashlib.sha256((json.dumps(_seal_body, sort_keys=True, indent=1)
+                       + "\n").encode()).hexdigest() != seal.get(
+                           "seal_sha256"):
+        raise RuntimeError(
+            "A13-SEAL-MISMATCH sealed bytes != seal sha; refusing to "
+            "grade substituted artifacts")
+    task = seal.get("task")
+    _seal_legs = seal.get("legs") or {}
+
+    def _resolve_checker(want_sha, *candidates):
+        for _cp in candidates:
+            if _cp and os.path.exists(_cp) and h(_cp) == want_sha:
+                return _cp
+        raise RuntimeError(
+            "A13-CHECKER-UNRESOLVABLE no on-disk checker copy matches "
+            f"the sealed checker sha {str(want_sha)[:12]}; refusing to "
+            "grade against substituted bytes")
+
+    def _output_path(leg):
+        return {"on": os.path.join(outdir, "OUTPUT.json"),
+                "off-noop": os.path.join(outdir, "a13-offnoop",
+                                         "OUTPUT.json"),
+                "pass-through": os.path.join(outdir, "a13-passthrough",
+                                             "OUTPUT.json")}[leg]
+
+    def _authority_checker(leg_outdir):
+        return os.path.join(leg_outdir, "frozen-evaluator", "check.py")
+
+    def _live_checker():
+        return os.path.join(taskdir, "..", "check.py")
+
+    _grades = {}
+    _on_checker = None
+    for _leg in ("on", "off-noop", "pass-through"):
+        _block = _seal_legs.get(_leg) or {}
+        # Seal legs are raw (program/ABI/consumers/adapted shas);
+        # execution observables live in their evidence dicts (the
+        # builder promotes them to top level at receipt time).
+        _ev = dict(_block.get("execution_evidence") or {})
+        _want_out = _ev.get("output_sha256")
+        _want_chk = _ev.get("checker_sha256")
+        _opath = _output_path(_leg)
+        if not isinstance(_want_out, str):
+            # The seal records no output for this leg: ON carries
+            # its pre-region harvested grading forward (sealed
+            # input, not post-region data); OFF/PASS were never
+            # graded anywhere and stay None (missing evidence).
+            if _leg == "on":
+                _grades[_leg] = {"output_sha256": None,
+                                 "checker_sha256": _ev.get(
+                                     "checker_sha256"),
+                                 "checker_path": None,
+                                 "checker_returncode": _ev.get(
+                                     "checker_returncode"),
+                                 "checker_output": _ev.get(
+                                     "checker_output"),
+                                 "checker_report_sha256": _ev.get(
+                                     "checker_report_sha256"),
+                                 "verdict": _ev.get("verdict")}
+            else:
+                # Bound checker recorded (which bytes WOULD have
+                # graded); grading fields stay None (never graded).
+                _grades[_leg] = {"output_sha256": None,
+                                 "checker_sha256": _ev.get(
+                                     "checker_sha256"),
+                                 "checker_path": None,
+                                 "checker_returncode": None,
+                                 "checker_output": None,
+                                 "checker_report_sha256": None,
+                                 "verdict": None}
+            continue
+        if not os.path.exists(_opath) or h(_opath) != _want_out:
+            raise RuntimeError(
+                "A13-SEAL-MISMATCH sealed artifact bytes for leg "
+                f"{_leg} != on-disk bytes at grade time (absent or "
+                "substituted after sealing); refusing to grade")
+        if _leg == "off-noop":
+            _cpath = _resolve_checker(
+                _want_chk,
+                _authority_checker(os.path.join(outdir, "a13-offnoop")),
+                _live_checker())
+        else:
+            if _on_checker is None:
+                _on_checker = _resolve_checker(
+                    ((_seal_legs.get("on") or {}).get(
+                        "execution_evidence") or {}).get("checker_sha256"),
+                    _authority_checker(outdir), _live_checker())
+            _cpath = _on_checker
+            if h(_cpath) != _want_chk:
                 raise RuntimeError(
-                    "A13-CHECKER-UNAVAILABLE the frozen checker "
-                    f"vanished mid-cell: {e}")
-            pass_rc = _chk.returncode
-            pass_verdict = ("ship" if _chk.returncode == 0 else
-                            "fix" if _chk.returncode == 1 else "blocked")
-            pass_text = ((_chk.stdout or "") + (_chk.stderr or ""))[:500]
-    pass_evidence = {
-        "task_snapshot_sha256": task_snapshot_sha256,
-        "capability_schema_sha256": schema_sha,
-        "adaptation_contract_sha256": contract_sha,
-        "adapted_input_sha256": on_pair["adapted_input_sha256"],
-        "passthrough_implementation_sha256":
-            AD.passthrough_identity(),
-        "output_sha256": pass_output_sha,
-        "output_present": pass_output_sha is not None,
-        "checker_sha256": (h(on_exec["checker_path"])
-                           if pass_output_sha is not None
-                           and on_exec.get("checker_path")
-                           and os.path.exists(
-                               on_exec["checker_path"]) else None),
-        "checker_returncode": pass_rc,
-        "checker_output": pass_text,
-        "checker_report_sha256": (
-            hashlib.sha256(pass_text.encode()).hexdigest()
-            if isinstance(pass_text, str) else None),
-        "container_returncode": None,
-        "verdict": pass_verdict,
+                    "A13-CHECKER-MISMATCH pass-through sealed checker "
+                    f"{str(_want_chk)[:12]} != the bytes that graded ON; "
+                    "refusing to grade across checkers")
+        try:
+            _chk = subprocess.run(
+                [sys.executable, _cpath, task, _opath],
+                capture_output=True, text=True)
+        except OSError as e:
+            raise RuntimeError(
+                "A13-CHECKER-UNAVAILABLE the frozen checker vanished "
+                f"post-region: {e}")
+        _text = ((_chk.stdout or "") + (_chk.stderr or ""))[:500]
+        _verdict = ("ship" if _chk.returncode == 0 else
+                    "fix" if _chk.returncode == 1 else "blocked")
+        if _leg == "on":
+            _harvested = _ev.get("verdict")
+            if _verdict != _harvested:
+                raise RuntimeError(
+                    "A13-ON-DIVERGENCE post-region re-grade "
+                    f"{_verdict!r} != pre-region harvested "
+                    f"{_harvested!r} on sealed bytes; refusing "
+                    "(deterministic checker + sealed bytes must agree)")
+        _grades[_leg] = {"output_sha256": _want_out,
+                         "checker_sha256": h(_cpath),
+                         "checker_path": _cpath,
+                         "checker_returncode": _chk.returncode,
+                         "checker_output": _text,
+                         "checker_report_sha256": hashlib.sha256(
+                             _text.encode()).hexdigest(),
+                         "verdict": _verdict}
+    grading = {
+        "grading_schema": "a13-grading-v1",
+        "seal_sha256": seal.get("seal_sha256"),
+        "seal_file": "A13-SEAL.json",
+        "legs": {leg: dict(_grades[leg])
+                 for leg in ("on", "off-noop", "pass-through")},
     }
+    grading_path = os.path.join(outdir, "A13-GRADING.json")
+    with open(grading_path, "w") as _f:
+        _f.write(json.dumps(grading, sort_keys=True, indent=1) + "\n")
 
-    def _leg(program, adapted_sha, file_shas, consumer, evidence):
-        return {"program": program,
-                "program_identity": AD.program_identity(program),
-                "adapter_abi": AD.VERSION_WIRING[program]["abi"],
-                "consumer": consumer,
-                "adapted_input_sha256": adapted_sha,
-                "adapted_files": dict(file_shas),
-                "execution_evidence": evidence}
+    def _gleg(leg_name):
+        _block = dict(_seal_legs.get(leg_name) or {})
+        _ev = dict(_block.get("execution_evidence") or {})
+        _g = _grades[leg_name]
+        for _k in ("output_sha256", "checker_sha256",
+                   "checker_returncode", "checker_output",
+                   "checker_report_sha256", "verdict"):
+            _ev[_k] = _g[_k]
+        _block["execution_evidence"] = _ev
+        return _block
 
-    det = AD.build_determinant(locked_sha, schema_sha,
-                               task_snapshot_sha256, contract_sha)
-    det_block = AD.prove_determinism(schema_id, task_files)
+    _det = seal.get("determinant") or {}
+    _isolation = seal.get("isolation") or {}
     receipt = AD.build_receipt(
-        family=family, task=task,
-        capability_id=cap_info.get("capability_id"),
-        determinant=det["determinant"],
-        determinant_sha256=det["determinant_sha256"],
-        on=_leg(AD.F_VERSION_V1, on_adapted_sha,
-                {"field_map.json": _fm_sha, "records.json": _rc_sha},
-                "locked-engine-then-checker", on_evidence),
-        off_noop=_leg(AD.PROGRAM_NOOP_V1,
-                      off_pair["adapted_input_sha256"],
-                      _file_shas(off_pair),
-                      "locked-engine-then-checker", off_evidence),
-        pass_through=_leg(AD.F_VERSION_V1,
-                          on_pair["adapted_input_sha256"],
-                          _file_shas(on_pair), "checker-direct",
-                          pass_evidence),
-        checker_sha256=on_exec.get("checker_sha256"),
-        truth_sha256=on_exec.get("truth_sha256"),
-        execution_harness_manifest_sha256=harness_manifest_sha(),
-        determinism=det_block,
-        isolation={"captured_response_sha256": captured_response_sha256,
-                   "cell_id": cell_id,
-                   "provider_call_delta": 0, "order_cell_delta": 0})
+        family=seal.get("family"), task=seal.get("task"),
+        capability_id=seal.get("capability_id"),
+        determinant=_det,
+        determinant_sha256=seal.get("determinant_sha256"),
+        on=_gleg("on"), off_noop=_gleg("off-noop"),
+        pass_through=_gleg("pass-through"),
+        checker_sha256=(seal.get("checker") or {}).get("checker_sha256"),
+        truth_sha256=(seal.get("checker") or {}).get("truth_sha256"),
+        execution_harness_manifest_sha256=seal.get(
+            "execution_harness_manifest_sha256"),
+        determinism=seal.get("determinism"),
+        isolation={
+            "captured_response_sha256": _isolation.get(
+                "captured_response_sha256"),
+            "cell_id": _isolation.get("cell_id"),
+            "provider_call_delta": _isolation.get("provider_call_delta"),
+            "order_cell_delta": _isolation.get("order_cell_delta"),
+            "enclosing_cell_provider_call_total": _isolation.get(
+                "enclosing_cell_provider_call_total")},
+        seal_sha256=seal.get("seal_sha256"))
     receipt_path = os.path.join(outdir, "A13-CAUSAL-RECEIPT.json")
     with open(receipt_path, "w") as _f:
         _f.write(json.dumps(receipt, sort_keys=True, indent=1) + "\n")
-    return {"executed": True, "reason": None, "receipt": receipt,
+    return {"graded": True, "reason": None, "receipt": receipt,
             "receipt_path": receipt_path,
             "receipt_sha256": receipt["receipt_sha256"],
             "causal": bool(receipt["causal_contribution_proven"]),
             "leg_verdicts": {
-                "on": on_evidence["verdict"],
-                "off-noop": off_evidence["verdict"],
-                "pass-through": pass_evidence["verdict"]}}
+                "on": _grades["on"]["verdict"],
+                "off-noop": _grades["off-noop"]["verdict"],
+                "pass-through": _grades["pass-through"]["verdict"]},
+            "grading": grading, "grading_path": grading_path,
+            "seal_sha256": seal.get("seal_sha256")}
 
 
 def main(lane, family, task, arm, outdir, capdir=None, opts=None,
@@ -2826,6 +3168,15 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     open(os.path.join(outdir, "prompt.txt"), "w").write(prompt)
     raw, receipt, nu_path, id_path, identity_family = call(
         lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
+    # A13 isolation artifact: this is the SINGLE provider-invocation
+    # site on any cell path (verified: no other call(/recorded_call(
+    # invocation exists in this runner; all traffic funnels through
+    # call() -> recorded_call()). A future second site MUST bump
+    # this counter too, or the enclosing total under-reports --
+    # review invariant, enforced by the H35b tripwire + counter
+    # asserts, never by prose alone.
+    global _PROVIDER_CALLS_ISSUED
+    _PROVIDER_CALLS_ISSUED += 1
     arrival, parse_mode = extract(raw)
     arrival_path = os.path.join(outdir, "arrival.json")
     open(arrival_path, "w").write(json.dumps(arrival, indent=1))
@@ -2890,9 +3241,19 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     # other path records no receipt and keeps the legacy
     # consumed-but-unproven ledger. No ORDER surface, no provider,
     # no usage artifact on this path (see execute_a13_legs).
-    a13 = {"executed": False, "reason": None, "receipt": None,
+    # Region/post-region split (auditor): execute_a13_legs seals
+    # leg artifacts + isolation evidence WITHOUT grading (the
+    # isolated region creates no grading process); grade_a13_legs
+    # grades the sealed bytes afterward, outside the region, and
+    # finalizes the receipt. The grading artifact references the
+    # seal and is never an input to the receipt.
+    set_a13_engine_jail_builder(jail_factory)
+    a13 = {"sealed": False, "reason": None, "seal": None,
+           "seal_path": None, "seal_sha256": None}
+    g13 = {"graded": False, "reason": None, "receipt": None,
            "receipt_path": None, "receipt_sha256": None,
-           "causal": False, "leg_verdicts": None}
+           "causal": False, "leg_verdicts": None,
+           "grading": None, "grading_path": None}
     if wire and execr.get("decision") == "use_capability" \
             and execr.get("execution_mode") == "engine" \
             and cap_info is not None:
@@ -2903,13 +3264,14 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
             task_snapshot_sha256=fro["expected_task_snapshot_sha256"],
             evaluator_authority=evaluator_authority,
             captured_response_sha256=response_text_sha256,
-            cell_id=cell["cell_id"],
-            jail_factory=jail_factory, sb=sb)
-        if a13["executed"]:
-            print(f"A13-LEGS on={a13['leg_verdicts']['on']} "
-                  f"off-noop={a13['leg_verdicts']['off-noop']} "
-                  f"pass-through={a13['leg_verdicts']['pass-through']} "
-                  f"causal={a13['causal']}")
+            cell_id=cell["cell_id"])
+        if a13["sealed"]:
+            g13 = grade_a13_legs(seal=a13["seal"], outdir=outdir,
+                                 taskdir=taskdir)
+            print(f"A13-LEGS on={g13['leg_verdicts']['on']} "
+                  f"off-noop={g13['leg_verdicts']['off-noop']} "
+                  f"pass-through={g13['leg_verdicts']['pass-through']} "
+                  f"causal={g13['causal']}")
         else:
             print(f"A13-OMITTED {a13['reason']} "
                   f"(treatment verdict {verdict} stands; no leg "
@@ -2992,21 +3354,21 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                 # executed legs it stays False (consumed, not proven
                 # contributed) exactly as before.
                 capability_materially_contributed=bool(
-                    _selected and a13["executed"] and a13["causal"]),
+                    _selected and g13["graded"] and g13["causal"]),
                 contribution_evidence=(
                     None if _rejected else
                     ({"mechanism": "a13-counterfactual-legs",
                       "receipt_file": os.path.basename(
-                          a13["receipt_path"]),
-                      "receipt_sha256": a13["receipt_sha256"],
+                          g13["receipt_path"]),
+                      "receipt_sha256": g13["receipt_sha256"],
                       "treatment_verdict_source": "on",
-                      "on_verdict": a13["leg_verdicts"]["on"],
+                      "on_verdict": g13["leg_verdicts"]["on"],
                       "off_noop_verdict":
-                          a13["leg_verdicts"]["off-noop"],
+                          g13["leg_verdicts"]["off-noop"],
                       "pass_through_verdict":
-                          a13["leg_verdicts"]["pass-through"],
-                      "causal_contribution_proven": a13["causal"]}
-                     if (_selected and a13["executed"]) else
+                          g13["leg_verdicts"]["pass-through"],
+                      "causal_contribution_proven": g13["causal"]}
+                     if (_selected and g13["graded"]) else
                      ({"mechanism": "none",
                        "reason": ("consumed but not proven contributed: "
                                   + (a13["reason"]
@@ -3051,17 +3413,27 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                 # A13 executed counterfactual legs: the receipt file +
                 # its self sha ride the manifest so chain genesis binds
                 # them (the receipt itself is hashed into the evidence
-                # chain without a new link kind). treatment verdict is
-                # the ON leg only (manifest verdict == ON verdict by
-                # construction: the ON leg IS the execution above).
-                # All five are None when the legs did not run.
+                # chain without a new link kind). The in-region seal
+                # and the post-region grading artifact ride along the
+                # same way (seal first, grading referencing it).
+                # treatment verdict is the ON leg only (manifest
+                # verdict == ON verdict by construction: the ON leg
+                # IS the execution above).
+                # All seven are None when the legs did not run/grade.
                 "a13_receipt_file": (
-                    os.path.basename(a13["receipt_path"])
-                    if a13["executed"] else None),
-                "a13_receipt_sha256": a13["receipt_sha256"],
+                    os.path.basename(g13["receipt_path"])
+                    if g13["graded"] else None),
+                "a13_receipt_sha256": g13["receipt_sha256"],
                 "a13_causal_contribution_proven": (
-                    a13["causal"] if a13["executed"] else None),
-                "a13_leg_verdicts": a13["leg_verdicts"],
+                    g13["causal"] if g13["graded"] else None),
+                "a13_leg_verdicts": g13["leg_verdicts"],
+                "a13_seal_file": (
+                    os.path.basename(a13["seal_path"])
+                    if a13["sealed"] else None),
+                "a13_seal_sha256": a13["seal_sha256"],
+                "a13_grading_file": (
+                    os.path.basename(g13["grading_path"])
+                    if g13["graded"] else None),
                 "a13_omitted_reason": a13["reason"],
                 # A12n slice D13 P0-2: the persisted graded-output link.
                 # graded_output_sha256 is the sha256 of the EXACT sealed

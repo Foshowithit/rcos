@@ -359,7 +359,9 @@ check("A13-RECEIPT exact key sets (no smuggled content anywhere)",
                                "legs", "checker", "frozen_checker_sha256",
                                "execution_harness_manifest_sha256",
                                "causal_contribution_proven",
+                               "seal_sha256",
                                "provider_call_delta", "order_cell_delta",
+                               "enclosing_cell_provider_call_total",
                                "receipt_sha256"))
       and sorted(_RCPT["legs"]) == ["off-noop", "on", "pass-through"]
       and sorted(_RCPT["legs"]["on"]) == sorted(
@@ -428,6 +430,7 @@ check("A13-RECEIPT unexecuted legs bind identities but record "
               for leg in _RCPT["legs"])
       and _RCPT["provider_call_delta"] is None
       and _RCPT["order_cell_delta"] is None
+      and _RCPT["enclosing_cell_provider_call_total"] is None
       and _RCPT["legs"]["off-noop"]["target_capability_sha256"]
       == ARTIFACT_SHA
       and _RCPT["legs"]["off-noop"]["noop_abi_sha256"] not in (
@@ -677,20 +680,101 @@ _o4 = tempfile.mkdtemp(prefix="h35b-cell-out-")
 # response_text_sha256 + cell id; the fixture stands in).
 _FX_RESPONSE = _sha(b"h35b-captured-response")
 _FX_CELL = "H35B-FIXTURE-CELL"
+# Runner-owned call counter: the fixture issued no provider calls
+# (they would raise above), so the default observation is 0; the
+# green cell below presets 1 to simulate the enclosing cell's
+# single observed call (observed, never hardcoded by the builder).
+_saved_counter = _RA._PROVIDER_CALLS_ISSUED
+_RA._PROVIDER_CALLS_ISSUED = 1
+# Harness-owned jail slot: the shim double (main() binds the real
+# seam per invocation; restored with the counter below).
+_saved_builder = _RA._A13_ENGINE_JAIL_BUILDER
+_RA.set_a13_engine_jail_builder(_shim_factory)
+# The receipt flow shares ONE outdir (as in production): the ON
+# execution writes its OUTPUT + frozen evaluator there, the helper
+# seals from those committed bytes, and grading re-reads them.
+_e4on = _RA.execute_arrival("correct", _ON_ARR, _w4, _o4, _T2DIR,
+                            _KPATH, None, jail_factory=_shim_factory,
+                            evaluator_authority=_AUTH)
 _a4 = _RA.execute_a13_legs(
     family="fam01", task="T2", cap_info=dict(_CAP), cap_engine=_KPATH,
-    on_exec=_e1, freeze_commit=FREEZE, famc_dir=FAMC, taskdir=_T2DIR,
+    on_exec=_e4on, freeze_commit=FREEZE, famc_dir=FAMC, taskdir=_T2DIR,
     work=_w4, outdir=_o4, task_snapshot_sha256=_SNAP,
     evaluator_authority=_AUTH,
-    captured_response_sha256=_FX_RESPONSE, cell_id=_FX_CELL,
-    jail_factory=_shim_factory, sb=None)
-check("H35b-LEGS end-to-end executes (no model call attempted)",
-      _a4["executed"] is True and _a4["causal"] is True
-      and _a4["leg_verdicts"] == {"on": "ship", "off-noop": "fix",
-                                  "pass-through": "fix"}
+    captured_response_sha256=_FX_RESPONSE, cell_id=_FX_CELL)
+check("H35b-SEAL legs execute and seal WITHOUT grading (no model "
+      "call attempted, no verdicts yet for OFF/PASS)",
+      _a4["sealed"] is True
+      and _a4["seal"]["seal_schema"] == "a13-seal-v1"
+      and _a4["seal"]["legs"]["on"]["execution_evidence"]["verdict"] \
+      == "ship"
+      and _a4["seal"]["legs"]["off-noop"]["execution_evidence"][
+          "verdict"] is None
+      and _a4["seal"]["legs"]["off-noop"]["execution_evidence"][
+          "checker_returncode"] is None
+      and _a4["seal"]["legs"]["pass-through"]["execution_evidence"][
+          "verdict"] is None
+      and _a4["seal"]["isolation"]["tripwire_violations"] == 0
+      and _a4["seal"]["isolation"][
+          "enclosing_cell_provider_call_total"] == 1
+      and _a4["seal"]["isolation"]["provider_call_delta"] == 0
+      and _a4["seal"]["seal_sha256"] == _sha(_canon(
+          {k: v for k, v in _a4["seal"].items()
+           if k != "seal_sha256"}).encode())
+      and json.load(open(_a4["seal_path"])) == _a4["seal"]
+      and not os.path.exists(
+          os.path.join(_o4, "A13-CAUSAL-RECEIPT.json"))
       and _calls == [],
       f"{_a4['reason']} calls={len(_calls)}")
-_R4 = _a4["receipt"]
+_g4 = _RA.grade_a13_legs(seal=_a4["seal"], outdir=_o4, taskdir=_T2DIR)
+check("H35b-SEAL exact shape (no smuggled content; seal binds "
+      "everything grading needs)",
+      sorted(_a4["seal"]) == sorted(
+          ("seal_schema", "family", "task", "capability_id",
+           "determinant", "determinant_sha256",
+           "adapted_input_sha256", "determinism", "legs", "checker",
+           "frozen_checker_sha256",
+           "execution_harness_manifest_sha256", "isolation",
+           "seal_sha256"))
+      and sorted(_a4["seal"]["legs"]) == ["off-noop", "on",
+                                          "pass-through"]
+      and sorted(_a4["seal"]["isolation"]) == sorted(
+          ("captured_response_sha256", "cell_id",
+           "provider_call_delta", "order_cell_delta",
+           "enclosing_cell_provider_call_total",
+           "tripwire_violations", "tripwire_first_event")))
+check("H35b-LEGS post-region grading finalizes verdicts + receipt "
+      "(grading references the seal, never inputs the receipt)",
+      _g4["graded"] is True
+      and _g4["leg_verdicts"] == {"on": "ship", "off-noop": "fix",
+                                  "pass-through": "fix"}
+      and _g4["causal"] is True
+      and _g4["grading"]["seal_sha256"] == _a4["seal_sha256"]
+      and _g4["receipt"]["seal_sha256"] == _a4["seal_sha256"]
+      and _calls == [],
+      f"causal={_g4['causal']} calls={len(_calls)}")
+# Seal tamper-evidence: flipping one byte of a sealed artifact
+# after sealing makes grading refuse (no verdicts, no receipt),
+# proving the grader cannot be steered by substitution.
+_wt2 = tempfile.mkdtemp(prefix="h35b-tamper-")
+_ot2 = tempfile.mkdtemp(prefix="h35b-tamper-out-")
+shutil.copytree(_o4, os.path.join(_wt2, "cell"))
+_ot2c = os.path.join(_wt2, "cell")
+_tamper_seal = json.loads(json.dumps(_a4["seal"]))
+_tamper_off = os.path.join(_ot2c, "a13-offnoop", "OUTPUT.json")
+_raw_t = bytearray(open(_tamper_off, "rb").read())
+_raw_t[10] ^= 0x01
+open(_tamper_off, "wb").write(bytes(_raw_t))
+_tamper_err = None
+try:
+    _RA.grade_a13_legs(seal=_tamper_seal, outdir=_ot2c, taskdir=_T2DIR)
+except RuntimeError as e:
+    _tamper_err = str(e)
+shutil.rmtree(_wt2, ignore_errors=True)
+check("H35b-SEAL tampered artifact refuses grading "
+      "(A13-SEAL-MISMATCH, no verdicts, no receipt)",
+      _tamper_err is not None and "SEAL-MISMATCH" in _tamper_err)
+_R4 = _g4["receipt"]
 check("H35b-RECEIPT all 18 ruling slots real (reruns, on, "
       "off-noop, pass-through, causal)",
       _R4["determinism"]["rerun_1_sha256"]
@@ -747,10 +831,15 @@ check("H35b-RECEIPT all 18 ruling slots real (reruns, on, "
       and _R4["legs"]["pass-through"]["verdict"] == "fix"
       and all(_R4["legs"][leg]["captured_response_sha256"]
               == _FX_RESPONSE for leg in _R4["legs"])
+      and len({_R4["legs"][leg]["captured_response_sha256"]
+               for leg in _R4["legs"]}) == 1
       and all(_R4["legs"][leg]["cell_id"] == _FX_CELL
               for leg in _R4["legs"])
+      and len({_R4["legs"][leg]["cell_id"]
+               for leg in _R4["legs"]}) == 1
       and _R4["provider_call_delta"] == 0
       and _R4["order_cell_delta"] == 0
+      and _R4["enclosing_cell_provider_call_total"] == 1
       and _R4["causal_contribution_proven"] is True)
 check("H35b-RECEIPT bindings == determinant, checkers shared, "
       "outputs differ, identities distinct",
@@ -782,10 +871,10 @@ check("H35b-RECEIPT canonical self-sha verifies + file "
       _R4["receipt_sha256"] == _sha(_canon(
           {k: v for k, v in _R4.items()
            if k != "receipt_sha256"}).encode())
-      and json.load(open(_a4["receipt_path"])) == _R4
-      and os.path.basename(_a4["receipt_path"])
+      and json.load(open(_g4["receipt_path"])) == _R4
+      and os.path.basename(_g4["receipt_path"])
       == "A13-CAUSAL-RECEIPT.json"
-      and _a4["receipt_sha256"] == _R4["receipt_sha256"])
+      and _g4["receipt_sha256"] == _R4["receipt_sha256"])
 _proven4, _detail4 = AD.derive_causal_contribution(
     determinant=_R4["determinant"],
     determinant_sha256=_R4["determinant_sha256"], legs=_R4["legs"],
@@ -796,6 +885,22 @@ check("H35b-DERIVE causal TRUE with every condition + relation "
       and all(item["ok"] for item in _detail4["conditions"]),
       str([item["name"] for item in _detail4["conditions"]
            if not item["ok"]]))
+# Layering: the enclosing total is RECORDED for the verifier's
+# equalities, never asserted by the derivation -- mutating it
+# leaves the derived outcome unchanged (the verifier, not the
+# builder, judges total-vs-delta consistency and one shared
+# response). The B4/B5 pair above proves the total is observed:
+# same helper records 1 vs 0 following the actual counter.
+_R4_mut = json.loads(json.dumps(_R4))
+_R4_mut["enclosing_cell_provider_call_total"] = 7
+_proven_mut, _ = AD.derive_causal_contribution(
+    determinant=_R4_mut["determinant"],
+    determinant_sha256=_R4_mut["determinant_sha256"],
+    legs=_R4_mut["legs"], determinism=_R4_mut["determinism"])
+check("H35b-LAYER counts are recorded, not derived (mutated "
+      "counts leave the derivation unchanged)",
+      _proven_mut is True and _R4["enclosing_cell_provider_call_total"] == 1
+      and _R4["provider_call_delta"] == 0)
 
 
 def _synth_legs(mutate):
@@ -868,29 +973,76 @@ _e5 = _RA.execute_arrival("correct", _ON_ARR, _w5, _o5, _T2DIR,
                           evaluator_authority=_AUTH)
 _w5b = tempfile.mkdtemp(prefix="h35b-shipcell-")
 _o5b = tempfile.mkdtemp(prefix="h35b-shipcell-out-")
+# Same single-outdir discipline as production: the ON execution
+# for THIS receipt runs into the receipt outdir.
+_e5b = _RA.execute_arrival("correct", _ON_ARR, _w5b, _o5b, _T2DIR,
+                           _KPATH5, None, jail_factory=_shim_factory,
+                           evaluator_authority=_AUTH)
+_w5c = tempfile.mkdtemp(prefix="h35b-shipcell-work-")
+# Counter at 0 here (vs 1 for the green cell above): the same
+# helper must then record total 0 -- the total is observed, never
+# hardcoded, and the derivation ignores it either way.
+_RA._PROVIDER_CALLS_ISSUED = 0
 _a5 = _RA.execute_a13_legs(
     family="fam01", task="T2",
     cap_info={"capability_id": "cap-h35-ship",
               "engine_sha256": _KSHA5},
-    cap_engine=_KPATH5, on_exec=_e5, freeze_commit=FREEZE,
-    famc_dir=FAMC, taskdir=_T2DIR, work=_w5b, outdir=_o5b,
-    task_snapshot_sha256=_SNAP, evaluator_authority=_AUTH,
-    jail_factory=_shim_factory, sb=None)
+    cap_engine=_KPATH5, on_exec=_e5b, freeze_commit=FREEZE,
+    famc_dir=FAMC, taskdir=_T2DIR, work=_w5c, outdir=_o5b,
+    task_snapshot_sha256=_SNAP, evaluator_authority=_AUTH)
+_g5 = _RA.grade_a13_legs(seal=_a5["seal"], outdir=_o5b, taskdir=_T2DIR)
 _proven5, _detail5 = AD.derive_causal_contribution(
-    determinant=_a5["receipt"]["determinant"],
-    determinant_sha256=_a5["receipt"]["determinant_sha256"],
-    legs=_a5["receipt"]["legs"],
-    determinism=_a5["receipt"]["determinism"])
+    determinant=_g5["receipt"]["determinant"],
+    determinant_sha256=_g5["receipt"]["determinant_sha256"],
+    legs=_g5["receipt"]["legs"],
+    determinism=_g5["receipt"]["determinism"])
 check("H35b-HONEST shipping OFF-noop derives causal FALSE "
       "(treatment stays ON=ship; no exception, no model call)",
-      _a5["executed"] is True
-      and _a5["leg_verdicts"] == {"on": "ship", "off-noop": "ship",
+      _a5["sealed"] is True
+      and _g5["graded"] is True
+      and _g5["leg_verdicts"] == {"on": "ship", "off-noop": "ship",
                                   "pass-through": "fix"}
-      and _a5["causal"] is False
-      and _a5["receipt"]["causal_contribution_proven"] is False
+      and _g5["causal"] is False
+      and _g5["receipt"]["causal_contribution_proven"] is False
+      and _g5["receipt"]["enclosing_cell_provider_call_total"] == 0
+      and _g5["receipt"]["provider_call_delta"] == 0
       and _proven5 is False
       and _calls == [],
-      f"causal={_a5['causal']} calls={len(_calls)}")
+      f"causal={_g5['causal']} calls={len(_calls)}")
+# Runtime tripwire (third layer): a provider attempt anywhere
+# inside the legs -- even via a compromised callee -- raises
+# immediately and writes no receipt. The evil wrapper below calls
+# back into the provider boundary from inside execute_arrival;
+# the guard installed by the helper must fire first.
+_real_arrival = _RA.execute_arrival
+
+
+def _evil_arrival(*a, **k):
+    _RA.call("P", "x", _o5b, "tripwire-probe")
+    return _real_arrival(*a, **k)
+
+
+_wt = tempfile.mkdtemp(prefix="h35b-trip-")
+_ot = tempfile.mkdtemp(prefix="h35b-trip-out-")
+_RA.execute_arrival = _evil_arrival
+_trip_err = None
+try:
+    _RA.execute_a13_legs(
+        family="fam01", task="T2", cap_info=dict(_CAP),
+        cap_engine=_KPATH, on_exec=_e1, freeze_commit=FREEZE,
+        famc_dir=FAMC, taskdir=_T2DIR, work=_wt, outdir=_ot,
+        task_snapshot_sha256=_SNAP, evaluator_authority=_AUTH,
+        captured_response_sha256=_FX_RESPONSE, cell_id=_FX_CELL)
+except RuntimeError as e:
+    _trip_err = str(e)
+finally:
+    _RA.execute_arrival = _real_arrival
+check("H35b-TRIPWIRE provider attempt inside the legs fails the "
+      "A13 execution immediately (no receipt)",
+      _trip_err is not None and "TRIPWIRE" in _trip_err
+      and not os.path.exists(
+          os.path.join(_ot, "A13-CAUSAL-RECEIPT.json")),
+      str(_trip_err)[:120])
 # Missing evidence is recorded, never defaulted: a crashing K
 # yields a built receipt with None output + causal FALSE (the
 # cell still completes with the ON verdict); an uncovered
@@ -912,16 +1064,16 @@ _a7 = _RA.execute_a13_legs(
               "engine_sha256": _KSHA7},
     cap_engine=_KPATH7, on_exec=_e7, freeze_commit=FREEZE,
     famc_dir=FAMC, taskdir=_T2DIR, work=_w7b, outdir=_o7b,
-    task_snapshot_sha256=_SNAP, evaluator_authority=_AUTH,
-    jail_factory=_shim_factory, sb=None)
+    task_snapshot_sha256=_SNAP, evaluator_authority=_AUTH)
+_g7 = _RA.grade_a13_legs(seal=_a7["seal"], outdir=_o7b, taskdir=_T2DIR)
 check("H35b-MISSING crashing K records missing output (None, "
       "causal FALSE) without failing the cell",
       _e7["verdict"] == "blocked" and _e7["output_sha256"] is None
-      and _a7["executed"] is True and _a7["causal"] is False
-      and _a7["leg_verdicts"]["on"] == "blocked"
-      and _a7["receipt"]["legs"]["on"]["output_sha256"] is None
-      and _a7["receipt"]["legs"]["on"]["verdict"] == "blocked"
-      and _a7["receipt"]["causal_contribution_proven"] is False)
+      and _a7["sealed"] is True and _g7["causal"] is False
+      and _g7["leg_verdicts"]["on"] == "blocked"
+      and _g7["receipt"]["legs"]["on"]["output_sha256"] is None
+      and _g7["receipt"]["legs"]["on"]["verdict"] == "blocked"
+      and _g7["receipt"]["causal_contribution_proven"] is False)
 _SNAP50 = FV.derive_expected_visible(
     FAMC, FREEZE, "fam05", "T0")["manifest_sha256"]
 _w7c = tempfile.mkdtemp(prefix="h35b-omit-")
@@ -932,31 +1084,89 @@ _a7c = _RA.execute_a13_legs(
     famc_dir=FAMC,
     taskdir=os.path.join(FAMC, "families", "fam05", "T0"),
     work=_w7c, outdir=_o7c, task_snapshot_sha256=_SNAP50,
-    evaluator_authority=_AUTH, jail_factory=_shim_factory, sb=None)
+    evaluator_authority=_AUTH)
 check("H35b-MISSING uncovered surface omits the legs with a "
       "reason (never a verdict)",
-      _a7c["executed"] is False and _a7c["receipt"] is None
-      and _a7c["causal"] is False
+      _a7c["sealed"] is False and _a7c["seal"] is None
+      and _a7c["seal_sha256"] is None
       and isinstance(_a7c["reason"], str)
       and "schema" in _a7c["reason"],
       str(_a7c["reason"]))
 # Verdict isolation + non-retry structure: the leg helper's own
 # source reaches no provider, no ORDER surface, and names no
 # retry/repair path; main() binds the receipt into the manifest.
+# The ingress mirror below applies the apparatus's own
+# capability-ingress rule to the entry parameters (no injected
+# callable, no *args/**kwargs, no handle-like names): the static
+# half of the invariant-gap finding, self-enforced in-suite.
+import ast as _ast3  # noqa: E402
+import re as _re3  # noqa: E402
 _helper_src = _inspect3.getsource(_RA.execute_a13_legs)
+_helper_fn = next(n for n in _ast3.walk(
+    _ast3.parse(_helper_src)) if isinstance(n, _ast3.FunctionDef))
+_helper_params = [a.arg for a in (
+    list(_helper_fn.args.posonlyargs) + list(_helper_fn.args.args)
+    + list(_helper_fn.args.kwonlyargs))]
+_helper_called = {n.func.id for n in _ast3.walk(_helper_fn)
+                  if isinstance(n, _ast3.Call)
+                  and isinstance(n.func, _ast3.Name)}
+_INGRESS_PAT = _re3.compile(
+    r"(factory|callable|handler|hook|^fn$|func$|provider|client|"
+    r"session|transport|^sb$|sandbox|^jail|_jail|jail$|engine_obj|"
+    r"conn|socket|^api$|^api_|adapter_obj|resolver|loader)", _re3.I)
+_ingress_hits = [
+    p for p in _helper_params
+    if p in _helper_called or _INGRESS_PAT.search(p)]
+_grade_src = _inspect3.getsource(_RA.grade_a13_legs)
+_grade_fn = next(n for n in _ast3.walk(
+    _ast3.parse(_grade_src)) if isinstance(n, _ast3.FunctionDef))
+_grade_params = [a.arg for a in (
+    list(_grade_fn.args.posonlyargs) + list(_grade_fn.args.args)
+    + list(_grade_fn.args.kwonlyargs))]
+_grade_called = {n.func.id for n in _ast3.walk(_grade_fn)
+                 if isinstance(n, _ast3.Call)
+                 and isinstance(n.func, _ast3.Name)}
+_ingress_hits_grade = [
+    p for p in _grade_params
+    if p in _grade_called or _INGRESS_PAT.search(p)]
 check("H35b-ISOLATE leg path cannot become a provider call, an "
       "ORDER cell, or a retry (source scan)",
       all(term not in _helper_src
-          for term in ("recorded_call", "order_authorize",
+          for term in ("recorded_call(", "order_authorize",
                        "order_expected", "retry", "repair", "urllib",
                        "p_call", "import order"))
-      and "execute_a13_legs" in _inspect3.getsource(_RA.main)
+      and all(term not in _grade_src
+              for term in ("recorded_call(", "order_authorize",
+                           "order_expected", "retry", "repair", "urllib",
+                           "p_call", "import order", "os.system",
+                           "os.exec", "os.spawn", "os.popen",
+                           "eval(", "exec("))
+      and _helper_fn.args.vararg is None
+      and _helper_fn.args.kwarg is None
+      and _ingress_hits == []
+      and _grade_fn.args.vararg is None
+      and _grade_fn.args.kwarg is None
+      and _ingress_hits_grade == [],
+      str(_ingress_hits + _ingress_hits_grade))
+check("H35b-ISOLATE grading lives post-region (checker subprocess "
+      "in the grade step only, never in the isolated helper)",
+      "subprocess.run" not in _helper_src
+      and "subprocess.run" in _grade_src)
+check("H35b-ISOLATE main() binds seal + grading + receipt into "
+      "the manifest and the ledger",
+      "execute_a13_legs" in _inspect3.getsource(_RA.main)
+      and "grade_a13_legs" in _inspect3.getsource(_RA.main)
       and "a13_receipt_sha256" in _inspect3.getsource(_RA.main)
+      and "a13_seal_sha256" in _inspect3.getsource(_RA.main)
+      and "set_a13_engine_jail_builder" in _inspect3.getsource(
+          _RA.main)
       and "capability_materially_contributed" in _inspect3.getsource(
           _RA.main))
+_RA._PROVIDER_CALLS_ISSUED = _saved_counter
+_RA.set_a13_engine_jail_builder(_saved_builder)
 for _d in (_KDIR, _w1, _o1, _w2, _o2, _pt_outdir, _w4, _o4, _KDIR5,
-           _w5, _o5, _w5b, _o5b, _KDIR7, _w7, _o7, _w7b, _o7b, _w7c,
-           _o7c):
+           _w5, _o5, _w5b, _o5b, _w5c, _wt, _ot, _KDIR7, _w7, _o7, _w7b,
+           _o7b, _w7c, _o7c):
     shutil.rmtree(_d, ignore_errors=True)
 
 bad = [n for n, ok_ in RESULTS if not ok_]
