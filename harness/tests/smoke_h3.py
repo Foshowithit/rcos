@@ -736,17 +736,20 @@ json.dump(_bak, open(os.path.join(drift, "FREEZE.json"), "w"))
 # missing required module instead of silently skipping it.
 sys.path.insert(0, os.path.join(FAMC, "harness-run"))
 import run_arm_h1 as _RUN
-_real_harness = _RUN.HARNESS
+# The digest covers the import closure (not a hardcoded list), so a
+# missing module is simulated by injecting a bogus closure entry --
+# the refusal branch (never silently skip) is what is under test.
+_real_closure = _RUN._preflight_harness_closure
 try:
-    _RUN.HARNESS = os.path.join(BASE, "a3-empty-harness")
-    os.makedirs(_RUN.HARNESS, exist_ok=True)
+    _RUN._preflight_harness_closure = (
+        lambda root, entry: ["harness/no-such-module.py"])
     _RUN.harness_manifest_sha()
     check("harness manifest: missing module refused", False)
 except RuntimeError as e:
     check("harness manifest: missing module refused",
           "HARNESS-MANIFEST-MISSING" in str(e), str(e)[:120])
 finally:
-    _RUN.HARNESS = _real_harness
+    _RUN._preflight_harness_closure = _real_closure
     check("harness manifest: true modules hash",
           len(_RUN.harness_manifest_sha()) == 64)
 
