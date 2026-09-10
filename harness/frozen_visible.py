@@ -116,10 +116,37 @@ def canonical_sha(obj):
         json.dumps(obj, sort_keys=True).encode()).hexdigest()
 
 
+def _base_prefix(base, root):
+    """The fam-c dir `base` as a repo-root-relative posix prefix WITH
+    trailing slash ("" when `base` IS the repo root).
+
+    A12n slice D12d: the families/ prefix is derived from `base`
+    relative to the git top level instead of hardcoding the
+    canonical `benchmarks/fam-c/` location — the two halves of
+    verify_instance_frozen() (FREEZE-HASHES consumption vs frozen
+    derivation) must agree for ANY fam-c dir, including hermetic
+    fixtures outside the canonical tree. Fail closed when `base`
+    escapes `root` (never derive authority over a bogus path); a
+    `base` outside any repo already fails closed in _git above.
+    With base == <root>/benchmarks/fam-c the prefix is exactly
+    "benchmarks/fam-c/", byte-identical to the old literal."""
+    rel = os.path.relpath(os.path.abspath(base), root)
+    if rel == ".." or rel.startswith(".." + os.sep):
+        raise RuntimeError("FROZEN-VISIBLE-NO-REPO: fam-c dir "
+                           f"{base} escapes the git top level {root}; "
+                           "refusing to derive frozen authority")
+    if rel == ".":
+        return ""
+    return rel.replace(os.sep, "/") + "/"
+
+
 def derive_expected_visible(base, freeze_commit, family, task):
     """Derive the immutable expectation from freeze-commit objects.
 
-    `base` is the fam-c dir (repo root is resolved from it via git).
+    `base` is the fam-c dir (repo root is resolved from it via git,
+    and the families/ prefix is derived from `base` relative to
+    that root — see _base_prefix — so hermetic fam-c fixtures work
+    exactly like the canonical tree).
     Returns {"freeze_commit", "family", "task", "paths",
     "manifest", "manifest_sha256", "paths_sha256",
     "task_snapshot_sha256"}. `paths` uses copied-shape (dirs end
@@ -133,7 +160,7 @@ def derive_expected_visible(base, freeze_commit, family, task):
         raise RuntimeError("FROZEN-VISIBLE-NO-COMMIT: freeze commit required")
     root = _git(["rev-parse", "--show-toplevel"],
                 cwd=base).decode().strip()
-    fam_rel = f"benchmarks/fam-c/families/{family}"
+    fam_rel = f"{_base_prefix(base, root)}families/{family}"
     task_rel = f"{fam_rel}/{task}"
     vis_text = _git_bytes(
         root, freeze_commit, f"{task_rel}/VISIBLE.md").decode()
@@ -208,7 +235,10 @@ def derive_expected_evaluator(base, freeze_commit, family):
     git objects (A12n slice D12b — same authority discipline as
     derive_expected_visible, never the mutable tree).
 
-    `base` is the fam-c dir (repo root is resolved from it via git).
+    `base` is the fam-c dir (repo root is resolved from it via git,
+    and the families/ prefix is derived from `base` relative to
+    that root — see _base_prefix — so hermetic fam-c fixtures work
+    exactly like the canonical tree).
     Returns {"freeze_commit", "family", "checker_rel", "truth_rel",
     "checker_sha256", "truth_sha256"} — sha256 over the frozen blob
     bytes of families/<family>/check.py and families/<family>/
@@ -220,8 +250,9 @@ def derive_expected_evaluator(base, freeze_commit, family):
                            "required (never default, never HEAD)")
     root = _git(["rev-parse", "--show-toplevel"],
                 cwd=base).decode().strip()
-    checker_rel = f"benchmarks/fam-c/families/{family}/check.py"
-    truth_rel = f"benchmarks/fam-c/families/{family}/truth.json"
+    fam_rel = f"{_base_prefix(base, root)}families/{family}"
+    checker_rel = f"{fam_rel}/check.py"
+    truth_rel = f"{fam_rel}/truth.json"
     checker_bytes = _git_bytes(root, freeze_commit, checker_rel)
     truth_bytes = _git_bytes(root, freeze_commit, truth_rel)
     return {"freeze_commit": freeze_commit, "family": family,

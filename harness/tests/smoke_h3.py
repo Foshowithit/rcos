@@ -631,6 +631,20 @@ drift = os.path.join(BASE, "a3-drift")
 os.system("rm -rf " + drift)
 os.makedirs(os.path.join(drift, "families", "fam99", "T0"))
 for rel, body in (("families/fam99/T0/prompt.md", "frozen\n"),
+                  # D12 contract: the frozen visibility declaration is
+                  # part of the freeze commit (the expectation is
+                  # derived from it, never from disk). It is committed
+                  # below and then removed from the worktree: the
+                  # fixture's task dir holds only prompt.md (so an
+                  # empty `task fixtures:` line is the consistent
+                  # declaration), and FREEZE-HASHES stays at exactly
+                  # the 3 graded entries, so verified_files == 3.
+                  ("families/fam99/T0/VISIBLE.md",
+                   "# Agent-visible files for fam99/T0 (frozen seal)\n"
+                   "\n"
+                   "VISIBLE TO AGENT:\n"
+                   "- prompt.md\n"
+                   "- task fixtures: \n"),
                   ("families/fam99/check.py", "print(1)\n"),
                   ("families/fam99/truth.json", "{}\n")):
     fp = os.path.join(drift, rel)
@@ -656,6 +670,10 @@ _fc = _sp.run(["git", "rev-parse", "HEAD"], cwd=drift, capture_output=True,
               env=_env, text=True).stdout.strip()
 _tree = _sp.run(["git", "rev-parse", "HEAD^{tree}"], cwd=drift,
                 capture_output=True, env=_env, text=True).stdout.strip()
+# The declaration lives in the freeze commit (frozen authority), not
+# on disk: remove the worktree copy so the task dir holds only the
+# graded prompt.md, matching the 3-entry FREEZE-HASHES below.
+os.remove(os.path.join(drift, "families", "fam99", "T0", "VISIBLE.md"))
 json.dump({"freeze_commit": _fc, "freeze_tree": _tree},
           open(os.path.join(drift, "FREEZE.json"), "w"))
 check("frozen-instance gate: clean fixture passes git-resolved manifest",

@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "f077f01c9a31947ba74f5f71dcd09a8d0d9d5b7836b59e6a1a3f22ebcfb6ab47",
+ "harness_manifest_sha256": "7b32aa22b6fc1b4bde2da15c7c4e8aaa33505c2d1e1343be963e18b8e9fffaee",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -25,7 +25,7 @@
   "harness/specificity.py": "166ee886f77f07c37302891277b0832616a608548fbf0ac9042d24bfec9690b7",
   "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193",
   "harness/contract_shape.py": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2",
-  "harness/frozen_visible.py": "36f18cb9cc50ecf7d50235b0c1cb1b56add0f6b1a7f22f35de898a391ec3a35f"
+  "harness/frozen_visible.py": "fc94d7512b473ec5f5b7671dfa3af322e6dd0866951590d22b365bdb296afe28"
  },
  "amendments": [
   {
@@ -884,6 +884,19 @@
    },
    "reason": "A12n slice D12c (general-seat findings A + B): provenance as precondition/conjunct in classify_run_dir (every gate evaluated, first failure with established wording); rule-bound required-field set fixed by the frozen rule in verify_expected_provenance (any surviving marker requires the full visible + evaluator set, missing subset refused by name, no-markers-at-all keeps the named legacy guard)",
    "slice": "a12n-slice-d12c",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "f077f01c9a31947ba74f5f71dcd09a8d0d9d5b7836b59e6a1a3f22ebcfb6ab47",
+   "to_manifest": "7b32aa22b6fc1b4bde2da15c7c4e8aaa33505c2d1e1343be963e18b8e9fffaee",
+   "files": {
+    "harness/frozen_visible.py": {
+     "from_sha": "36f18cb9cc50ecf7d50235b0c1cb1b56add0f6b1a7f22f35de898a391ec3a35f",
+     "to_sha": "fc94d7512b473ec5f5b7671dfa3af322e6dd0866951590d22b365bdb296afe28"
+    }
+   },
+   "reason": "A12n slice D12d hermetic-prefix fix: families/ prefix derived from the fam-c dir relative to the git top level (_base_prefix) in derive_expected_visible + derive_expected_evaluator; h3 miniature brought to the D12 contract (frozen VISIBLE.md in the fixture freeze commit)",
+   "slice": "a12n-slice-d12d",
    "status_after": "open-round2"
   }
  ],

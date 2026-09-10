@@ -397,6 +397,14 @@
    "reason": "A12n slice D12c (general-seat findings A + B): forward amendment AMEND-2026-09-10-d12c-classify-conjunction (provenance as precondition/conjunct in classify_run_dir \u2014 every gate evaluated, first failure reported with established wording; rule-bound required-field set fixed by the frozen rule \u2014 any surviving marker requires the full visible + evaluator set, missing subset refused by name, no-markers-at-all keeps the named legacy guard routed to the enforced legacy gates; D12b marker-gated reading SUPERSEDED)",
    "base": "7ed09ae",
    "slice": "a12n-slice-d12c"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "091fb78d15281178af16f5e21a45afa0042ca4089f30e6d2c2f8bf7493646644",
+   "to_sha": "91c0a5ea4c97cd8ab0161d145bc5b8960900019f3f08e00d88246c220108a17c",
+   "reason": "A12n slice D12d (shielded-battery hermetic-fixture regression, repo-side): forward amendment AMEND-2026-09-10-d12d-hermetic-prefix (families/ prefix derived from the fam-c dir relative to the git top level in derive_expected_visible + derive_expected_evaluator \u2014 byte-identical at the canonical base; h3 miniature carries the frozen visibility declaration in its freeze commit with FREEZE-HASHES at 3 entries)",
+   "base": "bd04f6e",
+   "slice": "a12n-slice-d12d"
   }
  ]
 }

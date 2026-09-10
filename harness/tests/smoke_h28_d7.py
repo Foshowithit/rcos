@@ -319,8 +319,8 @@ check("D7.2 no amendment entry deleted except the D8 hygiene pair, "
       "the D9 chronology pair, the D10 stability pair, and the D11 "
       "authority pairs "
       "(30 at D7 - 2 removed a12 edges + 1 D8 edge + 2 D8 forward "
-      "+ 2 D9 forward + 2 D10 forward + 10 D11 forward + 1 D12 forward + 1 D12b forward + 1 D12c forward = 48)",
-      len(LIVE_LOCK["amendments"]) == 48, str(len(LIVE_LOCK["amendments"])))
+      "+ 2 D9 forward + 2 D10 forward + 10 D11 forward + 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward = 49)",
+      len(LIVE_LOCK["amendments"]) == 49, str(len(LIVE_LOCK["amendments"])))
 check("D7.2 repair recorded as its own forward amendment "
       "AMEND-2026-09-09-d7-lineage-repair (PREREG + preflight edges)",
       sum(1 for a in LIVE_LOCK["amendments"]

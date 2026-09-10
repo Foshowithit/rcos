@@ -1019,6 +1019,27 @@ D12b's marker-gated reading ("absence of the evaluator fields
 excuses the check") is SUPERSEDED by this rule (it remains above
 as history and is not edited).
 
+Forward amendment AMEND-2026-09-10-d12d-hermetic-prefix
+(2026-09-10): latent coupling fix in the frozen derivation
+(shielded-battery regression on a hermetic fixture, repo-side).
+`verify_instance_frozen(base, ...)` consumes `base` as a fam-c
+dir, but `derive_expected_visible` / `derive_expected_evaluator`
+hardcoded the repo-root-relative prefix `benchmarks/fam-c/` —
+the two halves of the same function agreed only by accident of
+the canonical location, and any fam-c dir elsewhere (the h3
+hermetic miniature) made them disagree. From this amendment the
+families/ prefix is derived from `base` relative to the git top
+level (`_base_prefix`, empty when `base` IS the root, fail-closed
+when `base` escapes the root); with the canonical base the
+prefix is byte-identically `benchmarks/fam-c/` (proven by
+old-vs-new derivation equality over all 30 tasks plus the
+evaluator shas). The h3 miniature is brought to the D12
+contract: its freeze commit carries the frozen visibility
+declaration (`families/fam99/T0/VISIBLE.md`, empty `task
+fixtures:` — the fixture task dir holds only `prompt.md`), read
+from git objects, never disk; `FREEZE-HASHES.sha256` stays at
+exactly its 3 graded entries so `verified_files == 3`.
+
 ---
 # 11. Manifest lifecycle
 
