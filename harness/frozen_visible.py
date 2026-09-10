@@ -26,7 +26,10 @@ A12n slice D12b adds the same discipline for the GRADING
 evaluator: derive_expected_evaluator() hashes the frozen
 check.py/truth.json blobs, materialize_frozen_evaluator() writes
 those bytes into a run-private dir for execution, and
-verify_expected_provenance() re-derives both (marker-gated).
+verify_expected_provenance() re-derives both. A12n slice D12c:
+the required provenance set is fixed by the frozen rule — any
+surviving marker makes a run rule-bound (full set required);
+no markers at all is the only legacy route.
 
 Stdlib only. All git reads are fail-closed RuntimeErrors.
 """
@@ -290,16 +293,56 @@ def verify_expected_provenance(run_dir, repo_root=None):
     own instance_freeze_commit and require the manifest's recorded
     shas and task_snapshot to match. Returns True on pass. Raises
     ValueError(reason) on any mismatch (tampered/unverifiable).
-    Manifests WITHOUT the expected fields predate the provenance
-    rule and raise ValueError("legacy run: no expected provenance
-    fields") so callers can grandfather them explicitly."""
+
+    A12n slice D12c (Finding B — the required set is fixed by the
+    frozen protocol rule, never by the evidence it judges): a run is
+    RULE-BOUND iff it carries ANY provenance marker (any D12 visible
+    key or any D12b evaluator key below). The runner writes all
+    markers atomically before evidence genesis, so any surviving
+    marker proves rule-era production — and a missing subset then
+    proves DELETION, never legacy status: the full required set
+    (all visible keys + all evaluator keys) must be present and must
+    re-derive cleanly, else ValueError naming the absent/mismatched
+    provenance. Runs with NO markers at all are genuinely pre-rule
+    and raise ValueError("legacy run: no expected provenance
+    fields") so callers can route them to the legacy gates
+    explicitly (never a crash, never an admission). Deleting fields
+    therefore cannot downgrade the rule: removing a subset is
+    refused by name, and removing everything lands in the legacy
+    gates, which still enforce identity/usage/chain/ZERO-WORK."""
+    # The frozen required set (D12 visible provenance + D12b
+    # evaluator provenance). Presence of any one of these keys marks
+    # a run rule-bound; all of them are then required.
+    VIS_REQUIRED = ("expected_visible_manifest",
+                    "expected_visible_manifest_sha256",
+                    "expected_task_snapshot_sha256",
+                    "expected_visible_paths",
+                    "expected_visible_paths_sha256")
+    EV_REQUIRED = ("expected_checker_sha256", "expected_truth_sha256",
+                   "checker_sha256", "truth_sha256",
+                   "evaluator_freeze_commit", "evaluator_source",
+                   "executed_checker_path")
     mpath = os.path.join(run_dir, "H1-RUN-MANIFEST.json")
     try:
         m = json.load(open(mpath))
     except (OSError, ValueError) as e:
         raise ValueError(f"expected provenance unreadable manifest: {e}")
-    if m.get("expected_visible_manifest_sha256") is None:
+    if not any(m.get(k) is not None for k in VIS_REQUIRED + EV_REQUIRED):
         raise ValueError("legacy run: no expected provenance fields")
+    missing_vis = [k for k in VIS_REQUIRED if m.get(k) is None]
+    missing_ev = [k for k in EV_REQUIRED if m.get(k) is None]
+    if missing_ev:
+        raise ValueError(
+            "evaluator provenance absent: rule-bound run is missing "
+            f"required evaluator provenance field(s) {sorted(missing_ev)} "
+            "(any surviving marker proves rule-era production; "
+            "deletion cannot downgrade the rule)")
+    if missing_vis:
+        raise ValueError(
+            "expected provenance absent: rule-bound run is missing "
+            f"required visible provenance field(s) {sorted(missing_vis)} "
+            "(any surviving marker proves rule-era production; "
+            "deletion cannot downgrade the rule)")
     fc = m.get("instance_freeze_commit")
     fam, task = m.get("family"), m.get("task")
     if not (fc and fam and task):
@@ -319,17 +362,11 @@ def verify_expected_provenance(run_dir, repo_root=None):
     if exp["manifest"] != m.get("task_snapshot"):
         raise ValueError("manifest.task_snapshot != re-derived expected "
                          "task snapshot")
-    # A12n slice D12b (evaluator provenance): runs that record the
-    # freeze-derived evaluator expectation must re-derive cleanly —
-    # the recorded EXPECTED shas must equal the frozen authority,
-    # and the recorded EXECUTED shas must equal it too (a run graded
-    # by substituted evaluator bytes is excluded, naming evaluator
-    # provenance). Manifests WITHOUT the evaluator fields predate
-    # the rule and return True here (marker-gated: legacy behavior
-    # unchanged).
-    if m.get("expected_checker_sha256") is None and \
-            m.get("expected_truth_sha256") is None:
-        return True
+    # A12n slice D12b (evaluator provenance): the recorded EXPECTED
+    # shas must equal the frozen authority, and the recorded EXECUTED
+    # shas must equal it too (a run graded by substituted evaluator
+    # bytes is excluded, naming evaluator provenance). Reached only
+    # when the full required set above is present (rule-bound runs).
     exp_ev = derive_expected_evaluator(
         os.path.join(root, "benchmarks", "fam-c"), fc, fam)
     if exp_ev["checker_sha256"] != m.get("expected_checker_sha256"):

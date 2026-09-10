@@ -40,6 +40,14 @@ DockerSandbox where the daemon + pinned image are present (gated on
 docker, shim otherwise — the bind under test is host-side,
 pre/post-container). Stdlib only. Prints `H33 D12b smoke: N/N
 closed`; exits non-zero on any failure.
+
+A12n slice D12c extends this suite: provenance is a precondition,
+never a short-circuit (identity/chain/receipts/normalized gates
+are evaluated on every provenance-passing run), and the required
+provenance set is fixed by the frozen rule (any surviving marker
+makes a run rule-bound; deleting evaluator or visible fields from
+a rule-bound run is EXCLUDED; only the no-markers-at-all legacy
+shape routes to the legacy gates).
 """
 import ast
 import hashlib
@@ -519,15 +527,19 @@ check("D12b-CONTROL run classifies ESTIMAND-ELIGIBLE",
 _stage = os.path.join(WT, "tampered-run")
 shutil.rmtree(_stage, ignore_errors=True)
 shutil.copytree(_wrun(), _stage)
+_STAGE_MANIFEST_PATH = os.path.join(_stage, "H1-RUN-MANIFEST.json")
+_PRISTINE_MANIFEST = open(_STAGE_MANIFEST_PATH, "rb").read()
 
 
-def _stage_manifest():
-    _p = os.path.join(_stage, "H1-RUN-MANIFEST.json")
-    _m = json.load(open(_p))
-    return _p, _m
+def _reset_stage():
+    """Restore the pristine control manifest so every mutation block
+    starts from the same rule-bound run (mutations must never
+    accumulate across blocks)."""
+    open(_STAGE_MANIFEST_PATH, "wb").write(_PRISTINE_MANIFEST)
+    return _STAGE_MANIFEST_PATH, json.load(open(_STAGE_MANIFEST_PATH))
 
 
-_p, _m = _stage_manifest()
+_p, _m = _reset_stage()
 _m["checker_sha256"] = "0" * 64  # substituted evaluator graded this run
 json.dump(_m, open(_p, "w"), indent=1)
 try:
@@ -541,15 +553,20 @@ _s, _r = WADM.classify_run_dir(_stage, _m["instance_freeze_commit"])
 check("D12b-CLASSIFY substituted run EXCLUDED naming evaluator",
       _s == WADM.EXCLUDED and "evaluator" in _r, f"{_s}:{_r}"[:200])
 
-_p, _m = _stage_manifest()
-_m["checker_sha256"] = _WANT_EV["checker_sha256"]
+_p, _m = _reset_stage()
 _m["expected_truth_sha256"] = "f" * 64  # tampered expectation
 json.dump(_m, open(_p, "w"), indent=1)
 _s2, _r2 = WADM.classify_run_dir(_stage, _m["instance_freeze_commit"])
 check("D12b-CLASSIFY tampered expectation EXCLUDED naming evaluator",
       _s2 == WADM.EXCLUDED and "evaluator" in _r2, f"{_s2}:{_r2}"[:200])
 
-_p, _m = _stage_manifest()  # legacy shape: no evaluator fields at all
+# D12c CORRECTS the check below (Finding B): D12b's marker-gated
+# reading — "no evaluator fields" excuses the check — was a
+# downgrade path (field deletion switched the rule off). The frozen
+# rule is now: any surviving marker proves rule-era production and
+# the FULL set is required; no markers at all is the only legacy
+# route. An evaluator-stripped current run is EXCLUDED, not admitted.
+_p, _m = _reset_stage()  # evaluator fields deleted from a rule-bound run
 for _k in ("checker_sha256", "truth_sha256",
            "expected_checker_sha256", "expected_truth_sha256",
            "evaluator_freeze_commit", "evaluator_source",
@@ -557,14 +574,103 @@ for _k in ("checker_sha256", "truth_sha256",
     _m.pop(_k, None)
 json.dump(_m, open(_p, "w"), indent=1)
 try:
-    _legacy_ok = FV2.verify_expected_provenance(_stage) is True
-except ValueError:
-    _legacy_ok = False
+    FV2.verify_expected_provenance(_stage)
+    _del_ok = "admitted (downgrade)"
+except ValueError as _e:
+    _del_ok = str(_e)[:120]
 _s3, _r3 = WADM.classify_run_dir(_stage, _m["instance_freeze_commit"])
-check("D12b-CLASSIFY legacy manifest (no evaluator fields) behaves as "
-      "today (marker-gated: provenance passes, eligibility unchanged)",
-      _legacy_ok and _s3 == WADM.ELIGIBLE, f"{_s3}:{_r3}"[:200])
+check("D12c-CLASSIFY evaluator fields deleted from a rule-bound run "
+      "are EXCLUDED naming evaluator (no downgrade)",
+      "evaluator" in _del_ok and _s3 == WADM.EXCLUDED
+      and "evaluator" in _r3, f"helper={_del_ok} | {_s3}:{_r3}"[:200])
+
+_p, _m = _reset_stage()  # visible fields deleted, evaluator markers stay
+for _k in ("expected_visible_manifest", "expected_visible_manifest_sha256",
+           "expected_task_snapshot_sha256", "expected_visible_paths",
+           "expected_visible_paths_sha256"):
+    _m.pop(_k, None)
+json.dump(_m, open(_p, "w"), indent=1)
+_s4, _r4 = WADM.classify_run_dir(_stage, _m["instance_freeze_commit"])
+check("D12c-CLASSIFY visible fields deleted from a rule-bound run "
+      "are EXCLUDED naming provenance",
+      _s4 == WADM.EXCLUDED and "provenance" in _r4.lower(),
+      f"{_s4}:{_r4}"[:200])
+
+_p, _m = _reset_stage()  # genuinely pre-rule: NO markers at all
+for _k in ("expected_visible_manifest", "expected_visible_manifest_sha256",
+           "expected_task_snapshot_sha256", "expected_visible_paths",
+           "expected_visible_paths_sha256", "checker_sha256",
+           "truth_sha256", "expected_checker_sha256",
+           "expected_truth_sha256", "evaluator_freeze_commit",
+           "evaluator_source", "executed_checker_path"):
+    _m.pop(_k, None)
+json.dump(_m, open(_p, "w"), indent=1)
+try:
+    FV2.verify_expected_provenance(_stage)
+    _legacy_ok = "returned True (no guard)"
+except ValueError as _e:
+    _legacy_ok = "legacy-guard" if "legacy" in str(_e) else str(_e)[:80]
+_s5, _r5 = WADM.classify_run_dir(_stage, _m["instance_freeze_commit"])
+check("D12c-CLASSIFY fully legacy manifest keeps the named legacy "
+      "guard and is routed to the legacy gates (classified, the "
+      "complete honest run stays ELIGIBLE)",
+      _legacy_ok == "legacy-guard" and _s5 == WADM.ELIGIBLE,
+      f"helper={_legacy_ok} | {_s5}:{_r5}"[:200])
 shutil.rmtree(_stage, ignore_errors=True)
+
+# --- D12c-CONJUNCTION: provenance never short-circuits the gates ------
+def _fresh_copy(tag):
+    _d = os.path.join(WT, tag)
+    shutil.rmtree(_d, ignore_errors=True)
+    shutil.copytree(_wrun(), _d)
+    return _d
+
+
+_c1 = _fresh_copy("d12c-no-identity")
+os.remove(os.path.join(_c1, "identity.json"))
+_s6, _r6 = WADM.classify_run_dir(
+    _c1, json.load(open(os.path.join(
+        _c1, "H1-RUN-MANIFEST.json")))["instance_freeze_commit"])
+check("D12c-CONJUNCTION provenance-passing run with NO provider "
+      "identity is EXCLUDED (identity gate still evaluated)",
+      _s6 == WADM.EXCLUDED and "no provider identity.json" in _r6,
+      f"{_s6}:{_r6}"[:200])
+shutil.rmtree(_c1, ignore_errors=True)
+
+_c2 = _fresh_copy("d12c-no-chain")
+os.remove(os.path.join(_c2, "EVIDENCE-CHAIN.jsonl"))
+_s7, _r7 = WADM.classify_run_dir(
+    _c2, json.load(open(os.path.join(
+        _c2, "H1-RUN-MANIFEST.json")))["instance_freeze_commit"])
+check("D12c-CONJUNCTION provenance-passing run with NO evidence "
+      "chain is EXCLUDED (chain gate still evaluated)",
+      _s7 == WADM.EXCLUDED and "no EVIDENCE-CHAIN.jsonl" in _r7,
+      f"{_s7}:{_r7}"[:200])
+shutil.rmtree(_c2, ignore_errors=True)
+
+_c3 = _fresh_copy("d12c-no-work")
+_mp3 = os.path.join(_c3, "H1-RUN-MANIFEST.json")
+_m3 = json.load(open(_mp3))
+_m3["usage_receipts"] = []
+json.dump(_m3, open(_mp3, "w"), indent=1)
+_s8, _r8 = WADM.classify_run_dir(_c3, _m3["instance_freeze_commit"])
+check("D12c-CONJUNCTION provenance-passing run with NO usage "
+      "receipts is EXCLUDED with the ZERO-WORK wording",
+      _s8 == WADM.EXCLUDED and "ZERO-WORK" in _r8, f"{_s8}:{_r8}"[:200])
+shutil.rmtree(_c3, ignore_errors=True)
+
+_c4 = _fresh_copy("d12c-bad-normalized")
+_mp4 = os.path.join(_c4, "H1-RUN-MANIFEST.json")
+_m4 = json.load(open(_mp4))
+_nu4 = os.path.join(_c4, _m4["usage_receipts"][0][:-5] + ".normalized.json")
+with open(_nu4, "ab") as _fh:
+    _fh.write(b"TAMPERED-NORMALIZED")
+_s9, _r9 = WADM.classify_run_dir(_c4, _m4["instance_freeze_commit"])
+check("D12c-CONJUNCTION provenance-passing run with INVALID "
+      "normalized usage is EXCLUDED (usage gate still evaluated)",
+      _s9 == WADM.EXCLUDED and "normalized usage invalid for" in _r9,
+      f"{_s9}:{_r9}"[:200])
+shutil.rmtree(_c4, ignore_errors=True)
 
 shutil.rmtree(WT, ignore_errors=True)
 subprocess.run(["git", "-C", REPO, "worktree", "remove", "--force", WT],

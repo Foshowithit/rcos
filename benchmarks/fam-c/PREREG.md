@@ -989,6 +989,36 @@ from the frozen one is EXCLUDED naming evaluator provenance
 before). The protocol lock freezes THIS BINDING RULE; it never
 absorbs per-run evaluator values.
 
+Forward amendment AMEND-2026-09-10-d12c-classify-conjunction
+(2026-09-10): two corrections to the D12/D12b classification rule
+(general-seat findings A + B, both measured on production run
+dirs). (A) Provenance is a PRECONDITION/CONJUNCT, never an
+alternative: `classify_run_dir` evaluates the provenance
+re-derivation FIRST on every wired run, and a passing check never
+skips the identity / usage-receipts / normalized-usage /
+ZERO-WORK / evidence-chain gates — every gate is evaluated and
+the FIRST failure is reported with its established wording (a run
+with no provider identity, no evidence chain, or no model-usage
+receipts is EXCLUDED even when its provenance re-derives
+cleanly). (B) The required provenance set is fixed by THIS frozen
+rule, never by the run's own markers: a run is RULE-BOUND iff it
+carries ANY provenance marker (any D12 visible key or any D12b
+evaluator key — the runner writes all markers atomically before
+evidence genesis, so any surviving marker proves rule-era
+production), and a rule-bound run must present the FULL required
+set (all five visible keys plus all seven evaluator keys) with
+every recorded sha re-deriving cleanly; a missing subset proves
+DELETION and is EXCLUDED by name ("evaluator provenance absent"
+or "expected provenance absent"), never admitted. The ONLY legacy
+route is a manifest with NO markers at all (genuinely pre-rule),
+which raises the named legacy guard and is routed to the legacy
+gates — still enforced, never skipped. Deleting fields therefore
+cannot downgrade the rule: removing a subset is refused by name,
+and removing everything still faces identity/usage/chain.
+D12b's marker-gated reading ("absence of the evaluator fields
+excuses the check") is SUPERSEDED by this rule (it remains above
+as history and is not edited).
+
 ---
 # 11. Manifest lifecycle
 

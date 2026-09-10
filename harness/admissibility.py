@@ -23,6 +23,11 @@ Round-2 audit). A run dir is ESTIMAND-ELIGIBLE only when ALL hold:
   - EVIDENCE-CHAIN.jsonl present
 Anything else is EXCLUDED with a one-line reason.
 
+A12n slice D12c: expected-provenance re-derivation is a PRECONDITION
+over all of the above, never an alternative (first failure in gate
+order is reported; rule-bound runs must re-derive cleanly, legacy
+runs take the same gates below).
+
 verify_instance_frozen() is the runner's refuse-START gate: the executed
 instance subtree (families/<family>/<task>/** plus the family check.py and
 truth.json that grade it) must be byte-identical to FREEZE-HASHES.sha256 —
@@ -83,22 +88,34 @@ def classify_run_dir(run_dir, freeze_commit):
     elif m.get("instance_freeze_commit") != freeze_commit:
         reason = (f"instance anchor {str(m.get('instance_freeze_commit'))[:12]} "
                   f"!= freeze {freeze_commit[:12]}")
-    elif m.get("expected_visible_manifest_sha256") is not None:
-        # A12n slice D12 (auditor D11-post P0): runs that record
-        # expected provenance must re-derive cleanly — the recorded
-        # shas and task_snapshot must equal the frozen authority.
-        # Manifests WITHOUT the expected fields predate the rule and
-        # take the legacy path below (no behavior change for them).
+    # A12n slice D12c (Finding A — provenance is a PRECONDITION /
+    # CONJUNCT, never an alternative): the re-derivation below runs
+    # on EVERY wired run that reaches it, and it never skips the
+    # identity / usage / chain gates further below — each gate is
+    # evaluated in turn and the FIRST failure is reported with its
+    # established wording. Whether the run is rule-bound is decided
+    # by the helper from the frozen rule (any surviving provenance
+    # marker proves rule-era production; no markers at all is the
+    # only legacy route): rule-bound runs must re-derive cleanly,
+    # and any other provenance failure excludes the run here,
+    # naming provenance. A genuinely pre-rule run raises the
+    # helper's named legacy guard and proceeds to the legacy gates
+    # (never a crash).
+    if reason is None:
         try:
             import frozen_visible
             frozen_visible.verify_expected_provenance(run_dir)
         except ValueError as e:
-            reason = f"expected provenance refused: {e}"
+            if str(e).startswith("legacy run:"):
+                pass  # genuinely pre-rule: legacy gates below decide
+            else:
+                reason = f"expected provenance refused: {e}"
         except RuntimeError as e:
             reason = f"expected provenance unverifiable: {e}"
-    elif not os.path.exists(os.path.join(run_dir, "identity.json")):
+    if reason is None and not os.path.exists(
+            os.path.join(run_dir, "identity.json")):
         reason = "no provider identity.json (echoed model id never recorded)"
-    else:
+    if reason is None:
         # A12.0 (audit round 2): ZERO-WORK is not evidence. A wired run that
         # lists no usage receipt never spent model work, and a receipt whose
         # normalized primary_work (uncached input + output tokens) is zero or
