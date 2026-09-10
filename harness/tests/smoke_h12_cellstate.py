@@ -22,6 +22,7 @@ This suite proves the production dispatch on REAL machinery:
 
 Stdlib only, no network, no model, no docker. Exit 0 only if all green.
 """
+import hashlib
 import json
 import os
 import shutil
@@ -138,6 +139,22 @@ def write_chain(c, m):
     if os.path.exists(p):
         os.unlink(p)
     ch = CH.Chain(p, FREEZE_COMMIT, m)
+    # A12n slice D13 P0-3: the restored chain is production-shaped —
+    # the model-call link binds the run-time arrival bytes (the run
+    # dir's arrival.json, written by the fixture and untampered by
+    # every probe in this suite), so promotion reads verify exactly
+    # like production. Without this binding the restored chain would
+    # model a pre-rule run, and promotion must deny it.
+    _ablob = open(os.path.join(d, "arrival.json"), "rb").read()
+    _apay = json.loads(_ablob.decode()).get("execution_payload") or {}
+    _asrc = _apay.get("solver_py")
+    ch.append("model-call", {
+        "arrival_sha256": hashlib.sha256(_ablob).hexdigest(),
+        "arrival_file": "arrival.json",
+        "execution_payload_sha256": hashlib.sha256(
+            json.dumps(_apay, sort_keys=True).encode()).hexdigest(),
+        "solver_py_sha256": hashlib.sha256(_asrc.encode()).hexdigest()
+        if isinstance(_asrc, str) else None})
     # A12b.7: the restored chain is production-shaped — the evaluator link
     # carries real non-null evidence shas (promotion derives provenance
     # from the verified link and denies nulls).
