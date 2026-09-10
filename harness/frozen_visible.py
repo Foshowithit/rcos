@@ -340,7 +340,11 @@ def verify_expected_provenance(run_dir, repo_root=None):
     explicitly (never a crash, never an admission). Deleting fields
     therefore cannot downgrade the rule: removing a subset is
     refused by name, and removing everything lands in the legacy
-    gates, which still enforce identity/usage/chain/ZERO-WORK."""
+    gates, which still enforce identity/usage/chain/ZERO-WORK.
+    A12n slice D13c: additionally, whenever the manifest records
+    graded_output_sha256 it must equal output_sha256 (seal sourced
+    from the committed solver bytes); seal presence alone never
+    marks a run rule-bound."""
     # The frozen required set (D12 visible provenance + D12b
     # evaluator provenance). Presence of any one of these keys marks
     # a run rule-bound; all of them are then required.
@@ -358,6 +362,23 @@ def verify_expected_provenance(run_dir, repo_root=None):
         m = json.load(open(mpath))
     except (OSError, ValueError) as e:
         raise ValueError(f"expected provenance unreadable manifest: {e}")
+    # A12n slice D13c: the sealed graded output is a consumer-checked
+    # link — whenever a run records graded_output_sha256 it must
+    # equal the recorded container output_sha256 (the seal is sourced
+    # from the committed solver bytes on the authority path, so any
+    # divergence proves substitution or tampering). Checked before
+    # the marker gate below so it holds on every shape that carries
+    # the seal; runs without the seal key skip it (their
+    # output_sha256 stands alone, as before) — and the seal key
+    # itself is deliberately NOT a rule-bound marker, so legacy
+    # routing is unchanged.
+    if m.get("graded_output_sha256") is not None and \
+            m.get("graded_output_sha256") != m.get("output_sha256"):
+        raise ValueError(
+            "graded output provenance mismatch: recorded "
+            f"graded_output_sha256 {str(m.get('graded_output_sha256'))[:12]} != "
+            f"recorded output_sha256 {str(m.get('output_sha256'))[:12]} "
+            "(graded bytes must be the committed solver bytes)")
     if not any(m.get(k) is not None for k in VIS_REQUIRED + EV_REQUIRED):
         raise ValueError("legacy run: no expected provenance fields")
     missing_vis = [k for k in VIS_REQUIRED if m.get(k) is None]

@@ -591,6 +591,31 @@ check("D13-P0-2c candidate-output substitution before the T1 checker "
       and "evaluator-input-drift" in str(
           _cv_tampered.get("validation_failure")),
       f"{_cv_tampered.get('validation_failure')!r}")
+# D13c T1 sourcing: corrupt the committed outdir copy right after the
+# harness writes it — the checker grades the jail-produced work file,
+# so validation still passes on the honest bytes with the honest sha.
+_real_copy2c = shutil.copy2
+
+
+def _copy_cand_hook(src, dst, *a, **k):
+    r = _real_copy2c(src, dst, *a, **k)
+    if os.path.basename(dst) == "CANDIDATE-OUTPUT.json":
+        with open(dst, "w") as _fh:
+            _fh.write(O_BAD)
+    return r
+
+
+shutil.copy2 = _copy_cand_hook
+try:
+    _cv_sourced = _validate_direct()
+finally:
+    shutil.copy2 = _real_copy2c
+check("D13c-T1-sourcing committed-copy write cannot change T1 "
+      "validation (graded bytes come from the jail file)",
+      _cv_sourced.get("validated") is True
+      and _cv_sourced.get("candidate_output_sha256")
+      == _cv_clean.get("candidate_output_sha256"),
+      f"{_cv_sourced.get('validation_failure')!r}")
 shutil.rmtree(_wv, ignore_errors=True)
 shutil.rmtree(_ov, ignore_errors=True)
 shutil.rmtree(_vv, ignore_errors=True)
@@ -660,6 +685,38 @@ check("D13-P0-2a no verdict recorded (no run manifest: never a "
       not os.path.exists(
           os.path.join(_t0_rundir(), "H1-RUN-MANIFEST.json")))
 
+# --- D13c-(i): EVERY OUTPUT.json copy destination rewritten ---------
+# The auditor's falsifying shape: intercept the harness's own copy
+# so all OUTPUT.json destinations carry O_good while the solver
+# produced O_bad. The seal is sourced from the committed work file
+# (never the run-dir copy), so this denies pre-checker — never a
+# SHIP, no verdict recorded. (Reproduced pre-fix in
+# /tmp/d13c_repro.py: verdict SHIP, output==O_bad, sealed==O_good.)
+_real_copy2 = shutil.copy2
+
+
+def _copy_all_hook(src, dst, *a, **k):
+    r = _real_copy2(src, dst, *a, **k)
+    if os.path.basename(dst) == "OUTPUT.json":
+        with open(dst, "w") as _fh:
+            _fh.write(O_GOOD)
+    return r
+
+
+_calls_i = install_counting_transport(WUSAGE, O_BAD_ARR)
+shutil.copy2 = _copy_all_hook
+try:
+    ok_i, why_i = raises(lambda: WRA.main(
+        "P", "fam05", "T0", "acquisition", _t0_rundir(), None,
+        dict(_WOPTS_T0)), "EVALUATOR-INPUT-DRIFT-DENY")
+finally:
+    shutil.copy2 = _real_copy2
+check("D13c-(i) copy-destination rewrite to O_good is DENIED "
+      "(never a SHIP from substituted bytes)", ok_i, why_i)
+check("D13c-(i) no verdict recorded on the rewritten run",
+      not os.path.exists(
+          os.path.join(_t0_rundir(), "H1-RUN-MANIFEST.json")))
+
 # --- D13-P0-2b + T0 ship control (S0 + C0): honest ship, sealed --------
 _calls_s = install_counting_transport(WUSAGE, T0_ARRIVAL)
 _rc_s = WRA.main("P", "fam05", "T0", "acquisition", _t0_rundir(), None,
@@ -678,6 +735,12 @@ check("D13-P0-2b graded_output_sha256 == sha256 of the persisted "
       and _man_s["graded_output_path"].endswith(
           os.path.join("frozen-evaluator", "OUTPUT.json")),
       str(_man_s.get("graded_output_path")))
+check("D13c-(ii) honest run records graded_output_sha256 == "
+      "output_sha256 (the two never diverge)",
+      _man_s.get("graded_output_sha256") == _man_s.get("output_sha256")
+      and isinstance(_man_s.get("output_sha256"), str),
+      f"graded={str(_man_s.get('graded_output_sha256'))[:12]} "
+      f"output={str(_man_s.get('output_sha256'))[:12]}")
 
 # --- D13-P0-3e: arrival provenance rides manifest + chain ---------------
 _mchain = [json.loads(l) for l in
@@ -782,6 +845,44 @@ finally:
     json.dump(_t0_arr, open(_t0_ap, "w"), indent=1)
 check("D13-P0-3c swapped solver is DENIED at derive_candidate "
       "naming arrival provenance", ok_dc, why_dc)
+
+# --- D13c-(iii): run-dir write before the seal cannot change verdict -
+# Corrupt ONLY the run-dir audit copy right after the harness's own
+# work->outdir copy (the sealed evaluation package is sourced from
+# the committed work file, never this copy). The verdict must be
+# the honest one for the committed bytes, with graded == output.
+_real_copy2b = shutil.copy2
+
+
+def _copy_outdir_hook(src, dst, *a, **k):
+    r = _real_copy2b(src, dst, *a, **k)
+    if os.path.basename(dst) == "OUTPUT.json" \
+            and "frozen-evaluator" not in dst:
+        with open(dst, "w") as _fh:
+            _fh.write(O_GOOD)
+    return r
+
+
+shutil.rmtree(_t0_rundir(), ignore_errors=True)
+_calls_w = install_counting_transport(WUSAGE, O_BAD_ARR)
+shutil.copy2 = _copy_outdir_hook
+try:
+    _rc_w = WRA.main("P", "fam05", "T0", "acquisition", _t0_rundir(),
+                     None, dict(_WOPTS_T0))
+finally:
+    shutil.copy2 = _real_copy2b
+_man_w = json.load(open(os.path.join(_t0_rundir(), "H1-RUN-MANIFEST.json")))
+_O_BAD_SHA = _sha_bytes(O_BAD.encode())
+check("D13c-(iii) run-dir write before the seal cannot change the "
+      "verdict (honest fix for the committed bytes)",
+      _rc_w == 0 and _man_w.get("verdict") == "fix"
+      and _man_w.get("checker_returncode") == 1, f"rc={_rc_w}")
+check("D13c-(iii) graded == output == committed O_bad bytes "
+      "(substitution had zero effect)",
+      _man_w.get("graded_output_sha256") == _O_BAD_SHA
+      and _man_w.get("output_sha256") == _O_BAD_SHA,
+      f"graded={str(_man_w.get('graded_output_sha256'))[:12]} "
+      f"output={str(_man_w.get('output_sha256'))[:12]}")
 
 shutil.rmtree(WT, ignore_errors=True)
 subprocess.run(["git", "-C", REPO, "worktree", "remove", "--force", WT],

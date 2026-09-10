@@ -119,10 +119,10 @@ check("D9.1-LIVE branch-sequence lengths match the certified facts "
       "PREREG.md by its three D11 commits to 22 plus one "
       "D12 commit to 23 plus one D12b commit to 24 plus one "
       "D12c commit to 25 plus one D12d commit to 26 plus one "
-      "D13 commit to 27, "
+      "D13 commit to 27 plus one D13c commit to 28, "
       "HARNESS-READINESS.md still at its D10 12)",
       {fn: len(_SEQ[fn]) for fn in PF.PROTOCOL_GOVERNED} == {
-          "PREREG.md": 27, "ORDER.md": 5, "LANES.md": 5,
+          "PREREG.md": 28, "ORDER.md": 5, "LANES.md": 5,
           "HARNESS-READINESS.md": 12, "preflight.py": 24,
           "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str({fn: len(s) for fn, s in _SEQ.items()}))
@@ -198,9 +198,9 @@ check("D9-GOV the D9 stanza lives in PREREG.md (chronology rule + "
       in open(os.path.join(FAMC, "PREREG.md")).read()
       and "no chain repair" in
       open(os.path.join(FAMC, "PREREG.md")).read().lower())
-check("D9-GOV no amendment entry deleted (35 at D10 + 10 D11 forward + 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward + 1 D13 forward "
-      "= 50)",
-      len(LIVE_LOCK["amendments"]) == 50,
+check("D9-GOV no amendment entry deleted (35 at D10 + 10 D11 forward + 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward + 1 D13 forward + 1 D13c forward "
+      "= 51)",
+      len(LIVE_LOCK["amendments"]) == 51,
       str(len(LIVE_LOCK["amendments"])))
 check("D9-GOV the D9 slice recorded as its own forward amendment "
       "(PREREG + preflight edges)",

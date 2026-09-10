@@ -971,25 +971,36 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
             "bytes != freeze-derived authority; refused before "
             "any verdict is recorded")
     chk = None
-    # A12n slice D13 P0-2: the GRADED output is sealed. The checker
-    # must consume exactly the bytes the evidence hashes: on the
-    # authority path the committed OUTPUT.json is sealed into the
+    # A12n slice D13 P0-2 (+D13c residual): the GRADED output is sealed
+    # from the COMMITTED bytes, never from a mutable copy. `out` is the
+    # /work file the solver produced; the seal copies it into the
     # run-private evaluation package (frozen check.py + frozen
-    # truth.json + SEALED OUTPUT.json) and hashed immediately before
-    # the checker runs; a post-checker re-hash must equal it, else
+    # truth.json + SEALED OUTPUT.json) and verifies the sealed bytes
+    # equal the committed bytes BEFORE the checker runs — a run-dir
+    # substitution (before, during, or after the copy into outdir)
+    # cannot change the verdict and can never produce a SHIP from
+    # substituted bytes: the checker grades the committed bytes or
+    # the run refuses. A post-checker re-hash of BOTH the sealed
+    # file and the committed file must equal the seal, else
     # EVALUATOR-INPUT-DRIFT-DENY is raised and no verdict is ever
-    # recorded. A substitution before the seal is harmless (the
-    # evidence follows the graded bytes); a substitution between the
-    # seal and the end of grading is denied.
+    # recorded. On the authority path graded_output_sha256 ==
+    # output_sha256 is additionally required explicitly below, so
+    # the two can never diverge silently.
+    output_sha256 = h(out) if os.path.exists(out) else None
     graded_output_sha256 = None
     graded_output_path = None
     if os.path.exists(out):
         if evaluator_source == "frozen-materialized":
             graded_output_path = os.path.join(
                 os.path.dirname(checker), "OUTPUT.json")
-            shutil.copy2(os.path.join(outdir, "OUTPUT.json"),
-                         graded_output_path)
+            shutil.copy2(out, graded_output_path)
             graded_output_sha256 = h(graded_output_path)
+            if graded_output_sha256 != output_sha256:
+                raise RuntimeError(
+                    "EVALUATOR-INPUT-DRIFT-DENY sealed graded bytes "
+                    f"{graded_output_sha256[:12]} != committed solver "
+                    f"bytes {str(output_sha256)[:12]}; refusing before "
+                    "the checker runs")
             checker_argv_output = graded_output_path
         else:
             checker_argv_output = os.path.join(outdir, "OUTPUT.json")
@@ -997,21 +1008,29 @@ def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
                               os.path.basename(taskdir),
                               checker_argv_output],
                              capture_output=True, text=True)
-        if graded_output_sha256 is not None and \
-                h(graded_output_path) != graded_output_sha256:
-            raise RuntimeError(
-                "EVALUATOR-INPUT-DRIFT-DENY sealed graded output "
-                f"{h(graded_output_path)[:12]} != pre-checker seal "
-                f"{graded_output_sha256[:12]}; the checker consumed "
-                "bytes the evidence does not name — no verdict is "
-                "recorded")
+        if graded_output_sha256 is not None:
+            if h(graded_output_path) != graded_output_sha256 or \
+                    h(out) != output_sha256:
+                raise RuntimeError(
+                    "EVALUATOR-INPUT-DRIFT-DENY sealed graded output "
+                    f"{h(graded_output_path)[:12]} != pre-checker seal "
+                    f"{graded_output_sha256[:12]} (or committed bytes "
+                    "changed under grading); the checker consumed "
+                    "bytes the evidence does not name — no verdict is "
+                    "recorded")
+            if graded_output_sha256 != output_sha256:
+                raise RuntimeError(
+                    "EVALUATOR-INPUT-DRIFT-DENY graded output "
+                    f"{graded_output_sha256[:12]} != container output "
+                    f"{str(output_sha256)[:12]} on the authority path; "
+                    "the two must never diverge")
     verdict = ("ship" if chk and chk.returncode == 0 else
                "fix" if chk and chk.returncode == 1 else "blocked")
     return {"verdict": verdict,
             "checker_returncode": chk.returncode if chk else None,
             "checker_output": ((chk.stdout or "") + (chk.stderr or ""))[:500]
                               if chk else "missing output",
-            "output_sha256": h(out) if os.path.exists(out) else None,
+            "output_sha256": output_sha256,
             "graded_output_sha256": graded_output_sha256,
             "graded_output_path": graded_output_path,
             "decision": decision,
@@ -1266,10 +1285,15 @@ def validate_t1_candidate(*, adapter_py, candidate_source, candidate_sha256,
                      f"frozen T1 checker + truth the T1 cell verdict used",
                      adapter_sha=adapter_sha, executed_sha=executed_sha,
                      manifest_sha=manifest_sha, tree_sha=tree_sha)
-    cand_out_committed = (os.path.join(outdir, "CANDIDATE-OUTPUT.json")
-                          if outdir is not None and os.path.exists(
-                              os.path.join(outdir, "CANDIDATE-OUTPUT.json"))
-                          else cand_out_work)
+    cand_out_committed = cand_out_work
+    # A12n slice D13 P0-2 (+D13c residual, T1 mirror): grade the
+    # JAIL-PRODUCED bytes, never the mutable committed copy (same
+    # sourcing rule as the acquisition seal — the outdir
+    # CANDIDATE-OUTPUT.json copy stays as the audit artifact, but the
+    # checker consumes cand_out_work and the evidence hashes it
+    # pre/post checker). A work file missing at grade time is the
+    # same experimental missing-output failure as before (a stale
+    # outdir copy from an earlier state never grades).
     if not os.path.exists(cand_out_committed):
         return _fail("candidate-output-missing: the frozen T0 candidate "
                      f"wrote no CANDIDATE-OUTPUT.json (candidate "

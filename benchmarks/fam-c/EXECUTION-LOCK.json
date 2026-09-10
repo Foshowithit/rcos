@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "9c28d46ded78be8db71e07f95bdfe4d60a52c13b13f8043abfe6a30521feea59",
+ "harness_manifest_sha256": "ffdbe34199494496d26829d2bb8739ded7f0e4c92e46a43af2291c001378d423",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -13,7 +13,7 @@
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "cebd4c4f07e75b7ba81afa755d30f659a4423d3228b9856fd4b39f9d73581b43",
   "harness/admissibility.py": "a37b34545a5e4250c53cf1bc9f6f67ded6bc7e880a958f1a627c1a3b0f49b713",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "f186b090029b20c2ddb0a3bf01b11639954cc13057a8811e05fb56bfb4d181aa",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "925699655ed3a7e04f4ec5537bf0c9cd204d75d299ca4aee7fe535c6be2e8c49",
   "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
@@ -25,7 +25,7 @@
   "harness/specificity.py": "166ee886f77f07c37302891277b0832616a608548fbf0ac9042d24bfec9690b7",
   "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193",
   "harness/contract_shape.py": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2",
-  "harness/frozen_visible.py": "fc94d7512b473ec5f5b7671dfa3af322e6dd0866951590d22b365bdb296afe28"
+  "harness/frozen_visible.py": "9033d26c176d0dc3c681fecbdc8de111e057730032f2ad4dd671e2c4433e4dd9"
  },
  "amendments": [
   {
@@ -914,6 +914,23 @@
    },
    "reason": "A12n slice D13 finite provenance closure: D12e staged_tree + context_task_snapshot_hash vs frozen authority pre-model; P0-1 _snapshot_verified_capability (prompt + jail consume ONLY the run-private lock-verified snapshot, snapshot evidence in manifest + chain); P0-2 sealed graded output package with pre/post checker hash (EVALUATOR-INPUT-DRIFT-DENY) + T1 candidate-output seal as experimental evidence; P0-3 run-time response/arrival/payload/solver shas in manifest + chain model-call link with T1/promotion re-read require (_bound_arrival)",
    "slice": "a12n-slice-d13",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "9c28d46ded78be8db71e07f95bdfe4d60a52c13b13f8043abfe6a30521feea59",
+   "to_manifest": "ffdbe34199494496d26829d2bb8739ded7f0e4c92e46a43af2291c001378d423",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "f186b090029b20c2ddb0a3bf01b11639954cc13057a8811e05fb56bfb4d181aa",
+     "to_sha": "925699655ed3a7e04f4ec5537bf0c9cd204d75d299ca4aee7fe535c6be2e8c49"
+    },
+    "harness/frozen_visible.py": {
+     "from_sha": "fc94d7512b473ec5f5b7671dfa3af322e6dd0866951590d22b365bdb296afe28",
+     "to_sha": "9033d26c176d0dc3c681fecbdc8de111e057730032f2ad4dd671e2c4433e4dd9"
+    }
+   },
+   "reason": "A12n slice D13c residual seal-sourcing closure: seal sourced from the committed /work solver bytes (never the run-dir copy) with pre-checker equality require and post-checker re-hash of both files plus explicit graded == output require on the authority path; T1 mirror grades the jail-produced work file; verify_expected_provenance enforces graded == output marker-gated whenever the seal is recorded",
+   "slice": "a12n-slice-d13c",
    "status_after": "open-round2"
   }
  ],

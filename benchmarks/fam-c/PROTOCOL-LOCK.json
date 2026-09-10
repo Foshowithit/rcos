@@ -413,6 +413,14 @@
    "reason": "A12n slice D13 finite provenance closure (auditor D13: D12e pre-call prompt-snapshot binding + P0-1 capability snapshot + P0-2 sealed graded output + P0-3 arrival provenance binding): forward amendment AMEND-2026-09-10-d13-finite-closure (staged_tree + context hash vs frozen authority pre-model; lock-verified capability snapshot consumed by prompt + execution; committed output sealed into the run-private evaluation package with pre/post checker hash; response/arrival/payload/solver shas captured at run time with T1/promotion re-read require; T1 candidate-output seal as experimental evidence)",
    "base": "cb83f95",
    "slice": "a12n-slice-d13"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "cfd403dd18086a57c096859093c9ec670c6234699415b0a9ba57e71f20751b32",
+   "to_sha": "c40e7ccba6f4e96575080bee033eeb14d6a081093c6264c65ff5fc8ef10b3309",
+   "reason": "A12n slice D13c residual seal-sourcing closure (independent D13c probe: copy-destination rewrite still shipped): forward amendment AMEND-2026-09-10-d13c-seal-sourcing (seal sourced from the committed solver bytes with pre-checker equality require and post-checker re-hash of both files; graded_output_sha256 == output_sha256 required at seal time and enforced marker-gated by the provenance helper; T1 candidate-output mirror grades the jail-produced work file, never the mutable committed copy)",
+   "base": "4550d7e",
+   "slice": "a12n-slice-d13c"
   }
  ]
 }

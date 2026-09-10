@@ -1085,6 +1085,30 @@ PROMOTION-DENY naming arrival provenance; legacy/unverifiable
 chains deny, never consume). The protocol lock freezes THESE
 BINDING RULES; it never absorbs per-run values.
 
+Forward amendment AMEND-2026-09-10-d13c-seal-sourcing
+(2026-09-10): residual closure on the P0-2 seal (independent
+D13c probe against the live tree: rewriting every OUTPUT.json
+copy destination still produced a recorded SHIP while evidence
+hashed the original bytes). The seal had been sourced from the
+MUTABLE run-dir copy, and graded_output_sha256 ==
+output_sha256 was never required anywhere — a run-dir
+substitution graded substituted bytes AND recorded a ship. From
+this amendment: (a) the seal is sourced from the COMMITTED
+solver bytes (`/work/OUTPUT.json`), verified equal pre-checker,
+re-hashed with the committed file post-checker
+(EVALUATOR-INPUT-DRIFT-DENY, never a verdict); the run refuses
+OR grades the original bytes — never a ship from substituted
+bytes. (b) On the authority path graded_output_sha256 ==
+output_sha256 is required explicitly at seal time, and the
+provenance helper enforces it whenever a manifest records the
+seal (marker-gated on seal presence; seal presence alone never
+marks a run rule-bound, so legacy routing is unchanged) — the
+sealed link has a live consumer in both the runner and the
+reader. (c) The T1 candidate-output mirror grades the
+jail-produced CANDIDATE-OUTPUT.json work file, never the mutable
+committed copy (same sourcing rule; the outdir copy stays as the
+audit artifact).
+
 ---
 # 11. Manifest lifecycle
 
