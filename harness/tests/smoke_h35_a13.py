@@ -368,7 +368,7 @@ check("A13-RECEIPT exact key sets (no smuggled content anywhere)",
            "execution_evidence", "task_snapshot_sha256",
            "capability_schema_sha256", "adaptation_contract_sha256",
            "checker_sha256", "checker_returncode", "checker_output",
-           "checker_output_sha256", "captured_response_sha256",
+           "checker_report_sha256", "captured_response_sha256",
            "cell_id", "executable_sha256", "output_sha256",
            "verdict"))
       and sorted(_RCPT["legs"]["off-noop"]) == sorted(
@@ -377,7 +377,7 @@ check("A13-RECEIPT exact key sets (no smuggled content anywhere)",
            "execution_evidence", "task_snapshot_sha256",
            "capability_schema_sha256", "adaptation_contract_sha256",
            "checker_sha256", "checker_returncode", "checker_output",
-           "checker_output_sha256", "captured_response_sha256",
+           "checker_report_sha256", "captured_response_sha256",
            "cell_id", "target_capability_sha256",
            "noop_abi_sha256", "output_sha256", "verdict"))
       and sorted(_RCPT["legs"]["pass-through"]) == sorted(
@@ -386,7 +386,7 @@ check("A13-RECEIPT exact key sets (no smuggled content anywhere)",
            "execution_evidence", "task_snapshot_sha256",
            "capability_schema_sha256", "adaptation_contract_sha256",
            "checker_sha256", "checker_returncode", "checker_output",
-           "checker_output_sha256", "captured_response_sha256",
+           "checker_report_sha256", "captured_response_sha256",
            "cell_id", "passthrough_implementation_sha256",
            "output_sha256", "verdict"))
       and sorted(_RCPT["determinism"]) == sorted(
@@ -422,7 +422,7 @@ check("A13-RECEIPT unexecuted legs bind identities but record "
       and _RCPT["legs"]["on"]["verdict"] is None
       and _RCPT["legs"]["on"]["checker_returncode"] is None
       and _RCPT["legs"]["on"]["checker_output"] is None
-      and _RCPT["legs"]["on"]["checker_output_sha256"] is None
+      and _RCPT["legs"]["on"]["checker_report_sha256"] is None
       and all(_RCPT["legs"][leg]["captured_response_sha256"] is None
               and _RCPT["legs"][leg]["cell_id"] is None
               for leg in _RCPT["legs"])
@@ -709,7 +709,7 @@ check("H35b-RECEIPT all 18 ruling slots real (reruns, on, "
       and _R4["legs"]["on"]["checker_output"].strip() != ""
       and "traceback" not in _R4["legs"]["on"][
           "checker_output"].lower()
-      and _R4["legs"]["on"]["checker_output_sha256"] == _sha(
+      and _R4["legs"]["on"]["checker_report_sha256"] == _sha(
           _R4["legs"]["on"]["checker_output"].encode())
       and _R4["legs"]["on"]["verdict"] == "ship"
       and _R4["legs"]["off-noop"]["target_capability_sha256"]
@@ -725,7 +725,7 @@ check("H35b-RECEIPT all 18 ruling slots real (reruns, on, "
       and _R4["legs"]["off-noop"]["checker_output"].strip() != ""
       and "traceback" not in _R4["legs"]["off-noop"][
           "checker_output"].lower()
-      and _R4["legs"]["off-noop"]["checker_output_sha256"] == _sha(
+      and _R4["legs"]["off-noop"]["checker_report_sha256"] == _sha(
           _R4["legs"]["off-noop"]["checker_output"].encode())
       and _R4["legs"]["off-noop"]["verdict"] == "fix"
       and _R4["legs"]["pass-through"][
@@ -742,7 +742,7 @@ check("H35b-RECEIPT all 18 ruling slots real (reruns, on, "
       != ""
       and "traceback" not in _R4["legs"]["pass-through"][
           "checker_output"].lower()
-      and _R4["legs"]["pass-through"]["checker_output_sha256"] \
+      and _R4["legs"]["pass-through"]["checker_report_sha256"] \
       == _sha(_R4["legs"]["pass-through"]["checker_output"].encode())
       and _R4["legs"]["pass-through"]["verdict"] == "fix"
       and all(_R4["legs"][leg]["captured_response_sha256"]
@@ -824,7 +824,7 @@ check("H35b-COUNT rc1 with traceback output does NOT count "
               "checker_output",
               "Traceback (most recent call last): Boom"),
           legs["off-noop"].__setitem__(
-              "checker_output_sha256",
+              "checker_report_sha256",
               _sha(b"Traceback (most recent call last): Boom")))))
       is False)
 check("H35b-COUNT rc1 recorded as blocked does NOT count "
@@ -839,7 +839,7 @@ check("H35b-COUNT rc0 recorded as fix does NOT count (rc0 cannot "
       is False)
 check("H35b-COUNT missing report hash does NOT count",
       _derive_on(_synth_legs(lambda legs: legs["pass-through"]
-                 .__setitem__("checker_output_sha256", None)))
+                 .__setitem__("checker_report_sha256", None)))
       is False)
 check("H35b-COUNT rc2 blocked with output does NOT count "
       "(strict option: rc>=2 is missing evidence)",
@@ -852,7 +852,7 @@ check("H35b-COUNT silent output does NOT count (silence is not "
       _derive_on(_synth_legs(lambda legs: (
           legs["pass-through"].__setitem__("checker_output", "  "),
           legs["pass-through"].__setitem__(
-              "checker_output_sha256", _sha(b"  ")))))
+              "checker_report_sha256", _sha(b"  ")))))
       is False)
 # Derivation honesty: an always-ship K makes OFF ship -> causal
 # FALSE (never hardcoded true); the treatment (ON) still stands,

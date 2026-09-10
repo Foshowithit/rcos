@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "1e7e1f8ddd96df9aa1a03b563b56fcda9106e886145ffad6850132a15b446edc",
+ "harness_manifest_sha256": "2988c26b46bf8254e1613faf9660ca602adbc292819a9638141be4c86e1416f9",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -13,7 +13,7 @@
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/dockersandbox.py": "cebd4c4f07e75b7ba81afa755d30f659a4423d3228b9856fd4b39f9d73581b43",
   "harness/admissibility.py": "a37b34545a5e4250c53cf1bc9f6f67ded6bc7e880a958f1a627c1a3b0f49b713",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "999ef4de5f9802b6381fa58bc5bd3daee9b1e755b544a8139d1c0beb25739b69",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "88fd697cf7ca301c89baeab3e13e71638ed7bccfb236487e92680d1738bd9a1c",
   "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
@@ -26,7 +26,7 @@
   "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193",
   "harness/contract_shape.py": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2",
   "harness/frozen_visible.py": "9033d26c176d0dc3c681fecbdc8de111e057730032f2ad4dd671e2c4433e4dd9",
-  "harness/adaptation.py": "7a5012556334bc928d2d31a4a922633001d63d836a98dd40bcc8b5a68169e1e9"
+  "harness/adaptation.py": "d56a4d8ce51b4665bf0fff8afa078548858a7aef2c503aec530c6842dd0bca64"
  },
  "amendments": [
   {
@@ -979,6 +979,23 @@
    },
    "reason": "A13 v2.2 counting rule + isolation bindings (auditor): derivation requires rc-verdict consistency (ON ship-from-rc0; counterfactuals count only with rc1 + fix + recomputing report hash + non-empty crash-free output via shared checker); receipt carries per-leg checker_output/report-hash, captured_response_sha256 + cell_id, and top-level provider/order deltas; runner records grading text per leg and passes the single-response/single-cell binding",
    "slice": "a13-slice2-v22-counting",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "1e7e1f8ddd96df9aa1a03b563b56fcda9106e886145ffad6850132a15b446edc",
+   "to_manifest": "2988c26b46bf8254e1613faf9660ca602adbc292819a9638141be4c86e1416f9",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "999ef4de5f9802b6381fa58bc5bd3daee9b1e755b544a8139d1c0beb25739b69",
+     "to_sha": "88fd697cf7ca301c89baeab3e13e71638ed7bccfb236487e92680d1738bd9a1c"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "7a5012556334bc928d2d31a4a922633001d63d836a98dd40bcc8b5a68169e1e9",
+     "to_sha": "d56a4d8ce51b4665bf0fff8afa078548858a7aef2c503aec530c6842dd0bca64"
+    }
+   },
+   "reason": "Auditor binding rulings: canonical checker_report_sha256 evidence field (renamed from checker_output_sha256; auditor-named, apparatus-accepted) on all three legs; 15-marker crash scan mirroring the apparatus guard exactly; rerun-equality prose scoped to rerun identity for this pair (never proof F is deterministic under every execution)",
+   "slice": "a13-slice2-auditor-rulings",
    "status_after": "open-round2"
   }
  ],

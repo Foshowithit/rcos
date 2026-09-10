@@ -163,6 +163,23 @@ LEG_OFF_NOOP = "off-noop"
 LEG_PASS_THROUGH = "pass-through"
 LEGS = (LEG_ON, LEG_OFF_NOOP, LEG_PASS_THROUGH)
 
+# Crash markers for the v2.2 counting rule (auditor): a Python
+# exception exits 1, so recorded checker output is scanned for
+# these before an rc-1 fix may count. Stored in normalized form
+# (lowercase, [a-z0-9] only) mirroring the independent apparatus's
+# guard exactly, so the module derivation and the apparatus can
+# never disagree on honest evidence.
+_CRASH_MARKERS = ("traceback", "file", "syntaxerror", "nameerror",
+                  "modulenotfounderror", "importerror",
+                  "attributeerror", "typeerror", "indexerror",
+                  "keyerror", "valueerror", "runtimeerror",
+                  "assertionerror", "oserror", "zerodivisionerror")
+
+
+def _norm_text(text):
+    return "".join(
+        ch for ch in text.lower() if "a" <= ch <= "z" or "0" <= ch <= "9")
+
 RECEIPT_SCHEMA = "a13-causal-receipt-v1"
 
 # Frozen NOOP ABI declaration (the OFF-noop counterfactual runs the
@@ -709,21 +726,25 @@ def derive_causal_contribution(*, determinant, determinant_sha256,
         det_recomputed = None
     # 1 determinant_valid: tuple self-hash matches + reruns recorded
     # identical (both shas present and equal -- absent reruns prove
-    # nothing, so None/None never counts here).
+    # nothing, so None/None never counts here). The rerun equality
+    # is reported as independently verified rerun identity for THIS
+    # pair only, never as proof that F is deterministic under every
+    # execution.
     _r1, _r2 = detm.get("rerun_1_sha256"), detm.get("rerun_2_sha256")
     _add(1, "determinant_valid",
          det_recomputed is not None
          and det_recomputed == determinant_sha256
          and isinstance(_r1, str) and _r1 == _r2,
-         "tuple hash matches and reruns recorded identical"
-         if (det_recomputed == determinant_sha256
+         "tuple hash matches and rerun identity verified for this "
+         "pair" if (det_recomputed == determinant_sha256
              and isinstance(_r1, str) and _r1 == _r2)
          else "determinant or rerun binding unresolved/mismatched")
-    # 2 deterministic_F_valid: identical reruns recorded.
+    # 2 deterministic_F_valid: independently verified rerun identity
+    # (evidence of deterministic reproduction for THIS pair).
     _add(2, "deterministic_F_valid",
          detm.get("identical") is True and isinstance(_r1, str)
          and _r1 == _r2,
-         "recorded reruns identical" if (
+         "rerun identity verified for this pair" if (
              detm.get("identical") is True and isinstance(_r1, str)
              and _r1 == _r2) else "no identical reruns recorded")
     # 3 captured bytes are not an input to F (live structural
@@ -818,9 +839,12 @@ def derive_causal_contribution(*, determinant, determinant_sha256,
         _text = leg.get("checker_output")
         if not (isinstance(_text, str) and _text.strip()):
             return False, "no checker output recorded (silence is not fix)"
-        if "traceback" in _text.lower():
-            return False, "checker output carries a crash marker"
-        _hash = leg.get("checker_output_sha256")
+        _hit = next((m for m in _CRASH_MARKERS
+                     if m in _norm_text(_text)), None)
+        if _hit is not None:
+            return False, (f"checker output carries a crash marker "
+                           f"({_hit!r})")
+        _hash = leg.get("checker_report_sha256")
         if not (isinstance(_hash, str) and _hash == _sha_hex(
                 _text.encode())):
             return False, "report hash unresolved or mismatched"
@@ -1128,7 +1152,7 @@ def build_receipt(*, family, task, capability_id, determinant,
         # counting rule) and isolation bindings (the single
         # captured response + treatment cell), or missing (None).
         for _okey in ("checker_returncode", "checker_output",
-                      "checker_output_sha256"):
+                      "checker_report_sha256"):
             enriched[_okey] = evidence.get(_okey) if evidence else None
         if enriched["checker_returncode"] is not None \
                 and not isinstance(enriched["checker_returncode"], int):
@@ -1147,7 +1171,7 @@ def build_receipt(*, family, task, capability_id, determinant,
                     "noop_abi_sha256",
                     "passthrough_implementation_sha256",
                     "output_sha256", "checker_sha256",
-                    "checker_output_sha256",
+                    "checker_report_sha256",
                     "captured_response_sha256",
                     "task_snapshot_sha256", "capability_schema_sha256",
                     "adaptation_contract_sha256"):

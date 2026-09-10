@@ -2350,7 +2350,7 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
         "checker_sha256": on_exec.get("checker_sha256"),
         "checker_returncode": on_exec.get("checker_returncode"),
         "checker_output": _on_text if isinstance(_on_text, str) else None,
-        "checker_output_sha256": (
+        "checker_report_sha256": (
             hashlib.sha256(_on_text.encode()).hexdigest()
             if isinstance(_on_text, str) else None),
         "container_returncode": on_exec.get("container_returncode"),
@@ -2396,7 +2396,7 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
         "checker_sha256": off_exec.get("checker_sha256"),
         "checker_returncode": off_exec.get("checker_returncode"),
         "checker_output": _off_text if isinstance(_off_text, str) else None,
-        "checker_output_sha256": (
+        "checker_report_sha256": (
             hashlib.sha256(_off_text.encode()).hexdigest()
             if isinstance(_off_text, str) else None),
         "container_returncode": off_exec.get("container_returncode"),
@@ -2450,7 +2450,7 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
                                on_exec["checker_path"]) else None),
         "checker_returncode": pass_rc,
         "checker_output": pass_text,
-        "checker_output_sha256": (
+        "checker_report_sha256": (
             hashlib.sha256(pass_text.encode()).hexdigest()
             if isinstance(pass_text, str) else None),
         "container_returncode": None,
