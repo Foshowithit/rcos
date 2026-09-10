@@ -372,7 +372,8 @@ check("A13-RECEIPT exact key sets (no smuggled content anywhere)",
            "launch_records", "jail_config",
            "daemon_container_events", "jail_launches",
            "host_process_ledger", "host_ledger_sha256",
-           "process_journal", "grading"))
+           "process_journal", "grading",
+           "execution_identity"))
       and sorted(_RCPT["legs"]) == ["off-noop", "on", "pass-through"]
       and sorted(_RCPT["legs"]["on"]) == sorted(
           ("program", "program_identity", "adapter_abi", "consumer",
@@ -451,7 +452,7 @@ check("A13-RECEIPT unexecuted legs bind identities but record "
                         "jail_config", "daemon_container_events",
                         "jail_launches", "host_process_ledger",
                         "host_ledger_sha256", "process_journal",
-                        "grading"))
+                        "grading", "execution_identity"))
       and _RCPT["legs"]["off-noop"]["target_capability_sha256"]
       == ARTIFACT_SHA
       and _RCPT["legs"]["off-noop"]["noop_abi_sha256"] not in (
@@ -907,7 +908,19 @@ check("H35b-SEAL exact shape (no smuggled content; seal binds "
            "process_journal_sha256", "process_journal_path",
            "launch_records", "jail_launches", "jail_config",
            "daemon_container_events", "host_process_ledger",
-           "host_ledger_sha256", "process_journal")))
+           "host_ledger_sha256", "process_journal",
+           "grading", "execution_identity")))
+check("H35b-SEAL grading slot is pre-grade honest (checker bound, "
+      "execution pending -- the receipt completes it post-region)",
+      _a4["seal"]["isolation"]["grading"]
+      == {"checker_sha256": _e1["checker_sha256"],
+          "executed_at_monotonic": None}
+      and _a4["seal"]["isolation"]["execution_identity"][
+          "execution_harness_manifest_sha256"] is not None
+      and _g4["receipt"]["isolation"]["grading"]["checker_sha256"]
+      == _a4["seal"]["isolation"]["grading"]["checker_sha256"]
+      and _g4["receipt"]["isolation"]["execution_identity"]
+      == _a4["seal"]["isolation"]["execution_identity"])
 check("H35b-LEGS post-region grading finalizes verdicts + receipt "
       "(grading references the seal, never inputs the receipt)",
       _g4["graded"] is True
@@ -1064,10 +1077,11 @@ _ngrade_runs = sum(
 # enclosing_cell_provider_call_total) live at receipt top level and
 # per-leg by design (asserted by the H35b-RECEIPT checks above) --
 # they are not isolation evidence.
-check("H35b-ISOLATION-KEYS real receipt carries all 18 isolation "
-      "slots with well-typed ledger/journal/grading evidence",
+check("H35b-ISOLATION-KEYS real receipt carries all 15 receipt "
+      "isolation slots with well-typed ledger/journal/grading evidence",
       sorted(_iso4r) == sorted(
-          ("tripwire_violations", "tripwire_first_event",
+          ("execution_identity",
+           "tripwire_violations", "tripwire_first_event",
            "frozen_expected_provider_calls", "process_observer",
            "process_journal_sha256", "process_journal_path",
            "launch_records", "jail_config",
@@ -1106,6 +1120,36 @@ check("H35b-ISOLATION-KEYS real receipt carries all 18 isolation "
       and _iso4r["grading"]["executed_at_monotonic"] > _rclose,
       f"ledger={len(_rled) if isinstance(_rled, list) else _rled!r} "
       f"grade_runs={_ngrade_runs}")
+# Execution-identity bundle control (round-31/32 rulings, the
+# a12q/a12r shared verifier's six relationships, recomputed here on
+# the REAL emitted seal+receipt): the map covers the lock-governed
+# files and re-hashes clean; the declared manifest digest equals the
+# canonical digest of the declared map; the lock sha equals the lock
+# artifact bytes; the seal and receipt bundles are identical (no
+# drift); the lock map equals the frozen lock's own map on this
+# clean tree.
+_bun4r = _iso4r["execution_identity"]
+_bun4s = _seal_iso4["execution_identity"]
+_lock4 = json.load(open(os.path.join(FAMC, "EXECUTION-LOCK.json")))
+_lockraw4 = open(os.path.join(FAMC, "EXECUTION-LOCK.json"), "rb").read()
+_remap4 = {}
+for _rel4 in sorted(_bun4r["harness_manifest_map"]):
+    with open(os.path.join(REPO, _rel4), "rb") as _fh4:
+        _remap4[_rel4] = _sha(_fh4.read())
+_recanon4 = _sha("\n".join(sorted(
+    f"{_k}:{_v}" for _k, _v in _remap4.items())).encode())
+check("H35b-IDENTITY real seal+receipt bundles verify (map "
+      "recomputed, manifest canonical, lock bound, no drift)",
+      isinstance(_bun4r, dict) and isinstance(_bun4s, dict)
+      and _bun4r == _bun4s
+      and _remap4 == _bun4r["harness_manifest_map"]
+      and _recanon4 == _bun4r["execution_harness_manifest_sha256"]
+      == _lock4["harness_manifest_sha256"]
+      and _bun4r["execution_lock_sha256"] == _sha(_lockraw4)
+      and all(_rel4 in _remap4
+              for _rel4 in _lock4["harness_files"])
+      and _bun4r["harness_manifest_map"] == _lock4["harness_files"],
+      f"map_entries={len(_remap4)}")
 _proven4, _detail4 = AD.derive_causal_contribution(
     determinant=_R4["determinant"],
     determinant_sha256=_R4["determinant_sha256"], legs=_R4["legs"],

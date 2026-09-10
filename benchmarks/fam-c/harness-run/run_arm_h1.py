@@ -2658,6 +2658,48 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
         _trip_count, _trip_first = OB.trip_slice()
         _frozen_expected = AD.FROZEN_CONSTANTS[
             "expected_provider_calls_per_cell"]
+        # Execution-identity bundle (round-31/32 rulings, checked by
+        # the shared a12u verifier post-execution and required
+        # present on both proof surfaces pre-execution): the map of
+        # governed harness bytes as OBSERVED now (fresh hashes over
+        # the lock's file list -- never a copy of the lock's own
+        # map), its canonical digest in the repo's own form, and the
+        # lock artifact sha. Computed once here; grade_a13_legs
+        # forwards the identical object (seal/receipt drift on any
+        # of the three keys is itself acceptance-blocking).
+        _lock_path = os.path.join(BASE, "EXECUTION-LOCK.json")
+        try:
+            with open(_lock_path, "rb") as _lf:
+                _lock_raw = _lf.read()
+            _lock_doc = json.loads(_lock_raw.decode("utf-8"))
+            _lock_files = _lock_doc.get("harness_files") or {}
+        except (OSError, ValueError) as _e:
+            raise RuntimeError(
+                "A13-IDENTITY-UNAVAILABLE the execution lock is "
+                f"unreadable at seal time ({type(_e).__name__}); "
+                "refusing to seal evidence without its authority")
+        _identity_map = {}
+        for _rel in sorted(_lock_files):
+            _fp = os.path.join(ROOT, _rel)
+            try:
+                with open(_fp, "rb") as _fh:
+                    _identity_map[_rel] = hashlib.sha256(
+                        _fh.read()).hexdigest()
+            except OSError:
+                raise RuntimeError(
+                    "HARNESS-MANIFEST-MISSING governed harness file "
+                    f"absent at seal time: {_rel}; refusing to seal "
+                    "evidence its authority cannot name")
+        _identity_manifest = (
+            hashlib.sha256("\n".join(
+                sorted(f"{_k}:{_v}"
+                       for _k, _v in _identity_map.items())
+                ).encode()).hexdigest() if _identity_map else None)
+        _identity_bundle = {
+            "harness_manifest_map": _identity_map,
+            "execution_harness_manifest_sha256": _identity_manifest,
+            "execution_lock_sha256": hashlib.sha256(
+                _lock_raw).hexdigest()}
         # OFF two-launch evidence (auditor Ruling 1): the OFF leg
         # is exactly two authorized container launches in this
         # order -- snapshot_verify -> engine_exec -- on the real
@@ -2970,6 +3012,15 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
                 "host_process_ledger": _seal_ledger,
                 "host_ledger_sha256": _seal_ledger_sha,
                 "process_journal": _plog,
+                # Pre-grade grading slot (honest pre-region shape for a
+                # slot the receipt completes post-region -- same
+                # append-only pattern as the verdicts, which are None
+                # in the seal and graded in the receipt): the sealed
+                # checker authority that WILL grade, execution pending.
+                "grading": {"checker_sha256": on_exec.get(
+                    "checker_sha256"),
+                    "executed_at_monotonic": None},
+                "execution_identity": _identity_bundle,
                 "jail_config": AD.FROZEN_CONSTANTS["a13_jail_config"],
                 "daemon_container_events": _daemon.get("events") or [],
             },
@@ -3240,6 +3291,7 @@ def grade_a13_legs(*, seal, outdir, taskdir):
             "host_ledger_sha256": _receipt_ledger_sha,
             "process_journal": (_isolation.get("process_journal")),
             "grading": dict(_grading_attest),
+            "execution_identity": _isolation.get("execution_identity"),
             "jail_config": _isolation.get("jail_config"),
             "daemon_container_events": _isolation.get(
                 "daemon_container_events")},
