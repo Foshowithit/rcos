@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "3e6394fbed32b72f37623836d98f796a0b905cea0b90be88a80bad38dbbd8ee1",
+ "harness_manifest_sha256": "5f6cefd672c4325069dceeda784757493c4d6b2940c00a5f70ebe8b0fe9d331a",
  "harness_files": {
   "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -11,13 +11,13 @@
   "harness/lock.py": "0213e6a5b128d9f0e4f8d239bc65c4bca667e9ae5400ee1283e99e5b13a16cd1",
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
-  "harness/dockersandbox.py": "cebd4c4f07e75b7ba81afa755d30f659a4423d3228b9856fd4b39f9d73581b43",
+  "harness/dockersandbox.py": "9641d5dcb4bc2f9167f6070e9e94e6684414e140582dc0d8d87539b67bc83953",
   "harness/admissibility.py": "a37b34545a5e4250c53cf1bc9f6f67ded6bc7e880a958f1a627c1a3b0f49b713",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "0dd9b298a82c17518825d7e4439f68eb176dd3dd0a24889f41136612a1a3b6b0",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "438144cd2c500e74cc4360910f2806a3101f71d26ff8d463c96da4e66358dbc9",
   "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
-  "harness/mint_execution_lock.py": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
+  "harness/mint_execution_lock.py": "36b7a4e8834e56bfd0040f629a4aef2a4eb81ec3625977f7e9d2c79b7221f472",
   "harness/promotion.py": "a6ded5e324fd8c9519ae8f67dd87c233c397f8b4dda52afb6e04103de92c30d6",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
@@ -26,7 +26,8 @@
   "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193",
   "harness/contract_shape.py": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2",
   "harness/frozen_visible.py": "9033d26c176d0dc3c681fecbdc8de111e057730032f2ad4dd671e2c4433e4dd9",
-  "harness/adaptation.py": "af047c2164891595f0a0d24dfc0eec491bc1fcac693c21d474d60d69226bf961"
+  "harness/adaptation.py": "9648e95eed500d65471db4a623f21bf278b9d2e518a1fe1699af91c8a2154876",
+  "harness/a13_observer.py": "2f77b0c2db57b713c9836d0d1e3ae5473cf61d126c9c43dfeb70212208de65bc"
  },
  "amendments": [
   {
@@ -1100,10 +1101,114 @@
    "reason": "Isolation-traversal hygiene (no behavior change): evidence shape validator hoisted from recursive closure to module-level named global so the transitive static proof resolves it; seal/grade split unchanged",
    "slice": "a13-slice2-seal-validator-hoist",
    "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "3e6394fbed32b72f37623836d98f796a0b905cea0b90be88a80bad38dbbd8ee1",
+   "to_manifest": "5f6cefd672c4325069dceeda784757493c4d6b2940c00a5f70ebe8b0fe9d331a",
+   "files": {
+    "harness/a13_observer.py": {
+     "from_sha": null,
+     "to_sha": "2f77b0c2db57b713c9836d0d1e3ae5473cf61d126c9c43dfeb70212208de65bc"
+    },
+    "harness/dockersandbox.py": {
+     "from_sha": "cebd4c4f07e75b7ba81afa755d30f659a4423d3228b9856fd4b39f9d73581b43",
+     "to_sha": "9641d5dcb4bc2f9167f6070e9e94e6684414e140582dc0d8d87539b67bc83953"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "0dd9b298a82c17518825d7e4439f68eb176dd3dd0a24889f41136612a1a3b6b0",
+     "to_sha": "438144cd2c500e74cc4360910f2806a3101f71d26ff8d463c96da4e66358dbc9"
+    },
+    "harness/mint_execution_lock.py": {
+     "from_sha": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
+     "to_sha": "36b7a4e8834e56bfd0040f629a4aef2a4eb81ec3625977f7e9d2c79b7221f472"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "af047c2164891595f0a0d24dfc0eec491bc1fcac693c21d474d60d69226bf961",
+     "to_sha": "9648e95eed500d65471db4a623f21bf278b9d2e518a1fe1699af91c8a2154876"
+    }
+   },
+   "reason": "A13 auditor rulings 1+2: DockerSandbox two-launch history (cidfile) + snapshot payload single-source; observer role identities + entry-pid/cgroup helpers + sealed jail_launches; adaptation snapshot plan + role identity + combined budget + receipt jail_launches slot; runner two role-tagged launch records + jail_launches + module-level bind helpers + finite-float scalars; H35 shim two-launch history + shape asserts (commit 8c4274b)",
+   "slice": "a13-ruling12-two-role-launches",
+   "status_after": "open-round2"
   }
  ],
  "minted": {
   "base": "fca3df0",
   "slice": "a7-item-4"
+ },
+ "frozen_constants": {
+  "a13_jail_config": {
+   "cap_drop": [
+    "ALL"
+   ],
+   "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+   "memory": "1g",
+   "network": "none",
+   "pids_limit": 64,
+   "read_only": true,
+   "tmpfs": [
+    "/tmp:rw,noexec,nosuid,size=64m"
+   ],
+   "user": "WHO (invoking harness uid:gid)"
+  },
+  "a13_off_combined_docker_budget": 2,
+  "a13_process_plan": {
+   "off-noop": 1,
+   "on": 0,
+   "pass-through": 0
+  },
+  "a13_role_identity": {
+   "engine_exec": {
+    "argv_exact": [
+     "python3",
+     "/work/engine.py",
+     "/task/field_map.json",
+     "/task/records.json",
+     "/work/OUTPUT.json"
+    ],
+    "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+    "interpreter_path": "python3",
+    "interpreter_sha256": "0e6475dfda68a9b2d93501449fc47593ca169010e8f4881577b97463fd0c1263",
+    "mounts": [
+     {
+      "container": "/work",
+      "mode": "rw"
+     },
+     {
+      "container": "/task",
+      "mode": "ro"
+     }
+    ],
+    "network": "none",
+    "script_path": "/work/engine.py"
+   },
+   "snapshot_verify": {
+    "argv_head": [
+     "python3",
+     "-c"
+    ],
+    "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+    "interpreter_path": "python3",
+    "interpreter_sha256": "0e6475dfda68a9b2d93501449fc47593ca169010e8f4881577b97463fd0c1263",
+    "mounts": [
+     {
+      "container": "/work",
+      "mode": "rw"
+     },
+     {
+      "container": "/task",
+      "mode": "ro"
+     }
+    ],
+    "network": "none",
+    "payload_sha256": "b5f52b1eaefd54d3623be34d9d0a2c541b856490a54c95a92a8a7073561ae76f"
+   }
+  },
+  "a13_snapshot_verify_plan": {
+   "off-noop": 1,
+   "on": 0,
+   "pass-through": 0
+  },
+  "expected_provider_calls_per_cell": 1
  }
 }
