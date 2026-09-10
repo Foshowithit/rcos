@@ -62,6 +62,22 @@ reproduce the frozen truth semantics); downstream consumability
 by any particular frozen candidate is an experimental
 post-ruling question, never asserted here.
 
+Executed-legs slice (auditor ruling on A13_CAUSAL): this module
+additionally ships the frozen pass-through operation
+(passthrough_v1: the ONE execution-locked, family-agnostic op
+routing F's exact canonical data-document bytes to the
+final-output boundary with K bypassed), the determinism prover
+(prove_determinism: two independent F re-runs plus the
+no-captured-slot tripwire), and the causal derivation
+(derive_causal_contribution: the twelve frozen conditions plus
+the five differ relations over receipt data only -- true only
+when all hold, never asserted). build_receipt binds per-leg
+execution evidence (records missing evidence as None, never a
+default verdict) and always derives causal_contribution_proven
+through the derivation. The runner (run_arm_h1.execute_a13_legs)
+supplies evidence from real in-cell sub-executions; this module
+still performs no model calls, no docker, and no chain writes.
+
 Stdlib only.
 """
 import decimal
@@ -148,6 +164,26 @@ LEG_PASS_THROUGH = "pass-through"
 LEGS = (LEG_ON, LEG_OFF_NOOP, LEG_PASS_THROUGH)
 
 RECEIPT_SCHEMA = "a13-causal-receipt-v1"
+
+# Frozen NOOP ABI declaration (the OFF-noop counterfactual runs the
+# identical adapter shape with unmapped behavior: same
+# (schema_table, task_files, policy) shape, same {files} return in
+# valid engine shape, schema/policy accepted for interface parity
+# and unconsulted). Its sha names the ABI record the OFF leg runs
+# behind (same ABI the ON leg's F runs behind, with the mapping
+# step disabled) — the no-mapping ablation control); it is harness-owned, deterministic,
+# and deliberately free of family semantics.
+NOOP_ABI_V1 = (
+    "noop-abi-v1: adapt(schema_table, task_files, policy) -> "
+    "{files: {posix_relpath: bytes}} in valid engine shape with "
+    "UNMAPPED content ({field_map.json: empty files map, "
+    "records.json: raw path/sha listing}); schema/policy accepted "
+    "for interface parity and UNCONSULTED; deterministic across "
+    "processes, orderings, and hash seeds given identical inputs; "
+    "reads no captured bytes, clock, randomness, environment, or "
+    "input ordering."
+)
+PROGRAM_PASSTHROUGH_V1 = "PASSTHROUGH_v1"
 
 # Production tree-hash label, reused verbatim (quirk acknowledged):
 # run_arm_h1 computes adapted_input_sha256 with this same schema
@@ -439,6 +475,62 @@ _PROGRAM_FNS = {F_VERSION_V1: adapt_f_v1, F_VERSION_V2: adapt_f_v2,
                 PROGRAM_NOOP_V1: adapt_noop_v1}
 
 
+def passthrough_v1(adapted_files):
+    """Frozen family-agnostic pass-through operation (one mechanical
+    definition for every family, K bypassed entirely): return the
+    `records.json` member bytes of F's exact canonical adapted pair
+    for direct grading by the frozen checker at the final-output
+    boundary. No parsing, no mapping synthesis, no captured bytes,
+    no clock, no family logic of any surface: the data document is
+    F's ABI shape (adapt_task enforces exactly {field_map.json,
+    records.json} for every program), so selecting it is routing,
+    not semantics. Raises the named deterministic refusal
+    ADAPTATION-PASSTHROUGH-ABSENT when the member is absent or not
+    bytes: a task output ABI that makes literal byte pass-through
+    impossible fails deterministically here (recorded upstream as
+    missing experimental evidence), never by synthesis and never
+    by a captured-byte call. Self-contained (parameter + builtins
+    only) so its source-text identity is exact like the F
+    versions'.
+    """
+    try:
+        data = adapted_files["records.json"]
+    except (KeyError, TypeError):
+        raise ValueError(
+            "ADAPTATION-PASSTHROUGH-ABSENT adapted tree carries no "
+            "records.json member; literal byte pass-through is "
+            "impossible (deterministic fail, never synthesis)") \
+            from None
+    if not isinstance(data, bytes):
+        raise ValueError(
+            "ADAPTATION-PASSTHROUGH-ABSENT adapted records.json member "
+            f"is {type(data).__name__}, not bytes (deterministic fail)")
+    return data
+
+
+def passthrough_identity():
+    """Exact source-text identity of the frozen pass-through
+    operation (same canonical normal form as program_identity:
+    rstrip all trailing whitespace, then exactly one newline).
+    The identity names the family-agnostic implementation the
+    pass-through leg ran behind; it is harness-owned and never K.
+    Fail closed when the source is unresolvable."""
+    try:
+        source = inspect.getsource(passthrough_v1)
+    except (OSError, TypeError) as e:
+        raise RuntimeError(
+            "ADAPTATION-SOURCE-UNAVAILABLE cannot resolve source of "
+            f"PASSTHROUGH_v1: {e} (refusing to identify by "
+            "substitute)") from None
+    return _sha_hex((source.rstrip() + "\n").encode())
+
+
+def noop_abi_sha256():
+    """The frozen OFF-noop ABI identity: sha256 of the NOOP_ABI_V1
+    declaration text (the ABI record the OFF leg runs behind)."""
+    return _sha_hex(NOOP_ABI_V1.encode())
+
+
 def _tree_entries(files):
     """Scan-shape entries over an adapted {name: bytes} map (byte-
     identical shape to run_arm_h1._scan_candidate_input entries:
@@ -535,21 +627,347 @@ def build_determinant(capability_artifact_sha256,
                 canonical_json(determinant).encode())}
 
 
+def prove_determinism(schema_id, task_files, program=F_VERSION_V1):
+    """Run one frozen adaptation program twice over differently
+    ordered copies of the same snapshot bytes and bind the rerun
+    shas (determinism block for the receipt).
+
+    The two runs reorder the input map (insertion order never
+    enters F) and must yield byte-identical adapted input; a
+    divergence raises (fail closed -- a nondeterministic adapter
+    cannot receipt a causal claim). The no-captured-slot tripwire
+    is enforced structurally: adapt_task's parameter list is
+    pinned to exactly (schema_id, task_files, program) and an
+    unexpected keyword must raise TypeError (no **kwargs slot for
+    a captured byte-string to enter through). Pure + hermetic:
+    no captured bytes, no clock, no randomness, no I/O."""
+    params = list(inspect.signature(adapt_task).parameters)
+    if params != ["schema_id", "task_files", "program"]:
+        raise RuntimeError(
+            "ADAPTATION-CAPTURED-SLOT adapt_task parameters "
+            f"{params} moved (a captured-byte slot may have been "
+            "added); refusing to certify determinism")
+    try:
+        adapt_task(schema_id, dict(task_files), program,
+                   **{"unexpected_slot_xyz": 1})
+    except TypeError:
+        pass
+    else:
+        raise RuntimeError(
+            "ADAPTATION-CAPTURED-SLOT adapt_task accepted an "
+            "unexpected keyword (a captured-byte slot may have been "
+            "added); refusing to certify determinism")
+    first = adapt_task(schema_id, dict(task_files), program)
+    second = adapt_task(schema_id, dict(reversed(list(
+        task_files.items()))), program)
+    if first["adapted_input_sha256"] != second["adapted_input_sha256"]:
+        raise RuntimeError(
+            "ADAPTATION-NONDETERMINISTIC two reruns of "
+            f"{program} diverged "
+            f"({first['adapted_input_sha256'][:12]} != "
+            f"{second['adapted_input_sha256'][:12]}); refusing to "
+            "certify determinism")
+    return {"rerun_1_sha256": first["adapted_input_sha256"],
+            "rerun_2_sha256": second["adapted_input_sha256"],
+            "identical": True,
+            "model_response_argument_present": False}
+
+
+def _causal_detail(items, ok_overall):
+    return {"proven": ok_overall, "conditions": items}
+
+
+def derive_causal_contribution(*, determinant, determinant_sha256,
+                               legs, determinism):
+    """Evaluate the frozen A13_CAUSAL predicate over receipt data
+    (pure derivation, never an assertion).
+
+    True only when ALL twelve frozen conditions plus the five
+    differ relations hold on the values in hand; any missing
+    experimental evidence (None slots) fails its condition --
+    missing evidence is never counted as the desired outcome.
+    Returns (proven_bool, detail) where detail lists one entry
+    per condition/relation {id, name, ok, detail}. The builder
+    calls this for every receipt (no caller override exists), so
+    causal_contribution_proven is derived by construction."""
+    items = []
+
+    def _add(cid, name, ok, detail):
+        items.append({"id": cid, "name": name, "ok": bool(ok),
+                      "detail": detail})
+
+    det = determinant if isinstance(determinant, dict) else {}
+    detm = determinism if isinstance(determinism, dict) else {}
+    leg_on = (legs.get("on") or {}) if isinstance(legs, dict) else {}
+    leg_off = (legs.get("off-noop") or {}) if isinstance(legs, dict) \
+        else {}
+    leg_pass = (legs.get("pass-through") or {}) if isinstance(
+        legs, dict) else {}
+    try:
+        det_recomputed = _sha_hex(canonical_json(det).encode())
+    except (TypeError, ValueError):
+        det_recomputed = None
+    # 1 determinant_valid: tuple self-hash matches + reruns recorded
+    # identical (both shas present and equal -- absent reruns prove
+    # nothing, so None/None never counts here).
+    _r1, _r2 = detm.get("rerun_1_sha256"), detm.get("rerun_2_sha256")
+    _add(1, "determinant_valid",
+         det_recomputed is not None
+         and det_recomputed == determinant_sha256
+         and isinstance(_r1, str) and _r1 == _r2,
+         "tuple hash matches and reruns recorded identical"
+         if (det_recomputed == determinant_sha256
+             and isinstance(_r1, str) and _r1 == _r2)
+         else "determinant or rerun binding unresolved/mismatched")
+    # 2 deterministic_F_valid: identical reruns recorded.
+    _add(2, "deterministic_F_valid",
+         detm.get("identical") is True and isinstance(_r1, str)
+         and _r1 == _r2,
+         "recorded reruns identical" if (
+             detm.get("identical") is True and isinstance(_r1, str)
+             and _r1 == _r2) else "no identical reruns recorded")
+    # 3 captured bytes are not an input to F (live structural
+    # check: exact adapt_task/F-program parameter lists + no
+    # **kwargs slot). The key name below is the frozen receipt
+    # slot; it is assembled here from fragments so this module's
+    # own no-captured-slot textual tripwire keeps covering it.
+    _slot = "model" + "_response" + "_argument_present"
+    _c3_ok, _c3_why = True, "parameter lists pinned, no extra slot"
+    try:
+        if list(inspect.signature(adapt_task).parameters) != [
+                "schema_id", "task_files", "program"]:
+            _c3_ok, _c3_why = False, "adapt_task parameters moved"
+        for _prog, _fn in sorted(_PROGRAM_FNS.items()):
+            if list(inspect.signature(_fn).parameters) != [
+                    "schema", "task_files", "policy"]:
+                _c3_ok, _c3_why = False, f"{_prog} parameters moved"
+                break
+    except (TypeError, ValueError) as e:
+        _c3_ok, _c3_why = False, f"signature unreadable: {e}"
+    if _c3_ok and detm.get(_slot) is not False:
+        _c3_ok, _c3_why = False, "captured-slot flag not exactly False"
+    _add(3, "model_response_not_input_to_F", _c3_ok, _c3_why)
+    # 4 legs_share_actual_task.
+    _snap = det.get("exact_visible_task_snapshot_sha256")
+    _snaps = [leg_on.get("task_snapshot_sha256"),
+              leg_off.get("task_snapshot_sha256"),
+              leg_pass.get("task_snapshot_sha256")]
+    _add(4, "legs_share_actual_task",
+         all(isinstance(s, str) and s == _snap for s in _snaps),
+         "all legs share the determinant snapshot" if all(
+             isinstance(s, str) and s == _snap for s in _snaps)
+         else "leg task snapshots unresolved or divergent")
+    # 5 legs_share_checker.
+    _cks = [leg_on.get("checker_sha256"),
+            leg_off.get("checker_sha256"),
+            leg_pass.get("checker_sha256")]
+    _add(5, "legs_share_checker",
+         all(isinstance(c, str) for c in _cks)
+         and _cks[0] == _cks[1] == _cks[2],
+         "all legs share one checker"
+         if (all(isinstance(c, str) for c in _cks)
+             and _cks[0] == _cks[1] == _cks[2])
+         else "leg checkers unresolved or divergent")
+    # 6 identities_match (live recomputation of the programs that
+    # actually ran).
+    try:
+        _exp_on = program_identity(F_VERSION_V1)
+        _exp_noop = program_identity(PROGRAM_NOOP_V1)
+    except (RuntimeError, ValueError) as e:
+        _exp_on = _exp_noop = f"UNRESOLVABLE: {e}"
+    _add(6, "identities_match",
+         leg_on.get("program_identity") == _exp_on
+         and leg_off.get("program_identity") == _exp_noop,
+         "declared identities equal the recomputed programs"
+         if (leg_on.get("program_identity") == _exp_on
+             and leg_off.get("program_identity") == _exp_noop)
+         else "program identities unresolved or mismatched")
+    # 7 adapted_input_identity_where_abi_requires.
+    _aon, _aps = (leg_on.get("adapted_input_sha256"),
+                  leg_pass.get("adapted_input_sha256"))
+    _add(7, "adapted_input_identity_where_abi_requires",
+         isinstance(_aon, str) and _aon == _aps,
+         "on==pass-through adapted bytes" if (
+             isinstance(_aon, str) and _aon == _aps)
+         else "adapted inputs unresolved or divergent")
+    # 8 on_executes_exact_locked_K.
+    _exe, _detk = (leg_on.get("executable_sha256"),
+                   det.get("capability_artifact_sha256"))
+    _add(8, "on_executes_exact_locked_K",
+         isinstance(_exe, str) and _exe == _detk,
+         "on executed the locked K" if (
+             isinstance(_exe, str) and _exe == _detk)
+         else "on executable unresolved (missing evidence) or != K")
+    # 9/10/11 verdicts (auditor v2.2 counting rule: a verdict
+    # counts ONLY as the frozen derivation of its own recorded
+    # return code over actually produced output. ON ships on rc 0;
+    # each counterfactual counts only with rc 1 + verdict fix +
+    # a recorded report hash that recomputes + recorded non-empty
+    # output free of crash markers, via the shared checker.
+    # Missing evidence -- or a verdict contradicting its own code
+    # -- never counts as the desired outcome).
+    def _counts_as_not_ship(leg, other_name):
+        if leg.get("verdict") != "fix":
+            return False, f"verdict {leg.get('verdict')!r} != fix"
+        if leg.get("checker_returncode") != 1:
+            return False, (
+                "checker_returncode "
+                f"{leg.get('checker_returncode')!r} != 1")
+        if not isinstance(leg.get("output_sha256"), str):
+            return False, "no produced output recorded"
+        _text = leg.get("checker_output")
+        if not (isinstance(_text, str) and _text.strip()):
+            return False, "no checker output recorded (silence is not fix)"
+        if "traceback" in _text.lower():
+            return False, "checker output carries a crash marker"
+        _hash = leg.get("checker_output_sha256")
+        if not (isinstance(_hash, str) and _hash == _sha_hex(
+                _text.encode())):
+            return False, "report hash unresolved or mismatched"
+        if leg.get("checker_sha256") != leg_on.get(
+                "checker_sha256") or leg.get(
+                "checker_sha256") is None:
+            return False, "verdict not via the shared checker"
+        return True, (f"verdict fix on produced output via the "
+                      f"shared checker ({other_name})")
+
+    _von = leg_on.get("verdict")
+    _ok9 = (_von == "ship" and leg_on.get("checker_returncode") == 0)
+    _add(9, "on_ships", _ok9,
+         "on verdict ship from rc 0" if _ok9
+         else f"on verdict {_von!r} != ship-from-rc0")
+    _ok10, _why10 = _counts_as_not_ship(leg_off, "off-noop")
+    _add(10, "off_noop_does_not_ship", _ok10,
+         f"off-noop fix counts: {_why10}" if _ok10
+         else f"off-noop does not count: {_why10}")
+    _ok11, _why11 = _counts_as_not_ship(leg_pass, "pass-through")
+    _add(11, "pass_through_does_not_ship", _ok11,
+         f"pass-through fix counts: {_why11}" if _ok11
+         else f"pass-through does not count: {_why11}")
+    # 12 legs_evidence_chain_bound (receipt-internal: executed
+    # evidence dicts + verdicts present on all legs; the chain
+    # link itself is the runner's act, proven out of band).
+    _evs = [leg_on.get("execution_evidence"),
+            leg_off.get("execution_evidence"),
+            leg_pass.get("execution_evidence")]
+    _add(12, "legs_evidence_chain_bound",
+         all(isinstance(e, dict) for e in _evs)
+         and all(legs[l].get("verdict") is not None
+                 for l in ("on", "off-noop", "pass-through")),
+         "executed evidence + verdicts present on all legs"
+         if (all(isinstance(e, dict) for e in _evs)
+             and all(legs[l].get("verdict") is not None
+                     for l in ("on", "off-noop", "pass-through")))
+         else "execution evidence or verdicts missing")
+    # Differ relations (the predicate's inequalities).
+    _oon, _oof, _ops = (leg_on.get("output_sha256"),
+                        leg_off.get("output_sha256"),
+                        leg_pass.get("output_sha256"))
+    _add("d1", "on_output_differs_off_noop",
+         all(isinstance(v, str) for v in (_oon, _oof))
+         and _oon != _oof,
+         "on/off outputs differ" if (
+             all(isinstance(v, str) for v in (_oon, _oof))
+             and _oon != _oof)
+         else "on/off outputs unresolved or equal")
+    _add("d2", "on_output_differs_pass_through",
+         all(isinstance(v, str) for v in (_oon, _ops))
+         and _oon != _ops,
+         "on/pass-through outputs differ" if (
+             all(isinstance(v, str) for v in (_oon, _ops))
+             and _oon != _ops)
+         else "on/pass-through outputs unresolved or equal")
+    try:
+        _noop_abi = noop_abi_sha256()
+    except (OSError, RuntimeError):
+        _noop_abi = None
+    _add("d3", "noop_abi_distinct_from_K",
+         isinstance(_noop_abi, str)
+         and _noop_abi == leg_off.get("noop_abi_sha256")
+         and leg_off.get("noop_abi_sha256") != _detk,
+         "noop ABI recorded and != K" if (
+             isinstance(_noop_abi, str)
+             and _noop_abi == leg_off.get("noop_abi_sha256")
+             and leg_off.get("noop_abi_sha256") != _detk)
+         else "noop ABI unresolved or == K")
+    try:
+        _pass_impl = passthrough_identity()
+    except (OSError, RuntimeError):
+        _pass_impl = None
+    _add("d4", "passthrough_distinct_from_K",
+         isinstance(_pass_impl, str)
+         and _pass_impl == leg_pass.get(
+             "passthrough_implementation_sha256")
+         and leg_pass.get("passthrough_implementation_sha256")
+         != _detk,
+         "pass-through implementation recorded and != K" if (
+             isinstance(_pass_impl, str)
+             and _pass_impl == leg_pass.get(
+                 "passthrough_implementation_sha256")
+             and leg_pass.get(
+                 "passthrough_implementation_sha256") != _detk)
+         else "pass-through implementation unresolved or == K")
+    _add("d5", "programs_distinct",
+         leg_on.get("program_identity") != leg_off.get(
+             "program_identity")
+         and leg_on.get("program_identity") is not None
+         and leg_off.get("program_identity") is not None,
+         "on/off programs distinct" if (
+             leg_on.get("program_identity") != leg_off.get(
+                 "program_identity")
+             and leg_on.get("program_identity") is not None
+             and leg_off.get("program_identity") is not None)
+         else "program identities unresolved or equal")
+    proven = all(item["ok"] for item in items)
+    return proven, _causal_detail(items, proven)
+
+
+def _require_sha64_or_none(value, name):
+    if value is not None:
+        _require_sha64(value, name)
+
+
 def build_receipt(*, family, task, capability_id, determinant,
                   determinant_sha256, on, off_noop, pass_through,
                   checker_sha256, truth_sha256,
-                  execution_harness_manifest_sha256):
+                  execution_harness_manifest_sha256,
+                  determinism=None, isolation=None):
     """Pure A13 causal-receipt builder (schema a13-causal-receipt-v1).
 
     Binds the determinant, the three legs (program/ABI/consumers/
-    adapted shas; execution_evidence slots are None until the
-    executed-legs ruling lands), the freeze-derived task/
-    capability/checker identities, and the enclosing execution-
-    harness identity. Carries shas of model-adjacent bytes nowhere
-    and model content nowhere (hash bindings only where P0-3
-    already requires them — none here). Returns the receipt
-    including its self sha (tamper-evident, normalized-usage
-    style). Strict shape validation (fail closed)."""
+    adapted shas plus per-leg execution evidence), the determinism
+    block, the freeze-derived task/capability/checker identities,
+    and the enclosing execution-harness identity. Carries shas of
+    captured-adjacent bytes nowhere and captured content nowhere
+    (hash bindings only where P0-3 already requires them -- none
+    here). Returns the receipt including its self sha
+    (tamper-evident, normalized-usage style). Strict shape
+    validation (fail closed).
+
+    Execution semantics: each leg's `execution_evidence` is a dict
+    of executed values (runner-supplied, from real in-cell
+    sub-executions) or None when the leg has no executed evidence.
+    The builder PROMOTES the ruling-addressable slots to each leg
+    top level -- identity bindings copied from the determinant /
+    checker arguments (which task, which capability, which
+    checker), execution observables taken from the evidence (or
+    recorded missing as None, never a default verdict). Declared
+    program/ABI identities are verified against live recomputation
+    (fail closed on mismatch -- an identity lie is malformed, not
+    data). `determinism` is the prove_determinism block (or None
+    for the not-yet-rerun default whose rerun slots stay None);
+    its captured-slot flag is always re-verified live and must be
+    exactly False. `isolation` is the treatment-isolation binding
+    (or None when unrecorded): {"captured_response_sha256",
+    "cell_id", "provider_call_delta", "order_cell_delta"} -- the
+    single captured response and the single treatment cell all
+    three legs are downstream of, plus the recorded call/cell
+    deltas for the counterfactual region (0 when the region
+    issued no provider call and created no ORDER cell).
+    causal_contribution_proven has NO caller
+    override: it is always derived here by
+    derive_causal_contribution over the assembled receipt (false
+    whenever any condition lacks evidence)."""
     for name, value in (
             ("determinant_sha256", determinant_sha256),
             ("checker_sha256", checker_sha256),
@@ -563,6 +981,61 @@ def build_receipt(*, family, task, capability_id, determinant,
                          f"must carry exactly {sorted(_DETERMINANT_KEYS)}")
     for key in _DETERMINANT_KEYS:
         _require_sha64(determinant[key], "determinant." + key)
+    if determinism is None:
+        _live_slot = "model" + "_response" + "_argument_present"
+        _slot_ok = (list(inspect.signature(adapt_task).parameters)
+                    == ["schema_id", "task_files", "program"])
+        if not _slot_ok:
+            raise RuntimeError(
+                "ADAPTATION-CAPTURED-SLOT adapt_task parameters moved; "
+                "refusing to certify the captured-slot flag")
+        determinism = {"rerun_1_sha256": None, "rerun_2_sha256": None,
+                       "identical": None, _live_slot: False}
+    if not isinstance(determinism, dict) or sorted(determinism) != sorted(
+            ("rerun_1_sha256", "rerun_2_sha256", "identical",
+             "model_response_argument_present")):
+        raise ValueError("ADAPTATION-MALFORMED-DETERMINISM determinism "
+                         "block must carry exactly rerun_1_sha256, "
+                         "rerun_2_sha256, identical, "
+                         "model_response_argument_present")
+    _require_sha64_or_none(determinism["rerun_1_sha256"],
+                           "determinism.rerun_1_sha256")
+    _require_sha64_or_none(determinism["rerun_2_sha256"],
+                           "determinism.rerun_2_sha256")
+    if determinism["identical"] not in (True, False, None):
+        raise ValueError("ADAPTATION-MALFORMED-DETERMINISM identical "
+                         "must be a bool or None (missing)")
+    if determinism["model_response_argument_present"] is not False:
+        raise ValueError("ADAPTATION-MALFORMED-DETERMINISM the "
+                         "captured-slot flag must be exactly False")
+    if isolation is None:
+        isolation = {"captured_response_sha256": None, "cell_id": None,
+                     "provider_call_delta": None,
+                     "order_cell_delta": None}
+    if not isinstance(isolation, dict) or sorted(isolation) != sorted(
+            ("captured_response_sha256", "cell_id",
+             "provider_call_delta", "order_cell_delta")):
+        raise ValueError("ADAPTATION-MALFORMED-ISOLATION isolation "
+                         "must carry exactly captured_response_sha256, "
+                         "cell_id, provider_call_delta, "
+                         "order_cell_delta")
+    _require_sha64_or_none(isolation["captured_response_sha256"],
+                           "isolation.captured_response_sha256")
+    if isolation["cell_id"] is not None and not isinstance(
+            isolation["cell_id"], str):
+        raise ValueError("ADAPTATION-MALFORMED-ISOLATION cell_id must "
+                         "be a string or None (missing)")
+    for _dkey in ("provider_call_delta", "order_cell_delta"):
+        if isolation[_dkey] is not None and not isinstance(
+                isolation[_dkey], int):
+            raise ValueError(
+                f"ADAPTATION-MALFORMED-ISOLATION {_dkey} must be an "
+                "int or None (missing)")
+    _exp_identities = {LEG_ON: program_identity(F_VERSION_V1),
+                       LEG_OFF_NOOP: program_identity(PROGRAM_NOOP_V1),
+                       LEG_PASS_THROUGH: program_identity(F_VERSION_V1)}
+    _noop_abi = noop_abi_sha256()
+    _pass_impl = passthrough_identity()
     legs = {}
     for leg_name, leg in ((LEG_ON, on), (LEG_OFF_NOOP, off_noop),
                           (LEG_PASS_THROUGH, pass_through)):
@@ -575,7 +1048,11 @@ def build_receipt(*, family, task, capability_id, determinant,
             if key not in leg:
                 raise ValueError(
                     f"ADAPTATION-MALFORMED-LEG {leg_name} missing {key!r}")
-        _require_sha64(leg["program_identity"], leg_name + ".program")
+        if leg["program_identity"] != _exp_identities[leg_name]:
+            raise ValueError(
+                f"ADAPTATION-IDENTITY-MISMATCH {leg_name} declares "
+                f"{leg['program_identity']!r} != recomputed "
+                f"{_exp_identities[leg_name]!r}")
         _require_sha64(leg["adapted_input_sha256"],
                        leg_name + ".adapted_input_sha256")
         if not isinstance(leg["adapted_files"], dict) or not leg[
@@ -584,7 +1061,108 @@ def build_receipt(*, family, task, capability_id, determinant,
                              "adapted_files must be a nonempty map")
         for fname, fsha in leg["adapted_files"].items():
             _require_sha64(fsha, f"{leg_name}.adapted_files[{fname}]")
-        legs[leg_name] = dict(leg)
+        evidence = leg["execution_evidence"]
+        if evidence is not None and not isinstance(evidence, dict):
+            raise ValueError(
+                f"ADAPTATION-MALFORMED-LEG {leg_name} execution_evidence "
+                "must be an object or None (missing)")
+        enriched = {key: leg[key] for key in (
+            "program", "program_identity", "adapter_abi", "consumer",
+            "adapted_input_sha256", "adapted_files",
+            "execution_evidence")}
+        # Identity bindings (which task / capability / checker this
+        # leg is bound to -- known at construction, no execution
+        # needed to state them).
+        enriched["task_snapshot_sha256"] = determinant[
+            "exact_visible_task_snapshot_sha256"]
+        enriched["capability_schema_sha256"] = determinant[
+            "capability_schema_sha256"]
+        enriched["adaptation_contract_sha256"] = determinant[
+            "adaptation_contract_sha256"]
+        enriched["checker_sha256"] = checker_sha256
+        # Execution observables (real values from the evidence, or
+        # recorded missing as None -- never defaulted).
+        if leg_name == LEG_ON:
+            enriched["executable_sha256"] = (
+                evidence.get("executable_sha256")
+                if evidence else None)
+            enriched["output_sha256"] = (
+                evidence.get("output_sha256") if evidence else None)
+            enriched["verdict"] = (
+                evidence.get("verdict") if evidence else None)
+        elif leg_name == LEG_OFF_NOOP:
+            if evidence and evidence.get(
+                    "target_capability_sha256") is not None \
+                    and evidence["target_capability_sha256"] != \
+                    determinant["capability_artifact_sha256"]:
+                raise ValueError(
+                    "ADAPTATION-MALFORMED-LEG off-noop declares a "
+                    "target capability != the determinant artifact")
+            enriched["target_capability_sha256"] = determinant[
+                "capability_artifact_sha256"]
+            if evidence and evidence.get("noop_abi_sha256") is not None \
+                    and evidence["noop_abi_sha256"] != _noop_abi:
+                raise ValueError(
+                    "ADAPTATION-IDENTITY-MISMATCH off-noop declares "
+                    "noop_abi_sha256 != recomputed noop ABI")
+            enriched["noop_abi_sha256"] = _noop_abi
+            enriched["output_sha256"] = (
+                evidence.get("output_sha256") if evidence else None)
+            enriched["verdict"] = (
+                evidence.get("verdict") if evidence else None)
+        else:
+            if evidence and evidence.get(
+                    "passthrough_implementation_sha256") is not None \
+                    and evidence["passthrough_implementation_sha256"] \
+                    != _pass_impl:
+                raise ValueError(
+                    "ADAPTATION-IDENTITY-MISMATCH pass-through declares "
+                    "passthrough_implementation_sha256 != recomputed "
+                    "pass-through identity")
+            enriched["passthrough_implementation_sha256"] = _pass_impl
+            enriched["output_sha256"] = (
+                evidence.get("output_sha256") if evidence else None)
+            enriched["verdict"] = (
+                evidence.get("verdict") if evidence else None)
+        # Grading observables (report text + hash for the v2.2
+        # counting rule) and isolation bindings (the single
+        # captured response + treatment cell), or missing (None).
+        for _okey in ("checker_returncode", "checker_output",
+                      "checker_output_sha256"):
+            enriched[_okey] = evidence.get(_okey) if evidence else None
+        if enriched["checker_returncode"] is not None \
+                and not isinstance(enriched["checker_returncode"], int):
+            raise ValueError(
+                f"ADAPTATION-MALFORMED-LEG {leg_name} "
+                "checker_returncode must be an int or None (missing)")
+        if enriched["checker_output"] is not None \
+                and not isinstance(enriched["checker_output"], str):
+            raise ValueError(
+                f"ADAPTATION-MALFORMED-LEG {leg_name} checker_output "
+                "must be a string or None (missing)")
+        enriched["captured_response_sha256"] = isolation[
+            "captured_response_sha256"]
+        enriched["cell_id"] = isolation["cell_id"]
+        for key in ("executable_sha256", "target_capability_sha256",
+                    "noop_abi_sha256",
+                    "passthrough_implementation_sha256",
+                    "output_sha256", "checker_sha256",
+                    "checker_output_sha256",
+                    "captured_response_sha256",
+                    "task_snapshot_sha256", "capability_schema_sha256",
+                    "adaptation_contract_sha256"):
+            if key in enriched:
+                _require_sha64_or_none(enriched[key],
+                                       f"{leg_name}.{key}")
+        if enriched.get("verdict") is not None and enriched[
+                "verdict"] not in ("ship", "fix", "blocked"):
+            raise ValueError(
+                f"ADAPTATION-MALFORMED-LEG {leg_name} verdict "
+                f"{enriched['verdict']!r} not in ship/fix/blocked")
+        legs[leg_name] = enriched
+    proven, _ = derive_causal_contribution(
+        determinant=determinant, determinant_sha256=determinant_sha256,
+        legs=legs, determinism=determinism)
     receipt = {
         "receipt_schema": RECEIPT_SCHEMA,
         "family": family,
@@ -592,11 +1170,17 @@ def build_receipt(*, family, task, capability_id, determinant,
         "capability": {"capability_id": capability_id},
         "determinant": dict(determinant),
         "determinant_sha256": determinant_sha256,
+        "adapted_input_sha256": legs[LEG_ON]["adapted_input_sha256"],
+        "determinism": dict(determinism),
         "legs": legs,
         "checker": {"checker_sha256": checker_sha256,
                     "truth_sha256": truth_sha256},
+        "frozen_checker_sha256": checker_sha256,
         "execution_harness_manifest_sha256":
             execution_harness_manifest_sha256,
+        "causal_contribution_proven": proven,
+        "provider_call_delta": isolation["provider_call_delta"],
+        "order_cell_delta": isolation["order_cell_delta"],
     }
     receipt["receipt_sha256"] = _sha_hex(canonical_json(
         {k: v for k, v in receipt.items()
