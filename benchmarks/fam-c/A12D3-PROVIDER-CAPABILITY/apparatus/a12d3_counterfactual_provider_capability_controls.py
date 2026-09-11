@@ -99,7 +99,32 @@ ORDER_CELL_COUNT = 0
 # boundary and requiring the conjunct to flip FALSE with the offending record
 # published.  If it cannot be made false by a real extra opportunity, it is not
 # a measurement.
+#
+# TWO FALSIFIERS, and the distinction is the gate's ruling, not a preference:
+#
+#   F1  -- THE FROZEN, CONTRACT-BEARING FALSIFIER.  Baseline 1/1/1; inject a
+#          second REAL gate attempt; PREVENT the second dispatch; final 2/1/1;
+#          delta {attempts:+1, dispatches:0, receives:0}.  This is the shape the
+#          frozen text names, so it is the shape D3-X must produce.  Its purpose
+#          is to prove the apparatus detects an extra opportunity AT THE GATE
+#          BOUNDARY even when downstream dispatch never occurs.
+#
+#   F1b -- SUPPLEMENTAL, SEPARATELY NAMED.  The full traverse: the second
+#          opportunity IS dispatched, ending 2/2/1.  Strictly stronger evidence,
+#          and it is what the apparatus originally produced.  The gate explicitly
+#          forbade relabelling that pre-existing 2/2/1 result as F1 after the
+#          fact, so it is carried under its own name and is reported as
+#          supplemental -- it does NOT bear the contract.
 FALSIFIER_INJECTION_ARMS = ("D3-X",)
+SUPPLEMENTAL_FALSIFIER_ARMS = ("D3-X",)
+
+# The FROZEN F1 delta, transcribed from the frozen text: "baseline 1/1/1 -> inject
+# a second REAL gate request but prevent the second dispatch -> final 2/1/1 ->
+# delta {attempts:+1, dispatches:0, receives:0}".  Declared here so the falsifier's
+# "did the delta move to exactly the frozen shape" test has an explicit authority
+# rather than an inline literal.
+F1_FROZEN_DELTA = {"attempts": 1, "dispatches": 0, "receives": 0}
+F1_FROZEN_AFTER = {"attempts": 2, "dispatches": 1, "receives": 1}
 
 # Which leg roles consume the sealed response, per arm role.  EVERY arm that
 # runs a leg consumes it: HONEST_COUNTERFACTUAL_LEGS_COMPLETE must have content,
@@ -505,12 +530,53 @@ def run_arm(arm: str) -> dict:
     opportunity = boundary.cell_opportunity()
     time.sleep(0.3)   # let the gate's writers flush before snapshotting
     before_snapshot = boundary_module.snapshot_counts(arm_dir)
+
+    # ---- SEALED PRE-LEG LEDGER PREFIX --------------------------------------
+    # `provider-before.json` is a CLAIM ABOUT the ledgers; it is not the ledgers.
+    # Under snapshot-only authority a snapshot can be repointed at a different
+    # ledger, or both snapshots synthesised to agree, and D1_PROVIDER_OPPORTUNITY_
+    # DELTA_ZERO then reports a clean zero while the real ledgers moved.  So the
+    # pre-leg ledger BYTES are sealed to their own artifact here, before the
+    # release: the checker then proves those exact bytes are an exact PREFIX of the
+    # final ledger, which closes both substitution and retrospective-baseline
+    # reconstruction.  Copied as raw bytes, never re-serialised.
+    ledger_prefix_seal = {}
+    for _name in boundary_module.LEDGER_NAMES:
+        _src = arm_dir / boundary_module.LEDGER_FILES[_name]
+        _raw = _src.read_bytes() if _src.exists() else b""
+        _seal = arm_dir / ("d1-prefix-%s.jsonl" % _name)
+        _seal.write_bytes(_raw)
+        ledger_prefix_seal[_name] = {
+            "sealed_path": _seal.name,
+            "sealed_bytes": len(_raw),
+            "sealed_sha256": hashlib.sha256(_raw).hexdigest(),
+            "shorter_than_a_full_record": len(_raw) < 2,
+        }
+
     boundary_module.atomic_write_json(arm_dir / "provider-before.json", {
         "opportunity": opportunity,
         "counts": {n: before_snapshot[n] for n in boundary_module.LEDGER_NAMES},
         "snapshot_sha256": before_snapshot["_sha256"],
         "wall": before_snapshot["_wall"],
         "falsifier_arm": falsifier_arm,
+        "sealed_ledger_prefix": ledger_prefix_seal,
+    })
+
+    # ---- PRE-LEG cell identity (sealed before any leg is released) ---------
+    # TOTAL_MODEL_CELL_COUNT_UNCHANGED is a claim about UNCHANGED, not about
+    # existence, so it needs a pre-leg measurement to be unchanged FROM.  Taken
+    # here, before the release below, so the "before" is a genuine boundary state
+    # rather than a reconstruction performed after seeing the outcome.
+    cell_manifest_before = boundary_module.cell_manifest(
+        arm_dir,
+        cell_binaries={"model": BUILD_DIR / "d3-model-cell",
+                       "order": BUILD_DIR / "d3-order-cell"},
+        declared={"model": MODEL_CELL_COUNT, "order": ORDER_CELL_COUNT})
+    boundary_module.atomic_write_json(arm_dir / "cell-manifest-before.json", {
+        "phase": "PRE_LEG_RELEASE",
+        "wall": time.time(),
+        "manifest": cell_manifest_before,
+        "taken_before_leg_release": True,
     })
 
     # ---- Bind the D2 sealed-response identity -----------------------------
@@ -826,30 +892,214 @@ def run_arm(arm: str) -> dict:
     hold = _verdict_leg["hold"]
     seccomp = _verdict_leg["seccomp"]
 
+    # ---- AFTER snapshot + the measured delta ------------------------------
+    # Taken HERE: the legs have completed and the boundary stayed UP for the whole
+    # leg window, so a leg that reached it would have left a real record -- and,
+    # decisively, it is taken BEFORE the falsifier injects, so `after` describes the
+    # ARM's own run rather than the arm's run plus an injected perturbation.
+    #
+    # The ordering is what makes the falsifier a measurement: the injection must land
+    # AFTER the after-snapshot, otherwise the extra opportunity would be absorbed into
+    # `after`, the delta would stay zero by construction, and the conjunct would prove
+    # nothing about the delta being live.  The settle is for the gate's writers.
+    # (The boundary is stopped AFTER the falsifier block below: F1b's full traverse
+    #  needs a LIVE gate to dispatch through, and stopping here would make every
+    #  F1b injection fail with a missing socket.)
+    time.sleep(0.3)
+    after_snapshot = boundary_module.snapshot_counts(arm_dir)
+    provider_delta = boundary_module.measured_delta(before_snapshot,
+                                                    after_snapshot)
+
     # ---- FALSIFIER (D3-X): inject a REAL extra provider opportunity HERE ----
     # The leg is alive and blocked at the entry barrier, the before-snapshot is
-    # already written and its hash sealed.  Injecting now guarantees the extra
-    # opportunity cannot be absorbed into `before`: the DELTA itself must move.
+    # already written and its hash sealed, and the arm's own after-snapshot is taken.
+    # Injecting now guarantees the extra opportunity cannot be absorbed into either
+    # `before` or `after`: the DELTA itself must move.
     # Without a real injection point the conjunct could only ever fail for a
     # structural reason, which would not be a measurement of the delta at all.
     falsifier_injection = {"attempted": False}
+    # Named on every arm so the publish below never depends on a name that only
+    # exists on the falsifier path.
+    f1_byte_authority = {}
+    f1_authority_record = {}
+    f1_conjunct_value = False
+    f1_delta = {"attempts": 0, "dispatches": 0, "receives": 0}
+    f1_matches_frozen_shape = False
     if falsifier_arm:
         try:
-            extra = boundary.inject_extra_opportunity()
+            # ── F1: the FROZEN, contract-bearing falsifier ────────────────────
+            # A real second gate attempt, with the second dispatch prevented, so
+            # the arm ends 2/1/1 and the delta is {attempts:+1, dispatches:0,
+            # receives:0} -- exactly the shape the frozen text names.
+            extra = boundary.inject_extra_attempt_f1()
             time.sleep(0.3)   # let the gate's writers flush
             mid = boundary_module.snapshot_counts(arm_dir)
+            f1_after = {n: mid[n] for n in boundary_module.LEDGER_NAMES}
+            f1_delta = {
+                "attempts": (f1_after["attempts"]["records"]
+                             - before_snapshot["attempts"]["records"]),
+                "dispatches": (f1_after["dispatches"]["records"]
+                               - before_snapshot["dispatches"]["records"]),
+                "receives": (f1_after["receives"]["records"]
+                             - before_snapshot["receives"]["records"]),
+            }
+            # The frozen shape, asserted rather than assumed: had the mechanism
+            # dispatched, the contract-bearing falsifier would silently be F1b.
+            f1_matches_frozen_shape = (f1_delta == {"attempts": 1, "dispatches": 0,
+                                                    "receives": 0})
+
+            # ── F1's OWN BYTE-LEVEL STATE ─────────────────────────────────────
+            # F1's facts are sealed as BYTES so the checker can recompute F1's delta
+            # WITHOUT believing this record: it reads d1-prefix-<name>.jsonl (the
+            # pre-leg bytes) and d1-f1-final-<name>.jsonl (the bytes immediately after
+            # F1, before F1b ran) and derives both counts from those bytes itself.
+            # Without this the checker's only option would be to trust `f1_delta`,
+            # which is exactly the class of harness-trusted number the gate rejected.
+            #
+            # The byte seals are taken by the shared helper at the END of this block
+            # so that BOTH F1's and F1b's states are covered by one mechanism.
+            def _seal_ledger_stage(prefix_label):
+                """Copy every live ledger to its stage file and return the stage's
+                declared identities.  Used for BOTH F1's post state and F1b's post
+                state, so the two stages are sealed by one mechanism rather than by
+                two code paths that could drift apart."""
+                stage = {}
+                for _name in boundary_module.LEDGER_NAMES:
+                    _live = arm_dir / boundary_module.LEDGER_FILES[_name]
+                    _dest = arm_dir / ("d1-%s-%s.jsonl" % (prefix_label, _name))
+                    _dest.write_bytes(_live.read_bytes())
+                    _raw = _dest.read_bytes()
+                    stage[_name] = {
+                        "sealed_path": _dest.name,
+                        "sealed_bytes": len(_raw),
+                        "sealed_sha256": hashlib.sha256(_raw).hexdigest(),
+                    }
+                return stage
+
+            f1_baseline_seal = {}
+            for _name in boundary_module.LEDGER_NAMES:
+                _base = arm_dir / ("d1-prefix-%s.jsonl" % _name)
+                _base_bytes = _base.read_bytes() if _base.exists() else b""
+                f1_baseline_seal[_name] = {
+                    "sealed_path": _base.name,
+                    "sealed_bytes": len(_base_bytes),
+                    "sealed_sha256": hashlib.sha256(_base_bytes).hexdigest(),
+                }
+            f1_final_seal = _seal_ledger_stage("f1-final")
+
+            # ── F1b: SUPPLEMENTAL full-traverse falsifier ─────────────────────
+            # Run separately, and recorded under its own name with its own
+            # baseline.  It is explicitly NOT contract-bearing: the gate ruled that
+            # the frozen text names 2/1/1 and that F1b may not be relabelled as F1.
+            # Its baseline is the post-F1 state, so its OWN delta is the honest
+            # measure of what the full traverse added.
+            f1b_result = {}
+            try:
+                f1b_extra = boundary.inject_extra_attempt_f1b()
+                time.sleep(0.3)
+                f1b_mid = boundary_module.snapshot_counts(arm_dir)
+                f1b_after = {n: f1b_mid[n] for n in boundary_module.LEDGER_NAMES}
+                f1b_delta = {
+                    n: (f1b_after[n]["records"] - f1_after[n]["records"])
+                    for n in boundary_module.LEDGER_NAMES}
+                _f1b_reached_mock = f1b_delta.get("receives", 0) > 0
+                f1b_result = {
+                    "attempted": True,
+                    "ok": True,
+                    "injection": f1b_extra,
+                    "baseline": "state_after_F1",
+                    "baseline_counts": f1_after,
+                    "counts_after": f1b_after,
+                    "delta_from_F1_baseline": f1b_delta,
+                    "expected_full_traverse_delta": {
+                        "attempts": 1, "dispatches": 1, "receives": 1},
+                    "is_full_traverse": (f1b_delta == {"attempts": 1,
+                                                       "dispatches": 1,
+                                                       "receives": 1}),
+                    "reached_mock": _f1b_reached_mock,
+                    "gate_response_head": f1b_extra.get("response_head", ""),
+                    # STATED PLAINLY, because the difference matters: with the gate's
+                    # `authorized_attempt_limit` left at its frozen value the gate
+                    # answers BLOCKED_ATTEMPT_LIMIT, so the extra opportunity is
+                    # recorded as an attempt and as a blocked dispatch but never
+                    # reaches the mock and produces no receive.  The gate reads its
+                    # policy ONCE at startup, so rewriting the policy file is not
+                    # enough to raise it; doing so would require an injected
+                    # authorization limit, which would change the boundary under
+                    # test.  This is why F1b is labelled SUPPLEMENTAL and why its
+                    # shortfall is reported rather than smoothed over.
+                    "shortfall_reason": (
+                        None if _f1b_reached_mock else
+                        "gate answered BLOCKED_ATTEMPT_LIMIT at the frozen "
+                        "authorized_attempt_limit, so the extra attempt was recorded "
+                        "and a blocked dispatch row written, but no mock receive "
+                        "occurred; the full traverse is therefore partial"),
+                    "contract_bearing": False,
+                }
+            except BaseException as exc:
+                f1b_result = {"attempted": True, "ok": False,
+                              "error": "%s: %s" % (type(exc).__name__, exc),
+                              "contract_bearing": False}
+
+            # F1b's own post state, sealed by the same mechanism.  Its baseline is
+            # F1's post state, so the pair (f1-final, f1b-final) is what the
+            # supplemental full-traverse delta is derived from.
+            f1b_final_seal = _seal_ledger_stage("f1b-final")
+            if f1b_result.get("ok"):
+                f1b_result["byte_authority"] = {
+                    "baseline_seal": "d1-f1-final-<name>.jsonl",
+                    "post_seal": f1b_final_seal,
+                }
+
+            # Written to a CARRIER, not to `provider_delta`: that dict does not exist
+            # yet at this point and is rebound by measured_delta() further down, so
+            # writing through it here silently lost every seal (measured: the field
+            # arrived in provider-after.json as an empty object and the checker
+            # correctly reported "F1 byte seals absent").
+            f1_authority_record = {
+                "pre_leg_seal": f1_baseline_seal,
+                "post_f1_seal": f1_final_seal,
+                "post_f1b_seal": f1b_final_seal,
+                "note": ("F1's and F1b's states are sealed as BYTES so the checker "
+                         "derives both deltas from bytes rather than from any number "
+                         "this summary states."),
+            }
+
+            f1_conjunct_value = bool(
+                f1_matches_frozen_shape
+                and before_snapshot["attempts"]["records"] == 1
+                and before_snapshot["dispatches"]["records"] == 1)
+
+            f1_offenders = 0
+            if not f1_conjunct_value:
+                boundary_module.publish_offenders(
+                    arm_dir, before_snapshot, provider_delta,
+                    falsifier_injection.get("injected_attempt"))
+                f1_offenders = 1
+
             falsifier_injection = {
                 "attempted": True,
                 "ok": True,
+                "contract_bearing_falsifier": "F1",
+                "frozen_shape_required": {"attempts": 1, "dispatches": 0,
+                                          "receives": 0},
+                "frozen_shape_observed": f1_delta,
+                "frozen_shape_matches": f1_matches_frozen_shape,
                 "injection_point": "leg_alive_at_entry_barrier_after_before_snapshot",
                 "injected_attempt": extra,
-                "counts_after_injection": {
-                    n: mid[n] for n in boundary_module.LEDGER_NAMES},
+                "counts_after_injection": f1_after,
+                "delta_after_injection": f1_delta,
+                "supplemental_falsifier": {
+                    "name": "F1b_EXTRA_DISPATCH_FULL_TRAVERSE",
+                    "contract_bearing": False,
+                    **f1b_result},
             }
         except BaseException as exc:
             falsifier_injection = {"attempted": True, "ok": False,
                                    "error": "%s: %s" % (type(exc).__name__, exc)}
     atomic_write_json(arm_dir / "falsifier-injection.json", falsifier_injection)
+    # The boundary has now served both the arm and the supplemental falsifier.
+    boundary.stop()
 
     atomic_write_json(arm_dir / "measurement.json", {
         "hold": hold, "seccomp": seccomp, "descriptors": descriptors,
@@ -932,26 +1182,59 @@ def run_arm(arm: str) -> dict:
 
     ledger_counts = {name: count_ledger(path) for name, path in ledgers.items()}
 
-    # ---- AFTER snapshot + the measured delta ------------------------------
-    # The boundary stayed UP for the whole leg window, so a leg that reached it
-    # would have left a real record.  Stop it only now, then snapshot.
-    boundary.stop()
-    time.sleep(0.3)
-    after_snapshot = boundary_module.snapshot_counts(arm_dir)
-    provider_delta = boundary_module.measured_delta(before_snapshot,
-                                                    after_snapshot)
+    # (The AFTER snapshot and the measured delta were taken BEFORE the falsifier
+    #  block above, so F1's extra opportunity cannot be absorbed into the arm's own
+    #  `after` state.  Re-taking them here would overwrite `provider_delta` and
+    #  destroy exactly that property.)
+    # F1's byte authority and F1b's own record must appear IN provider-after.json,
+    # which is the file the checker reads.  They were computed inside the falsifier
+    # block above; they are attached here because `measured_delta` returns a fresh
+    # dict and `provider_delta` is rebound at this point.
+    # F1's byte authority and F1b's own record must appear IN provider-after.json,
+    # which is the file the checker reads.  `provider_delta` was built before the
+    # injection, so these are attached now -- and `conjunct_value` is set from F1's
+    # OWN delta (taken above), never from a re-measurement that would include F1b.
+    if falsifier_injection.get("attempted"):
+        provider_delta["falsifier_injection"] = falsifier_injection
+        provider_delta["f1_byte_authority"] = f1_authority_record
+        provider_delta["f1_delta_observed"] = f1_delta
+        provider_delta["f1_frozen_shape_required"] = dict(F1_FROZEN_DELTA)
+        provider_delta["f1_conjunct_value"] = f1_conjunct_value
+        # D3-X's conjunct is F1's shape, NOT the arm's own zero delta: the arm's zero
+        # delta is what a clean run looks like, and grading on it would make the
+        # falsifier's conjunct true whether or not the injection happened.
+        provider_delta["conjunct_value"] = f1_conjunct_value
     boundary_module.atomic_write_json(arm_dir / "provider-after.json", {
         "counts": {n: after_snapshot[n] for n in boundary_module.LEDGER_NAMES},
         "snapshot_sha256": after_snapshot["_sha256"],
         "wall": after_snapshot["_wall"],
         "delta": provider_delta["delta"],
         "conjunct_value": provider_delta["conjunct_value"],
+        "falsifier_injection": provider_delta.get("falsifier_injection"),
+        "f1_byte_authority": provider_delta.get("f1_byte_authority"),
+        "f1_delta_observed": provider_delta.get("f1_delta_observed"),
+        "f1_frozen_shape_required": provider_delta.get("f1_frozen_shape_required"),
+        # The sealed pre-leg prefix this `after` state is comparable against, named
+        # so the checker's join is to a specific sealed artifact rather than to
+        # "whatever the before-snapshot happened to say".
+        "sealed_ledger_prefix": {
+            n: {
+                "sealed_path": "d1-prefix-%s.jsonl" % n,
+                "sealed_bytes": (ledger_prefix_seal.get(n) or {}).get("sealed_bytes"),
+                "sealed_sha256": (ledger_prefix_seal.get(n) or {}).get("sealed_sha256"),
+                "prefix_is_exact_prefix_of_final": (
+                    (arm_dir / ("d1-prefix-%s.jsonl" % n)).exists()
+                    and (arm_dir / ("d1-prefix-%s.jsonl" % n)).read_bytes()
+                    == (arm_dir / boundary_module.LEDGER_FILES[n]).read_bytes()[
+                        :(ledger_prefix_seal.get(n) or {}).get("sealed_bytes", 0)]),
+            }
+            for n in boundary_module.LEDGER_NAMES
+        },
     })
     if not provider_delta["conjunct_value"]:
         boundary_module.publish_offenders(
             arm_dir, before_snapshot, provider_delta,
             falsifier_injection.get("injected_attempt"))
-    provider_delta["falsifier_injection"] = falsifier_injection
 
     # ---- The D2 identity join from RAW artifacts --------------------------
     # ALL THREE legs, by D2's own identity names.  With one leg the "all three
@@ -982,6 +1265,55 @@ def run_arm(arm: str) -> dict:
     cells["order_cell_count_measured"] = 0
     cells["counted_by"] = ("executed model-cell report + filesystem enumeration; "
                            "never ledger emptiness")
+
+    # ---- POST-LEG cell identity, joined to the sealed pre-leg manifest ------
+    # The conjunct is a claim about the boundary being UNCHANGED, so it is decided
+    # by comparing two independently taken enumerations, not by one existence test.
+    cell_manifest_after = boundary_module.cell_manifest(
+        arm_dir,
+        cell_binaries={"model": BUILD_DIR / "d3-model-cell",
+                       "order": BUILD_DIR / "d3-order-cell"},
+        declared={"model": MODEL_CELL_COUNT, "order": ORDER_CELL_COUNT})
+    boundary_module.atomic_write_json(arm_dir / "cell-manifest-after.json", {
+        "phase": "POST_LEG_COMPLETION",
+        "wall": time.time(),
+        "manifest": cell_manifest_after,
+        "cell_manifest_before_sha256": sha256_of(
+            arm_dir / "cell-manifest-before.json"),
+    })
+    cells["cell_manifest_before"] = cell_manifest_before
+    cells["cell_manifest_after"] = cell_manifest_after
+    cells["cell_count_before"] = {
+        "model": cell_manifest_before["model_cell_count"],
+        "order": cell_manifest_before["order_cell_count"],
+    }
+    cells["cell_count_after"] = {
+        "model": cell_manifest_after["model_cell_count"],
+        "order": cell_manifest_after["order_cell_count"],
+    }
+    # Identity continuity is decided on (st_dev, st_ino) plus content hash, so a
+    # same-path-different-inode swap is NOT silently continuous.
+    def _ident(manifest, kind):
+        return sorted((r.get("st_dev"), r.get("st_ino"), r.get("sha256"))
+                      for r in manifest.get("%s_cell_entries" % kind, []))
+    cells["model_cell_identity_same"] = (
+        _ident(cell_manifest_before, "model")
+        == _ident(cell_manifest_after, "model"))
+    cells["order_cell_identity_same"] = (
+        _ident(cell_manifest_before, "order")
+        == _ident(cell_manifest_after, "order"))
+    cells["model_cell_count_unchanged"] = (
+        cell_manifest_before["model_cell_count"]
+        == cell_manifest_after["model_cell_count"] == MODEL_CELL_COUNT)
+    cells["order_cell_count_unchanged"] = (
+        cell_manifest_before["order_cell_count"]
+        == cell_manifest_after["order_cell_count"] == ORDER_CELL_COUNT)
+    cells["cell_measurement_valid"] = bool(
+        cell_manifest_before["model_cell_count"] == MODEL_CELL_COUNT
+        and cell_manifest_after["model_cell_count"] == MODEL_CELL_COUNT
+        and cell_manifest_before["order_cell_count"] == ORDER_CELL_COUNT
+        and cell_manifest_after["order_cell_count"] == ORDER_CELL_COUNT
+        and model_cell.get("report_present"))
 
     return {
         "arm": arm, "role": role, "arm_dir": str(arm_dir),
@@ -1648,11 +1980,11 @@ def evaluate_arm(arm: dict) -> dict:
         "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO":
             bool(arm.get("provider_delta", {}).get("conjunct_value")),
         "TOTAL_MODEL_CELL_COUNT_UNCHANGED":
-            arm.get("cell_artifacts", {}).get("model_cell_count_measured") ==
-            MODEL_CELL_COUNT,
+            bool(arm.get("cell_artifacts", {}).get("model_cell_count_unchanged"))
+            and bool(arm.get("cell_artifacts", {}).get("model_cell_identity_same")),
         "ORDER_CELL_COUNT_UNCHANGED":
-            arm.get("cell_artifacts", {}).get("order_cell_count_measured") ==
-            ORDER_CELL_COUNT,
+            bool(arm.get("cell_artifacts", {}).get("order_cell_count_unchanged"))
+            and bool(arm.get("cell_artifacts", {}).get("order_cell_identity_same")),
         "ALL_CAPABILITY_BINDINGS_RECONCILED":
             bool(equality.get("measurement_valid")) and
             possession["all_legs_reconciled"],
@@ -2050,22 +2382,56 @@ def main() -> int:
         "offenders_path": str(Path(falsifier_run.get("arm_dir", ""))
                               / "delta-offenders.json"),
     }
-    # The falsifier succeeds ONLY when the delta itself moved (non-zero) while
-    # the before-snapshot stayed populated.  Any other way of going false -- a
-    # structural error, a missing artifact -- would not be a delta measurement.
+    # ── WHAT "PROVED LIVE" MEANS, WITH F1 AND F1b SEPARATED ────────────────────
+    #
+    # `falsifier_delta` is the ARM's own delta: before-snapshot -> the state when the
+    # legs completed, taken BEFORE the falsifier injected.  On D3-X that is
+    # correctly ZERO, because the arm's own run must produce no extra provider
+    # opportunity.  F1's delta is a DIFFERENT number and lives in the injection
+    # record, measured against that same baseline immediately after F1 was injected.
+    #
+    # The old test was `conjunct_value is False` -- require the conjunct to FLIP
+    # FALSE.  That was right while every arm shared one expected shape, because 2/1/1
+    # is not 1/1/1 and the conjunct necessarily went false.  It is the wrong test
+    # once the falsifier arm is graded against the frozen F1 shape per the gate's
+    # ruling: after a CORRECT injection the conjunct is correctly TRUE.
+    #
+    # Liveness is therefore proved by all of:
+    #   * the ARM's own delta is zero            (the run itself opened no opportunity)
+    #   * F1's delta is EXACTLY the frozen shape  (the injected cause, not drift)
+    #   * the boundary was POPULATED beforehand   (there was something to move FROM)
+    #   * the conjunct is TRUE on that shape      (it grades the injected delta)
+    f1_injection = falsifier_run.get("falsifier_injection") or {}
+    f1_observed_delta = f1_injection.get("delta_after_injection")
+    falsifier["frozen_f1_delta_expected"] = dict(F1_FROZEN_DELTA)
+    falsifier["arm_own_delta"] = falsifier_delta.get("delta")
+    falsifier["arm_own_delta_is_zero"] = all(
+        v == 0 for v in (falsifier_delta.get("delta") or {}).values()) \
+        and bool(falsifier_delta.get("delta"))
+    falsifier["f1_observed_delta"] = f1_observed_delta
+    falsifier["f1_delta_is_frozen_shape"] = bool(
+        f1_observed_delta == dict(F1_FROZEN_DELTA))
+    falsifier["frozen_shape_matches"] = bool(
+        f1_injection.get("frozen_shape_matches"))
     falsifier["delta_moved"] = bool(
-        falsifier_delta.get("delta")
-        and any(v > 0 for v in falsifier_delta["delta"].values()))
-    falsifier["conjunct_flipped_false"] = (
-        falsifier_delta.get("conjunct_value") is False)
+        f1_observed_delta and any(v > 0 for v in f1_observed_delta.values()))
+    falsifier["conjunct_true_on_injected_delta"] = (
+        falsifier_delta.get("conjunct_value") is True)
+    falsifier["supplemental_f1b"] = (
+        f1_injection.get("supplemental_falsifier") or {})
     falsifier["proves_delta_is_live_measurement"] = bool(
-        falsifier["delta_moved"] and falsifier["conjunct_flipped_false"]
-        and falsifier_delta.get("boundary_populated_before"))
-    print("falsifier %s: delta=%s conjunct=%s proved_live=%s offenders=%d"
-          % (falsifier["arm"], falsifier["delta"],
-             falsifier["conjunct_value_with_injection"],
+        falsifier["arm_own_delta_is_zero"]
+        and falsifier["delta_moved"]
+        and falsifier["f1_delta_is_frozen_shape"]
+        and falsifier["frozen_shape_matches"]
+        and falsifier_delta.get("boundary_populated_before")
+        and falsifier["conjunct_true_on_injected_delta"])
+    print("falsifier %s: arm_delta=%s f1_delta=%s frozen=%s proved_live=%s "
+          "f1b_full_traverse=%s"
+          % (falsifier["arm"], falsifier["arm_own_delta"], f1_observed_delta,
+             falsifier["f1_delta_is_frozen_shape"],
              falsifier["proves_delta_is_live_measurement"],
-             falsifier["offending_records_published"]))
+             falsifier["supplemental_f1b"].get("is_full_traverse")))
 
     receipt = {
         "harness_version": HARNESS_VERSION,

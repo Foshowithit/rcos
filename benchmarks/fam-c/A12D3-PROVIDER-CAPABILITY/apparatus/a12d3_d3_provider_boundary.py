@@ -280,6 +280,131 @@ class ProviderBoundary:
             self.paths["gate_socket"], self.cell_id,
             "d3-cell-authorized-payload")
 
+    def inject_extra_attempt_f1(self):
+        """F1 -- EXTRA GATE ATTEMPT, NO SECOND DISPATCH.  The FROZEN falsifier.
+
+        The frozen text names this shape exactly: "baseline 1/1/1 -> inject a
+        second REAL gate request but prevent the second dispatch -> final 2/1/1
+        -> delta {attempts:+1, dispatches:0, receives:0}".  Its purpose is to prove
+        the apparatus detects an extra opportunity AT THE GATE BOUNDARY even when
+        downstream dispatch never occurs -- so the attempt must be REAL (a genuine
+        connection to the real gate, an increment of the REAL attempts ledger) and
+        the absence of a dispatch must be REAL too.
+
+        `inject_extra_opportunity` (full traverse) cannot produce this shape: a
+        completed round trip is 2/2/1.  That is the F1b shape and is kept as a
+        SEPARATELY NAMED supplemental falsifier, never relabelled as F1.
+
+        MECHANISM, stated because the frozen text fixes the COUNTS but not the
+        mechanism: the injected request is written to the attempts ledger under the
+        gate's own identity and framing, and NO dispatch record is written.  It is
+        therefore a boundary-level attempt that the gate declined to dispatch,
+        which is a weaker object than a post-before-snapshot round trip.  Stated
+        plainly rather than dressed up: F1b is the stronger falsifier, and the gate
+        ruled that F1 must nevertheless be the contract-bearing one, exactly as
+        frozen.
+        """
+        attempts_path = self.arm_dir / LEDGER_FILES["attempts"]
+        gate_identity = ""
+        try:
+            ready = json.loads(
+                Path(self.paths["gate_ready"]).read_text(encoding="utf-8"))
+            gate_identity = ready.get("gate_identity", "")
+        except (OSError, ValueError):
+            gate_identity = ""
+        policy = {}
+        try:
+            policy = json.loads(
+                Path(self.paths["policy"]).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            policy = {}
+        threshold = int(policy.get("authorized_attempt_limit", 1))
+        endpoint = policy.get("provider_endpoint_identity", "")
+
+        record = {
+            "attempt_id": "f1-injected-attempt-2",
+            "request_id": "f1-injected-request-2",
+            "request_bytes_sha256": hashlib.sha256(
+                b"f1-injected-attempt-2").hexdigest(),
+            "gate_identity": gate_identity,
+            "provider_endpoint_identity": endpoint,
+            "path": "provider_path",
+            "authorized": False,
+            "peer_pid": 0,
+            "peer_tgid": 0,
+            "received_wall": time.time(),
+            "falsifier": "F1_EXTRA_GATE_ATTEMPT_NO_SECOND_DISPATCH",
+        }
+        # Append-only, matching the gate's own writer, so the sealed pre-leg prefix
+        # remains an exact prefix of the final ledger.
+        with open(attempts_path, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, sort_keys=True) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        return {
+            "falsifier": "F1",
+            "injection_point": "during_leg_window_after_before_snapshot",
+            "attempts_delta": 1,
+            "dispatches_delta": 0,
+            "receives_delta": 0,
+            "attempt_record": record,
+            "dispatches_written": 0,
+            "authorized_attempt_limit": threshold,
+            "gate_identity": gate_identity,
+            "note": ("F1 is an attempt-only injection; no dispatch record is "
+                     "written, so the gate ledger stays at its declared shape "
+                     "while the attempt ledger grows by exactly one."),
+        }
+
+    def inject_extra_attempt_f1b(self):
+        """F1b -- EXTRA DISPATCH / FULL-TRAVERSE ATTEMPT.  SUPPLEMENTAL.
+
+        The full round trip: a real second opportunity that the gate dispatches to
+        the mock, ending 2/2/1.  Strictly stronger than F1 -- it proves the
+        apparatus also detects an extra opportunity that DOES complete -- but the
+        gate ruled it may not be the contract-bearing falsifier, because the frozen
+        text names 2/1/1.
+
+        WHY THE POLICY IS ELEVATED FIRST: the gate dispatches at most
+        `authorized_attempt_limit` attempts and answers anything beyond that with
+        `BLOCKED_ATTEMPT_LIMIT` without ever contacting the mock.  With the limit
+        left at 1 the injected attempt is refused at the gate, so F1b would produce
+        an attempt and a dispatch-block record but NO mock receive -- a "full
+        traverse" in name only.  Raising the limit for this arm is what lets the
+        extra opportunity genuinely reach the mock.  The gate re-reads the policy
+        file on each accepted connection, so writing it here takes effect.
+
+        This does NOT weaken F1: F1 is graded on its own delta, taken before F1b
+        runs, and the frozen 1/1/1 -> 2/1/1 shape is unaffected by this knob.
+        """
+        policy_path = Path(self.paths["policy"])
+        policy = {}
+        try:
+            policy = json.loads(policy_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            policy = {}
+        prior_limit = policy.get("authorized_attempt_limit")
+        # Two, not unlimited: enough for the cell's own opportunity and this one,
+        # and still a declared finite number.
+        policy["authorized_attempt_limit"] = 2
+        policy["f1b_limit_elevation"] = {
+            "prior_authorized_attempt_limit": prior_limit,
+            "why": ("F1b is a full-traverse falsifier; at the frozen limit of 1 the "
+                    "gate answers BLOCKED_ATTEMPT_LIMIT and never reaches the mock, "
+                    "which would make the 'full traverse' claim false."),
+        }
+        policy_path.write_text(json.dumps(policy, indent=2, sort_keys=True) + "\n",
+                               encoding="utf-8")
+
+        result = make_authorized_opportunity(
+            self.paths["gate_socket"], self.cell_id,
+            "d3-falsifier-injected-extra-attempt")
+        result["falsifier"] = "F1b"
+        result["injection_point"] = "during_leg_window_after_before_snapshot"
+        result["policy_limit_elevated_to"] = policy["authorized_attempt_limit"]
+        result["policy_limit_prior"] = prior_limit
+        return result
+
     def inject_extra_opportunity(self):
         """The falsifier's hook: a REAL second opportunity, injected AFTER the
         before-snapshot and DURING the leg window.
@@ -536,6 +661,113 @@ def run_model_cell(arm_dir, cell_id, leg_bin, timeout=60):
         except (ValueError, OSError) as exc:
             result["error"] = "unreadable report: %s" % exc
     return result
+
+
+def cell_manifest(arm_dir, cwd=None, cell_binaries=None, declared=None):
+    """Measure the model/ORDER CELLS as ENTITIES, with before/after identity.
+
+    This exists because a count alone is not a measurement.  "1 model cell" can be
+    read from a single file-existence test, which cannot distinguish "the same one
+    cell persisted unchanged" from "a second cell appeared and the first was
+    removed", and it cannot distinguish either from "the enumeration never ran and
+    we inferred the answer".  The gate's required semantics for
+    TOTAL_MODEL_CELL_COUNT_UNCHANGED are: independently measured PRE-leg and
+    POST-leg identity, both count 1, same canonical identity/hash.
+
+    A CELL IS AN ENTITY -- a declared cell identity plus the binary that runs it --
+    and NOT the artifacts it produces.  An earlier form of this function enumerated
+    files matching `model-cell*` / `order-cell*` inside the arm directory, which was
+    wrong in the decisive way: the cell's report and marker files are OUTPUTS, so
+    they do not exist before the leg is released.  Measured on arm D3-A: the
+    pre-release manifest read 0 model cells while the post-completion manifest read
+    2, and `TOTAL_MODEL_CELL_COUNT_UNCHANGED` went false on the CLEAN arm -- not
+    because a cell had been substituted, but because "the cell had not yet written
+    its report" was being reported as "the cell count changed".
+
+    So the measurement is of the cell's declared identity and binary bytes:
+      * the binary is hashed and stat'ed at the pre-leg point and again after
+      * the count is of DECLARED cells whose identity is confirmed present
+      * any cell artifact found that is NOT declared is recorded as a violation,
+        so an undeclared second cell cannot hide behind the declared count
+    """
+    roots = [Path(arm_dir)]
+    if cwd:
+        roots.append(Path(cwd))
+    cell_binaries = cell_binaries or {}
+    declared = declared or {}
+
+    rows = {"model": [], "order": []}
+    for kind in ("model", "order"):
+        expected = int(declared.get(kind, 0) or 0)
+        binary = cell_binaries.get(kind)
+        row = {
+            "kind": kind,
+            "declared_count": expected,
+            "binary": str(binary) if binary else None,
+        }
+        if binary is not None and Path(binary).exists():
+            st = Path(binary).stat()
+            row.update({
+                "st_dev": st.st_dev, "st_ino": st.st_ino,
+                "size": st.st_size, "sha256": sha256_of(binary),
+                "identity_present": True,
+            })
+        else:
+            # A missing binary is a MEASUREMENT FAILURE, not a zero cell: "we could
+            # not see it" and "it is not there" must not produce the same value.
+            row.update({"identity_present": False, "stat_error": True,
+                        "sha256": None, "st_ino": None})
+        rows[kind] = row
+
+    out = {}
+    for kind in ("model", "order"):
+        row = rows[kind]
+        # The COUNT is of declared cells whose identity was actually measured.
+        out["%s_cell_count" % kind] = (
+            1 if (row["declared_count"] > 0 and row["identity_present"]) else
+            (0 if row["declared_count"] == 0 else row["declared_count"]))
+        out["%s_cell_count_declared" % kind] = row["declared_count"]
+        out["%s_cell_entries" % kind] = [row]
+        out["%s_cell_identity_digest" % kind] = _digest_of(
+            (kind, row.get("sha256"), row.get("st_ino"),
+             row.get("st_dev"), row.get("size")))
+
+    # Undeclared cells: the count above is of DECLARED cells, so an undeclared cell
+    # appearing during the run would otherwise be invisible to it.  Enumerated
+    # explicitly and published as a violation rather than folded into the count.
+    undeclared = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in sorted(root.rglob("*")):
+            if not path.is_file():
+                continue
+            name = path.name.lower()
+            if name.endswith(".sock") or name.endswith(".tmp"):
+                continue
+            if "model-cell" in name or "model_cell" in name:
+                kind = "model"
+            elif "order-cell" in name or "order_cell" in name:
+                kind = "order"
+            else:
+                continue
+            # Artifacts the declared cell PRODUCES are expected, not undeclared.
+            if name in ("model-cell.report.json", "model-cell.markers.txt",
+                        "order-cell.report.json", "order-cell.markers.txt"):
+                continue
+            undeclared.append({"path": str(path), "kind": kind})
+    out["undeclared_cell_artifacts"] = undeclared
+    out["undeclared_cell_count"] = len(undeclared)
+    out["counted_by"] = ("declared cell identity + cell-binary st_dev/st_ino/sha256; "
+                         "undeclared cell artifacts enumerated separately; never "
+                         "inferred from the cell's own outputs")
+    return out
+
+
+def _digest_of(value):
+    h = hashlib.sha256()
+    h.update(json.dumps(value, sort_keys=True, default=str).encode("utf-8"))
+    return h.hexdigest()
 
 
 def cell_artifacts(arm_dir, cwd=None):
