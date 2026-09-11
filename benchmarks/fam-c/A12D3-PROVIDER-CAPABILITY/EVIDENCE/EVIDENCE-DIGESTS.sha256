@@ -1,0 +1,25 @@
+# Evidence digests — A12D3 PROVIDER-CAPABILITY
+# Generated 2026-09-11 from the artifacts named in REPORT-TO-GATE.md.
+# Paths are recorded as absolute /tmp/d3gen paths: those run dirs are NOT in this
+# repo (see README.md sec.7). Digests let you confirm what was measured and detect
+# any later substitution; they do not by themselves publish the bytes.
+
+# --- THE DEFENSIVE RUN (claim depends on this one) ---
+c57dfb67692da006fe723f5667a8da8e609661fb38d7f926b8aa367cdb2f8370  /tmp/d3gen/d3run-audited2/receipt.json
+0031b6d652034deaf41abd33b484bf0f90911a70181b47c75000ae9a01c441b5  /tmp/d3gen/d3run-audited2/independent_audit.json
+
+# --- build artifacts measured by that run ---
+2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe  /tmp/d3gen/build-audit2/d3-denial-filter.bin
+98c21329a3507f78dacf1492c66f95cc5191317211cd549d7ee8aa5a7074cad5  /tmp/d3gen/build-audit2/d3-denial-policy.json
+d623f1468db109791e57e4d87132eb9f20de6f53a8557739ea715335010fb62e  /tmp/d3gen/build-audit2/d3-leg-on
+
+# --- run 1: retained, SUPERSEDED (wait4 inflation; non-claim-bearing) ---
+ec855dcf3cee0aa6200956037453979028f23e40e71613f7e3cb9c0990fa81df  /tmp/d3gen/d3run-audited/receipt.json
+92587d50f2f7e88205b6cfb850f8b4c80115f56bb0e826d8176c308ac913f4d7  /tmp/d3gen/d3run-audited/independent_audit.json
+
+# --- run 0: superseded; its independent_audit.json was OVERWRITTEN 14:23 (non-claim-bearing) ---
+b4360333a5eb774c6bee3fd833fda9a6bd5fab547756f37a1518e8b196dbb9ec  /tmp/d3gen/d3run-SUPERSEDED-no-prediction-binding/receipt.json
+
+# --- raw kernel audit extracts (journalctl -k, type=1326) ---
+88f550665c36b7a9cbc2ab1b347f932a1562a6278cc5fdfacca6209d97ddb408  /tmp/d3gen/kernel-audit-records.txt
+5ff2ca16428ce28fc48802d932f0d4f103865700bbff2d5ac73f2d4c521c3e24  /tmp/d3gen/kernel-audit-records2.txt

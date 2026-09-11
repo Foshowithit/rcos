@@ -1,0 +1,28 @@
+# A12D3 PROVIDER-CAPABILITY — FROZEN SOURCE MANIFEST
+#
+# Paths are relative to this directory (apparatus/).  Verify with:
+#     cd apparatus && sha256sum -c SOURCE-FREEZE.sha256
+#
+# Originating freeze: /tmp/d3gen/frozen-150201, frozen 2026-09-11 15:09.
+# The live apparatus dir (/home/chow/rcos-verify/apparatus-final) was being written
+# concurrently by another session, so that digest set -- not the live tree -- is the
+# binding identity of what was measured.  The bytes below are copied verbatim from it.
+#
+# The seccomp(2) LOG install patch is applied IN THIS FREEZE, not in the live tree.
+#   patched   a12d3_d3_legs.c = 4c3fb3dcc21a63e28896beff4544d6d939aeb5d0686447a9d7e4973851d8ea12
+#   pristine  a12d3_d3_legs.c = 5a9396b0e45dab1af1486fffc9208b3decdc6104605b27e5cd8ffa877bc68892
+# Reproduce the patch on a pristine copy with:
+#     python3 apply_seccomp_log_patch.py <path-to>/a12d3_d3_legs.c
+#
+c2abdfbe98798a6ee8e9091e75692a392e279927922c23a1db70dc4e946a5c39  a12d2_d2_mock_boundary.py
+98900e0648e91a6773909d849290ce51274618ec6719fc253039f3ba82985195  a12d2_d2_provider_gate.py
+afa4a3da0168bc8696c0bf716270c19e9049d51f68341ce1c96cb200a2f421f7  a12d3_counterfactual_provider_capability_controls.py
+4f4086c3ce538da75b2d44d0a22e41b93f5646947e9f5ab1dc729980aef1689d  a12d3_d3_descriptor_inspector.py
+421de4d0190271b78e50d98c3c9ab065230382a024a32f438bafacbde0f7926c  a12d3_d3_independent_checker.py
+4c3fb3dcc21a63e28896beff4544d6d939aeb5d0686447a9d7e4973851d8ea12  a12d3_d3_legs.c
+571bbefbfeabac8d900957700a74da29c43c6e3f1eaf5682f961532ecd95ed69  a12d3_d3_predicate.py
+f35b6d80eb1443618ab962291ef7d6990d6623c0fa5bf43e2488b82fb6282161  a12d3_d3_provider_boundary.py
+aaa4d918d6ca333e04741b6fc2a9b68de5e5d350690e6134708c6c528772aa98  a12d3_d3_sealed_identity.py
+f144649b86f8ca559b158ec5a07397023e6357892f2dbece8b7744d478dc6443  a12d3_d3_seccomp_policy.py
+b348850f5b208aa184bbc20d89c8f7cda3292ac41302091d96ef00fe810b92d6  apply_seccomp_log_patch.py
+acfbb228f97fea81788379834d2865072ae168e6f5f674da27c8b16975857142  build-pinned.sh
