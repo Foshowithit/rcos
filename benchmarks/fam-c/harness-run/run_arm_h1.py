@@ -2451,6 +2451,27 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
             "bytes that are not the locked K")
     calls_before, _order_before = None, None
     cell_before = cell_id
+    # Temporal grading schema (B): the grading PLAN is written up front,
+    # BEFORE any leg executes. It declares the authority that WILL grade
+    # (checker sha), which legs are planned, and when planning happened.
+    # The grading RESULT is written only after execution, post-region, in
+    # grade_a13_legs -- under a distinct name, with its own ledger. A
+    # result without a prior plan, a rewritten plan, or a misordered pair
+    # refuses in the isolation contract (a12q temporal checks).
+    _plan_mono = time.monotonic()
+    _grading_plan = {
+        "grading_plan_schema": "a13-grading-plan-v1",
+        "checker_sha256": on_exec.get("checker_sha256"),
+        "planned_legs": ["on", "off-noop", "pass-through"],
+        "planned_at_monotonic": _plan_mono,
+    }
+    _grading_plan_sha = hashlib.sha256(
+        _a13_canon_json(_grading_plan)).hexdigest()
+    _grading_plan = dict(_grading_plan,
+                         grading_plan_sha256=_grading_plan_sha)
+    _grading_plan_path = os.path.join(outdir, "A13-GRADING-PLAN.json")
+    with open(_grading_plan_path, "w") as _f:
+        _f.write(json.dumps(_grading_plan, sort_keys=True, indent=1) + "\n")
     _saved_call, _saved_recorded_call = call, recorded_call
     call, recorded_call = _tripwire, _tripwire
     try:
@@ -3015,6 +3036,14 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
                 "jail_launches": _jail_launches,
                 "host_process_ledger": _seal_ledger,
                 "host_ledger_sha256": _seal_ledger_sha,
+                # Temporal schema (B): the up-front grading plan (verbatim
+                # copy of A13-GRADING-PLAN.json, written before any leg
+                # executed) and the execution-phase ledger under its own
+                # distinct name. The grading-phase ledger lives only in
+                # the post-region grading_result (grade_a13_legs).
+                "grading_plan": dict(_grading_plan),
+                "host_execution_ledger": list(_seal_ledger),
+                "host_execution_ledger_sha256": _seal_ledger_sha,
                 "process_journal": _plog,
                 # Pre-grade grading slot (honest pre-region shape for a
                 # slot the receipt completes post-region -- same
@@ -3035,6 +3064,10 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
             # copies are one object here, so they cannot drift at
             # emission; seal-vs-receipt drift is checked post-run.
             "execution_identity": _identity_bundle,
+            # Temporal schema (B) cross-binding plan->seal: the seal names
+            # the up-front plan sha at top level (the verbatim plan rides
+            # in isolation.grading_plan); the receipt re-checks both.
+            "grading_plan_sha256": _grading_plan_sha,
         }
         seal["seal_sha256"] = hashlib.sha256(
             (json.dumps({k: v for k, v in seal.items()
@@ -3228,6 +3261,23 @@ def grade_a13_legs(*, seal, outdir, taskdir):
         _a13_canon_json(_receipt_ledger)).hexdigest()
     _grading_attest = {"checker_sha256": _grade_checker,
                        "executed_at_monotonic": _grade_mono}
+    # Temporal schema (B): the grading RESULT, written only after
+    # execution (post-region, strictly after region close). Distinct name
+    # from the up-front grading_plan; carries the grading-phase ledger
+    # under its own distinct name (host_grading_ledger: grading-role
+    # entries only) and binds both the plan and the seal it grades.
+    _seal_plan = dict((_seal_isolation.get("grading_plan") or {}))
+    _grading_ledger_sha = hashlib.sha256(
+        _a13_canon_json(_grading_ledger)).hexdigest()
+    _grading_result = {
+        "grading_result_schema": "a13-grading-result-v1",
+        "checker_sha256": _grade_checker,
+        "executed_at_monotonic": _grade_mono,
+        "host_grading_ledger": list(_grading_ledger),
+        "host_grading_ledger_sha256": _grading_ledger_sha,
+        "grading_plan_sha256": seal.get("grading_plan_sha256"),
+        "seal_sha256": seal.get("seal_sha256"),
+    }
     grading = {
         "grading_schema": "a13-grading-v1",
         "seal_sha256": seal.get("seal_sha256"),
@@ -3236,6 +3286,8 @@ def grade_a13_legs(*, seal, outdir, taskdir):
                  for leg in ("on", "off-noop", "pass-through")},
         "checker_sha256": _grade_checker,
         "executed_at_monotonic": _grade_mono,
+        "grading_plan_sha256": seal.get("grading_plan_sha256"),
+        "host_grading_ledger_sha256": _grading_ledger_sha,
     }
     grading_path = os.path.join(outdir, "A13-GRADING.json")
     with open(grading_path, "w") as _f:
@@ -3300,6 +3352,20 @@ def grade_a13_legs(*, seal, outdir, taskdir):
             "jail_launches": _isolation.get("jail_launches"),
             "host_process_ledger": _receipt_ledger,
             "host_ledger_sha256": _receipt_ledger_sha,
+            # Temporal schema (B): the verbatim up-front plan (rewriting
+            # it after execution refuses in the contract), the
+            # post-execution grading result under its distinct name, and
+            # the two ledgers under their distinct names -- the sealed
+            # execution-phase ledger (immutable copy) vs the
+            # grading-phase ledger (grading-role entries only).
+            "grading_plan": dict(_seal_plan),
+            "grading_result": dict(_grading_result),
+            "host_execution_ledger": list(
+                _isolation.get("host_execution_ledger") or []),
+            "host_execution_ledger_sha256": _isolation.get(
+                "host_execution_ledger_sha256"),
+            "host_grading_ledger": list(_grading_ledger),
+            "host_grading_ledger_sha256": _grading_ledger_sha,
             "process_journal": (_isolation.get("process_journal")),
             "grading": dict(_grading_attest),
             "execution_identity": _isolation.get("execution_identity"),
