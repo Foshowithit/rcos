@@ -917,7 +917,21 @@ def recompute_capability_bindings(arm_dir: Path, precommit: dict,
     precommit_leg_sha = (precommit.get("leg_binary_sha256") or "")
     precommit_allow = ((precommit.get("descriptor_allowlist") or {})
                        .get("allowlist_sha256") or "")
-    entry_sha = measurement.get("leg_binary_sha256") or pid.get("leg_binary_sha256")
+    # The identity ACTUALLY GRADED is the leg binary's bytes, so the checker
+    # re-hashes the binary itself.  Neither measurement.json nor the receipt carries
+    # a leg-binary hash -- only the precommit declares one -- so looking for the
+    # "graded" identity in those artifacts yielded None, the equality was
+    # None == None, and the term silently evaluated false on every run.  A join has
+    # to compare a DECLARED hash to a MEASURED one, not to another declaration.
+    leg_binary_path = Path(precommit.get("leg_binary") or "")
+    graded_leg_sha, leg_binary_measure_error = "", ""
+    if str(leg_binary_path) and leg_binary_path.exists():
+        try:
+            graded_leg_sha = sha256_of(leg_binary_path)
+        except OSError as exc:
+            leg_binary_measure_error = "%s: %s" % (type(exc).__name__, exc)
+    else:
+        leg_binary_measure_error = "leg binary not readable at %s" % leg_binary_path
     manifest_join = {
         "pre_manifest_present": bool(before_man),
         "post_manifest_present": bool(after_man),
@@ -926,15 +940,31 @@ def recompute_capability_bindings(arm_dir: Path, precommit: dict,
         "forward_link_valid": bool(recorded_link and recorded_link == actual_link),
         "precommit_leg_sha256": precommit_leg_sha,
         "precommit_allowlist_sha256": precommit_allow,
-        "graded_leg_sha256": entry_sha or "",
+        "leg_binary_path": str(leg_binary_path),
+        "graded_leg_sha256": graded_leg_sha,
+        "leg_binary_measure_error": leg_binary_measure_error,
+        # Fail-closed: an unmeasurable binary cannot reconcile, because "we could
+        # not read it" must not read the same as "it matched".
         "leg_identity_reconciled": bool(
-            precommit_leg_sha and entry_sha and precommit_leg_sha == entry_sha),
+            precommit_leg_sha and graded_leg_sha
+            and precommit_leg_sha == graded_leg_sha),
     }
     manifest_join["reconciled"] = bool(
         manifest_join["pre_manifest_present"]
         and manifest_join["post_manifest_present"]
         and manifest_join["forward_link_valid"]
-        and manifest_join["precommit_allowlist_sha256"])
+        and manifest_join["precommit_allowlist_sha256"]
+        # AND THE ACTUAL IDENTITY JOIN.  `leg_identity_reconciled` was computed
+        # above and then NOT included in this conjunction, so a substituted leg
+        # binary could set leg_identity_reconciled = false while
+        # pre_leg_authority_manifest_binding.reconciled stayed true -- and
+        # ALL_CAPABILITY_BINDINGS_RECONCILED with it.  The join the conjunct's name
+        # asserts ("precommit authority == the identity actually graded") was
+        # therefore evaluated and then discarded.  Computing a term and forgetting
+        # to AND it into the verdict is exactly the shape of defect that survived
+        # four rounds of reading the carrier, so it belongs in the conjunction
+        # rather than beside it.
+        and manifest_join["leg_identity_reconciled"])
 
     joins = {
         "policy_identity_binding": policy_join,
