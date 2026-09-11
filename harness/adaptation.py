@@ -1191,7 +1191,16 @@ def build_receipt(*, family, task, capability_id, determinant,
                      "grading": None,
                      "execution_identity": None,
                      "jail_config": None,
-                     "daemon_container_events": None}
+                     "daemon_container_events": None,
+                     # Temporal grading schema (B): the up-front plan,
+                     # the post-execution result, and the two distinctly
+                     # named ledger halves (execution vs grading).
+                     "grading_plan": None,
+                     "grading_result": None,
+                     "host_execution_ledger": None,
+                     "host_execution_ledger_sha256": None,
+                     "host_grading_ledger": None,
+                     "host_grading_ledger_sha256": None}
     if not isinstance(isolation, dict) or sorted(isolation) != sorted(
             ("captured_response_sha256", "cell_id",
              "provider_call_delta", "order_cell_delta",
@@ -1203,9 +1212,12 @@ def build_receipt(*, family, task, capability_id, determinant,
              "daemon_container_events", "jail_launches",
              "host_process_ledger", "host_ledger_sha256",
              "process_journal", "grading",
-             "execution_identity")):
+             "execution_identity",
+             "grading_plan", "grading_result",
+             "host_execution_ledger", "host_execution_ledger_sha256",
+             "host_grading_ledger", "host_grading_ledger_sha256")):
         raise ValueError("ADAPTATION-MALFORMED-ISOLATION isolation "
-                         "must carry exactly the twenty frozen slots "
+                         "must carry exactly the twenty-six frozen slots "
                          "(captured_response_sha256, cell_id, "
                          "provider_call_delta, order_cell_delta, "
                          "enclosing_cell_provider_call_total, "
@@ -1216,7 +1228,11 @@ def build_receipt(*, family, task, capability_id, determinant,
                          "jail_config, daemon_container_events, "
                          "jail_launches, host_process_ledger, "
                          "host_ledger_sha256, process_journal, grading, "
-                         "execution_identity)")
+                         "execution_identity, grading_plan, "
+                         "grading_result, host_execution_ledger, "
+                         "host_execution_ledger_sha256, "
+                         "host_grading_ledger, "
+                         "host_grading_ledger_sha256)")
     _require_sha64_or_none(isolation["captured_response_sha256"],
                            "isolation.captured_response_sha256")
     if isolation["cell_id"] is not None and not isinstance(
@@ -1238,13 +1254,15 @@ def build_receipt(*, family, task, capability_id, determinant,
                          "tripwire_first_event must be a string or "
                          "None (missing)")
     for _dkey in ("process_observer", "launch_records", "jail_config",
-                    "jail_launches", "grading", "execution_identity"):
+                    "jail_launches", "grading", "execution_identity",
+                    "grading_plan", "grading_result"):
         if isolation[_dkey] is not None and not isinstance(
                 isolation[_dkey], dict):
             raise ValueError(
                 f"ADAPTATION-MALFORMED-ISOLATION {_dkey} must be an "
                 "object or None (missing)")
-    for _lkey in ("host_process_ledger", "process_journal"):
+    for _lkey in ("host_process_ledger", "process_journal",
+                    "host_execution_ledger", "host_grading_ledger"):
         if isolation[_lkey] is not None and not isinstance(
                 isolation[_lkey], list):
             raise ValueError(
@@ -1252,6 +1270,10 @@ def build_receipt(*, family, task, capability_id, determinant,
                 "list or None (missing)")
     _require_sha64_or_none(isolation["host_ledger_sha256"],
                            "isolation.host_ledger_sha256")
+    _require_sha64_or_none(isolation["host_execution_ledger_sha256"],
+                           "isolation.host_execution_ledger_sha256")
+    _require_sha64_or_none(isolation["host_grading_ledger_sha256"],
+                           "isolation.host_grading_ledger_sha256")
     _require_sha64_or_none(isolation["process_journal_sha256"],
                            "isolation.process_journal_sha256")
     if isolation["process_journal_path"] is not None and not isinstance(
@@ -1438,6 +1460,14 @@ def build_receipt(*, family, task, capability_id, determinant,
             "host_ledger_sha256": isolation["host_ledger_sha256"],
             "process_journal": isolation["process_journal"],
             "grading": isolation["grading"],
+            "grading_plan": isolation["grading_plan"],
+            "grading_result": isolation["grading_result"],
+            "host_execution_ledger": isolation["host_execution_ledger"],
+            "host_execution_ledger_sha256": isolation[
+                "host_execution_ledger_sha256"],
+            "host_grading_ledger": isolation["host_grading_ledger"],
+            "host_grading_ledger_sha256": isolation[
+                "host_grading_ledger_sha256"],
             "execution_identity": isolation["execution_identity"],
             "jail_config": isolation["jail_config"],
             "daemon_container_events": isolation[
