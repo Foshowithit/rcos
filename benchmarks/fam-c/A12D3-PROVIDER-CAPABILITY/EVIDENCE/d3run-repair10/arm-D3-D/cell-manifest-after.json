@@ -1,0 +1,40 @@
+{
+  "cell_manifest_before_sha256": "56fe34fbebc8a5c282c5c81eb74697a0d37abb77aad584070abeb97dbe566644",
+  "manifest": {
+    "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+    "model_cell_count": 1,
+    "model_cell_count_declared": 1,
+    "model_cell_entries": [
+      {
+        "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+        "declared_count": 1,
+        "identity_present": true,
+        "kind": "model",
+        "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+        "size": 16728,
+        "st_dev": 66306,
+        "st_ino": 11620487
+      }
+    ],
+    "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+    "order_cell_count": 0,
+    "order_cell_count_declared": 0,
+    "order_cell_entries": [
+      {
+        "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+        "declared_count": 0,
+        "identity_present": true,
+        "kind": "order",
+        "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+        "size": 16424,
+        "st_dev": 66306,
+        "st_ino": 11620488
+      }
+    ],
+    "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+    "undeclared_cell_artifacts": [],
+    "undeclared_cell_count": 0
+  },
+  "phase": "POST_LEG_COMPLETION",
+  "wall": 1789164299.7460833
+}

@@ -1,0 +1,9 @@
+{
+  "allow_dispatch": true,
+  "authorized_attempt_limit": 2,
+  "f1b_limit_elevation": {
+    "prior_authorized_attempt_limit": 1,
+    "why": "F1b is a full-traverse falsifier; at the frozen limit of 1 the gate answers BLOCKED_ATTEMPT_LIMIT and never reaches the mock, which would make the 'full traverse' claim false."
+  },
+  "provider_endpoint_identity": "d3-provider-endpoint"
+}

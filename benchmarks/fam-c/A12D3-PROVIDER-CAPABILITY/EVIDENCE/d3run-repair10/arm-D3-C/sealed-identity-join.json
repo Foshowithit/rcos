@@ -1,0 +1,79 @@
+{
+  "derivation": "recomputed from sealed identity + per-leg receipts",
+  "expected_captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+  "expected_leg_count": 3,
+  "join_key": "captured_response_sha256 == point_of_use_sha256",
+  "leg_count": 3,
+  "legs": [
+    {
+      "bytes_consumed": 346,
+      "claim_matches_observation": true,
+      "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "leg": "ADAPTER_ONLY_PASS_THROUGH",
+      "matches_captured_response": true,
+      "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "proof": "decoded_actual_consumed_bytes",
+      "provider_calls": 0
+    },
+    {
+      "bytes_consumed": 346,
+      "claim_matches_observation": true,
+      "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "leg": "OFF_NOOP",
+      "matches_captured_response": true,
+      "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "proof": "decoded_actual_consumed_bytes",
+      "provider_calls": 0
+    },
+    {
+      "bytes_consumed": 346,
+      "claim_matches_observation": true,
+      "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "leg": "ON",
+      "matches_captured_response": true,
+      "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "proof": "decoded_actual_consumed_bytes",
+      "provider_calls": 0
+    }
+  ],
+  "legs_consumed_sealed_response": true,
+  "legs_missing_receipt": [],
+  "legs_with_mismatched_point_of_use": [],
+  "no_response_substitution": true,
+  "offender_identity": "ON",
+  "offender_injection": "direct-network-attempt",
+  "per_leg": {
+    "ADAPTER_ONLY_PASS_THROUGH": {
+      "bytes_consumed": 346,
+      "claim_matches_observation": true,
+      "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "leg": "ADAPTER_ONLY_PASS_THROUGH",
+      "matches_captured_response": true,
+      "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "proof": "decoded_actual_consumed_bytes",
+      "provider_calls": 0
+    },
+    "OFF_NOOP": {
+      "bytes_consumed": 346,
+      "claim_matches_observation": true,
+      "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "leg": "OFF_NOOP",
+      "matches_captured_response": true,
+      "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "proof": "decoded_actual_consumed_bytes",
+      "provider_calls": 0
+    },
+    "ON": {
+      "bytes_consumed": 346,
+      "claim_matches_observation": true,
+      "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "leg": "ON",
+      "matches_captured_response": true,
+      "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+      "proof": "decoded_actual_consumed_bytes",
+      "provider_calls": 0
+    }
+  },
+  "point_of_use_hash_valid": true,
+  "same_captured_response_bound_to_all_legs": true
+}

@@ -1,0 +1,1 @@
+{"allow_dispatch": true, "authorized_attempt_limit": 1, "gate_identity": "d3-provider-gate", "gate_policy_sha256": "", "provider_endpoint_identity": "d3-provider-endpoint", "role": "PROVIDER_GATE", "socket": "/tmp/d3gen/d3run-repair10/arm-D3-E/provider-gate.sock"}

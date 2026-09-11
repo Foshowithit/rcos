@@ -1,0 +1,11 @@
+{
+  "arm": "D3-C",
+  "frozen_before": "launch",
+  "leg_binary": "d3-leg-on-net",
+  "leg_binary_sha256": "fa8ed58b11124c3a05a98ed51cac2ae7bcbe6858667b42f324dd02db5d315f35",
+  "predicted_failure_code": "PROVIDER_CAPABILITY_ATTEMPT",
+  "predicted_predicate_holds": false,
+  "predicted_verdict": "FAIL",
+  "prediction_wall": 1789164274.9290717,
+  "role": "ON"
+}

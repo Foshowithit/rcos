@@ -1,0 +1,391 @@
+{
+  "arm": "D3-B",
+  "legs": [
+    {
+      "binary": "d3-leg-on-prov",
+      "binary_sha256": "cbab9edef597845759e3d668ae50bf2a4fa265eedf42d6da971c210e76b9dd05",
+      "descriptors": {
+        "canonical_set": [
+          {
+            "fd": 0,
+            "identity": "STDIO:0",
+            "kind": "STDIO"
+          },
+          {
+            "fd": 1,
+            "identity": "STDIO:1",
+            "kind": "STDIO"
+          },
+          {
+            "fd": 2,
+            "identity": "STDIO:2",
+            "kind": "STDIO"
+          },
+          {
+            "fd": 3,
+            "identity": "AF_UNIX:inode=100844217",
+            "kind": "SOCKET"
+          }
+        ],
+        "descriptor_count": 4,
+        "descriptors": [
+          {
+            "fd": 0,
+            "identity": "STDIO:0",
+            "kind": "STDIO",
+            "link_target": "/dev/null",
+            "resolution": [
+              "stdio_excluded_from_business_identity"
+            ]
+          },
+          {
+            "fd": 1,
+            "identity": "STDIO:1",
+            "kind": "STDIO",
+            "link_target": "pipe:[100848350]",
+            "resolution": [
+              "stdio_excluded_from_business_identity"
+            ]
+          },
+          {
+            "fd": 2,
+            "identity": "STDIO:2",
+            "kind": "STDIO",
+            "link_target": "pipe:[100848351]",
+            "resolution": [
+              "stdio_excluded_from_business_identity"
+            ]
+          },
+          {
+            "fd": 3,
+            "fdinfo": [
+              "pos:\t0",
+              "flags:\t02",
+              "mnt_id:\t12",
+              "ino:\t100844217",
+              "scm_fds: 0"
+            ],
+            "fdinfo_available": true,
+            "fdinfo_sha256": "2d73e6fe6715fc834c6e4da78e382440ed157caefa74d7bb2216d0d8843e5c1b",
+            "identity": "AF_UNIX:inode=100844217",
+            "kind": "SOCKET",
+            "link_target": "socket:[100844217]",
+            "local_path": null,
+            "peer_inode": null,
+            "peer_path": null,
+            "resolution": [
+              "link_target_socket_inode",
+              "resolved_via_inode_only"
+            ],
+            "socket_inode": "100844217",
+            "unix_table_inode_present": false,
+            "unix_table_source": "/proc/net/unix"
+          }
+        ],
+        "measured": true,
+        "measured_set_sha256": "a73a4bcb32acfde4c34587cb60734aadd71406ed7c26a9c71a825d36bdd1aa70",
+        "measurement_source": "external_proc_fd_readlink",
+        "measurement_wall": 1789164260.6852987,
+        "non_stdio_descriptors": [
+          {
+            "fd": 3,
+            "fdinfo": [
+              "pos:\t0",
+              "flags:\t02",
+              "mnt_id:\t12",
+              "ino:\t100844217",
+              "scm_fds: 0"
+            ],
+            "fdinfo_available": true,
+            "fdinfo_sha256": "2d73e6fe6715fc834c6e4da78e382440ed157caefa74d7bb2216d0d8843e5c1b",
+            "identity": "AF_UNIX:inode=100844217",
+            "kind": "SOCKET",
+            "link_target": "socket:[100844217]",
+            "local_path": null,
+            "peer_inode": null,
+            "peer_path": null,
+            "resolution": [
+              "link_target_socket_inode",
+              "resolved_via_inode_only"
+            ],
+            "socket_inode": "100844217",
+            "unix_table_inode_present": false,
+            "unix_table_source": "/proc/net/unix"
+          }
+        ],
+        "pid": 2185865,
+        "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+        "target_identity": {
+          "alive": true,
+          "comm": "d3-leg-on-prov",
+          "exe": "/tmp/d3gen/build-audit2/d3-leg-on-prov",
+          "pid": 2185865,
+          "readable": true,
+          "starttime_ticks": 33419568,
+          "state": "S"
+        },
+        "target_mismatches": [],
+        "target_verified": true
+      },
+      "hold": {
+        "blocked": true,
+        "observed": {
+          "state": "S (sleeping)",
+          "wall": 1789164260.6816375,
+          "wchan": "sigsuspend"
+        },
+        "waited_seconds": 0.00011754035949707031
+      },
+      "identity": "ON",
+      "injection": "inherited-provider-socket",
+      "pid": 2185865,
+      "seccomp": {
+        "activation_evidenced_by_kernel": true,
+        "at_least_one_filter_attached": true,
+        "evidence_source": "kernel_reported_proc_status",
+        "filter_mode_active": true,
+        "no_new_privs": true,
+        "no_new_privs_raw": "1",
+        "seccomp_filter_count": 1,
+        "seccomp_filters_raw": "1",
+        "seccomp_mode": 2,
+        "seccomp_mode_name": "FILTER",
+        "seccomp_raw": "2",
+        "status_raw_available": true,
+        "status_raw_sha256": "0463a9fba774b4298f0e382eb06dbfe076ddda85778a99412042dda61116a248",
+        "target_identity": {
+          "alive": true,
+          "comm": "d3-leg-on-prov",
+          "exe": "/tmp/d3gen/build-audit2/d3-leg-on-prov",
+          "pid": 2185865,
+          "readable": true,
+          "starttime_ticks": 33419568,
+          "state": "S"
+        },
+        "target_mismatches": [],
+        "target_verified": true
+      }
+    },
+    {
+      "binary": "d3-leg-off",
+      "binary_sha256": "798173c83f708f71c03b31ca90f00a808a960904c7bc334ea5da105bfb63a0a2",
+      "descriptors": {
+        "canonical_set": [
+          {
+            "fd": 0,
+            "identity": "STDIO:0",
+            "kind": "STDIO"
+          },
+          {
+            "fd": 1,
+            "identity": "STDIO:1",
+            "kind": "STDIO"
+          },
+          {
+            "fd": 2,
+            "identity": "STDIO:2",
+            "kind": "STDIO"
+          }
+        ],
+        "descriptor_count": 3,
+        "descriptors": [
+          {
+            "fd": 0,
+            "identity": "STDIO:0",
+            "kind": "STDIO",
+            "link_target": "/dev/null",
+            "resolution": [
+              "stdio_excluded_from_business_identity"
+            ]
+          },
+          {
+            "fd": 1,
+            "identity": "STDIO:1",
+            "kind": "STDIO",
+            "link_target": "pipe:[100848350]",
+            "resolution": [
+              "stdio_excluded_from_business_identity"
+            ]
+          },
+          {
+            "fd": 2,
+            "identity": "STDIO:2",
+            "kind": "STDIO",
+            "link_target": "pipe:[100848351]",
+            "resolution": [
+              "stdio_excluded_from_business_identity"
+            ]
+          }
+        ],
+        "measured": true,
+        "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+        "measurement_source": "external_proc_fd_readlink",
+        "measurement_wall": 1789164260.6855736,
+        "non_stdio_descriptors": [],
+        "pid": 2185866,
+        "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+        "target_identity": {
+          "alive": true,
+          "comm": "d3-leg-off",
+          "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+          "pid": 2185866,
+          "readable": true,
+          "starttime_ticks": 33419568,
+          "state": "S"
+        },
+        "target_mismatches": [],
+        "target_verified": true
+      },
+      "hold": {
+        "blocked": true,
+        "observed": {
+          "state": "S (sleeping)",
+          "wall": 1789164260.685432,
+          "wchan": "sigsuspend"
+        },
+        "waited_seconds": 7.534027099609375e-05
+      },
+      "identity": "OFF_NOOP",
+      "injection": "none",
+      "pid": 2185866,
+      "seccomp": {
+        "activation_evidenced_by_kernel": true,
+        "at_least_one_filter_attached": true,
+        "evidence_source": "kernel_reported_proc_status",
+        "filter_mode_active": true,
+        "no_new_privs": true,
+        "no_new_privs_raw": "1",
+        "seccomp_filter_count": 1,
+        "seccomp_filters_raw": "1",
+        "seccomp_mode": 2,
+        "seccomp_mode_name": "FILTER",
+        "seccomp_raw": "2",
+        "status_raw_available": true,
+        "status_raw_sha256": "2f5bbc7349c2f56c0f82179c490716febb4e7b96270ba17000473e6739ad01fb",
+        "target_identity": {
+          "alive": true,
+          "comm": "d3-leg-off",
+          "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+          "pid": 2185866,
+          "readable": true,
+          "starttime_ticks": 33419568,
+          "state": "S"
+        },
+        "target_mismatches": [],
+        "target_verified": true
+      }
+    },
+    {
+      "binary": "d3-leg-adapt",
+      "binary_sha256": "0f6f89e96b65125f2be35a0a5ecc624a43b2b3ff3c08cfbc9b31a5f0dc7e97da",
+      "descriptors": {
+        "canonical_set": [
+          {
+            "fd": 0,
+            "identity": "STDIO:0",
+            "kind": "STDIO"
+          },
+          {
+            "fd": 1,
+            "identity": "STDIO:1",
+            "kind": "STDIO"
+          },
+          {
+            "fd": 2,
+            "identity": "STDIO:2",
+            "kind": "STDIO"
+          }
+        ],
+        "descriptor_count": 3,
+        "descriptors": [
+          {
+            "fd": 0,
+            "identity": "STDIO:0",
+            "kind": "STDIO",
+            "link_target": "/dev/null",
+            "resolution": [
+              "stdio_excluded_from_business_identity"
+            ]
+          },
+          {
+            "fd": 1,
+            "identity": "STDIO:1",
+            "kind": "STDIO",
+            "link_target": "pipe:[100848350]",
+            "resolution": [
+              "stdio_excluded_from_business_identity"
+            ]
+          },
+          {
+            "fd": 2,
+            "identity": "STDIO:2",
+            "kind": "STDIO",
+            "link_target": "pipe:[100848351]",
+            "resolution": [
+              "stdio_excluded_from_business_identity"
+            ]
+          }
+        ],
+        "measured": true,
+        "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+        "measurement_source": "external_proc_fd_readlink",
+        "measurement_wall": 1789164260.6857986,
+        "non_stdio_descriptors": [],
+        "pid": 2185867,
+        "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+        "target_identity": {
+          "alive": true,
+          "comm": "d3-leg-adapt",
+          "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+          "pid": 2185867,
+          "readable": true,
+          "starttime_ticks": 33419568,
+          "state": "S"
+        },
+        "target_mismatches": [],
+        "target_verified": true
+      },
+      "hold": {
+        "blocked": true,
+        "observed": {
+          "state": "S (sleeping)",
+          "wall": 1789164260.6856742,
+          "wchan": "sigsuspend"
+        },
+        "waited_seconds": 6.079673767089844e-05
+      },
+      "identity": "ADAPTER_ONLY_PASS_THROUGH",
+      "injection": "none",
+      "pid": 2185867,
+      "seccomp": {
+        "activation_evidenced_by_kernel": true,
+        "at_least_one_filter_attached": true,
+        "evidence_source": "kernel_reported_proc_status",
+        "filter_mode_active": true,
+        "no_new_privs": true,
+        "no_new_privs_raw": "1",
+        "seccomp_filter_count": 1,
+        "seccomp_filters_raw": "1",
+        "seccomp_mode": 2,
+        "seccomp_mode_name": "FILTER",
+        "seccomp_raw": "2",
+        "status_raw_available": true,
+        "status_raw_sha256": "68d087721d06ca695218060bb6d6e2f2a12a461ca140a699a310248a4d2cc2d7",
+        "target_identity": {
+          "alive": true,
+          "comm": "d3-leg-adapt",
+          "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+          "pid": 2185867,
+          "readable": true,
+          "starttime_ticks": 33419568,
+          "state": "S"
+        },
+        "target_mismatches": [],
+        "target_verified": true
+      }
+    }
+  ],
+  "measured_wall": 1789164260.6859543,
+  "offender_identity": "ON",
+  "offender_injection": "inherited-provider-socket"
+}

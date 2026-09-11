@@ -1,0 +1,11 @@
+{
+  "arm": "D3-E",
+  "frozen_before": "launch",
+  "leg_binary": "d3-leg-on-brok",
+  "leg_binary_sha256": "8825a9c9842b27e1fa74d1f462f0d9873ee315a8273358faaf6ed286eddd7ff4",
+  "predicted_failure_code": "PROVIDER_BROKER_REACHABLE",
+  "predicted_predicate_holds": false,
+  "predicted_verdict": "FAIL",
+  "prediction_wall": 1789164303.3656878,
+  "role": "ON"
+}

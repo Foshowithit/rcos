@@ -1,0 +1,84 @@
+{
+  "arm": "D3-E",
+  "declared_expected_identities": [
+    "broker_channel"
+  ],
+  "descriptor_allowlist": {
+    "allowlist_bytes": 41,
+    "allowlist_entries": [],
+    "allowlist_entry_count": 0,
+    "allowlist_sha256": "bacc3b3d45a9a5ef064d0497c2f63a45116dd51cd8f44b2b30e60927c44b909e",
+    "permitted_channel_fds": []
+  },
+  "expectation": {
+    "expected_failure_code": "PROVIDER_BROKER_REACHABLE",
+    "predicate_should_hold": false
+  },
+  "harness_version": "D3_COUNTERFACTUAL_PROVIDER_CAPABILITY_CONTROLS_v1.0",
+  "leg_binary": "/tmp/d3gen/build-audit2/d3-leg-on-brok",
+  "leg_binary_bytes": 21912,
+  "leg_binary_sha256": "8825a9c9842b27e1fa74d1f462f0d9873ee315a8273358faaf6ed286eddd7ff4",
+  "policy": {
+    "denied_errno": 13,
+    "denied_syscall_numbers": [
+      41,
+      42,
+      43,
+      44,
+      46,
+      49,
+      50,
+      53,
+      56,
+      57,
+      58,
+      59,
+      288,
+      322,
+      435
+    ],
+    "denied_syscalls": [
+      "socket",
+      "socketpair",
+      "connect",
+      "bind",
+      "listen",
+      "accept",
+      "accept4",
+      "sendto",
+      "sendmsg",
+      "fork",
+      "vfork",
+      "clone",
+      "clone3",
+      "execve",
+      "execveat"
+    ],
+    "filter_bytes_match": true,
+    "filter_bytes_sha256_on_disk": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+    "filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+    "instruction_count": 21,
+    "kill_actions_used": false,
+    "policy_bytes_sha256_on_disk": "98c21329a3507f78dacf1492c66f95cc5191317211cd549d7ee8aa5a7074cad5",
+    "policy_sha256": "98c21329a3507f78dacf1492c66f95cc5191317211cd549d7ee8aa5a7074cad5",
+    "spec_bytes_match": true
+  },
+  "precommit_wall": 1789164303.3659146,
+  "prediction_sha256": "34fcc3c70760c9f14e871dde46c0b18a019d1e6cbfcb00870d3c0bb0ffb9d5b3",
+  "role": "ON",
+  "sequence_forbidden": [
+    "LEG_PROCESS_START",
+    "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+    "BUSINESS_LOGIC_RELEASED",
+    "DENIAL_POLICY_INSTALLED"
+  ],
+  "sequence_required": [
+    "LEG_PROCESS_START",
+    "DENIAL_POLICY_INSTALLED",
+    "ENTRY_BARRIER_REACHED",
+    "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+    "POLICY_ACTIVATION_EVIDENCED",
+    "DESCRIPTOR_ALLOWLIST_RECONCILED",
+    "BUSINESS_LOGIC_RELEASED"
+  ]
+}

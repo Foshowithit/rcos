@@ -1,0 +1,11 @@
+{
+  "arm": "D3-A",
+  "frozen_before": "launch",
+  "leg_binary": "d3-leg-on",
+  "leg_binary_sha256": "d623f1468db109791e57e4d87132eb9f20de6f53a8557739ea715335010fb62e",
+  "predicted_failure_code": "NONE",
+  "predicted_predicate_holds": true,
+  "predicted_verdict": "PASS",
+  "prediction_wall": 1789164246.4260612,
+  "role": "none"
+}

@@ -1,0 +1,31 @@
+{
+  "audit_copy_role": "retained_evidence_copy_NOT_the_handoff",
+  "bound_wall": 1789164289.1678617,
+  "captured_from": "exclusive_gate_dispatch",
+  "captured_response_bytes": 346,
+  "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+  "captured_responses": 1,
+  "cell_id": "d3-cell-D3-D",
+  "d2_authority": "a12d2_single_captured_response_controls.py",
+  "handoff_delivery": "PATH_because_systemd_run_drops_inherited_fds",
+  "handoff_kind": "sealed_memfd_descriptor_family",
+  "handoff_path": "/tmp/d3gen/d3run-repair10/arm-D3-D/response/sealed-response.b64",
+  "identity_join_key": "captured_response_sha256 == point_of_use_sha256",
+  "leg_identities": [
+    "ON",
+    "OFF_NOOP",
+    "ADAPTER_ONLY_PASS_THROUGH"
+  ],
+  "live_source_seal": "PATH_BACKED_NOT_KERNEL_SEALABLE",
+  "provider_opportunities_made": 1,
+  "response_snapshot_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+  "reuse": "D2 capture+seal semantics reused; D3 captures nothing new",
+  "seal_flags": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+  "seal_strong_hash_family": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+  "sealed_audit_copy": "/tmp/d3gen/d3run-repair10/arm-D3-D/response/sealed-response.b64",
+  "sealed_handoff_write_probe": "EPERM_kernel_seal_confirmed",
+  "sealed_memfd_bytes": 346,
+  "sealed_reread_matches": true,
+  "sealed_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+  "version": "D3_D2_SEALED_IDENTITY_REUSE_v1.0"
+}

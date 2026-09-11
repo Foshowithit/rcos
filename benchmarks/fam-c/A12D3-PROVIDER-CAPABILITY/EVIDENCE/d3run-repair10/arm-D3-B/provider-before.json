@@ -1,0 +1,55 @@
+{
+  "counts": {
+    "attempts": {
+      "bytes": 372,
+      "exists": true,
+      "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-attempts.jsonl",
+      "records": 1,
+      "unparsable": 0
+    },
+    "dispatches": {
+      "bytes": 372,
+      "exists": true,
+      "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-dispatches.jsonl",
+      "records": 1,
+      "unparsable": 0
+    },
+    "receives": {
+      "bytes": 530,
+      "exists": true,
+      "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/mock-receives.jsonl",
+      "records": 1,
+      "unparsable": 0
+    }
+  },
+  "falsifier_arm": false,
+  "opportunity": {
+    "request_bytes": 161,
+    "request_bytes_sha256": "4a13ed96676b328da0edd369a42cafb03e2b9846f8f9c51b4e7d591b8a1c5d41",
+    "response_bytes": 347,
+    "response_head": "{\"attempt_id\": \"cell-attempt-1\", \"body\": \"D2-CAPTURED-RESPONSE|request_id=cell-request-1|attempt=cell-attempt-1|origin=g",
+    "response_sha256": "fed9ee3377e2611378538b26d10675a7ccef55bcff495e730ff8cfb6cc50fc5b"
+  },
+  "sealed_ledger_prefix": {
+    "attempts": {
+      "sealed_bytes": 372,
+      "sealed_path": "d1-prefix-attempts.jsonl",
+      "sealed_sha256": "43783a8be93c09269fc1544800a41054f7ff5d99aee12403c4fcac3fdc07679e",
+      "shorter_than_a_full_record": false
+    },
+    "dispatches": {
+      "sealed_bytes": 372,
+      "sealed_path": "d1-prefix-dispatches.jsonl",
+      "sealed_sha256": "6c9c4899ed9411dbe3801bad0e1b9bcdfab89731f082bb5bbe9ec1b6331a9c99",
+      "shorter_than_a_full_record": false
+    },
+    "receives": {
+      "sealed_bytes": 530,
+      "sealed_path": "d1-prefix-receives.jsonl",
+      "sealed_sha256": "3e6371d72f72cc34c826f8797942c71448812730f9e217453b8e925269b7b4df",
+      "shorter_than_a_full_record": false
+    }
+  },
+  "snapshot_sha256": "f6394060906df0802535090d7d5d09d7d1c5fddd696c7ed97b34611bef8bcb75",
+  "wall": 1789164260.517601
+}

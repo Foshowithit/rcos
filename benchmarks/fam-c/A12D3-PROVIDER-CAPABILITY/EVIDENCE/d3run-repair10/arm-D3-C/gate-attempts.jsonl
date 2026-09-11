@@ -1,0 +1,1 @@
+{"attempt_id": "cell-attempt-1", "authorized": true, "gate_identity": "d3-provider-gate", "path": "provider_path", "peer_pid": 2183904, "peer_tgid": 2183904, "provider_endpoint_identity": "d3-provider-endpoint", "received_wall": 1789164274.6040673, "request_bytes_sha256": "bb24820ded56e1e5df15aeb647e6d7375e3e21f05ceac863574f3f6bcfc8b40a", "request_id": "cell-request-1"}

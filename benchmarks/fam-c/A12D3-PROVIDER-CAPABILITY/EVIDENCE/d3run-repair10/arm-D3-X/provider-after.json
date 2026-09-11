@@ -1,0 +1,284 @@
+{
+  "conjunct_value": true,
+  "counts": {
+    "attempts": {
+      "bytes": 372,
+      "exists": true,
+      "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-attempts.jsonl",
+      "records": 1,
+      "unparsable": 0
+    },
+    "dispatches": {
+      "bytes": 372,
+      "exists": true,
+      "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-dispatches.jsonl",
+      "records": 1,
+      "unparsable": 0
+    },
+    "receives": {
+      "bytes": 530,
+      "exists": true,
+      "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/mock-receives.jsonl",
+      "records": 1,
+      "unparsable": 0
+    }
+  },
+  "delta": {
+    "attempts": 0,
+    "dispatches": 0,
+    "receives": 0
+  },
+  "f1_byte_authority": {
+    "note": "F1's and F1b's states are sealed as BYTES so the checker derives both deltas from bytes rather than from any number this summary states.",
+    "post_f1_seal": {
+      "attempts": {
+        "sealed_bytes": 805,
+        "sealed_path": "d1-f1-final-attempts.jsonl",
+        "sealed_sha256": "7e60199af9e0b83e2efc84171460fcbf1421efd136cd1cc443db45ae11c8b62a"
+      },
+      "dispatches": {
+        "sealed_bytes": 372,
+        "sealed_path": "d1-f1-final-dispatches.jsonl",
+        "sealed_sha256": "f855d0df2478321b112c669199361ceab3864ef67b3c421fe5f28b898758f837"
+      },
+      "receives": {
+        "sealed_bytes": 530,
+        "sealed_path": "d1-f1-final-receives.jsonl",
+        "sealed_sha256": "ef8d904604f4f133f4b28ad41c9a653345077f32794f752eea06f65eb5ee3c8a"
+      }
+    },
+    "post_f1b_seal": {
+      "attempts": {
+        "sealed_bytes": 1179,
+        "sealed_path": "d1-f1b-final-attempts.jsonl",
+        "sealed_sha256": "a922f6eca7cde063a041c8bc3e23fbca3006303dea7e75e47f0994dd977b0ded"
+      },
+      "dispatches": {
+        "sealed_bytes": 680,
+        "sealed_path": "d1-f1b-final-dispatches.jsonl",
+        "sealed_sha256": "d429eeab859524c3f0d209c27127265e44e49920e7f71d999f6afa94a8ae96ea"
+      },
+      "receives": {
+        "sealed_bytes": 530,
+        "sealed_path": "d1-f1b-final-receives.jsonl",
+        "sealed_sha256": "ef8d904604f4f133f4b28ad41c9a653345077f32794f752eea06f65eb5ee3c8a"
+      }
+    },
+    "pre_leg_seal": {
+      "attempts": {
+        "sealed_bytes": 372,
+        "sealed_path": "d1-prefix-attempts.jsonl",
+        "sealed_sha256": "f5af4e9f01ffa10521123ae39ae9b56e7e68fe314570a819d415c7ef93fc1a11"
+      },
+      "dispatches": {
+        "sealed_bytes": 372,
+        "sealed_path": "d1-prefix-dispatches.jsonl",
+        "sealed_sha256": "f855d0df2478321b112c669199361ceab3864ef67b3c421fe5f28b898758f837"
+      },
+      "receives": {
+        "sealed_bytes": 530,
+        "sealed_path": "d1-prefix-receives.jsonl",
+        "sealed_sha256": "ef8d904604f4f133f4b28ad41c9a653345077f32794f752eea06f65eb5ee3c8a"
+      }
+    }
+  },
+  "f1_delta_observed": {
+    "attempts": 1,
+    "dispatches": 0,
+    "receives": 0
+  },
+  "f1_frozen_shape_required": {
+    "attempts": 1,
+    "dispatches": 0,
+    "receives": 0
+  },
+  "falsifier_injection": {
+    "attempted": true,
+    "contract_bearing_falsifier": "F1",
+    "counts_after_injection": {
+      "attempts": {
+        "bytes": 805,
+        "exists": true,
+        "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-attempts.jsonl",
+        "records": 2,
+        "unparsable": 0
+      },
+      "dispatches": {
+        "bytes": 372,
+        "exists": true,
+        "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-dispatches.jsonl",
+        "records": 1,
+        "unparsable": 0
+      },
+      "receives": {
+        "bytes": 530,
+        "exists": true,
+        "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/mock-receives.jsonl",
+        "records": 1,
+        "unparsable": 0
+      }
+    },
+    "delta_after_injection": {
+      "attempts": 1,
+      "dispatches": 0,
+      "receives": 0
+    },
+    "frozen_shape_matches": true,
+    "frozen_shape_observed": {
+      "attempts": 1,
+      "dispatches": 0,
+      "receives": 0
+    },
+    "frozen_shape_required": {
+      "attempts": 1,
+      "dispatches": 0,
+      "receives": 0
+    },
+    "injected_attempt": {
+      "attempt_record": {
+        "attempt_id": "f1-injected-attempt-2",
+        "authorized": false,
+        "falsifier": "F1_EXTRA_GATE_ATTEMPT_NO_SECOND_DISPATCH",
+        "gate_identity": "d3-provider-gate",
+        "path": "provider_path",
+        "peer_pid": 0,
+        "peer_tgid": 0,
+        "provider_endpoint_identity": "d3-provider-endpoint",
+        "received_wall": 1789164317.9705153,
+        "request_bytes_sha256": "75189a5af99084d9d103fb8f15edc36be7de4d4af3995c8d3a62118f608a8ce1",
+        "request_id": "f1-injected-request-2"
+      },
+      "attempts_delta": 1,
+      "authorized_attempt_limit": 1,
+      "dispatches_delta": 0,
+      "dispatches_written": 0,
+      "falsifier": "F1",
+      "gate_identity": "d3-provider-gate",
+      "injection_point": "during_leg_window_after_before_snapshot",
+      "note": "F1 is an attempt-only injection; no dispatch record is written, so the gate ledger stays at its declared shape while the attempt ledger grows by exactly one.",
+      "receives_delta": 0
+    },
+    "injection_point": "leg_alive_at_entry_barrier_after_before_snapshot",
+    "ok": true,
+    "supplemental_falsifier": {
+      "attempted": true,
+      "baseline": "state_after_F1",
+      "baseline_counts": {
+        "attempts": {
+          "bytes": 805,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-attempts.jsonl",
+          "records": 2,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "byte_authority": {
+        "baseline_seal": "d1-f1-final-<name>.jsonl",
+        "post_seal": {
+          "attempts": {
+            "sealed_bytes": 1179,
+            "sealed_path": "d1-f1b-final-attempts.jsonl",
+            "sealed_sha256": "a922f6eca7cde063a041c8bc3e23fbca3006303dea7e75e47f0994dd977b0ded"
+          },
+          "dispatches": {
+            "sealed_bytes": 680,
+            "sealed_path": "d1-f1b-final-dispatches.jsonl",
+            "sealed_sha256": "d429eeab859524c3f0d209c27127265e44e49920e7f71d999f6afa94a8ae96ea"
+          },
+          "receives": {
+            "sealed_bytes": 530,
+            "sealed_path": "d1-f1b-final-receives.jsonl",
+            "sealed_sha256": "ef8d904604f4f133f4b28ad41c9a653345077f32794f752eea06f65eb5ee3c8a"
+          }
+        }
+      },
+      "contract_bearing": false,
+      "counts_after": {
+        "attempts": {
+          "bytes": 1179,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-attempts.jsonl",
+          "records": 3,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 680,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-dispatches.jsonl",
+          "records": 2,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "delta_from_F1_baseline": {
+        "attempts": 1,
+        "dispatches": 1,
+        "receives": 0
+      },
+      "expected_full_traverse_delta": {
+        "attempts": 1,
+        "dispatches": 1,
+        "receives": 1
+      },
+      "gate_response_head": "{\"outcome\":\"BLOCKED_ATTEMPT_LIMIT\"}\n",
+      "injection": {
+        "falsifier": "F1b",
+        "injection_point": "during_leg_window_after_before_snapshot",
+        "policy_limit_elevated_to": 2,
+        "policy_limit_prior": 1,
+        "request_bytes": 170,
+        "request_bytes_sha256": "91398d75f84f37dad2d24dce75cb4647f858249a906eecff6f7be65092cfafd8",
+        "response_bytes": 36,
+        "response_head": "{\"outcome\":\"BLOCKED_ATTEMPT_LIMIT\"}\n",
+        "response_sha256": "cb5ef9fd897ed2ebe6b06adb4ee242a14affc5ae99487382b1e9bf530da373a4"
+      },
+      "is_full_traverse": false,
+      "name": "F1b_EXTRA_DISPATCH_FULL_TRAVERSE",
+      "ok": true,
+      "reached_mock": false,
+      "shortfall_reason": "gate answered BLOCKED_ATTEMPT_LIMIT at the frozen authorized_attempt_limit, so the extra attempt was recorded and a blocked dispatch row written, but no mock receive occurred; the full traverse is therefore partial"
+    }
+  },
+  "sealed_ledger_prefix": {
+    "attempts": {
+      "prefix_is_exact_prefix_of_final": true,
+      "sealed_bytes": 372,
+      "sealed_path": "d1-prefix-attempts.jsonl",
+      "sealed_sha256": "f5af4e9f01ffa10521123ae39ae9b56e7e68fe314570a819d415c7ef93fc1a11"
+    },
+    "dispatches": {
+      "prefix_is_exact_prefix_of_final": true,
+      "sealed_bytes": 372,
+      "sealed_path": "d1-prefix-dispatches.jsonl",
+      "sealed_sha256": "f855d0df2478321b112c669199361ceab3864ef67b3c421fe5f28b898758f837"
+    },
+    "receives": {
+      "prefix_is_exact_prefix_of_final": true,
+      "sealed_bytes": 530,
+      "sealed_path": "d1-prefix-receives.jsonl",
+      "sealed_sha256": "ef8d904604f4f133f4b28ad41c9a653345077f32794f752eea06f65eb5ee3c8a"
+    }
+  },
+  "snapshot_sha256": "f6394060906df0802535090d7d5d09d7d1c5fddd696c7ed97b34611bef8bcb75",
+  "wall": 1789164317.9704113
+}

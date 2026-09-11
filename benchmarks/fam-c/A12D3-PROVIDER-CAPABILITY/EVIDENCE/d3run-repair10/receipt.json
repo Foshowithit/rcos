@@ -1,0 +1,4999 @@
+{
+  "all_arms_meet_contract": true,
+  "arms": {
+    "D3-A": {
+      "activation_evidenced_by_kernel": true,
+      "all_denial_groups_denied": true,
+      "arm": "D3-A",
+      "arm_attempted_denied_ops": false,
+      "attempt_intent": "none",
+      "attempt_skipped": true,
+      "cell_artifacts": {
+        "cell_count_after": {
+          "model": 1,
+          "order": 0
+        },
+        "cell_count_before": {
+          "model": 1,
+          "order": 0
+        },
+        "cell_manifest_after": {
+          "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+          "model_cell_count": 1,
+          "model_cell_count_declared": 1,
+          "model_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+              "declared_count": 1,
+              "identity_present": true,
+              "kind": "model",
+              "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+              "size": 16728,
+              "st_dev": 66306,
+              "st_ino": 11620487
+            }
+          ],
+          "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+          "order_cell_count": 0,
+          "order_cell_count_declared": 0,
+          "order_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+              "declared_count": 0,
+              "identity_present": true,
+              "kind": "order",
+              "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+              "size": 16424,
+              "st_dev": 66306,
+              "st_ino": 11620488
+            }
+          ],
+          "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+          "undeclared_cell_artifacts": [],
+          "undeclared_cell_count": 0
+        },
+        "cell_manifest_before": {
+          "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+          "model_cell_count": 1,
+          "model_cell_count_declared": 1,
+          "model_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+              "declared_count": 1,
+              "identity_present": true,
+              "kind": "model",
+              "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+              "size": 16728,
+              "st_dev": 66306,
+              "st_ino": 11620487
+            }
+          ],
+          "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+          "order_cell_count": 0,
+          "order_cell_count_declared": 0,
+          "order_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+              "declared_count": 0,
+              "identity_present": true,
+              "kind": "order",
+              "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+              "size": 16424,
+              "st_dev": 66306,
+              "st_ino": 11620488
+            }
+          ],
+          "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+          "undeclared_cell_artifacts": [],
+          "undeclared_cell_count": 0
+        },
+        "cell_measurement_valid": true,
+        "counted_by": "executed model-cell report + filesystem enumeration; never ledger emptiness",
+        "model_cell_artifacts": [
+          "/tmp/d3gen/d3run-repair10/arm-D3-A/model-cell.markers.txt",
+          "/tmp/d3gen/d3run-repair10/arm-D3-A/model-cell.report.json"
+        ],
+        "model_cell_count": 2,
+        "model_cell_count_measured": 1,
+        "model_cell_count_unchanged": true,
+        "model_cell_identity_same": true,
+        "model_cell_run": {
+          "cell_bin": "/tmp/d3gen/build-audit2/d3-model-cell",
+          "error": null,
+          "ran": true,
+          "report": {
+            "cell": "model-cell",
+            "cell_id": "d3-cell-D3-A",
+            "cells_run": 1,
+            "leg_rc": 90,
+            "model_cell_reports": 1,
+            "order_cells_run": 0,
+            "provider_calls": 0,
+            "role": "clean",
+            "wall": 1789164256.952694
+          },
+          "report_present": true,
+          "report_sha256": "63616938a0ab4e61fb1588d7540bd05ff4ca9202a8c273d8628259bc7e2eb525",
+          "returncode": 90,
+          "spawn_target": "/tmp/d3gen/build-audit2/d3-leg-on",
+          "stderr_tail": ""
+        },
+        "order_cell_artifacts": [],
+        "order_cell_count": 0,
+        "order_cell_count_measured": 0,
+        "order_cell_count_unchanged": true,
+        "order_cell_identity_same": true
+      },
+      "conjuncts": {
+        "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+        "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+        "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+        "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+        "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+        "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_SET_MEASURED": true,
+        "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+        "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+        "ORDER_CELL_COUNT_UNCHANGED": true,
+        "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+      },
+      "denial_errnos": [
+        13
+      ],
+      "denied_event_count": 12,
+      "denied_syscalls": [
+        "clone",
+        "execve",
+        "socket",
+        "socketpair"
+      ],
+      "expectation_detail": {
+        "arm": "D3-A",
+        "control_ok": true,
+        "expected_reason": "NONE",
+        "expected_semantic_ok": true,
+        "known_arm": true,
+        "observed_reason": "NONE",
+        "observed_semantic_ok": true
+      },
+      "expectation_met": true,
+      "expected_failure_code": "NONE",
+      "expected_predicate_holds": true,
+      "failure_bound_signals": {},
+      "failure_code": "NONE",
+      "failure_kind": "CLEAN",
+      "falsified_conjuncts": [],
+      "forbidden_sequence_observed": false,
+      "holds": true,
+      "holds_denial_boundary": true,
+      "honest_legs": [
+        "ON",
+        "OFF_NOOP",
+        "ADAPTER_ONLY_PASS_THROUGH"
+      ],
+      "honest_legs_completed": true,
+      "kill_action_observed": false,
+      "leg_denial_errnos": [
+        13
+      ],
+      "leg_errno_matches_policy": true,
+      "leg_measurements": [
+        {
+          "binary": "d3-leg-on",
+          "binary_sha256": "d623f1468db109791e57e4d87132eb9f20de6f53a8557739ea715335010fb62e",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100837054]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100837055]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164246.5535917,
+            "non_stdio_descriptors": [],
+            "pid": 2184369,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-on",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-on",
+              "pid": 2184369,
+              "readable": true,
+              "starttime_ticks": 33418161,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164246.5533986,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 0.00012445449829101562
+          },
+          "identity": "ON",
+          "injection": "none",
+          "pid": 2184369,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "b4c5b407438ca28c3dec1779446fc18ae38a2b4147330fe5dec39c9cb1721720",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-on",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-on",
+              "pid": 2184369,
+              "readable": true,
+              "starttime_ticks": 33418161,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        },
+        {
+          "binary": "d3-leg-off",
+          "binary_sha256": "798173c83f708f71c03b31ca90f00a808a960904c7bc334ea5da105bfb63a0a2",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100837054]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100837055]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164246.5538514,
+            "non_stdio_descriptors": [],
+            "pid": 2184370,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-off",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+              "pid": 2184370,
+              "readable": true,
+              "starttime_ticks": 33418161,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164246.5537162,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 7.176399230957031e-05
+          },
+          "identity": "OFF_NOOP",
+          "injection": "none",
+          "pid": 2184370,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "da817f6353b755664ac1701dbbbf36dca210a68d719f161b2d48489b35f4a5f0",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-off",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+              "pid": 2184370,
+              "readable": true,
+              "starttime_ticks": 33418161,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        },
+        {
+          "binary": "d3-leg-adapt",
+          "binary_sha256": "0f6f89e96b65125f2be35a0a5ecc624a43b2b3ff3c08cfbc9b31a5f0dc7e97da",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100837054]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100837055]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164246.554091,
+            "non_stdio_descriptors": [],
+            "pid": 2184371,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-adapt",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+              "pid": 2184371,
+              "readable": true,
+              "starttime_ticks": 33418161,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164246.553958,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 6.580352783203125e-05
+          },
+          "identity": "ADAPTER_ONLY_PASS_THROUGH",
+          "injection": "none",
+          "pid": 2184371,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "6e7172a52a1f2a8f909c7bf75fac12fb51223a51c481c55e03e2cd2565026072",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-adapt",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+              "pid": 2184371,
+              "readable": true,
+              "starttime_ticks": 33418161,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        }
+      ],
+      "leg_plan": [
+        {
+          "binary": "d3-leg-on",
+          "identity": "ON",
+          "injection": "none"
+        },
+        {
+          "binary": "d3-leg-off",
+          "identity": "OFF_NOOP",
+          "injection": "none"
+        },
+        {
+          "binary": "d3-leg-adapt",
+          "identity": "ADAPTER_ONLY_PASS_THROUGH",
+          "injection": "none"
+        }
+      ],
+      "measured_non_stdio_identities": [],
+      "missing_conjuncts": [],
+      "offender_identity": null,
+      "offender_injection": "none",
+      "policy_denied_errno": 13,
+      "possession": {
+        "all_legs_reconciled": true,
+        "all_legs_target_verified": true,
+        "allowlist_identities": [],
+        "declared_identities": [],
+        "honest_legs": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "honest_legs_completed": true,
+        "honest_legs_joined": [
+          "ADAPTER_ONLY_PASS_THROUGH",
+          "OFF_NOOP",
+          "ON"
+        ],
+        "identities_match_precommit": true,
+        "legs_with_broker_endpoint": [],
+        "legs_with_provider_descriptor": [],
+        "measured_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "measured_leg_count": 3,
+        "offender_identity": null,
+        "offender_injection": "none",
+        "offender_legs": [],
+        "per_leg": {
+          "ADAPTER_ONLY_PASS_THROUGH": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "ADAPTER_ONLY_PASS_THROUGH",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          },
+          "OFF_NOOP": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "OFF_NOOP",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          },
+          "ON": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "ON",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          }
+        }
+      },
+      "predicate": {
+        "conjunct_order": [
+          "LEG_ENTRY_IDENTITIES_PRECOMMITTED",
+          "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED",
+          "LEG_DESCRIPTOR_SET_MEASURED",
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED",
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED",
+          "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY",
+          "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY",
+          "EXEC_DENIED_AFTER_LEG_ENTRY",
+          "KERNEL_DENIAL_POLICY_PRECOMMITTED",
+          "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE",
+          "HONEST_COUNTERFACTUAL_LEGS_COMPLETE",
+          "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO",
+          "TOTAL_MODEL_CELL_COUNT_UNCHANGED",
+          "ORDER_CELL_COUNT_UNCHANGED",
+          "ALL_CAPABILITY_BINDINGS_RECONCILED"
+        ],
+        "conjuncts": {
+          "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+          "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+          "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+          "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+          "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+          "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+          "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+          "LEG_DESCRIPTOR_SET_MEASURED": true,
+          "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+          "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+          "ORDER_CELL_COUNT_UNCHANGED": true,
+          "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+          "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+        },
+        "falsified_conjuncts": [],
+        "falsified_count": 0,
+        "missing_conjuncts": [],
+        "predicate": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED",
+        "predicate_text": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED := LEG_ENTRY_IDENTITIES_PRECOMMITTED AND LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED AND LEG_DESCRIPTOR_SET_MEASURED AND NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED AND NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED AND NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY AND PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY AND EXEC_DENIED_AFTER_LEG_ENTRY AND KERNEL_DENIAL_POLICY_PRECOMMITTED AND KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE AND HONEST_COUNTERFACTUAL_LEGS_COMPLETE AND D1_PROVIDER_OPPORTUNITY_DELTA_ZERO AND TOTAL_MODEL_CELL_COUNT_UNCHANGED AND ORDER_CELL_COUNT_UNCHANGED AND ALL_CAPABILITY_BINDINGS_RECONCILED",
+        "structural_defect": false,
+        "value": true
+      },
+      "provider_after": {
+        "attempts": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/gate-attempts.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "provider_before": {
+        "attempts": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/gate-attempts.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "provider_delta": {
+        "after": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_snapshot_sha256": "f6394060906df0802535090d7d5d09d7d1c5fddd696c7ed97b34611bef8bcb75",
+        "before": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_snapshot_sha256": "f6394060906df0802535090d7d5d09d7d1c5fddd696c7ed97b34611bef8bcb75",
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_zero": true,
+        "derivation": "after == before == 1/1/1 AND the before snapshot was non-vacuous (real D2 fixture wrote real records)",
+        "expected_after": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_before": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "ledgers_absent_or_empty_before": [],
+        "offending_records": [],
+        "vacuous_if_true_without_boundary_populated_before": true
+      },
+      "provider_delta_detail": {
+        "attempts": 0,
+        "dispatches": 0,
+        "receives": 0
+      },
+      "provider_delta_zero": true,
+      "role": "none",
+      "sealed_identity": {
+        "audit_copy_role": "retained_evidence_copy_NOT_the_handoff",
+        "bound_wall": 1789164246.4253223,
+        "captured_from": "exclusive_gate_dispatch",
+        "captured_response_bytes": 346,
+        "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "captured_responses": 1,
+        "cell_id": "d3-cell-D3-A",
+        "d2_authority": "a12d2_single_captured_response_controls.py",
+        "handoff_delivery": "PATH_because_systemd_run_drops_inherited_fds",
+        "handoff_kind": "sealed_memfd_descriptor_family",
+        "handoff_path": "/tmp/d3gen/d3run-repair10/arm-D3-A/response/sealed-response.b64",
+        "identity_join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "live_source_seal": "PATH_BACKED_NOT_KERNEL_SEALABLE",
+        "provider_opportunities_made": 1,
+        "response_snapshot_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "reuse": "D2 capture+seal semantics reused; D3 captures nothing new",
+        "seal_flags": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+        "seal_strong_hash_family": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+        "sealed_audit_copy": "/tmp/d3gen/d3run-repair10/arm-D3-A/response/sealed-response.b64",
+        "sealed_handoff_write_probe": "EPERM_kernel_seal_confirmed",
+        "sealed_memfd_bytes": 346,
+        "sealed_reread_matches": true,
+        "sealed_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "version": "D3_D2_SEALED_IDENTITY_REUSE_v1.0"
+      },
+      "sealed_join": {
+        "derivation": "recomputed from sealed identity + per-leg receipts",
+        "expected_captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "expected_leg_count": 3,
+        "join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_count": 3,
+        "legs": [
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          }
+        ],
+        "legs_consumed_sealed_response": true,
+        "legs_missing_receipt": [],
+        "legs_with_mismatched_point_of_use": [],
+        "no_response_substitution": true,
+        "offender_identity": null,
+        "offender_injection": "none",
+        "per_leg": {
+          "ADAPTER_ONLY_PASS_THROUGH": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          "OFF_NOOP": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          "ON": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          }
+        },
+        "point_of_use_hash_valid": true,
+        "same_captured_response_bound_to_all_legs": true
+      },
+      "seccomp_filter_count": 1,
+      "seccomp_raw": "2",
+      "semantic_ok": true,
+      "structural_defect": false,
+      "target_verified": true,
+      "timeline": {
+        "complete": true,
+        "expected_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "forbidden_capability_window": null,
+        "forbidden_sequence_definition": [
+          "LEG_PROCESS_START",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "BUSINESS_LOGIC_RELEASED",
+          "DENIAL_POLICY_INSTALLED"
+        ],
+        "forbidden_sequence_observed": false,
+        "missing_steps": [],
+        "no_forbidden_capability_window": true,
+        "order_inversions": [],
+        "order_respected": true,
+        "ordered_steps": [
+          {
+            "step": "LEG_PROCESS_START",
+            "wall": 1789164246.470471
+          },
+          {
+            "step": "DENIAL_POLICY_INSTALLED",
+            "wall": 1789164246.4742305
+          },
+          {
+            "step": "ENTRY_BARRIER_REACHED",
+            "wall": 1789164246.474335
+          },
+          {
+            "step": "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+            "wall": 1789164246.5542653
+          },
+          {
+            "step": "POLICY_ACTIVATION_EVIDENCED",
+            "wall": 1789164246.5542653
+          },
+          {
+            "step": "DESCRIPTOR_ALLOWLIST_RECONCILED",
+            "wall": 1789164246.5542653
+          },
+          {
+            "step": "BUSINESS_LOGIC_RELEASED",
+            "wall": 1789164256.939939
+          }
+        ]
+      }
+    },
+    "D3-B": {
+      "activation_evidenced_by_kernel": true,
+      "all_denial_groups_denied": true,
+      "arm": "D3-B",
+      "arm_attempted_denied_ops": true,
+      "attempt_intent": "none",
+      "attempt_skipped": true,
+      "cell_artifacts": {
+        "cell_count_after": {
+          "model": 1,
+          "order": 0
+        },
+        "cell_count_before": {
+          "model": 1,
+          "order": 0
+        },
+        "cell_manifest_after": {
+          "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+          "model_cell_count": 1,
+          "model_cell_count_declared": 1,
+          "model_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+              "declared_count": 1,
+              "identity_present": true,
+              "kind": "model",
+              "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+              "size": 16728,
+              "st_dev": 66306,
+              "st_ino": 11620487
+            }
+          ],
+          "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+          "order_cell_count": 0,
+          "order_cell_count_declared": 0,
+          "order_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+              "declared_count": 0,
+              "identity_present": true,
+              "kind": "order",
+              "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+              "size": 16424,
+              "st_dev": 66306,
+              "st_ino": 11620488
+            }
+          ],
+          "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+          "undeclared_cell_artifacts": [],
+          "undeclared_cell_count": 0
+        },
+        "cell_manifest_before": {
+          "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+          "model_cell_count": 1,
+          "model_cell_count_declared": 1,
+          "model_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+              "declared_count": 1,
+              "identity_present": true,
+              "kind": "model",
+              "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+              "size": 16728,
+              "st_dev": 66306,
+              "st_ino": 11620487
+            }
+          ],
+          "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+          "order_cell_count": 0,
+          "order_cell_count_declared": 0,
+          "order_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+              "declared_count": 0,
+              "identity_present": true,
+              "kind": "order",
+              "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+              "size": 16424,
+              "st_dev": 66306,
+              "st_ino": 11620488
+            }
+          ],
+          "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+          "undeclared_cell_artifacts": [],
+          "undeclared_cell_count": 0
+        },
+        "cell_measurement_valid": true,
+        "counted_by": "executed model-cell report + filesystem enumeration; never ledger emptiness",
+        "model_cell_artifacts": [
+          "/tmp/d3gen/d3run-repair10/arm-D3-B/model-cell.markers.txt",
+          "/tmp/d3gen/d3run-repair10/arm-D3-B/model-cell.report.json"
+        ],
+        "model_cell_count": 2,
+        "model_cell_count_measured": 1,
+        "model_cell_count_unchanged": true,
+        "model_cell_identity_same": true,
+        "model_cell_run": {
+          "cell_bin": "/tmp/d3gen/build-audit2/d3-model-cell",
+          "error": null,
+          "ran": true,
+          "report": {
+            "cell": "model-cell",
+            "cell_id": "d3-cell-D3-B",
+            "cells_run": 1,
+            "leg_rc": 90,
+            "model_cell_reports": 1,
+            "order_cells_run": 0,
+            "provider_calls": 0,
+            "role": "clean",
+            "wall": 1789164271.225615
+          },
+          "report_present": true,
+          "report_sha256": "b7aa6d7e1530bf42c1e4df24eac5177dc43f089fcfc8c2fc388af93b4455c527",
+          "returncode": 90,
+          "spawn_target": "/tmp/d3gen/build-audit2/d3-leg-on",
+          "stderr_tail": ""
+        },
+        "order_cell_artifacts": [],
+        "order_cell_count": 0,
+        "order_cell_count_measured": 0,
+        "order_cell_count_unchanged": true,
+        "order_cell_identity_same": true
+      },
+      "conjuncts": {
+        "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+        "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+        "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+        "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+        "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+        "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_SET_MEASURED": true,
+        "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+        "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": false,
+        "ORDER_CELL_COUNT_UNCHANGED": true,
+        "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+      },
+      "denial_errnos": [
+        13
+      ],
+      "denied_event_count": 12,
+      "denied_syscalls": [
+        "clone",
+        "execve",
+        "socket",
+        "socketpair"
+      ],
+      "expectation_detail": {
+        "arm": "D3-B",
+        "control_ok": true,
+        "expected_reason": "PROVIDER_CAPABILITY_INHERITED",
+        "expected_semantic_ok": false,
+        "known_arm": true,
+        "observed_reason": "PROVIDER_CAPABILITY_INHERITED",
+        "observed_semantic_ok": false
+      },
+      "expectation_met": true,
+      "expected_failure_code": "PROVIDER_CAPABILITY_INHERITED",
+      "expected_predicate_holds": false,
+      "failure_bound_signals": {
+        "declared_but_unmeasured": [],
+        "legs_with_provider_descriptor": [
+          {
+            "declared_identity": "inherited_provider_socket",
+            "endpoint_identities": [
+              "AF_UNIX:inode=100844217"
+            ],
+            "leg_identity": "ON"
+          }
+        ],
+        "measured_non_stdio_identities": [
+          "AF_UNIX:inode=100844217"
+        ],
+        "undeclared_but_measured": [
+          "AF_UNIX:inode=100844217"
+        ]
+      },
+      "failure_code": "PROVIDER_CAPABILITY_INHERITED",
+      "failure_kind": "POSSESSION",
+      "falsified_conjuncts": [
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED"
+      ],
+      "forbidden_sequence_observed": false,
+      "holds": false,
+      "holds_denial_boundary": false,
+      "honest_legs": [
+        "OFF_NOOP",
+        "ADAPTER_ONLY_PASS_THROUGH"
+      ],
+      "honest_legs_completed": true,
+      "kill_action_observed": false,
+      "leg_denial_errnos": [
+        13
+      ],
+      "leg_errno_matches_policy": true,
+      "leg_measurements": [
+        {
+          "binary": "d3-leg-on-prov",
+          "binary_sha256": "cbab9edef597845759e3d668ae50bf2a4fa265eedf42d6da971c210e76b9dd05",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 3,
+                "identity": "AF_UNIX:inode=100844217",
+                "kind": "SOCKET"
+              }
+            ],
+            "descriptor_count": 4,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100848350]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100848351]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 3,
+                "fdinfo": [
+                  "pos:\t0",
+                  "flags:\t02",
+                  "mnt_id:\t12",
+                  "ino:\t100844217",
+                  "scm_fds: 0"
+                ],
+                "fdinfo_available": true,
+                "fdinfo_sha256": "2d73e6fe6715fc834c6e4da78e382440ed157caefa74d7bb2216d0d8843e5c1b",
+                "identity": "AF_UNIX:inode=100844217",
+                "kind": "SOCKET",
+                "link_target": "socket:[100844217]",
+                "local_path": null,
+                "peer_inode": null,
+                "peer_path": null,
+                "resolution": [
+                  "link_target_socket_inode",
+                  "resolved_via_inode_only"
+                ],
+                "socket_inode": "100844217",
+                "unix_table_inode_present": false,
+                "unix_table_source": "/proc/net/unix"
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "a73a4bcb32acfde4c34587cb60734aadd71406ed7c26a9c71a825d36bdd1aa70",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164260.6852987,
+            "non_stdio_descriptors": [
+              {
+                "fd": 3,
+                "fdinfo": [
+                  "pos:\t0",
+                  "flags:\t02",
+                  "mnt_id:\t12",
+                  "ino:\t100844217",
+                  "scm_fds: 0"
+                ],
+                "fdinfo_available": true,
+                "fdinfo_sha256": "2d73e6fe6715fc834c6e4da78e382440ed157caefa74d7bb2216d0d8843e5c1b",
+                "identity": "AF_UNIX:inode=100844217",
+                "kind": "SOCKET",
+                "link_target": "socket:[100844217]",
+                "local_path": null,
+                "peer_inode": null,
+                "peer_path": null,
+                "resolution": [
+                  "link_target_socket_inode",
+                  "resolved_via_inode_only"
+                ],
+                "socket_inode": "100844217",
+                "unix_table_inode_present": false,
+                "unix_table_source": "/proc/net/unix"
+              }
+            ],
+            "pid": 2185865,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-on-prov",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-on-prov",
+              "pid": 2185865,
+              "readable": true,
+              "starttime_ticks": 33419568,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164260.6816375,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 0.00011754035949707031
+          },
+          "identity": "ON",
+          "injection": "inherited-provider-socket",
+          "pid": 2185865,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "0463a9fba774b4298f0e382eb06dbfe076ddda85778a99412042dda61116a248",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-on-prov",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-on-prov",
+              "pid": 2185865,
+              "readable": true,
+              "starttime_ticks": 33419568,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        },
+        {
+          "binary": "d3-leg-off",
+          "binary_sha256": "798173c83f708f71c03b31ca90f00a808a960904c7bc334ea5da105bfb63a0a2",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100848350]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100848351]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164260.6855736,
+            "non_stdio_descriptors": [],
+            "pid": 2185866,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-off",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+              "pid": 2185866,
+              "readable": true,
+              "starttime_ticks": 33419568,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164260.685432,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 7.534027099609375e-05
+          },
+          "identity": "OFF_NOOP",
+          "injection": "none",
+          "pid": 2185866,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "2f5bbc7349c2f56c0f82179c490716febb4e7b96270ba17000473e6739ad01fb",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-off",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+              "pid": 2185866,
+              "readable": true,
+              "starttime_ticks": 33419568,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        },
+        {
+          "binary": "d3-leg-adapt",
+          "binary_sha256": "0f6f89e96b65125f2be35a0a5ecc624a43b2b3ff3c08cfbc9b31a5f0dc7e97da",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100848350]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100848351]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164260.6857986,
+            "non_stdio_descriptors": [],
+            "pid": 2185867,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-adapt",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+              "pid": 2185867,
+              "readable": true,
+              "starttime_ticks": 33419568,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164260.6856742,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 6.079673767089844e-05
+          },
+          "identity": "ADAPTER_ONLY_PASS_THROUGH",
+          "injection": "none",
+          "pid": 2185867,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "68d087721d06ca695218060bb6d6e2f2a12a461ca140a699a310248a4d2cc2d7",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-adapt",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+              "pid": 2185867,
+              "readable": true,
+              "starttime_ticks": 33419568,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        }
+      ],
+      "leg_plan": [
+        {
+          "binary": "d3-leg-on-prov",
+          "identity": "ON",
+          "injection": "inherited-provider-socket"
+        },
+        {
+          "binary": "d3-leg-off",
+          "identity": "OFF_NOOP",
+          "injection": "none"
+        },
+        {
+          "binary": "d3-leg-adapt",
+          "identity": "ADAPTER_ONLY_PASS_THROUGH",
+          "injection": "none"
+        }
+      ],
+      "measured_non_stdio_identities": [
+        "AF_UNIX:inode=100844217"
+      ],
+      "missing_conjuncts": [],
+      "offender_identity": "ON",
+      "offender_injection": "inherited-provider-socket",
+      "policy_denied_errno": 13,
+      "possession": {
+        "all_legs_reconciled": true,
+        "all_legs_target_verified": true,
+        "allowlist_identities": [],
+        "declared_identities": [
+          "inherited_provider_socket"
+        ],
+        "honest_legs": [
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "honest_legs_completed": true,
+        "honest_legs_joined": [
+          "ADAPTER_ONLY_PASS_THROUGH",
+          "OFF_NOOP"
+        ],
+        "identities_match_precommit": true,
+        "legs_with_broker_endpoint": [],
+        "legs_with_provider_descriptor": [
+          {
+            "declared_identity": "inherited_provider_socket",
+            "endpoint_identities": [
+              "AF_UNIX:inode=100844217"
+            ],
+            "leg_identity": "ON"
+          }
+        ],
+        "measured_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "measured_leg_count": 3,
+        "offender_identity": "ON",
+        "offender_injection": "inherited-provider-socket",
+        "offender_legs": [
+          "ON"
+        ],
+        "per_leg": {
+          "ADAPTER_ONLY_PASS_THROUGH": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "ADAPTER_ONLY_PASS_THROUGH",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          },
+          "OFF_NOOP": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "OFF_NOOP",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          },
+          "ON": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": true,
+            "endpoint_identities": [
+              "AF_UNIX:inode=100844217"
+            ],
+            "identity": "ON",
+            "injection": "inherited-provider-socket",
+            "is_offender": true,
+            "non_stdio_fd_count": 1
+          }
+        }
+      },
+      "predicate": {
+        "conjunct_order": [
+          "LEG_ENTRY_IDENTITIES_PRECOMMITTED",
+          "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED",
+          "LEG_DESCRIPTOR_SET_MEASURED",
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED",
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED",
+          "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY",
+          "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY",
+          "EXEC_DENIED_AFTER_LEG_ENTRY",
+          "KERNEL_DENIAL_POLICY_PRECOMMITTED",
+          "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE",
+          "HONEST_COUNTERFACTUAL_LEGS_COMPLETE",
+          "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO",
+          "TOTAL_MODEL_CELL_COUNT_UNCHANGED",
+          "ORDER_CELL_COUNT_UNCHANGED",
+          "ALL_CAPABILITY_BINDINGS_RECONCILED"
+        ],
+        "conjuncts": {
+          "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+          "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+          "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+          "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+          "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+          "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+          "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+          "LEG_DESCRIPTOR_SET_MEASURED": true,
+          "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+          "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": false,
+          "ORDER_CELL_COUNT_UNCHANGED": true,
+          "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+          "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+        },
+        "falsified_conjuncts": [
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED"
+        ],
+        "falsified_count": 1,
+        "missing_conjuncts": [],
+        "predicate": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED",
+        "predicate_text": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED := LEG_ENTRY_IDENTITIES_PRECOMMITTED AND LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED AND LEG_DESCRIPTOR_SET_MEASURED AND NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED AND NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED AND NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY AND PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY AND EXEC_DENIED_AFTER_LEG_ENTRY AND KERNEL_DENIAL_POLICY_PRECOMMITTED AND KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE AND HONEST_COUNTERFACTUAL_LEGS_COMPLETE AND D1_PROVIDER_OPPORTUNITY_DELTA_ZERO AND TOTAL_MODEL_CELL_COUNT_UNCHANGED AND ORDER_CELL_COUNT_UNCHANGED AND ALL_CAPABILITY_BINDINGS_RECONCILED",
+        "structural_defect": false,
+        "value": false
+      },
+      "provider_after": {
+        "attempts": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-attempts.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "provider_before": {
+        "attempts": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-attempts.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "provider_delta": {
+        "after": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_snapshot_sha256": "f6394060906df0802535090d7d5d09d7d1c5fddd696c7ed97b34611bef8bcb75",
+        "before": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_snapshot_sha256": "f6394060906df0802535090d7d5d09d7d1c5fddd696c7ed97b34611bef8bcb75",
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_zero": true,
+        "derivation": "after == before == 1/1/1 AND the before snapshot was non-vacuous (real D2 fixture wrote real records)",
+        "expected_after": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_before": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "ledgers_absent_or_empty_before": [],
+        "offending_records": [],
+        "vacuous_if_true_without_boundary_populated_before": true
+      },
+      "provider_delta_detail": {
+        "attempts": 0,
+        "dispatches": 0,
+        "receives": 0
+      },
+      "provider_delta_zero": true,
+      "role": "ON",
+      "sealed_identity": {
+        "audit_copy_role": "retained_evidence_copy_NOT_the_handoff",
+        "bound_wall": 1789164260.5186322,
+        "captured_from": "exclusive_gate_dispatch",
+        "captured_response_bytes": 346,
+        "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "captured_responses": 1,
+        "cell_id": "d3-cell-D3-B",
+        "d2_authority": "a12d2_single_captured_response_controls.py",
+        "handoff_delivery": "PATH_because_systemd_run_drops_inherited_fds",
+        "handoff_kind": "sealed_memfd_descriptor_family",
+        "handoff_path": "/tmp/d3gen/d3run-repair10/arm-D3-B/response/sealed-response.b64",
+        "identity_join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "live_source_seal": "PATH_BACKED_NOT_KERNEL_SEALABLE",
+        "provider_opportunities_made": 1,
+        "response_snapshot_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "reuse": "D2 capture+seal semantics reused; D3 captures nothing new",
+        "seal_flags": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+        "seal_strong_hash_family": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+        "sealed_audit_copy": "/tmp/d3gen/d3run-repair10/arm-D3-B/response/sealed-response.b64",
+        "sealed_handoff_write_probe": "EPERM_kernel_seal_confirmed",
+        "sealed_memfd_bytes": 346,
+        "sealed_reread_matches": true,
+        "sealed_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "version": "D3_D2_SEALED_IDENTITY_REUSE_v1.0"
+      },
+      "sealed_join": {
+        "derivation": "recomputed from sealed identity + per-leg receipts",
+        "expected_captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "expected_leg_count": 3,
+        "join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_count": 3,
+        "legs": [
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          }
+        ],
+        "legs_consumed_sealed_response": true,
+        "legs_missing_receipt": [],
+        "legs_with_mismatched_point_of_use": [],
+        "no_response_substitution": true,
+        "offender_identity": "ON",
+        "offender_injection": "inherited-provider-socket",
+        "per_leg": {
+          "ADAPTER_ONLY_PASS_THROUGH": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          "OFF_NOOP": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          "ON": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          }
+        },
+        "point_of_use_hash_valid": true,
+        "same_captured_response_bound_to_all_legs": true
+      },
+      "seccomp_filter_count": 1,
+      "seccomp_raw": "2",
+      "semantic_ok": false,
+      "structural_defect": false,
+      "target_verified": true,
+      "timeline": {
+        "complete": true,
+        "expected_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "forbidden_capability_window": null,
+        "forbidden_sequence_definition": [
+          "LEG_PROCESS_START",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "BUSINESS_LOGIC_RELEASED",
+          "DENIAL_POLICY_INSTALLED"
+        ],
+        "forbidden_sequence_observed": false,
+        "missing_steps": [],
+        "no_forbidden_capability_window": true,
+        "order_inversions": [],
+        "order_respected": true,
+        "ordered_steps": [
+          {
+            "step": "LEG_PROCESS_START",
+            "wall": 1789164260.541753
+          },
+          {
+            "step": "DENIAL_POLICY_INSTALLED",
+            "wall": 1789164260.5451245
+          },
+          {
+            "step": "ENTRY_BARRIER_REACHED",
+            "wall": 1789164260.5452218
+          },
+          {
+            "step": "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+            "wall": 1789164260.6859543
+          },
+          {
+            "step": "POLICY_ACTIVATION_EVIDENCED",
+            "wall": 1789164260.6859543
+          },
+          {
+            "step": "DESCRIPTOR_ALLOWLIST_RECONCILED",
+            "wall": 1789164260.6859543
+          },
+          {
+            "step": "BUSINESS_LOGIC_RELEASED",
+            "wall": 1789164271.2158582
+          }
+        ]
+      }
+    },
+    "D3-C": {
+      "activation_evidenced_by_kernel": true,
+      "all_denial_groups_denied": true,
+      "arm": "D3-C",
+      "arm_attempted_denied_ops": true,
+      "attempt_intent": "none",
+      "attempt_skipped": true,
+      "cell_artifacts": {
+        "cell_count_after": {
+          "model": 1,
+          "order": 0
+        },
+        "cell_count_before": {
+          "model": 1,
+          "order": 0
+        },
+        "cell_manifest_after": {
+          "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+          "model_cell_count": 1,
+          "model_cell_count_declared": 1,
+          "model_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+              "declared_count": 1,
+              "identity_present": true,
+              "kind": "model",
+              "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+              "size": 16728,
+              "st_dev": 66306,
+              "st_ino": 11620487
+            }
+          ],
+          "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+          "order_cell_count": 0,
+          "order_cell_count_declared": 0,
+          "order_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+              "declared_count": 0,
+              "identity_present": true,
+              "kind": "order",
+              "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+              "size": 16424,
+              "st_dev": 66306,
+              "st_ino": 11620488
+            }
+          ],
+          "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+          "undeclared_cell_artifacts": [],
+          "undeclared_cell_count": 0
+        },
+        "cell_manifest_before": {
+          "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+          "model_cell_count": 1,
+          "model_cell_count_declared": 1,
+          "model_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+              "declared_count": 1,
+              "identity_present": true,
+              "kind": "model",
+              "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+              "size": 16728,
+              "st_dev": 66306,
+              "st_ino": 11620487
+            }
+          ],
+          "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+          "order_cell_count": 0,
+          "order_cell_count_declared": 0,
+          "order_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+              "declared_count": 0,
+              "identity_present": true,
+              "kind": "order",
+              "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+              "size": 16424,
+              "st_dev": 66306,
+              "st_ino": 11620488
+            }
+          ],
+          "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+          "undeclared_cell_artifacts": [],
+          "undeclared_cell_count": 0
+        },
+        "cell_measurement_valid": true,
+        "counted_by": "executed model-cell report + filesystem enumeration; never ledger emptiness",
+        "model_cell_artifacts": [
+          "/tmp/d3gen/d3run-repair10/arm-D3-C/model-cell.markers.txt",
+          "/tmp/d3gen/d3run-repair10/arm-D3-C/model-cell.report.json"
+        ],
+        "model_cell_count": 2,
+        "model_cell_count_measured": 1,
+        "model_cell_count_unchanged": true,
+        "model_cell_identity_same": true,
+        "model_cell_run": {
+          "cell_bin": "/tmp/d3gen/build-audit2/d3-model-cell",
+          "error": null,
+          "ran": true,
+          "report": {
+            "cell": "model-cell",
+            "cell_id": "d3-cell-D3-C",
+            "cells_run": 1,
+            "leg_rc": 90,
+            "model_cell_reports": 1,
+            "order_cells_run": 0,
+            "provider_calls": 0,
+            "role": "clean",
+            "wall": 1789164285.512213
+          },
+          "report_present": true,
+          "report_sha256": "89d7ba46cb83fa866ac28f4c31d587b443e2011f7bb34fc31b2489b0ea8eafbe",
+          "returncode": 90,
+          "spawn_target": "/tmp/d3gen/build-audit2/d3-leg-on",
+          "stderr_tail": ""
+        },
+        "order_cell_artifacts": [],
+        "order_cell_count": 0,
+        "order_cell_count_measured": 0,
+        "order_cell_count_unchanged": true,
+        "order_cell_identity_same": true
+      },
+      "conjuncts": {
+        "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+        "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+        "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+        "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+        "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+        "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_SET_MEASURED": true,
+        "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+        "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+        "ORDER_CELL_COUNT_UNCHANGED": true,
+        "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+      },
+      "denial_errnos": [
+        13
+      ],
+      "denied_event_count": 12,
+      "denied_syscalls": [
+        "clone",
+        "execve",
+        "socket",
+        "socketpair"
+      ],
+      "expectation_detail": {
+        "arm": "D3-C",
+        "control_ok": true,
+        "expected_reason": "PROVIDER_CAPABILITY_ATTEMPT",
+        "expected_semantic_ok": false,
+        "known_arm": true,
+        "observed_reason": "PROVIDER_CAPABILITY_ATTEMPT",
+        "observed_semantic_ok": false
+      },
+      "expectation_met": true,
+      "expected_failure_code": "PROVIDER_CAPABILITY_ATTEMPT",
+      "expected_predicate_holds": false,
+      "failure_bound_signals": {
+        "attempt_intent": "none",
+        "denied_syscalls": [
+          "clone",
+          "execve",
+          "socket",
+          "socketpair"
+        ],
+        "leg_denial_errnos": [
+          13
+        ]
+      },
+      "failure_code": "PROVIDER_CAPABILITY_ATTEMPT",
+      "failure_kind": "ATTEMPTED_USE_DENIED",
+      "falsified_conjuncts": [],
+      "forbidden_sequence_observed": false,
+      "holds": true,
+      "holds_denial_boundary": true,
+      "honest_legs": [
+        "OFF_NOOP",
+        "ADAPTER_ONLY_PASS_THROUGH"
+      ],
+      "honest_legs_completed": true,
+      "kill_action_observed": false,
+      "leg_denial_errnos": [
+        13
+      ],
+      "leg_errno_matches_policy": true,
+      "leg_measurements": [
+        {
+          "binary": "d3-leg-on-net",
+          "binary_sha256": "fa8ed58b11124c3a05a98ed51cac2ae7bcbe6858667b42f324dd02db5d315f35",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100867469]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100867470]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164275.0895293,
+            "non_stdio_descriptors": [],
+            "pid": 2187562,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-on-net",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-on-net",
+              "pid": 2187562,
+              "readable": true,
+              "starttime_ticks": 33421009,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164275.0893517,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 0.00011563301086425781
+          },
+          "identity": "ON",
+          "injection": "direct-network-attempt",
+          "pid": 2187562,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "3ecd3c0102d17bacf8adee8e9fcf39af6a69580870b0444c5bc1bb1bb329e812",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-on-net",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-on-net",
+              "pid": 2187562,
+              "readable": true,
+              "starttime_ticks": 33421009,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        },
+        {
+          "binary": "d3-leg-off",
+          "binary_sha256": "798173c83f708f71c03b31ca90f00a808a960904c7bc334ea5da105bfb63a0a2",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100867469]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100867470]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164275.0897899,
+            "non_stdio_descriptors": [],
+            "pid": 2187563,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-off",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+              "pid": 2187563,
+              "readable": true,
+              "starttime_ticks": 33421009,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164275.089653,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 7.176399230957031e-05
+          },
+          "identity": "OFF_NOOP",
+          "injection": "none",
+          "pid": 2187563,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "d19e800069bc569e8b1c86510fd72b6ea871aef9f0797bb11adf50882871cb0a",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-off",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+              "pid": 2187563,
+              "readable": true,
+              "starttime_ticks": 33421009,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        },
+        {
+          "binary": "d3-leg-adapt",
+          "binary_sha256": "0f6f89e96b65125f2be35a0a5ecc624a43b2b3ff3c08cfbc9b31a5f0dc7e97da",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100867469]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100867470]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164275.0900342,
+            "non_stdio_descriptors": [],
+            "pid": 2187564,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-adapt",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+              "pid": 2187564,
+              "readable": true,
+              "starttime_ticks": 33421009,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164275.0899017,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 6.866455078125e-05
+          },
+          "identity": "ADAPTER_ONLY_PASS_THROUGH",
+          "injection": "none",
+          "pid": 2187564,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "5523533f987ee6760b2193bf9c71d886bbe252af85d10dff16bb577150af7c65",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-adapt",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+              "pid": 2187564,
+              "readable": true,
+              "starttime_ticks": 33421009,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        }
+      ],
+      "leg_plan": [
+        {
+          "binary": "d3-leg-on-net",
+          "identity": "ON",
+          "injection": "direct-network-attempt"
+        },
+        {
+          "binary": "d3-leg-off",
+          "identity": "OFF_NOOP",
+          "injection": "none"
+        },
+        {
+          "binary": "d3-leg-adapt",
+          "identity": "ADAPTER_ONLY_PASS_THROUGH",
+          "injection": "none"
+        }
+      ],
+      "measured_non_stdio_identities": [],
+      "missing_conjuncts": [],
+      "offender_identity": "ON",
+      "offender_injection": "direct-network-attempt",
+      "policy_denied_errno": 13,
+      "possession": {
+        "all_legs_reconciled": true,
+        "all_legs_target_verified": true,
+        "allowlist_identities": [],
+        "declared_identities": [],
+        "honest_legs": [
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "honest_legs_completed": true,
+        "honest_legs_joined": [
+          "ADAPTER_ONLY_PASS_THROUGH",
+          "OFF_NOOP"
+        ],
+        "identities_match_precommit": true,
+        "legs_with_broker_endpoint": [],
+        "legs_with_provider_descriptor": [],
+        "measured_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "measured_leg_count": 3,
+        "offender_identity": "ON",
+        "offender_injection": "direct-network-attempt",
+        "offender_legs": [
+          "ON"
+        ],
+        "per_leg": {
+          "ADAPTER_ONLY_PASS_THROUGH": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "ADAPTER_ONLY_PASS_THROUGH",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          },
+          "OFF_NOOP": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "OFF_NOOP",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          },
+          "ON": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "ON",
+            "injection": "direct-network-attempt",
+            "is_offender": true,
+            "non_stdio_fd_count": 0
+          }
+        }
+      },
+      "predicate": {
+        "conjunct_order": [
+          "LEG_ENTRY_IDENTITIES_PRECOMMITTED",
+          "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED",
+          "LEG_DESCRIPTOR_SET_MEASURED",
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED",
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED",
+          "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY",
+          "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY",
+          "EXEC_DENIED_AFTER_LEG_ENTRY",
+          "KERNEL_DENIAL_POLICY_PRECOMMITTED",
+          "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE",
+          "HONEST_COUNTERFACTUAL_LEGS_COMPLETE",
+          "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO",
+          "TOTAL_MODEL_CELL_COUNT_UNCHANGED",
+          "ORDER_CELL_COUNT_UNCHANGED",
+          "ALL_CAPABILITY_BINDINGS_RECONCILED"
+        ],
+        "conjuncts": {
+          "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+          "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+          "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+          "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+          "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+          "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+          "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+          "LEG_DESCRIPTOR_SET_MEASURED": true,
+          "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+          "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+          "ORDER_CELL_COUNT_UNCHANGED": true,
+          "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+          "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+        },
+        "falsified_conjuncts": [],
+        "falsified_count": 0,
+        "missing_conjuncts": [],
+        "predicate": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED",
+        "predicate_text": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED := LEG_ENTRY_IDENTITIES_PRECOMMITTED AND LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED AND LEG_DESCRIPTOR_SET_MEASURED AND NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED AND NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED AND NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY AND PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY AND EXEC_DENIED_AFTER_LEG_ENTRY AND KERNEL_DENIAL_POLICY_PRECOMMITTED AND KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE AND HONEST_COUNTERFACTUAL_LEGS_COMPLETE AND D1_PROVIDER_OPPORTUNITY_DELTA_ZERO AND TOTAL_MODEL_CELL_COUNT_UNCHANGED AND ORDER_CELL_COUNT_UNCHANGED AND ALL_CAPABILITY_BINDINGS_RECONCILED",
+        "structural_defect": false,
+        "value": true
+      },
+      "provider_after": {
+        "attempts": {
+          "bytes": 373,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/gate-attempts.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "provider_before": {
+        "attempts": {
+          "bytes": 373,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/gate-attempts.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "provider_delta": {
+        "after": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_snapshot_sha256": "9d0bfc496ee828897a8bdc9e28112707fa597a06ccbd9732c6492743870e8e06",
+        "before": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_snapshot_sha256": "9d0bfc496ee828897a8bdc9e28112707fa597a06ccbd9732c6492743870e8e06",
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_zero": true,
+        "derivation": "after == before == 1/1/1 AND the before snapshot was non-vacuous (real D2 fixture wrote real records)",
+        "expected_after": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_before": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "ledgers_absent_or_empty_before": [],
+        "offending_records": [],
+        "vacuous_if_true_without_boundary_populated_before": true
+      },
+      "provider_delta_detail": {
+        "attempts": 0,
+        "dispatches": 0,
+        "receives": 0
+      },
+      "provider_delta_zero": true,
+      "role": "ON",
+      "sealed_identity": {
+        "audit_copy_role": "retained_evidence_copy_NOT_the_handoff",
+        "bound_wall": 1789164274.9274242,
+        "captured_from": "exclusive_gate_dispatch",
+        "captured_response_bytes": 346,
+        "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "captured_responses": 1,
+        "cell_id": "d3-cell-D3-C",
+        "d2_authority": "a12d2_single_captured_response_controls.py",
+        "handoff_delivery": "PATH_because_systemd_run_drops_inherited_fds",
+        "handoff_kind": "sealed_memfd_descriptor_family",
+        "handoff_path": "/tmp/d3gen/d3run-repair10/arm-D3-C/response/sealed-response.b64",
+        "identity_join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "live_source_seal": "PATH_BACKED_NOT_KERNEL_SEALABLE",
+        "provider_opportunities_made": 1,
+        "response_snapshot_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "reuse": "D2 capture+seal semantics reused; D3 captures nothing new",
+        "seal_flags": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+        "seal_strong_hash_family": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+        "sealed_audit_copy": "/tmp/d3gen/d3run-repair10/arm-D3-C/response/sealed-response.b64",
+        "sealed_handoff_write_probe": "EPERM_kernel_seal_confirmed",
+        "sealed_memfd_bytes": 346,
+        "sealed_reread_matches": true,
+        "sealed_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "version": "D3_D2_SEALED_IDENTITY_REUSE_v1.0"
+      },
+      "sealed_join": {
+        "derivation": "recomputed from sealed identity + per-leg receipts",
+        "expected_captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "expected_leg_count": 3,
+        "join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_count": 3,
+        "legs": [
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          }
+        ],
+        "legs_consumed_sealed_response": true,
+        "legs_missing_receipt": [],
+        "legs_with_mismatched_point_of_use": [],
+        "no_response_substitution": true,
+        "offender_identity": "ON",
+        "offender_injection": "direct-network-attempt",
+        "per_leg": {
+          "ADAPTER_ONLY_PASS_THROUGH": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          "OFF_NOOP": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          "ON": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          }
+        },
+        "point_of_use_hash_valid": true,
+        "same_captured_response_bound_to_all_legs": true
+      },
+      "seccomp_filter_count": 1,
+      "seccomp_raw": "2",
+      "semantic_ok": false,
+      "structural_defect": false,
+      "target_verified": true,
+      "timeline": {
+        "complete": true,
+        "expected_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "forbidden_capability_window": null,
+        "forbidden_sequence_definition": [
+          "LEG_PROCESS_START",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "BUSINESS_LOGIC_RELEASED",
+          "DENIAL_POLICY_INSTALLED"
+        ],
+        "forbidden_sequence_observed": false,
+        "missing_steps": [],
+        "no_forbidden_capability_window": true,
+        "order_inversions": [],
+        "order_respected": true,
+        "ordered_steps": [
+          {
+            "step": "LEG_PROCESS_START",
+            "wall": 1789164274.948196
+          },
+          {
+            "step": "DENIAL_POLICY_INSTALLED",
+            "wall": 1789164274.9511664
+          },
+          {
+            "step": "ENTRY_BARRIER_REACHED",
+            "wall": 1789164274.9512923
+          },
+          {
+            "step": "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+            "wall": 1789164275.090231
+          },
+          {
+            "step": "POLICY_ACTIVATION_EVIDENCED",
+            "wall": 1789164275.090231
+          },
+          {
+            "step": "DESCRIPTOR_ALLOWLIST_RECONCILED",
+            "wall": 1789164275.090231
+          },
+          {
+            "step": "BUSINESS_LOGIC_RELEASED",
+            "wall": 1789164285.4971778
+          }
+        ]
+      }
+    },
+    "D3-D": {
+      "activation_evidenced_by_kernel": true,
+      "all_denial_groups_denied": true,
+      "arm": "D3-D",
+      "arm_attempted_denied_ops": true,
+      "attempt_intent": "none",
+      "attempt_skipped": true,
+      "cell_artifacts": {
+        "cell_count_after": {
+          "model": 1,
+          "order": 0
+        },
+        "cell_count_before": {
+          "model": 1,
+          "order": 0
+        },
+        "cell_manifest_after": {
+          "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+          "model_cell_count": 1,
+          "model_cell_count_declared": 1,
+          "model_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+              "declared_count": 1,
+              "identity_present": true,
+              "kind": "model",
+              "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+              "size": 16728,
+              "st_dev": 66306,
+              "st_ino": 11620487
+            }
+          ],
+          "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+          "order_cell_count": 0,
+          "order_cell_count_declared": 0,
+          "order_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+              "declared_count": 0,
+              "identity_present": true,
+              "kind": "order",
+              "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+              "size": 16424,
+              "st_dev": 66306,
+              "st_ino": 11620488
+            }
+          ],
+          "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+          "undeclared_cell_artifacts": [],
+          "undeclared_cell_count": 0
+        },
+        "cell_manifest_before": {
+          "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+          "model_cell_count": 1,
+          "model_cell_count_declared": 1,
+          "model_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+              "declared_count": 1,
+              "identity_present": true,
+              "kind": "model",
+              "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+              "size": 16728,
+              "st_dev": 66306,
+              "st_ino": 11620487
+            }
+          ],
+          "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+          "order_cell_count": 0,
+          "order_cell_count_declared": 0,
+          "order_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+              "declared_count": 0,
+              "identity_present": true,
+              "kind": "order",
+              "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+              "size": 16424,
+              "st_dev": 66306,
+              "st_ino": 11620488
+            }
+          ],
+          "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+          "undeclared_cell_artifacts": [],
+          "undeclared_cell_count": 0
+        },
+        "cell_measurement_valid": true,
+        "counted_by": "executed model-cell report + filesystem enumeration; never ledger emptiness",
+        "model_cell_artifacts": [
+          "/tmp/d3gen/d3run-repair10/arm-D3-D/model-cell.markers.txt",
+          "/tmp/d3gen/d3run-repair10/arm-D3-D/model-cell.report.json"
+        ],
+        "model_cell_count": 2,
+        "model_cell_count_measured": 1,
+        "model_cell_count_unchanged": true,
+        "model_cell_identity_same": true,
+        "model_cell_run": {
+          "cell_bin": "/tmp/d3gen/build-audit2/d3-model-cell",
+          "error": null,
+          "ran": true,
+          "report": {
+            "cell": "model-cell",
+            "cell_id": "d3-cell-D3-D",
+            "cells_run": 1,
+            "leg_rc": 90,
+            "model_cell_reports": 1,
+            "order_cells_run": 0,
+            "provider_calls": 0,
+            "role": "clean",
+            "wall": 1789164299.743251
+          },
+          "report_present": true,
+          "report_sha256": "dba5c952b73e614ad0179f2364a9fa68e8b658c931144eb3499c371ca6b7fba0",
+          "returncode": 90,
+          "spawn_target": "/tmp/d3gen/build-audit2/d3-leg-on",
+          "stderr_tail": ""
+        },
+        "order_cell_artifacts": [],
+        "order_cell_count": 0,
+        "order_cell_count_measured": 0,
+        "order_cell_count_unchanged": true,
+        "order_cell_identity_same": true
+      },
+      "conjuncts": {
+        "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+        "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+        "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+        "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+        "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+        "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_SET_MEASURED": true,
+        "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+        "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+        "ORDER_CELL_COUNT_UNCHANGED": true,
+        "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+      },
+      "denial_errnos": [
+        13
+      ],
+      "denied_event_count": 12,
+      "denied_syscalls": [
+        "clone",
+        "execve",
+        "socket",
+        "socketpair"
+      ],
+      "expectation_detail": {
+        "arm": "D3-D",
+        "control_ok": true,
+        "expected_reason": "PROVIDER_CAPABILITY_ATTEMPT",
+        "expected_semantic_ok": false,
+        "known_arm": true,
+        "observed_reason": "PROVIDER_CAPABILITY_ATTEMPT",
+        "observed_semantic_ok": false
+      },
+      "expectation_met": true,
+      "expected_failure_code": "PROVIDER_CAPABILITY_ATTEMPT",
+      "expected_predicate_holds": false,
+      "failure_bound_signals": {
+        "attempt_intent": "none",
+        "denied_syscalls": [
+          "clone",
+          "execve",
+          "socket",
+          "socketpair"
+        ],
+        "leg_denial_errnos": [
+          13
+        ]
+      },
+      "failure_code": "PROVIDER_CAPABILITY_ATTEMPT",
+      "failure_kind": "ATTEMPTED_USE_DENIED",
+      "falsified_conjuncts": [],
+      "forbidden_sequence_observed": false,
+      "holds": true,
+      "holds_denial_boundary": true,
+      "honest_legs": [
+        "OFF_NOOP",
+        "ADAPTER_ONLY_PASS_THROUGH"
+      ],
+      "honest_legs_completed": true,
+      "kill_action_observed": false,
+      "leg_denial_errnos": [
+        13
+      ],
+      "leg_errno_matches_policy": true,
+      "leg_measurements": [
+        {
+          "binary": "d3-leg-on-exec",
+          "binary_sha256": "0372dcd4346ea3c280409c7b8a66021ae15f29569fac9bbe4a1e75c084f0dca9",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100875082]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100875083]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164289.3109195,
+            "non_stdio_descriptors": [],
+            "pid": 2189260,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-on-exec",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-on-exec",
+              "pid": 2189260,
+              "readable": true,
+              "starttime_ticks": 33422438,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164289.3107414,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 0.00012540817260742188
+          },
+          "identity": "ON",
+          "injection": "process-exec-escape",
+          "pid": 2189260,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "ca993d92184d464f78e696c0bb0d7c44df6a873c28dd653b03a781cb3975937c",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-on-exec",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-on-exec",
+              "pid": 2189260,
+              "readable": true,
+              "starttime_ticks": 33422438,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        },
+        {
+          "binary": "d3-leg-off",
+          "binary_sha256": "798173c83f708f71c03b31ca90f00a808a960904c7bc334ea5da105bfb63a0a2",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100875082]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100875083]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164289.3111758,
+            "non_stdio_descriptors": [],
+            "pid": 2189261,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-off",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+              "pid": 2189261,
+              "readable": true,
+              "starttime_ticks": 33422438,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164289.3110404,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 7.176399230957031e-05
+          },
+          "identity": "OFF_NOOP",
+          "injection": "none",
+          "pid": 2189261,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "786cfac542422d89b46704b4ffd2bce7d69d34296983e595bed72cb14995d47a",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-off",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+              "pid": 2189261,
+              "readable": true,
+              "starttime_ticks": 33422438,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        },
+        {
+          "binary": "d3-leg-adapt",
+          "binary_sha256": "0f6f89e96b65125f2be35a0a5ecc624a43b2b3ff3c08cfbc9b31a5f0dc7e97da",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100875082]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100875083]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164289.3114107,
+            "non_stdio_descriptors": [],
+            "pid": 2189262,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-adapt",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+              "pid": 2189262,
+              "readable": true,
+              "starttime_ticks": 33422438,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164289.311282,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 6.556510925292969e-05
+          },
+          "identity": "ADAPTER_ONLY_PASS_THROUGH",
+          "injection": "none",
+          "pid": 2189262,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "bb2c7f188d76dfdbc38845570f8512333f00048e58bbac000d6e79e6faecd7f5",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-adapt",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+              "pid": 2189262,
+              "readable": true,
+              "starttime_ticks": 33422438,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        }
+      ],
+      "leg_plan": [
+        {
+          "binary": "d3-leg-on-exec",
+          "identity": "ON",
+          "injection": "process-exec-escape"
+        },
+        {
+          "binary": "d3-leg-off",
+          "identity": "OFF_NOOP",
+          "injection": "none"
+        },
+        {
+          "binary": "d3-leg-adapt",
+          "identity": "ADAPTER_ONLY_PASS_THROUGH",
+          "injection": "none"
+        }
+      ],
+      "measured_non_stdio_identities": [],
+      "missing_conjuncts": [],
+      "offender_identity": "ON",
+      "offender_injection": "process-exec-escape",
+      "policy_denied_errno": 13,
+      "possession": {
+        "all_legs_reconciled": true,
+        "all_legs_target_verified": true,
+        "allowlist_identities": [],
+        "declared_identities": [],
+        "honest_legs": [
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "honest_legs_completed": true,
+        "honest_legs_joined": [
+          "ADAPTER_ONLY_PASS_THROUGH",
+          "OFF_NOOP"
+        ],
+        "identities_match_precommit": true,
+        "legs_with_broker_endpoint": [],
+        "legs_with_provider_descriptor": [],
+        "measured_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "measured_leg_count": 3,
+        "offender_identity": "ON",
+        "offender_injection": "process-exec-escape",
+        "offender_legs": [
+          "ON"
+        ],
+        "per_leg": {
+          "ADAPTER_ONLY_PASS_THROUGH": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "ADAPTER_ONLY_PASS_THROUGH",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          },
+          "OFF_NOOP": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "OFF_NOOP",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          },
+          "ON": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "ON",
+            "injection": "process-exec-escape",
+            "is_offender": true,
+            "non_stdio_fd_count": 0
+          }
+        }
+      },
+      "predicate": {
+        "conjunct_order": [
+          "LEG_ENTRY_IDENTITIES_PRECOMMITTED",
+          "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED",
+          "LEG_DESCRIPTOR_SET_MEASURED",
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED",
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED",
+          "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY",
+          "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY",
+          "EXEC_DENIED_AFTER_LEG_ENTRY",
+          "KERNEL_DENIAL_POLICY_PRECOMMITTED",
+          "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE",
+          "HONEST_COUNTERFACTUAL_LEGS_COMPLETE",
+          "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO",
+          "TOTAL_MODEL_CELL_COUNT_UNCHANGED",
+          "ORDER_CELL_COUNT_UNCHANGED",
+          "ALL_CAPABILITY_BINDINGS_RECONCILED"
+        ],
+        "conjuncts": {
+          "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+          "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+          "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+          "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+          "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+          "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+          "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+          "LEG_DESCRIPTOR_SET_MEASURED": true,
+          "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+          "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+          "ORDER_CELL_COUNT_UNCHANGED": true,
+          "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+          "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+        },
+        "falsified_conjuncts": [],
+        "falsified_count": 0,
+        "missing_conjuncts": [],
+        "predicate": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED",
+        "predicate_text": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED := LEG_ENTRY_IDENTITIES_PRECOMMITTED AND LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED AND LEG_DESCRIPTOR_SET_MEASURED AND NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED AND NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED AND NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY AND PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY AND EXEC_DENIED_AFTER_LEG_ENTRY AND KERNEL_DENIAL_POLICY_PRECOMMITTED AND KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE AND HONEST_COUNTERFACTUAL_LEGS_COMPLETE AND D1_PROVIDER_OPPORTUNITY_DELTA_ZERO AND TOTAL_MODEL_CELL_COUNT_UNCHANGED AND ORDER_CELL_COUNT_UNCHANGED AND ALL_CAPABILITY_BINDINGS_RECONCILED",
+        "structural_defect": false,
+        "value": true
+      },
+      "provider_after": {
+        "attempts": {
+          "bytes": 373,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/gate-attempts.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "provider_before": {
+        "attempts": {
+          "bytes": 373,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/gate-attempts.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "provider_delta": {
+        "after": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_snapshot_sha256": "9d0bfc496ee828897a8bdc9e28112707fa597a06ccbd9732c6492743870e8e06",
+        "before": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_snapshot_sha256": "9d0bfc496ee828897a8bdc9e28112707fa597a06ccbd9732c6492743870e8e06",
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_zero": true,
+        "derivation": "after == before == 1/1/1 AND the before snapshot was non-vacuous (real D2 fixture wrote real records)",
+        "expected_after": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_before": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "ledgers_absent_or_empty_before": [],
+        "offending_records": [],
+        "vacuous_if_true_without_boundary_populated_before": true
+      },
+      "provider_delta_detail": {
+        "attempts": 0,
+        "dispatches": 0,
+        "receives": 0
+      },
+      "provider_delta_zero": true,
+      "role": "ON",
+      "sealed_identity": {
+        "audit_copy_role": "retained_evidence_copy_NOT_the_handoff",
+        "bound_wall": 1789164289.1678617,
+        "captured_from": "exclusive_gate_dispatch",
+        "captured_response_bytes": 346,
+        "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "captured_responses": 1,
+        "cell_id": "d3-cell-D3-D",
+        "d2_authority": "a12d2_single_captured_response_controls.py",
+        "handoff_delivery": "PATH_because_systemd_run_drops_inherited_fds",
+        "handoff_kind": "sealed_memfd_descriptor_family",
+        "handoff_path": "/tmp/d3gen/d3run-repair10/arm-D3-D/response/sealed-response.b64",
+        "identity_join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "live_source_seal": "PATH_BACKED_NOT_KERNEL_SEALABLE",
+        "provider_opportunities_made": 1,
+        "response_snapshot_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "reuse": "D2 capture+seal semantics reused; D3 captures nothing new",
+        "seal_flags": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+        "seal_strong_hash_family": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+        "sealed_audit_copy": "/tmp/d3gen/d3run-repair10/arm-D3-D/response/sealed-response.b64",
+        "sealed_handoff_write_probe": "EPERM_kernel_seal_confirmed",
+        "sealed_memfd_bytes": 346,
+        "sealed_reread_matches": true,
+        "sealed_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "version": "D3_D2_SEALED_IDENTITY_REUSE_v1.0"
+      },
+      "sealed_join": {
+        "derivation": "recomputed from sealed identity + per-leg receipts",
+        "expected_captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "expected_leg_count": 3,
+        "join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_count": 3,
+        "legs": [
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          }
+        ],
+        "legs_consumed_sealed_response": true,
+        "legs_missing_receipt": [],
+        "legs_with_mismatched_point_of_use": [],
+        "no_response_substitution": true,
+        "offender_identity": "ON",
+        "offender_injection": "process-exec-escape",
+        "per_leg": {
+          "ADAPTER_ONLY_PASS_THROUGH": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          "OFF_NOOP": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          "ON": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          }
+        },
+        "point_of_use_hash_valid": true,
+        "same_captured_response_bound_to_all_legs": true
+      },
+      "seccomp_filter_count": 1,
+      "seccomp_raw": "2",
+      "semantic_ok": false,
+      "structural_defect": false,
+      "target_verified": true,
+      "timeline": {
+        "complete": true,
+        "expected_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "forbidden_capability_window": null,
+        "forbidden_sequence_definition": [
+          "LEG_PROCESS_START",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "BUSINESS_LOGIC_RELEASED",
+          "DENIAL_POLICY_INSTALLED"
+        ],
+        "forbidden_sequence_observed": false,
+        "missing_steps": [],
+        "no_forbidden_capability_window": true,
+        "order_inversions": [],
+        "order_respected": true,
+        "ordered_steps": [
+          {
+            "step": "LEG_PROCESS_START",
+            "wall": 1789164289.241662
+          },
+          {
+            "step": "DENIAL_POLICY_INSTALLED",
+            "wall": 1789164289.2455873
+          },
+          {
+            "step": "ENTRY_BARRIER_REACHED",
+            "wall": 1789164289.2457042
+          },
+          {
+            "step": "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+            "wall": 1789164289.3115742
+          },
+          {
+            "step": "POLICY_ACTIVATION_EVIDENCED",
+            "wall": 1789164289.3115742
+          },
+          {
+            "step": "DESCRIPTOR_ALLOWLIST_RECONCILED",
+            "wall": 1789164289.3115742
+          },
+          {
+            "step": "BUSINESS_LOGIC_RELEASED",
+            "wall": 1789164299.703788
+          }
+        ]
+      }
+    },
+    "D3-E": {
+      "activation_evidenced_by_kernel": true,
+      "all_denial_groups_denied": true,
+      "arm": "D3-E",
+      "arm_attempted_denied_ops": true,
+      "attempt_intent": "none",
+      "attempt_skipped": true,
+      "cell_artifacts": {
+        "cell_count_after": {
+          "model": 1,
+          "order": 0
+        },
+        "cell_count_before": {
+          "model": 1,
+          "order": 0
+        },
+        "cell_manifest_after": {
+          "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+          "model_cell_count": 1,
+          "model_cell_count_declared": 1,
+          "model_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+              "declared_count": 1,
+              "identity_present": true,
+              "kind": "model",
+              "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+              "size": 16728,
+              "st_dev": 66306,
+              "st_ino": 11620487
+            }
+          ],
+          "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+          "order_cell_count": 0,
+          "order_cell_count_declared": 0,
+          "order_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+              "declared_count": 0,
+              "identity_present": true,
+              "kind": "order",
+              "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+              "size": 16424,
+              "st_dev": 66306,
+              "st_ino": 11620488
+            }
+          ],
+          "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+          "undeclared_cell_artifacts": [],
+          "undeclared_cell_count": 0
+        },
+        "cell_manifest_before": {
+          "counted_by": "declared cell identity + cell-binary st_dev/st_ino/sha256; undeclared cell artifacts enumerated separately; never inferred from the cell's own outputs",
+          "model_cell_count": 1,
+          "model_cell_count_declared": 1,
+          "model_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-model-cell",
+              "declared_count": 1,
+              "identity_present": true,
+              "kind": "model",
+              "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+              "size": 16728,
+              "st_dev": 66306,
+              "st_ino": 11620487
+            }
+          ],
+          "model_cell_identity_digest": "bbc5eb3386f5b7e27ae08e4c91a0fb3f98f35abdca01615cf9f0bbf5a41e379b",
+          "order_cell_count": 0,
+          "order_cell_count_declared": 0,
+          "order_cell_entries": [
+            {
+              "binary": "/tmp/d3gen/build-audit2/d3-order-cell",
+              "declared_count": 0,
+              "identity_present": true,
+              "kind": "order",
+              "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+              "size": 16424,
+              "st_dev": 66306,
+              "st_ino": 11620488
+            }
+          ],
+          "order_cell_identity_digest": "06ded42fd2a7238229b39bba72df4f97ba27680fae3405db524c75fa212eff77",
+          "undeclared_cell_artifacts": [],
+          "undeclared_cell_count": 0
+        },
+        "cell_measurement_valid": true,
+        "counted_by": "executed model-cell report + filesystem enumeration; never ledger emptiness",
+        "model_cell_artifacts": [
+          "/tmp/d3gen/d3run-repair10/arm-D3-E/model-cell.markers.txt",
+          "/tmp/d3gen/d3run-repair10/arm-D3-E/model-cell.report.json"
+        ],
+        "model_cell_count": 2,
+        "model_cell_count_measured": 1,
+        "model_cell_count_unchanged": true,
+        "model_cell_identity_same": true,
+        "model_cell_run": {
+          "cell_bin": "/tmp/d3gen/build-audit2/d3-model-cell",
+          "error": null,
+          "ran": true,
+          "report": {
+            "cell": "model-cell",
+            "cell_id": "d3-cell-D3-E",
+            "cells_run": 1,
+            "leg_rc": 90,
+            "model_cell_reports": 1,
+            "order_cells_run": 0,
+            "provider_calls": 0,
+            "role": "clean",
+            "wall": 1789164313.948625
+          },
+          "report_present": true,
+          "report_sha256": "e115238d553aab60e8b1d55893eb8557d95069b7eef9caeb3adcc26aef5cc2ba",
+          "returncode": 90,
+          "spawn_target": "/tmp/d3gen/build-audit2/d3-leg-on",
+          "stderr_tail": ""
+        },
+        "order_cell_artifacts": [],
+        "order_cell_count": 0,
+        "order_cell_count_measured": 0,
+        "order_cell_count_unchanged": true,
+        "order_cell_identity_same": true
+      },
+      "conjuncts": {
+        "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+        "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+        "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+        "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+        "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+        "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_SET_MEASURED": true,
+        "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+        "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": false,
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+        "ORDER_CELL_COUNT_UNCHANGED": true,
+        "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+      },
+      "denial_errnos": [
+        13
+      ],
+      "denied_event_count": 12,
+      "denied_syscalls": [
+        "clone",
+        "execve",
+        "socket",
+        "socketpair"
+      ],
+      "expectation_detail": {
+        "arm": "D3-E",
+        "control_ok": true,
+        "expected_reason": "PROVIDER_BROKER_REACHABLE",
+        "expected_semantic_ok": false,
+        "known_arm": true,
+        "observed_reason": "PROVIDER_BROKER_REACHABLE",
+        "observed_semantic_ok": false
+      },
+      "expectation_met": true,
+      "expected_failure_code": "PROVIDER_BROKER_REACHABLE",
+      "expected_predicate_holds": false,
+      "failure_bound_signals": {
+        "broker_channel_identities": [
+          "AF_UNIX:inode=100871619"
+        ],
+        "legs_with_broker_endpoint": [
+          {
+            "declared_identity": "broker_channel",
+            "endpoint_identities": [
+              "AF_UNIX:inode=100871619"
+            ],
+            "leg_identity": "ON"
+          }
+        ]
+      },
+      "failure_code": "PROVIDER_BROKER_REACHABLE",
+      "failure_kind": "POSSESSION_INDIRECT",
+      "falsified_conjuncts": [
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED"
+      ],
+      "forbidden_sequence_observed": false,
+      "holds": false,
+      "holds_denial_boundary": false,
+      "honest_legs": [
+        "OFF_NOOP",
+        "ADAPTER_ONLY_PASS_THROUGH"
+      ],
+      "honest_legs_completed": true,
+      "kill_action_observed": false,
+      "leg_denial_errnos": [
+        13
+      ],
+      "leg_errno_matches_policy": true,
+      "leg_measurements": [
+        {
+          "binary": "d3-leg-on-brok",
+          "binary_sha256": "8825a9c9842b27e1fa74d1f462f0d9873ee315a8273358faaf6ed286eddd7ff4",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 3,
+                "identity": "AF_UNIX:inode=100871619",
+                "kind": "SOCKET"
+              }
+            ],
+            "descriptor_count": 4,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100895861]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100895862]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 3,
+                "fdinfo": [
+                  "pos:\t0",
+                  "flags:\t02",
+                  "mnt_id:\t12",
+                  "ino:\t100871619",
+                  "scm_fds: 0"
+                ],
+                "fdinfo_available": true,
+                "fdinfo_sha256": "01595111ac9bc89559660e8bd74055fa515c2759b1a7140362b4c208d0548c5f",
+                "identity": "AF_UNIX:inode=100871619",
+                "kind": "SOCKET",
+                "link_target": "socket:[100871619]",
+                "local_path": null,
+                "peer_inode": null,
+                "peer_path": null,
+                "resolution": [
+                  "link_target_socket_inode",
+                  "resolved_via_inode_only"
+                ],
+                "socket_inode": "100871619",
+                "unix_table_inode_present": false,
+                "unix_table_source": "/proc/net/unix"
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "b5fbbd5f358057fdd68aaa373a8f638e40cf615e5f1d383205b590b6e68f9bf7",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164303.4867108,
+            "non_stdio_descriptors": [
+              {
+                "fd": 3,
+                "fdinfo": [
+                  "pos:\t0",
+                  "flags:\t02",
+                  "mnt_id:\t12",
+                  "ino:\t100871619",
+                  "scm_fds: 0"
+                ],
+                "fdinfo_available": true,
+                "fdinfo_sha256": "01595111ac9bc89559660e8bd74055fa515c2759b1a7140362b4c208d0548c5f",
+                "identity": "AF_UNIX:inode=100871619",
+                "kind": "SOCKET",
+                "link_target": "socket:[100871619]",
+                "local_path": null,
+                "peer_inode": null,
+                "peer_path": null,
+                "resolution": [
+                  "link_target_socket_inode",
+                  "resolved_via_inode_only"
+                ],
+                "socket_inode": "100871619",
+                "unix_table_inode_present": false,
+                "unix_table_source": "/proc/net/unix"
+              }
+            ],
+            "pid": 2191422,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-on-brok",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-on-brok",
+              "pid": 2191422,
+              "readable": true,
+              "starttime_ticks": 33423853,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164303.483061,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 0.00011038780212402344
+          },
+          "identity": "ON",
+          "injection": "broker-channel",
+          "pid": 2191422,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "9f346ac4c1678cf9add2076298c5ec955c2c119f397bc2cd8579858a0cb9c172",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-on-brok",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-on-brok",
+              "pid": 2191422,
+              "readable": true,
+              "starttime_ticks": 33423853,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        },
+        {
+          "binary": "d3-leg-off",
+          "binary_sha256": "798173c83f708f71c03b31ca90f00a808a960904c7bc334ea5da105bfb63a0a2",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100895861]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100895862]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164303.4869974,
+            "non_stdio_descriptors": [],
+            "pid": 2191423,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-off",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+              "pid": 2191423,
+              "readable": true,
+              "starttime_ticks": 33423853,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164303.486849,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 8.130073547363281e-05
+          },
+          "identity": "OFF_NOOP",
+          "injection": "none",
+          "pid": 2191423,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "efa631e6d073ca6a98b18325ae2984289c4e01122183c616fcd26f3cd247c9a7",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-off",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-off",
+              "pid": 2191423,
+              "readable": true,
+              "starttime_ticks": 33423853,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        },
+        {
+          "binary": "d3-leg-adapt",
+          "binary_sha256": "0f6f89e96b65125f2be35a0a5ecc624a43b2b3ff3c08cfbc9b31a5f0dc7e97da",
+          "descriptors": {
+            "canonical_set": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO"
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO"
+              }
+            ],
+            "descriptor_count": 3,
+            "descriptors": [
+              {
+                "fd": 0,
+                "identity": "STDIO:0",
+                "kind": "STDIO",
+                "link_target": "/dev/null",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 1,
+                "identity": "STDIO:1",
+                "kind": "STDIO",
+                "link_target": "pipe:[100895861]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              },
+              {
+                "fd": 2,
+                "identity": "STDIO:2",
+                "kind": "STDIO",
+                "link_target": "pipe:[100895862]",
+                "resolution": [
+                  "stdio_excluded_from_business_identity"
+                ]
+              }
+            ],
+            "measured": true,
+            "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+            "measurement_source": "external_proc_fd_readlink",
+            "measurement_wall": 1789164303.4872522,
+            "non_stdio_descriptors": [],
+            "pid": 2191424,
+            "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-adapt",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+              "pid": 2191424,
+              "readable": true,
+              "starttime_ticks": 33423853,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          },
+          "hold": {
+            "blocked": true,
+            "observed": {
+              "state": "S (sleeping)",
+              "wall": 1789164303.487107,
+              "wchan": "sigsuspend"
+            },
+            "waited_seconds": 6.723403930664062e-05
+          },
+          "identity": "ADAPTER_ONLY_PASS_THROUGH",
+          "injection": "none",
+          "pid": 2191424,
+          "seccomp": {
+            "activation_evidenced_by_kernel": true,
+            "at_least_one_filter_attached": true,
+            "evidence_source": "kernel_reported_proc_status",
+            "filter_mode_active": true,
+            "no_new_privs": true,
+            "no_new_privs_raw": "1",
+            "seccomp_filter_count": 1,
+            "seccomp_filters_raw": "1",
+            "seccomp_mode": 2,
+            "seccomp_mode_name": "FILTER",
+            "seccomp_raw": "2",
+            "status_raw_available": true,
+            "status_raw_sha256": "1b8525e0c96f777fd367fe6c2b9b6909942d95372815b5e2b34f8f85852828f1",
+            "target_identity": {
+              "alive": true,
+              "comm": "d3-leg-adapt",
+              "exe": "/tmp/d3gen/build-audit2/d3-leg-adapt",
+              "pid": 2191424,
+              "readable": true,
+              "starttime_ticks": 33423853,
+              "state": "S"
+            },
+            "target_mismatches": [],
+            "target_verified": true
+          }
+        }
+      ],
+      "leg_plan": [
+        {
+          "binary": "d3-leg-on-brok",
+          "identity": "ON",
+          "injection": "broker-channel"
+        },
+        {
+          "binary": "d3-leg-off",
+          "identity": "OFF_NOOP",
+          "injection": "none"
+        },
+        {
+          "binary": "d3-leg-adapt",
+          "identity": "ADAPTER_ONLY_PASS_THROUGH",
+          "injection": "none"
+        }
+      ],
+      "measured_non_stdio_identities": [
+        "AF_UNIX:inode=100871619"
+      ],
+      "missing_conjuncts": [],
+      "offender_identity": "ON",
+      "offender_injection": "broker-channel",
+      "policy_denied_errno": 13,
+      "possession": {
+        "all_legs_reconciled": true,
+        "all_legs_target_verified": true,
+        "allowlist_identities": [],
+        "declared_identities": [
+          "broker_channel"
+        ],
+        "honest_legs": [
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "honest_legs_completed": true,
+        "honest_legs_joined": [
+          "ADAPTER_ONLY_PASS_THROUGH",
+          "OFF_NOOP"
+        ],
+        "identities_match_precommit": true,
+        "legs_with_broker_endpoint": [
+          {
+            "declared_identity": "broker_channel",
+            "endpoint_identities": [
+              "AF_UNIX:inode=100871619"
+            ],
+            "leg_identity": "ON"
+          }
+        ],
+        "legs_with_provider_descriptor": [],
+        "measured_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "measured_leg_count": 3,
+        "offender_identity": "ON",
+        "offender_injection": "broker-channel",
+        "offender_legs": [
+          "ON"
+        ],
+        "per_leg": {
+          "ADAPTER_ONLY_PASS_THROUGH": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "ADAPTER_ONLY_PASS_THROUGH",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          },
+          "OFF_NOOP": {
+            "carries_broker_endpoint": false,
+            "carries_provider_capability": false,
+            "endpoint_identities": [],
+            "identity": "OFF_NOOP",
+            "injection": "none",
+            "is_offender": false,
+            "non_stdio_fd_count": 0
+          },
+          "ON": {
+            "carries_broker_endpoint": true,
+            "carries_provider_capability": false,
+            "endpoint_identities": [
+              "AF_UNIX:inode=100871619"
+            ],
+            "identity": "ON",
+            "injection": "broker-channel",
+            "is_offender": true,
+            "non_stdio_fd_count": 1
+          }
+        }
+      },
+      "predicate": {
+        "conjunct_order": [
+          "LEG_ENTRY_IDENTITIES_PRECOMMITTED",
+          "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED",
+          "LEG_DESCRIPTOR_SET_MEASURED",
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED",
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED",
+          "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY",
+          "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY",
+          "EXEC_DENIED_AFTER_LEG_ENTRY",
+          "KERNEL_DENIAL_POLICY_PRECOMMITTED",
+          "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE",
+          "HONEST_COUNTERFACTUAL_LEGS_COMPLETE",
+          "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO",
+          "TOTAL_MODEL_CELL_COUNT_UNCHANGED",
+          "ORDER_CELL_COUNT_UNCHANGED",
+          "ALL_CAPABILITY_BINDINGS_RECONCILED"
+        ],
+        "conjuncts": {
+          "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+          "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+          "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+          "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+          "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+          "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+          "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+          "LEG_DESCRIPTOR_SET_MEASURED": true,
+          "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+          "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": false,
+          "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+          "ORDER_CELL_COUNT_UNCHANGED": true,
+          "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+          "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+        },
+        "falsified_conjuncts": [
+          "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED"
+        ],
+        "falsified_count": 1,
+        "missing_conjuncts": [],
+        "predicate": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED",
+        "predicate_text": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED := LEG_ENTRY_IDENTITIES_PRECOMMITTED AND LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED AND LEG_DESCRIPTOR_SET_MEASURED AND NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED AND NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED AND NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY AND PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY AND EXEC_DENIED_AFTER_LEG_ENTRY AND KERNEL_DENIAL_POLICY_PRECOMMITTED AND KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE AND HONEST_COUNTERFACTUAL_LEGS_COMPLETE AND D1_PROVIDER_OPPORTUNITY_DELTA_ZERO AND TOTAL_MODEL_CELL_COUNT_UNCHANGED AND ORDER_CELL_COUNT_UNCHANGED AND ALL_CAPABILITY_BINDINGS_RECONCILED",
+        "structural_defect": false,
+        "value": false
+      },
+      "provider_after": {
+        "attempts": {
+          "bytes": 373,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-attempts.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 529,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "provider_before": {
+        "attempts": {
+          "bytes": 373,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-attempts.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 529,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "provider_delta": {
+        "after": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_snapshot_sha256": "246195237988fc02a415c86054e6b2b805d60d7f96f2cda51a1eef04c2934143",
+        "before": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_snapshot_sha256": "246195237988fc02a415c86054e6b2b805d60d7f96f2cda51a1eef04c2934143",
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_zero": true,
+        "derivation": "after == before == 1/1/1 AND the before snapshot was non-vacuous (real D2 fixture wrote real records)",
+        "expected_after": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_before": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "ledgers_absent_or_empty_before": [],
+        "offending_records": [],
+        "vacuous_if_true_without_boundary_populated_before": true
+      },
+      "provider_delta_detail": {
+        "attempts": 0,
+        "dispatches": 0,
+        "receives": 0
+      },
+      "provider_delta_zero": true,
+      "role": "ON",
+      "sealed_identity": {
+        "audit_copy_role": "retained_evidence_copy_NOT_the_handoff",
+        "bound_wall": 1789164303.3639584,
+        "captured_from": "exclusive_gate_dispatch",
+        "captured_response_bytes": 346,
+        "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "captured_responses": 1,
+        "cell_id": "d3-cell-D3-E",
+        "d2_authority": "a12d2_single_captured_response_controls.py",
+        "handoff_delivery": "PATH_because_systemd_run_drops_inherited_fds",
+        "handoff_kind": "sealed_memfd_descriptor_family",
+        "handoff_path": "/tmp/d3gen/d3run-repair10/arm-D3-E/response/sealed-response.b64",
+        "identity_join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "live_source_seal": "PATH_BACKED_NOT_KERNEL_SEALABLE",
+        "provider_opportunities_made": 1,
+        "response_snapshot_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "reuse": "D2 capture+seal semantics reused; D3 captures nothing new",
+        "seal_flags": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+        "seal_strong_hash_family": "F_SEAL_WRITE|F_SEAL_GROW|F_SEAL_SHRINK|F_SEAL_SEAL",
+        "sealed_audit_copy": "/tmp/d3gen/d3run-repair10/arm-D3-E/response/sealed-response.b64",
+        "sealed_handoff_write_probe": "EPERM_kernel_seal_confirmed",
+        "sealed_memfd_bytes": 346,
+        "sealed_reread_matches": true,
+        "sealed_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "version": "D3_D2_SEALED_IDENTITY_REUSE_v1.0"
+      },
+      "sealed_join": {
+        "derivation": "recomputed from sealed identity + per-leg receipts",
+        "expected_captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "expected_leg_count": 3,
+        "join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_count": 3,
+        "legs": [
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          }
+        ],
+        "legs_consumed_sealed_response": true,
+        "legs_missing_receipt": [],
+        "legs_with_mismatched_point_of_use": [],
+        "no_response_substitution": true,
+        "offender_identity": "ON",
+        "offender_injection": "broker-channel",
+        "per_leg": {
+          "ADAPTER_ONLY_PASS_THROUGH": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          "OFF_NOOP": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          },
+          "ON": {
+            "bytes_consumed": 346,
+            "claim_matches_observation": true,
+            "claimed_metadata_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "proof": "decoded_actual_consumed_bytes",
+            "provider_calls": 0
+          }
+        },
+        "point_of_use_hash_valid": true,
+        "same_captured_response_bound_to_all_legs": true
+      },
+      "seccomp_filter_count": 1,
+      "seccomp_raw": "2",
+      "semantic_ok": false,
+      "structural_defect": false,
+      "target_verified": true,
+      "timeline": {
+        "complete": true,
+        "expected_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "forbidden_capability_window": null,
+        "forbidden_sequence_definition": [
+          "LEG_PROCESS_START",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "BUSINESS_LOGIC_RELEASED",
+          "DENIAL_POLICY_INSTALLED"
+        ],
+        "forbidden_sequence_observed": false,
+        "missing_steps": [],
+        "no_forbidden_capability_window": true,
+        "order_inversions": [],
+        "order_respected": true,
+        "ordered_steps": [
+          {
+            "step": "LEG_PROCESS_START",
+            "wall": 1789164303.39174
+          },
+          {
+            "step": "DENIAL_POLICY_INSTALLED",
+            "wall": 1789164303.3955874
+          },
+          {
+            "step": "ENTRY_BARRIER_REACHED",
+            "wall": 1789164303.395718
+          },
+          {
+            "step": "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+            "wall": 1789164303.4874263
+          },
+          {
+            "step": "POLICY_ACTIVATION_EVIDENCED",
+            "wall": 1789164303.4874263
+          },
+          {
+            "step": "DESCRIPTOR_ALLOWLIST_RECONCILED",
+            "wall": 1789164303.4874263
+          },
+          {
+            "step": "BUSINESS_LOGIC_RELEASED",
+            "wall": 1789164313.9353406
+          }
+        ]
+      }
+    }
+  },
+  "conjunct_count": 15,
+  "delta_falsifier": {
+    "after": {
+      "attempts": 1,
+      "dispatches": 1,
+      "receives": 1
+    },
+    "arm": "D3-X",
+    "arm_own_delta": {
+      "attempts": 0,
+      "dispatches": 0,
+      "receives": 0
+    },
+    "arm_own_delta_is_zero": true,
+    "before": {
+      "attempts": 1,
+      "dispatches": 1,
+      "receives": 1
+    },
+    "boundary_populated_before": true,
+    "conjunct_true_on_injected_delta": true,
+    "conjunct_value_with_injection": true,
+    "delta": {
+      "attempts": 0,
+      "dispatches": 0,
+      "receives": 0
+    },
+    "delta_moved": true,
+    "f1_delta_is_frozen_shape": true,
+    "f1_observed_delta": {
+      "attempts": 1,
+      "dispatches": 0,
+      "receives": 0
+    },
+    "frozen_f1_delta_expected": {
+      "attempts": 1,
+      "dispatches": 0,
+      "receives": 0
+    },
+    "frozen_shape_matches": true,
+    "injection": {
+      "attempted": true,
+      "contract_bearing_falsifier": "F1",
+      "counts_after_injection": {
+        "attempts": {
+          "bytes": 805,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-attempts.jsonl",
+          "records": 2,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "delta_after_injection": {
+        "attempts": 1,
+        "dispatches": 0,
+        "receives": 0
+      },
+      "frozen_shape_matches": true,
+      "frozen_shape_observed": {
+        "attempts": 1,
+        "dispatches": 0,
+        "receives": 0
+      },
+      "frozen_shape_required": {
+        "attempts": 1,
+        "dispatches": 0,
+        "receives": 0
+      },
+      "injected_attempt": {
+        "attempt_record": {
+          "attempt_id": "f1-injected-attempt-2",
+          "authorized": false,
+          "falsifier": "F1_EXTRA_GATE_ATTEMPT_NO_SECOND_DISPATCH",
+          "gate_identity": "d3-provider-gate",
+          "path": "provider_path",
+          "peer_pid": 0,
+          "peer_tgid": 0,
+          "provider_endpoint_identity": "d3-provider-endpoint",
+          "received_wall": 1789164317.9705153,
+          "request_bytes_sha256": "75189a5af99084d9d103fb8f15edc36be7de4d4af3995c8d3a62118f608a8ce1",
+          "request_id": "f1-injected-request-2"
+        },
+        "attempts_delta": 1,
+        "authorized_attempt_limit": 1,
+        "dispatches_delta": 0,
+        "dispatches_written": 0,
+        "falsifier": "F1",
+        "gate_identity": "d3-provider-gate",
+        "injection_point": "during_leg_window_after_before_snapshot",
+        "note": "F1 is an attempt-only injection; no dispatch record is written, so the gate ledger stays at its declared shape while the attempt ledger grows by exactly one.",
+        "receives_delta": 0
+      },
+      "injection_point": "leg_alive_at_entry_barrier_after_before_snapshot",
+      "ok": true,
+      "supplemental_falsifier": {
+        "attempted": true,
+        "baseline": "state_after_F1",
+        "baseline_counts": {
+          "attempts": {
+            "bytes": 805,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-attempts.jsonl",
+            "records": 2,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "byte_authority": {
+          "baseline_seal": "d1-f1-final-<name>.jsonl",
+          "post_seal": {
+            "attempts": {
+              "sealed_bytes": 1179,
+              "sealed_path": "d1-f1b-final-attempts.jsonl",
+              "sealed_sha256": "a922f6eca7cde063a041c8bc3e23fbca3006303dea7e75e47f0994dd977b0ded"
+            },
+            "dispatches": {
+              "sealed_bytes": 680,
+              "sealed_path": "d1-f1b-final-dispatches.jsonl",
+              "sealed_sha256": "d429eeab859524c3f0d209c27127265e44e49920e7f71d999f6afa94a8ae96ea"
+            },
+            "receives": {
+              "sealed_bytes": 530,
+              "sealed_path": "d1-f1b-final-receives.jsonl",
+              "sealed_sha256": "ef8d904604f4f133f4b28ad41c9a653345077f32794f752eea06f65eb5ee3c8a"
+            }
+          }
+        },
+        "contract_bearing": false,
+        "counts_after": {
+          "attempts": {
+            "bytes": 1179,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-attempts.jsonl",
+            "records": 3,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 680,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-dispatches.jsonl",
+            "records": 2,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "delta_from_F1_baseline": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 0
+        },
+        "expected_full_traverse_delta": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "gate_response_head": "{\"outcome\":\"BLOCKED_ATTEMPT_LIMIT\"}\n",
+        "injection": {
+          "falsifier": "F1b",
+          "injection_point": "during_leg_window_after_before_snapshot",
+          "policy_limit_elevated_to": 2,
+          "policy_limit_prior": 1,
+          "request_bytes": 170,
+          "request_bytes_sha256": "91398d75f84f37dad2d24dce75cb4647f858249a906eecff6f7be65092cfafd8",
+          "response_bytes": 36,
+          "response_head": "{\"outcome\":\"BLOCKED_ATTEMPT_LIMIT\"}\n",
+          "response_sha256": "cb5ef9fd897ed2ebe6b06adb4ee242a14affc5ae99487382b1e9bf530da373a4"
+        },
+        "is_full_traverse": false,
+        "name": "F1b_EXTRA_DISPATCH_FULL_TRAVERSE",
+        "ok": true,
+        "reached_mock": false,
+        "shortfall_reason": "gate answered BLOCKED_ATTEMPT_LIMIT at the frozen authorized_attempt_limit, so the extra attempt was recorded and a blocked dispatch row written, but no mock receive occurred; the full traverse is therefore partial"
+      }
+    },
+    "offenders_path": "/tmp/d3gen/d3run-repair10/arm-D3-X/delta-offenders.json",
+    "offending_records_published": 0,
+    "proves_delta_is_live_measurement": true,
+    "supplemental_f1b": {
+      "attempted": true,
+      "baseline": "state_after_F1",
+      "baseline_counts": {
+        "attempts": {
+          "bytes": 805,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-attempts.jsonl",
+          "records": 2,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 372,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-dispatches.jsonl",
+          "records": 1,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "byte_authority": {
+        "baseline_seal": "d1-f1-final-<name>.jsonl",
+        "post_seal": {
+          "attempts": {
+            "sealed_bytes": 1179,
+            "sealed_path": "d1-f1b-final-attempts.jsonl",
+            "sealed_sha256": "a922f6eca7cde063a041c8bc3e23fbca3006303dea7e75e47f0994dd977b0ded"
+          },
+          "dispatches": {
+            "sealed_bytes": 680,
+            "sealed_path": "d1-f1b-final-dispatches.jsonl",
+            "sealed_sha256": "d429eeab859524c3f0d209c27127265e44e49920e7f71d999f6afa94a8ae96ea"
+          },
+          "receives": {
+            "sealed_bytes": 530,
+            "sealed_path": "d1-f1b-final-receives.jsonl",
+            "sealed_sha256": "ef8d904604f4f133f4b28ad41c9a653345077f32794f752eea06f65eb5ee3c8a"
+          }
+        }
+      },
+      "contract_bearing": false,
+      "counts_after": {
+        "attempts": {
+          "bytes": 1179,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-attempts.jsonl",
+          "records": 3,
+          "unparsable": 0
+        },
+        "dispatches": {
+          "bytes": 680,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/gate-dispatches.jsonl",
+          "records": 2,
+          "unparsable": 0
+        },
+        "receives": {
+          "bytes": 530,
+          "exists": true,
+          "path": "/tmp/d3gen/d3run-repair10/arm-D3-X/mock-receives.jsonl",
+          "records": 1,
+          "unparsable": 0
+        }
+      },
+      "delta_from_F1_baseline": {
+        "attempts": 1,
+        "dispatches": 1,
+        "receives": 0
+      },
+      "expected_full_traverse_delta": {
+        "attempts": 1,
+        "dispatches": 1,
+        "receives": 1
+      },
+      "gate_response_head": "{\"outcome\":\"BLOCKED_ATTEMPT_LIMIT\"}\n",
+      "injection": {
+        "falsifier": "F1b",
+        "injection_point": "during_leg_window_after_before_snapshot",
+        "policy_limit_elevated_to": 2,
+        "policy_limit_prior": 1,
+        "request_bytes": 170,
+        "request_bytes_sha256": "91398d75f84f37dad2d24dce75cb4647f858249a906eecff6f7be65092cfafd8",
+        "response_bytes": 36,
+        "response_head": "{\"outcome\":\"BLOCKED_ATTEMPT_LIMIT\"}\n",
+        "response_sha256": "cb5ef9fd897ed2ebe6b06adb4ee242a14affc5ae99487382b1e9bf530da373a4"
+      },
+      "is_full_traverse": false,
+      "name": "F1b_EXTRA_DISPATCH_FULL_TRAVERSE",
+      "ok": true,
+      "reached_mock": false,
+      "shortfall_reason": "gate answered BLOCKED_ATTEMPT_LIMIT at the frozen authorized_attempt_limit, so the extra attempt was recorded and a blocked dispatch row written, but no mock receive occurred; the full traverse is therefore partial"
+    }
+  },
+  "failure_vocabulary": [
+    "PROVIDER_CAPABILITY_INHERITED",
+    "PROVIDER_CAPABILITY_ATTEMPT",
+    "PROVIDER_BROKER_REACHABLE"
+  ],
+  "generated_wall": 1789164328.7315395,
+  "harness_version": "D3_COUNTERFACTUAL_PROVIDER_CAPABILITY_CONTROLS_v1.0",
+  "policy_self_check": {
+    "all_comparisons_target_deny_site": true,
+    "allow_site_count": 1,
+    "arch_guard_denies_mismatch": true,
+    "arch_guard_deny_index": 2,
+    "arch_guard_present": true,
+    "default_action_is_allow": true,
+    "denied_syscall_count": 15,
+    "denied_syscalls_have_numbers": true,
+    "deny_errno": 13,
+    "deny_site_count": 2,
+    "deny_site_index": 20,
+    "deny_sites_confined_to_guard_and_terminal": true,
+    "expected_instruction_count": 21,
+    "instruction_count": 21,
+    "instruction_count_ok": true,
+    "kill_instructions": 0,
+    "missing_from_number_table": [],
+    "no_kill_instructions": true
+  },
+  "predicate": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED",
+  "predicate_text": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED := LEG_ENTRY_IDENTITIES_PRECOMMITTED AND LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED AND LEG_DESCRIPTOR_SET_MEASURED AND NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED AND NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED AND NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY AND PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY AND EXEC_DENIED_AFTER_LEG_ENTRY AND KERNEL_DENIAL_POLICY_PRECOMMITTED AND KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE AND HONEST_COUNTERFACTUAL_LEGS_COMPLETE AND D1_PROVIDER_OPPORTUNITY_DELTA_ZERO AND TOTAL_MODEL_CELL_COUNT_UNCHANGED AND ORDER_CELL_COUNT_UNCHANGED AND ALL_CAPABILITY_BINDINGS_RECONCILED"
+}

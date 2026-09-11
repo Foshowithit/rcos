@@ -1,0 +1,7 @@
+1789164246.472883 execve("/tmp/d3gen/build-audit2/d3-leg-adapt", ["/tmp/d3gen/build-audit2/d3-leg-a"...], 0x578bfdd32128 /* 68 vars */) = 0
+1789164256.939796 --- SIGUSR1 {si_signo=SIGUSR1, si_code=SI_USER, si_pid=2183904, si_uid=1000} ---
+1789164256.940496 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)
+1789164256.940752 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7fff869b8d00) = -1 EACCES (Permission denied)
+1789164256.940876 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7c9a1e9b7a10) = -1 EACCES (Permission denied)
+1789164256.940993 execve("/bin/true", ["true"], NULL) = -1 EACCES (Permission denied)
+1789164256.941272 exit_group(0)         = ?

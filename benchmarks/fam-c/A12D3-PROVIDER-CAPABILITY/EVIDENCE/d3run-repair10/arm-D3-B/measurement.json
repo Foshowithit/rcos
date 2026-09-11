@@ -1,0 +1,217 @@
+{
+  "descriptors": {
+    "canonical_set": [
+      {
+        "fd": 0,
+        "identity": "STDIO:0",
+        "kind": "STDIO"
+      },
+      {
+        "fd": 1,
+        "identity": "STDIO:1",
+        "kind": "STDIO"
+      },
+      {
+        "fd": 2,
+        "identity": "STDIO:2",
+        "kind": "STDIO"
+      },
+      {
+        "fd": 3,
+        "identity": "AF_UNIX:inode=100844217",
+        "kind": "SOCKET"
+      }
+    ],
+    "descriptor_count": 4,
+    "descriptors": [
+      {
+        "fd": 0,
+        "identity": "STDIO:0",
+        "kind": "STDIO",
+        "link_target": "/dev/null",
+        "resolution": [
+          "stdio_excluded_from_business_identity"
+        ]
+      },
+      {
+        "fd": 1,
+        "identity": "STDIO:1",
+        "kind": "STDIO",
+        "link_target": "pipe:[100848350]",
+        "resolution": [
+          "stdio_excluded_from_business_identity"
+        ]
+      },
+      {
+        "fd": 2,
+        "identity": "STDIO:2",
+        "kind": "STDIO",
+        "link_target": "pipe:[100848351]",
+        "resolution": [
+          "stdio_excluded_from_business_identity"
+        ]
+      },
+      {
+        "fd": 3,
+        "fdinfo": [
+          "pos:\t0",
+          "flags:\t02",
+          "mnt_id:\t12",
+          "ino:\t100844217",
+          "scm_fds: 0"
+        ],
+        "fdinfo_available": true,
+        "fdinfo_sha256": "2d73e6fe6715fc834c6e4da78e382440ed157caefa74d7bb2216d0d8843e5c1b",
+        "identity": "AF_UNIX:inode=100844217",
+        "kind": "SOCKET",
+        "link_target": "socket:[100844217]",
+        "local_path": null,
+        "peer_inode": null,
+        "peer_path": null,
+        "resolution": [
+          "link_target_socket_inode",
+          "resolved_via_inode_only"
+        ],
+        "socket_inode": "100844217",
+        "unix_table_inode_present": false,
+        "unix_table_source": "/proc/net/unix"
+      }
+    ],
+    "measured": true,
+    "measured_set_sha256": "a73a4bcb32acfde4c34587cb60734aadd71406ed7c26a9c71a825d36bdd1aa70",
+    "measurement_source": "external_proc_fd_readlink",
+    "measurement_wall": 1789164260.6852987,
+    "non_stdio_descriptors": [
+      {
+        "fd": 3,
+        "fdinfo": [
+          "pos:\t0",
+          "flags:\t02",
+          "mnt_id:\t12",
+          "ino:\t100844217",
+          "scm_fds: 0"
+        ],
+        "fdinfo_available": true,
+        "fdinfo_sha256": "2d73e6fe6715fc834c6e4da78e382440ed157caefa74d7bb2216d0d8843e5c1b",
+        "identity": "AF_UNIX:inode=100844217",
+        "kind": "SOCKET",
+        "link_target": "socket:[100844217]",
+        "local_path": null,
+        "peer_inode": null,
+        "peer_path": null,
+        "resolution": [
+          "link_target_socket_inode",
+          "resolved_via_inode_only"
+        ],
+        "socket_inode": "100844217",
+        "unix_table_inode_present": false,
+        "unix_table_source": "/proc/net/unix"
+      }
+    ],
+    "pid": 2185865,
+    "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+    "target_identity": {
+      "alive": true,
+      "comm": "d3-leg-on-prov",
+      "exe": "/tmp/d3gen/build-audit2/d3-leg-on-prov",
+      "pid": 2185865,
+      "readable": true,
+      "starttime_ticks": 33419568,
+      "state": "S"
+    },
+    "target_mismatches": [],
+    "target_verified": true
+  },
+  "hold": {
+    "blocked": true,
+    "observed": {
+      "state": "S (sleeping)",
+      "wall": 1789164260.6816375,
+      "wchan": "sigsuspend"
+    },
+    "waited_seconds": 0.00011754035949707031
+  },
+  "measured_wall": 1789164260.6859543,
+  "negative_head_to_head": {
+    "distinct_pids": true,
+    "leg_pid": 2185865,
+    "tracer_descriptors": {
+      "descriptor_count": 0,
+      "descriptors": [],
+      "error": "target_identity_mismatch:exe_mismatch",
+      "measured": false,
+      "measured_set_sha256": null,
+      "measurement_source": "external_proc_fd_readlink",
+      "measurement_wall": 1789164260.685952,
+      "pid": 2185860,
+      "target_identity": {
+        "alive": true,
+        "comm": "strace",
+        "exe": "/usr/bin/strace",
+        "pid": 2185860,
+        "readable": true,
+        "starttime_ticks": 33419567,
+        "state": "S"
+      },
+      "target_mismatches": [
+        "exe_mismatch"
+      ],
+      "target_verified": false
+    },
+    "tracer_measured_as_if_leg": {
+      "activation_evidenced_by_kernel": false,
+      "at_least_one_filter_attached": false,
+      "evidence_source": "kernel_reported_proc_status",
+      "filter_mode_active": false,
+      "no_new_privs": false,
+      "no_new_privs_raw": "0",
+      "seccomp_filter_count": 0,
+      "seccomp_filters_raw": "0",
+      "seccomp_mode": 0,
+      "seccomp_mode_name": "DISABLED",
+      "seccomp_raw": "0",
+      "status_raw_available": true,
+      "status_raw_sha256": "2c015a0c14c7ddf8833d387ff85e65c474251d84fe4da0a9e2181159c2e228a5",
+      "target_identity": {
+        "alive": true,
+        "comm": "strace",
+        "exe": "/usr/bin/strace",
+        "pid": 2185860,
+        "readable": true,
+        "starttime_ticks": 33419567,
+        "state": "S"
+      },
+      "target_mismatches": [
+        "exe_mismatch"
+      ],
+      "target_verified": false
+    },
+    "tracer_pid": 2185860
+  },
+  "seccomp": {
+    "activation_evidenced_by_kernel": true,
+    "at_least_one_filter_attached": true,
+    "evidence_source": "kernel_reported_proc_status",
+    "filter_mode_active": true,
+    "no_new_privs": true,
+    "no_new_privs_raw": "1",
+    "seccomp_filter_count": 1,
+    "seccomp_filters_raw": "1",
+    "seccomp_mode": 2,
+    "seccomp_mode_name": "FILTER",
+    "seccomp_raw": "2",
+    "status_raw_available": true,
+    "status_raw_sha256": "0463a9fba774b4298f0e382eb06dbfe076ddda85778a99412042dda61116a248",
+    "target_identity": {
+      "alive": true,
+      "comm": "d3-leg-on-prov",
+      "exe": "/tmp/d3gen/build-audit2/d3-leg-on-prov",
+      "pid": 2185865,
+      "readable": true,
+      "starttime_ticks": 33419568,
+      "state": "S"
+    },
+    "target_mismatches": [],
+    "target_verified": true
+  }
+}

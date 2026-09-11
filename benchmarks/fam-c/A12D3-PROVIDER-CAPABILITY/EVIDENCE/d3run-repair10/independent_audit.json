@@ -1,0 +1,2925 @@
+{
+  "arms": {
+    "D3-A": {
+      "activation_evidenced_by_kernel": true,
+      "agrees_with_harness": true,
+      "arm": "D3-A",
+      "capability_bindings_recomputed": {
+        "all_bindings_reconciled": true,
+        "derived_from": "filter rebuilt from source vs on-disk bytes vs precommit freeze; sealed identity vs per-leg point-of-use; pre-leg authority manifest vs graded identities",
+        "joins": {
+          "policy_identity_binding": {
+            "anchor_source": "precommit",
+            "disk_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "filter_rebuilt_matches_disk": true,
+            "policy_rebuilt_matches_disk": true,
+            "precommit_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "precommit_frozen_matches_rebuilt": true,
+            "rebuilt_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "reconciled": true
+          },
+          "pre_leg_authority_manifest_binding": {
+            "actual_pre_manifest_sha256": "fc5be551c245d3a91ddfcb6257de08d5feaf331fe58aefc027e8448699abc9a2",
+            "forward_link_valid": true,
+            "graded_leg_sha256": "d623f1468db109791e57e4d87132eb9f20de6f53a8557739ea715335010fb62e",
+            "leg_binary_measure_error": "",
+            "leg_binary_path": "/tmp/d3gen/build-audit2/d3-leg-on",
+            "leg_identity_reconciled": true,
+            "post_manifest_present": true,
+            "pre_manifest_present": true,
+            "precommit_allowlist_sha256": "bacc3b3d45a9a5ef064d0497c2f63a45116dd51cd8f44b2b30e60927c44b909e",
+            "precommit_leg_sha256": "d623f1468db109791e57e4d87132eb9f20de6f53a8557739ea715335010fb62e",
+            "reconciled": true,
+            "recorded_forward_link": "fc5be551c245d3a91ddfcb6257de08d5feaf331fe58aefc027e8448699abc9a2"
+          },
+          "sealed_response_binding": {
+            "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "legs_bound": [
+              "ADAPTER_ONLY_PASS_THROUGH",
+              "OFF_NOOP",
+              "ON"
+            ],
+            "legs_unbound_or_mismatched": [],
+            "reconciled": true
+          }
+        }
+      },
+      "cell_counts_recomputed": {
+        "after_manifest_sha256": "9d03e834674f46be0c388ae9ec32a87b0c3b10f8f7902a56f6d6a88220a8bc55",
+        "before_manifest_sha256": "fc5be551c245d3a91ddfcb6257de08d5feaf331fe58aefc027e8448699abc9a2",
+        "cell_binary_rehash_agrees": true,
+        "cell_measurement_valid": true,
+        "counted_by": "independent reparse of executed cell report; cell BINARY re-hashed by the checker; BOTH sealed pre/post-leg manifests; undeclared cell artifacts enumerated separately; never an inferred zero",
+        "counts_agree_with_enumeration": true,
+        "manifests_present": true,
+        "model_cell_binary_remeasured": {
+          "present": true,
+          "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+          "size": 16728,
+          "st_dev": 66306,
+          "st_ino": 11620487
+        },
+        "model_cell_count_after": 1,
+        "model_cell_count_before": 1,
+        "model_cell_count_measured": 1,
+        "model_cell_count_unchanged": true,
+        "model_cell_identity_same": true,
+        "model_cell_report_present": true,
+        "model_cell_report_sha256": "63616938a0ab4e61fb1588d7540bd05ff4ca9202a8c273d8628259bc7e2eb525",
+        "order_cell_binary_remeasured": {
+          "present": true,
+          "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+          "size": 16424,
+          "st_dev": 66306,
+          "st_ino": 11620488
+        },
+        "order_cell_count_after": 0,
+        "order_cell_count_before": 0,
+        "order_cell_count_measured": 0,
+        "order_cell_count_unchanged": true,
+        "order_cell_identity_same": true,
+        "reported_cells_run": 1,
+        "reported_provider_calls": 0,
+        "undeclared_cell_artifacts": []
+      },
+      "checker_derived_failure_code": "NONE",
+      "checker_derived_failure_kind": "CLEAN",
+      "conjuncts": {
+        "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+        "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+        "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+        "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+        "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+        "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_SET_MEASURED": true,
+        "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+        "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+        "ORDER_CELL_COUNT_UNCHANGED": true,
+        "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+      },
+      "denied_records": [
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.940678 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184369"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.940830 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffdaaf8a230) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184369"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.940975 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7b35cf957a10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184369"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.941149 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184369"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.940554 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184370"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.940768 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffda4e362b0) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184370"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.940908 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7dac7eeb9a10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184370"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.941071 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184370"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.940496 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184371"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.940752 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7fff869b8d00) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184371"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.940876 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7c9a1e9b7a10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184371"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164256.940993 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-A/trace-prefix..2184371"
+        }
+      ],
+      "denied_syscalls": [
+        "clone",
+        "execve",
+        "socket",
+        "socketpair"
+      ],
+      "disagreements": [],
+      "equality": {
+        "declared_but_unmeasured": [],
+        "declared_non_stdio_identities": [],
+        "measured_non_stdio_identities": [],
+        "measurement_valid": true,
+        "no_provider_capable_descriptor_inherited": true,
+        "undeclared_but_measured": [],
+        "verdict": "EQUALITY_SATISFIED"
+      },
+      "falsified_conjuncts": [],
+      "kill_events": [],
+      "ledgers": {
+        "gate_attempts": 1,
+        "gate_dispatches": 1,
+        "mock_receives": 1
+      },
+      "leg_completed": true,
+      "leg_denial_errnos": [
+        13
+      ],
+      "predicate_value": true,
+      "provider_delta_recomputed": {
+        "after": {
+          "attempts": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "after_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_present": true,
+        "before": {
+          "attempts": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-A/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "before_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_present": true,
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes_matches_expected": true,
+        "delta_zero": true,
+        "expected": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "expected_is_falsifier_shape": false,
+        "fail_closed": false,
+        "falsifier_arm": false,
+        "falsifier_injection_present": true,
+        "offenders_present": false,
+        "raw_ledger_authority": {
+          "join": "recorded path resolves into this arm dir; the sealed pre-leg prefix bytes decode to the before-snapshot's record count; the sealed bytes are an exact prefix of the final ledger bytes",
+          "notes": [],
+          "raw_ledgers_authoritative": true,
+          "rows": {
+            "attempts": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-attempts.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 372,
+                "final_prefix_sha256": "28f1d02ad49052778ecb7c5ce004649c9016b8e156e1f60abf659797b2679985",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 372,
+                "sealed_sha256": "28f1d02ad49052778ecb7c5ce004649c9016b8e156e1f60abf659797b2679985"
+              },
+              "raw_after": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "28f1d02ad49052778ecb7c5ce004649c9016b8e156e1f60abf659797b2679985"
+              },
+              "raw_before": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "28f1d02ad49052778ecb7c5ce004649c9016b8e156e1f60abf659797b2679985"
+              },
+              "seal_consistent": true
+            },
+            "dispatches": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-dispatches.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 372,
+                "final_prefix_sha256": "11b3bb643df2decdcefbc06ff78366afe3cfda549699dafb85699e522edb73e4",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 372,
+                "sealed_sha256": "11b3bb643df2decdcefbc06ff78366afe3cfda549699dafb85699e522edb73e4"
+              },
+              "raw_after": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "11b3bb643df2decdcefbc06ff78366afe3cfda549699dafb85699e522edb73e4"
+              },
+              "raw_before": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "11b3bb643df2decdcefbc06ff78366afe3cfda549699dafb85699e522edb73e4"
+              },
+              "seal_consistent": true
+            },
+            "receives": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "mock-receives.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 530,
+                "final_prefix_sha256": "8a9ddc25384f634afcb8174cc5bf150e3028ab6d09cd99fcd87a659d89494e8c",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 530,
+                "sealed_sha256": "8a9ddc25384f634afcb8174cc5bf150e3028ab6d09cd99fcd87a659d89494e8c"
+              },
+              "raw_after": {
+                "bytes": 530,
+                "records": 1,
+                "sha256": "8a9ddc25384f634afcb8174cc5bf150e3028ab6d09cd99fcd87a659d89494e8c"
+              },
+              "raw_before": {
+                "bytes": 530,
+                "records": 1,
+                "sha256": "8a9ddc25384f634afcb8174cc5bf150e3028ab6d09cd99fcd87a659d89494e8c"
+              },
+              "seal_consistent": true
+            }
+          }
+        },
+        "snapshots_agree_with_bytes": true
+      },
+      "reason_recomputed": {
+        "checker_derived_bound_signals": {
+          "attempt_denials": [],
+          "broker": {
+            "declared_broker_class": false,
+            "legs_with_broker_endpoint": [],
+            "non_stdio_descriptor_identities": []
+          },
+          "declared_intents": [
+            "none"
+          ],
+          "possession": {
+            "declared_provider_class": false,
+            "legs_with_provider_descriptor": [],
+            "non_stdio_descriptor_identities": [],
+            "undeclared_but_measured": []
+          }
+        },
+        "checker_derived_failure_code": "NONE",
+        "checker_derived_failure_kind": "CLEAN",
+        "escalation_order_matches_frozen_predicate": true
+      },
+      "sealed_join_recomputed": {
+        "all_expected_legs_present": true,
+        "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "derivation": "independent reparse of sealed identity + raw leg receipts",
+        "expected_leg_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "handoff_hash_matches_recorded": true,
+        "handoff_present": true,
+        "handoff_sha256_recomputed_by_checker": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_count": 3,
+        "legs": [
+          {
+            "bytes_consumed": 346,
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          }
+        ],
+        "legs_absent": [],
+        "legs_consumed_sealed_response": true,
+        "legs_missing_receipt": [],
+        "legs_with_mismatched_point_of_use": [],
+        "point_of_use_hash_valid": true,
+        "same_captured_response_bound_to_all_legs": true
+      },
+      "seccomp_filter_count": 1,
+      "seccomp_raw": "2",
+      "target_verified": true,
+      "timeline": {
+        "expected_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "forbidden_sequence_observed": false,
+        "missing_steps": [],
+        "no_forbidden_capability_window": true,
+        "observed_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "order_inversions": [],
+        "order_respected": true
+      }
+    },
+    "D3-B": {
+      "activation_evidenced_by_kernel": true,
+      "agrees_with_harness": true,
+      "arm": "D3-B",
+      "capability_bindings_recomputed": {
+        "all_bindings_reconciled": true,
+        "derived_from": "filter rebuilt from source vs on-disk bytes vs precommit freeze; sealed identity vs per-leg point-of-use; pre-leg authority manifest vs graded identities",
+        "joins": {
+          "policy_identity_binding": {
+            "anchor_source": "precommit",
+            "disk_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "filter_rebuilt_matches_disk": true,
+            "policy_rebuilt_matches_disk": true,
+            "precommit_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "precommit_frozen_matches_rebuilt": true,
+            "rebuilt_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "reconciled": true
+          },
+          "pre_leg_authority_manifest_binding": {
+            "actual_pre_manifest_sha256": "1d2eb2f0fde5c97531399592723b566d60c459c7bf4d5031f7f525c3c2155202",
+            "forward_link_valid": true,
+            "graded_leg_sha256": "cbab9edef597845759e3d668ae50bf2a4fa265eedf42d6da971c210e76b9dd05",
+            "leg_binary_measure_error": "",
+            "leg_binary_path": "/tmp/d3gen/build-audit2/d3-leg-on-prov",
+            "leg_identity_reconciled": true,
+            "post_manifest_present": true,
+            "pre_manifest_present": true,
+            "precommit_allowlist_sha256": "bacc3b3d45a9a5ef064d0497c2f63a45116dd51cd8f44b2b30e60927c44b909e",
+            "precommit_leg_sha256": "cbab9edef597845759e3d668ae50bf2a4fa265eedf42d6da971c210e76b9dd05",
+            "reconciled": true,
+            "recorded_forward_link": "1d2eb2f0fde5c97531399592723b566d60c459c7bf4d5031f7f525c3c2155202"
+          },
+          "sealed_response_binding": {
+            "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "legs_bound": [
+              "ADAPTER_ONLY_PASS_THROUGH",
+              "OFF_NOOP",
+              "ON"
+            ],
+            "legs_unbound_or_mismatched": [],
+            "reconciled": true
+          }
+        }
+      },
+      "cell_counts_recomputed": {
+        "after_manifest_sha256": "63e5dca3b8675b42b57508d1019ef1b112923ba5a7b71834fa6bd1e6f9031f57",
+        "before_manifest_sha256": "1d2eb2f0fde5c97531399592723b566d60c459c7bf4d5031f7f525c3c2155202",
+        "cell_binary_rehash_agrees": true,
+        "cell_measurement_valid": true,
+        "counted_by": "independent reparse of executed cell report; cell BINARY re-hashed by the checker; BOTH sealed pre/post-leg manifests; undeclared cell artifacts enumerated separately; never an inferred zero",
+        "counts_agree_with_enumeration": true,
+        "manifests_present": true,
+        "model_cell_binary_remeasured": {
+          "present": true,
+          "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+          "size": 16728,
+          "st_dev": 66306,
+          "st_ino": 11620487
+        },
+        "model_cell_count_after": 1,
+        "model_cell_count_before": 1,
+        "model_cell_count_measured": 1,
+        "model_cell_count_unchanged": true,
+        "model_cell_identity_same": true,
+        "model_cell_report_present": true,
+        "model_cell_report_sha256": "b7aa6d7e1530bf42c1e4df24eac5177dc43f089fcfc8c2fc388af93b4455c527",
+        "order_cell_binary_remeasured": {
+          "present": true,
+          "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+          "size": 16424,
+          "st_dev": 66306,
+          "st_ino": 11620488
+        },
+        "order_cell_count_after": 0,
+        "order_cell_count_before": 0,
+        "order_cell_count_measured": 0,
+        "order_cell_count_unchanged": true,
+        "order_cell_identity_same": true,
+        "reported_cells_run": 1,
+        "reported_provider_calls": 0,
+        "undeclared_cell_artifacts": []
+      },
+      "checker_derived_failure_code": "PROVIDER_CAPABILITY_INHERITED",
+      "checker_derived_failure_kind": "POSSESSION",
+      "conjuncts": {
+        "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+        "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+        "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+        "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+        "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+        "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_SET_MEASURED": true,
+        "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+        "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": false,
+        "ORDER_CELL_COUNT_UNCHANGED": true,
+        "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+      },
+      "denied_records": [
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216361 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185865"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216538 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7fff60cde8a0) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185865"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216645 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7c40a8fbaa10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185865"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216842 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185865"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216324 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185866"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216531 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffc38438710) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185866"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216634 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7854c007ca10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185866"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216813 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185866"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216352 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185867"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216519 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffd79e63400) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185867"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216610 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7485edb6da10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185867"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164271.216744 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-B/trace-prefix..2185867"
+        }
+      ],
+      "denied_syscalls": [
+        "clone",
+        "execve",
+        "socket",
+        "socketpair"
+      ],
+      "disagreements": [],
+      "equality": {
+        "declared_but_unmeasured": [],
+        "declared_non_stdio_identities": [],
+        "measured_non_stdio_identities": [
+          "AF_UNIX:inode=100844217"
+        ],
+        "measurement_valid": true,
+        "no_provider_capable_descriptor_inherited": false,
+        "undeclared_but_measured": [
+          "AF_UNIX:inode=100844217"
+        ],
+        "verdict": "CAPABILITY_VIOLATION"
+      },
+      "falsified_conjuncts": [
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED"
+      ],
+      "kill_events": [],
+      "ledgers": {
+        "gate_attempts": 1,
+        "gate_dispatches": 1,
+        "mock_receives": 1
+      },
+      "leg_completed": true,
+      "leg_denial_errnos": [
+        13
+      ],
+      "predicate_value": false,
+      "provider_delta_recomputed": {
+        "after": {
+          "attempts": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "after_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_present": true,
+        "before": {
+          "attempts": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "before_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_present": true,
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes_matches_expected": true,
+        "delta_zero": true,
+        "expected": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "expected_is_falsifier_shape": false,
+        "fail_closed": false,
+        "falsifier_arm": false,
+        "falsifier_injection_present": true,
+        "offenders_present": false,
+        "raw_ledger_authority": {
+          "join": "recorded path resolves into this arm dir; the sealed pre-leg prefix bytes decode to the before-snapshot's record count; the sealed bytes are an exact prefix of the final ledger bytes",
+          "notes": [],
+          "raw_ledgers_authoritative": true,
+          "rows": {
+            "attempts": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-attempts.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 372,
+                "final_prefix_sha256": "43783a8be93c09269fc1544800a41054f7ff5d99aee12403c4fcac3fdc07679e",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 372,
+                "sealed_sha256": "43783a8be93c09269fc1544800a41054f7ff5d99aee12403c4fcac3fdc07679e"
+              },
+              "raw_after": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "43783a8be93c09269fc1544800a41054f7ff5d99aee12403c4fcac3fdc07679e"
+              },
+              "raw_before": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "43783a8be93c09269fc1544800a41054f7ff5d99aee12403c4fcac3fdc07679e"
+              },
+              "seal_consistent": true
+            },
+            "dispatches": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-dispatches.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 372,
+                "final_prefix_sha256": "6c9c4899ed9411dbe3801bad0e1b9bcdfab89731f082bb5bbe9ec1b6331a9c99",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 372,
+                "sealed_sha256": "6c9c4899ed9411dbe3801bad0e1b9bcdfab89731f082bb5bbe9ec1b6331a9c99"
+              },
+              "raw_after": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "6c9c4899ed9411dbe3801bad0e1b9bcdfab89731f082bb5bbe9ec1b6331a9c99"
+              },
+              "raw_before": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "6c9c4899ed9411dbe3801bad0e1b9bcdfab89731f082bb5bbe9ec1b6331a9c99"
+              },
+              "seal_consistent": true
+            },
+            "receives": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "mock-receives.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 530,
+                "final_prefix_sha256": "3e6371d72f72cc34c826f8797942c71448812730f9e217453b8e925269b7b4df",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 530,
+                "sealed_sha256": "3e6371d72f72cc34c826f8797942c71448812730f9e217453b8e925269b7b4df"
+              },
+              "raw_after": {
+                "bytes": 530,
+                "records": 1,
+                "sha256": "3e6371d72f72cc34c826f8797942c71448812730f9e217453b8e925269b7b4df"
+              },
+              "raw_before": {
+                "bytes": 530,
+                "records": 1,
+                "sha256": "3e6371d72f72cc34c826f8797942c71448812730f9e217453b8e925269b7b4df"
+              },
+              "seal_consistent": true
+            }
+          }
+        },
+        "snapshots_agree_with_bytes": true
+      },
+      "reason_recomputed": {
+        "checker_derived_bound_signals": {
+          "declared_provider_class": true,
+          "legs_with_provider_descriptor": [
+            {
+              "endpoints": [
+                "AF_UNIX:inode=100844217"
+              ]
+            }
+          ],
+          "non_stdio_descriptor_identities": [
+            "AF_UNIX:inode=100844217"
+          ],
+          "undeclared_but_measured": [
+            "AF_UNIX:inode=100844217"
+          ]
+        },
+        "checker_derived_failure_code": "PROVIDER_CAPABILITY_INHERITED",
+        "checker_derived_failure_kind": "POSSESSION",
+        "escalation_order_matches_frozen_predicate": true
+      },
+      "sealed_join_recomputed": {
+        "all_expected_legs_present": true,
+        "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "derivation": "independent reparse of sealed identity + raw leg receipts",
+        "expected_leg_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "handoff_hash_matches_recorded": true,
+        "handoff_present": true,
+        "handoff_sha256_recomputed_by_checker": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_count": 3,
+        "legs": [
+          {
+            "bytes_consumed": 346,
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          }
+        ],
+        "legs_absent": [],
+        "legs_consumed_sealed_response": true,
+        "legs_missing_receipt": [],
+        "legs_with_mismatched_point_of_use": [],
+        "point_of_use_hash_valid": true,
+        "same_captured_response_bound_to_all_legs": true
+      },
+      "seccomp_filter_count": 1,
+      "seccomp_raw": "2",
+      "target_verified": true,
+      "timeline": {
+        "expected_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "forbidden_sequence_observed": false,
+        "missing_steps": [],
+        "no_forbidden_capability_window": true,
+        "observed_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "order_inversions": [],
+        "order_respected": true
+      }
+    },
+    "D3-C": {
+      "activation_evidenced_by_kernel": true,
+      "agrees_with_harness": true,
+      "arm": "D3-C",
+      "capability_bindings_recomputed": {
+        "all_bindings_reconciled": true,
+        "derived_from": "filter rebuilt from source vs on-disk bytes vs precommit freeze; sealed identity vs per-leg point-of-use; pre-leg authority manifest vs graded identities",
+        "joins": {
+          "policy_identity_binding": {
+            "anchor_source": "precommit",
+            "disk_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "filter_rebuilt_matches_disk": true,
+            "policy_rebuilt_matches_disk": true,
+            "precommit_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "precommit_frozen_matches_rebuilt": true,
+            "rebuilt_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "reconciled": true
+          },
+          "pre_leg_authority_manifest_binding": {
+            "actual_pre_manifest_sha256": "34e623e6ed7e52cf0e1964aeb53e4f3d01f94cdcafed219e1c9f7613333cee4b",
+            "forward_link_valid": true,
+            "graded_leg_sha256": "fa8ed58b11124c3a05a98ed51cac2ae7bcbe6858667b42f324dd02db5d315f35",
+            "leg_binary_measure_error": "",
+            "leg_binary_path": "/tmp/d3gen/build-audit2/d3-leg-on-net",
+            "leg_identity_reconciled": true,
+            "post_manifest_present": true,
+            "pre_manifest_present": true,
+            "precommit_allowlist_sha256": "bacc3b3d45a9a5ef064d0497c2f63a45116dd51cd8f44b2b30e60927c44b909e",
+            "precommit_leg_sha256": "fa8ed58b11124c3a05a98ed51cac2ae7bcbe6858667b42f324dd02db5d315f35",
+            "reconciled": true,
+            "recorded_forward_link": "34e623e6ed7e52cf0e1964aeb53e4f3d01f94cdcafed219e1c9f7613333cee4b"
+          },
+          "sealed_response_binding": {
+            "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "legs_bound": [
+              "ADAPTER_ONLY_PASS_THROUGH",
+              "OFF_NOOP",
+              "ON"
+            ],
+            "legs_unbound_or_mismatched": [],
+            "reconciled": true
+          }
+        }
+      },
+      "cell_counts_recomputed": {
+        "after_manifest_sha256": "6949b026476568510d0cca05ae75aaabac282ba90662cff94c3834d41c9196cd",
+        "before_manifest_sha256": "34e623e6ed7e52cf0e1964aeb53e4f3d01f94cdcafed219e1c9f7613333cee4b",
+        "cell_binary_rehash_agrees": true,
+        "cell_measurement_valid": true,
+        "counted_by": "independent reparse of executed cell report; cell BINARY re-hashed by the checker; BOTH sealed pre/post-leg manifests; undeclared cell artifacts enumerated separately; never an inferred zero",
+        "counts_agree_with_enumeration": true,
+        "manifests_present": true,
+        "model_cell_binary_remeasured": {
+          "present": true,
+          "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+          "size": 16728,
+          "st_dev": 66306,
+          "st_ino": 11620487
+        },
+        "model_cell_count_after": 1,
+        "model_cell_count_before": 1,
+        "model_cell_count_measured": 1,
+        "model_cell_count_unchanged": true,
+        "model_cell_identity_same": true,
+        "model_cell_report_present": true,
+        "model_cell_report_sha256": "89d7ba46cb83fa866ac28f4c31d587b443e2011f7bb34fc31b2489b0ea8eafbe",
+        "order_cell_binary_remeasured": {
+          "present": true,
+          "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+          "size": 16424,
+          "st_dev": 66306,
+          "st_ino": 11620488
+        },
+        "order_cell_count_after": 0,
+        "order_cell_count_before": 0,
+        "order_cell_count_measured": 0,
+        "order_cell_count_unchanged": true,
+        "order_cell_identity_same": true,
+        "reported_cells_run": 1,
+        "reported_provider_calls": 0,
+        "undeclared_cell_artifacts": []
+      },
+      "checker_derived_failure_code": "PROVIDER_CAPABILITY_ATTEMPT",
+      "checker_derived_failure_kind": "ATTEMPTED_USE_DENIED",
+      "conjuncts": {
+        "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+        "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+        "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+        "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+        "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+        "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_SET_MEASURED": true,
+        "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+        "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+        "ORDER_CELL_COUNT_UNCHANGED": true,
+        "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+      },
+      "denied_records": [
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.497769 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187562"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.497891 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffe9992dc00) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187562"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.498018 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x73d30db68a10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187562"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.498153 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187562"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.497676 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187563"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.497845 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffe68b925d0) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187563"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.497966 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7d2978413a10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187563"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.498097 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187563"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.497642 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187564"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.497826 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffc4505d640) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187564"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.497933 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7dffd0ed1a10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187564"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164285.498033 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-C/trace-prefix..2187564"
+        }
+      ],
+      "denied_syscalls": [
+        "clone",
+        "execve",
+        "socket",
+        "socketpair"
+      ],
+      "disagreements": [],
+      "equality": {
+        "declared_but_unmeasured": [],
+        "declared_non_stdio_identities": [],
+        "measured_non_stdio_identities": [],
+        "measurement_valid": true,
+        "no_provider_capable_descriptor_inherited": true,
+        "undeclared_but_measured": [],
+        "verdict": "EQUALITY_SATISFIED"
+      },
+      "falsified_conjuncts": [],
+      "kill_events": [],
+      "ledgers": {
+        "gate_attempts": 1,
+        "gate_dispatches": 1,
+        "mock_receives": 1
+      },
+      "leg_completed": true,
+      "leg_denial_errnos": [
+        13
+      ],
+      "predicate_value": true,
+      "provider_delta_recomputed": {
+        "after": {
+          "attempts": {
+            "bytes": 373,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "after_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_present": true,
+        "before": {
+          "attempts": {
+            "bytes": 373,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-C/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "before_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_present": true,
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes_matches_expected": true,
+        "delta_zero": true,
+        "expected": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "expected_is_falsifier_shape": false,
+        "fail_closed": false,
+        "falsifier_arm": false,
+        "falsifier_injection_present": true,
+        "offenders_present": false,
+        "raw_ledger_authority": {
+          "join": "recorded path resolves into this arm dir; the sealed pre-leg prefix bytes decode to the before-snapshot's record count; the sealed bytes are an exact prefix of the final ledger bytes",
+          "notes": [],
+          "raw_ledgers_authoritative": true,
+          "rows": {
+            "attempts": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-attempts.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 373,
+                "final_prefix_sha256": "cb75b0da020f76a8d9e5feb983be3fdf516aef23bb9a83e5c611c32a6affd44d",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 373,
+                "sealed_sha256": "cb75b0da020f76a8d9e5feb983be3fdf516aef23bb9a83e5c611c32a6affd44d"
+              },
+              "raw_after": {
+                "bytes": 373,
+                "records": 1,
+                "sha256": "cb75b0da020f76a8d9e5feb983be3fdf516aef23bb9a83e5c611c32a6affd44d"
+              },
+              "raw_before": {
+                "bytes": 373,
+                "records": 1,
+                "sha256": "cb75b0da020f76a8d9e5feb983be3fdf516aef23bb9a83e5c611c32a6affd44d"
+              },
+              "seal_consistent": true
+            },
+            "dispatches": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-dispatches.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 372,
+                "final_prefix_sha256": "b2914ea0fa8385f7737bc4637308a9638386d91d59816c089e4c33beed075df0",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 372,
+                "sealed_sha256": "b2914ea0fa8385f7737bc4637308a9638386d91d59816c089e4c33beed075df0"
+              },
+              "raw_after": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "b2914ea0fa8385f7737bc4637308a9638386d91d59816c089e4c33beed075df0"
+              },
+              "raw_before": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "b2914ea0fa8385f7737bc4637308a9638386d91d59816c089e4c33beed075df0"
+              },
+              "seal_consistent": true
+            },
+            "receives": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "mock-receives.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 530,
+                "final_prefix_sha256": "219ac347263085e7333d32061deb7fa1e1bed6c5a77a310c116e3960785bee32",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 530,
+                "sealed_sha256": "219ac347263085e7333d32061deb7fa1e1bed6c5a77a310c116e3960785bee32"
+              },
+              "raw_after": {
+                "bytes": 530,
+                "records": 1,
+                "sha256": "219ac347263085e7333d32061deb7fa1e1bed6c5a77a310c116e3960785bee32"
+              },
+              "raw_before": {
+                "bytes": 530,
+                "records": 1,
+                "sha256": "219ac347263085e7333d32061deb7fa1e1bed6c5a77a310c116e3960785bee32"
+              },
+              "seal_consistent": true
+            }
+          }
+        },
+        "snapshots_agree_with_bytes": true
+      },
+      "reason_recomputed": {
+        "checker_derived_bound_signals": {
+          "by_conjunct": {
+            "EXEC_DENIED_AFTER_LEG_ENTRY": [
+              "execve"
+            ],
+            "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": [
+              "socket",
+              "socketpair"
+            ],
+            "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": [
+              "clone"
+            ]
+          },
+          "declared_intents": [
+            "none",
+            "reach_provider_cognition"
+          ],
+          "denied_syscalls": [
+            "clone",
+            "execve",
+            "socket",
+            "socketpair"
+          ]
+        },
+        "checker_derived_failure_code": "PROVIDER_CAPABILITY_ATTEMPT",
+        "checker_derived_failure_kind": "ATTEMPTED_USE_DENIED",
+        "escalation_order_matches_frozen_predicate": true
+      },
+      "sealed_join_recomputed": {
+        "all_expected_legs_present": true,
+        "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "derivation": "independent reparse of sealed identity + raw leg receipts",
+        "expected_leg_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "handoff_hash_matches_recorded": true,
+        "handoff_present": true,
+        "handoff_sha256_recomputed_by_checker": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_count": 3,
+        "legs": [
+          {
+            "bytes_consumed": 346,
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          }
+        ],
+        "legs_absent": [],
+        "legs_consumed_sealed_response": true,
+        "legs_missing_receipt": [],
+        "legs_with_mismatched_point_of_use": [],
+        "point_of_use_hash_valid": true,
+        "same_captured_response_bound_to_all_legs": true
+      },
+      "seccomp_filter_count": 1,
+      "seccomp_raw": "2",
+      "target_verified": true,
+      "timeline": {
+        "expected_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "forbidden_sequence_observed": false,
+        "missing_steps": [],
+        "no_forbidden_capability_window": true,
+        "observed_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "order_inversions": [],
+        "order_respected": true
+      }
+    },
+    "D3-D": {
+      "activation_evidenced_by_kernel": true,
+      "agrees_with_harness": true,
+      "arm": "D3-D",
+      "capability_bindings_recomputed": {
+        "all_bindings_reconciled": true,
+        "derived_from": "filter rebuilt from source vs on-disk bytes vs precommit freeze; sealed identity vs per-leg point-of-use; pre-leg authority manifest vs graded identities",
+        "joins": {
+          "policy_identity_binding": {
+            "anchor_source": "precommit",
+            "disk_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "filter_rebuilt_matches_disk": true,
+            "policy_rebuilt_matches_disk": true,
+            "precommit_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "precommit_frozen_matches_rebuilt": true,
+            "rebuilt_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "reconciled": true
+          },
+          "pre_leg_authority_manifest_binding": {
+            "actual_pre_manifest_sha256": "56fe34fbebc8a5c282c5c81eb74697a0d37abb77aad584070abeb97dbe566644",
+            "forward_link_valid": true,
+            "graded_leg_sha256": "0372dcd4346ea3c280409c7b8a66021ae15f29569fac9bbe4a1e75c084f0dca9",
+            "leg_binary_measure_error": "",
+            "leg_binary_path": "/tmp/d3gen/build-audit2/d3-leg-on-exec",
+            "leg_identity_reconciled": true,
+            "post_manifest_present": true,
+            "pre_manifest_present": true,
+            "precommit_allowlist_sha256": "bacc3b3d45a9a5ef064d0497c2f63a45116dd51cd8f44b2b30e60927c44b909e",
+            "precommit_leg_sha256": "0372dcd4346ea3c280409c7b8a66021ae15f29569fac9bbe4a1e75c084f0dca9",
+            "reconciled": true,
+            "recorded_forward_link": "56fe34fbebc8a5c282c5c81eb74697a0d37abb77aad584070abeb97dbe566644"
+          },
+          "sealed_response_binding": {
+            "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "legs_bound": [
+              "ADAPTER_ONLY_PASS_THROUGH",
+              "OFF_NOOP",
+              "ON"
+            ],
+            "legs_unbound_or_mismatched": [],
+            "reconciled": true
+          }
+        }
+      },
+      "cell_counts_recomputed": {
+        "after_manifest_sha256": "bc92a213e9cec72ce807957e27eb223ef7cb7ddd0d1fddcb195cf97980315808",
+        "before_manifest_sha256": "56fe34fbebc8a5c282c5c81eb74697a0d37abb77aad584070abeb97dbe566644",
+        "cell_binary_rehash_agrees": true,
+        "cell_measurement_valid": true,
+        "counted_by": "independent reparse of executed cell report; cell BINARY re-hashed by the checker; BOTH sealed pre/post-leg manifests; undeclared cell artifacts enumerated separately; never an inferred zero",
+        "counts_agree_with_enumeration": true,
+        "manifests_present": true,
+        "model_cell_binary_remeasured": {
+          "present": true,
+          "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+          "size": 16728,
+          "st_dev": 66306,
+          "st_ino": 11620487
+        },
+        "model_cell_count_after": 1,
+        "model_cell_count_before": 1,
+        "model_cell_count_measured": 1,
+        "model_cell_count_unchanged": true,
+        "model_cell_identity_same": true,
+        "model_cell_report_present": true,
+        "model_cell_report_sha256": "dba5c952b73e614ad0179f2364a9fa68e8b658c931144eb3499c371ca6b7fba0",
+        "order_cell_binary_remeasured": {
+          "present": true,
+          "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+          "size": 16424,
+          "st_dev": 66306,
+          "st_ino": 11620488
+        },
+        "order_cell_count_after": 0,
+        "order_cell_count_before": 0,
+        "order_cell_count_measured": 0,
+        "order_cell_count_unchanged": true,
+        "order_cell_identity_same": true,
+        "reported_cells_run": 1,
+        "reported_provider_calls": 0,
+        "undeclared_cell_artifacts": []
+      },
+      "checker_derived_failure_code": "PROVIDER_CAPABILITY_ATTEMPT",
+      "checker_derived_failure_kind": "ATTEMPTED_USE_DENIED",
+      "conjuncts": {
+        "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+        "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+        "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+        "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+        "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+        "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_SET_MEASURED": true,
+        "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+        "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": true,
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+        "ORDER_CELL_COUNT_UNCHANGED": true,
+        "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+      },
+      "denied_records": [
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704405 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189260"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704617 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffe8775b690) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189260"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704771 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7e7da664fa10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189260"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704952 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189260"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704505 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189261"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704642 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffe2fcd7940) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189261"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704781 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7f6cfb1aea10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189261"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704921 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189261"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704372 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189262"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704583 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7fff63522eb0) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189262"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704719 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x766b426dfa10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189262"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164299.704841 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-D/trace-prefix..2189262"
+        }
+      ],
+      "denied_syscalls": [
+        "clone",
+        "execve",
+        "socket",
+        "socketpair"
+      ],
+      "disagreements": [],
+      "equality": {
+        "declared_but_unmeasured": [],
+        "declared_non_stdio_identities": [],
+        "measured_non_stdio_identities": [],
+        "measurement_valid": true,
+        "no_provider_capable_descriptor_inherited": true,
+        "undeclared_but_measured": [],
+        "verdict": "EQUALITY_SATISFIED"
+      },
+      "falsified_conjuncts": [],
+      "kill_events": [],
+      "ledgers": {
+        "gate_attempts": 1,
+        "gate_dispatches": 1,
+        "mock_receives": 1
+      },
+      "leg_completed": true,
+      "leg_denial_errnos": [
+        13
+      ],
+      "predicate_value": true,
+      "provider_delta_recomputed": {
+        "after": {
+          "attempts": {
+            "bytes": 373,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "after_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_present": true,
+        "before": {
+          "attempts": {
+            "bytes": 373,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-D/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "before_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_present": true,
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes_matches_expected": true,
+        "delta_zero": true,
+        "expected": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "expected_is_falsifier_shape": false,
+        "fail_closed": false,
+        "falsifier_arm": false,
+        "falsifier_injection_present": true,
+        "offenders_present": false,
+        "raw_ledger_authority": {
+          "join": "recorded path resolves into this arm dir; the sealed pre-leg prefix bytes decode to the before-snapshot's record count; the sealed bytes are an exact prefix of the final ledger bytes",
+          "notes": [],
+          "raw_ledgers_authoritative": true,
+          "rows": {
+            "attempts": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-attempts.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 373,
+                "final_prefix_sha256": "c87aab51f3d62cd319ff7eda93de7718d40126690e3eb0e5e8a592f5d70d4216",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 373,
+                "sealed_sha256": "c87aab51f3d62cd319ff7eda93de7718d40126690e3eb0e5e8a592f5d70d4216"
+              },
+              "raw_after": {
+                "bytes": 373,
+                "records": 1,
+                "sha256": "c87aab51f3d62cd319ff7eda93de7718d40126690e3eb0e5e8a592f5d70d4216"
+              },
+              "raw_before": {
+                "bytes": 373,
+                "records": 1,
+                "sha256": "c87aab51f3d62cd319ff7eda93de7718d40126690e3eb0e5e8a592f5d70d4216"
+              },
+              "seal_consistent": true
+            },
+            "dispatches": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-dispatches.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 372,
+                "final_prefix_sha256": "4ba58c5ca15cbdea7ceff1eb0aa52fcb8bcc5189c2e24db8b4a230ef7b8ea9d6",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 372,
+                "sealed_sha256": "4ba58c5ca15cbdea7ceff1eb0aa52fcb8bcc5189c2e24db8b4a230ef7b8ea9d6"
+              },
+              "raw_after": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "4ba58c5ca15cbdea7ceff1eb0aa52fcb8bcc5189c2e24db8b4a230ef7b8ea9d6"
+              },
+              "raw_before": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "4ba58c5ca15cbdea7ceff1eb0aa52fcb8bcc5189c2e24db8b4a230ef7b8ea9d6"
+              },
+              "seal_consistent": true
+            },
+            "receives": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "mock-receives.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 530,
+                "final_prefix_sha256": "8cde92460cfa23c80ef2a63bc732c6ed2abbb6e1a97869c8c7833a61714f7f89",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 530,
+                "sealed_sha256": "8cde92460cfa23c80ef2a63bc732c6ed2abbb6e1a97869c8c7833a61714f7f89"
+              },
+              "raw_after": {
+                "bytes": 530,
+                "records": 1,
+                "sha256": "8cde92460cfa23c80ef2a63bc732c6ed2abbb6e1a97869c8c7833a61714f7f89"
+              },
+              "raw_before": {
+                "bytes": 530,
+                "records": 1,
+                "sha256": "8cde92460cfa23c80ef2a63bc732c6ed2abbb6e1a97869c8c7833a61714f7f89"
+              },
+              "seal_consistent": true
+            }
+          }
+        },
+        "snapshots_agree_with_bytes": true
+      },
+      "reason_recomputed": {
+        "checker_derived_bound_signals": {
+          "by_conjunct": {
+            "EXEC_DENIED_AFTER_LEG_ENTRY": [
+              "execve"
+            ],
+            "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": [
+              "socket",
+              "socketpair"
+            ],
+            "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": [
+              "clone"
+            ]
+          },
+          "declared_intents": [
+            "none",
+            "reach_provider_cognition"
+          ],
+          "denied_syscalls": [
+            "clone",
+            "execve",
+            "socket",
+            "socketpair"
+          ]
+        },
+        "checker_derived_failure_code": "PROVIDER_CAPABILITY_ATTEMPT",
+        "checker_derived_failure_kind": "ATTEMPTED_USE_DENIED",
+        "escalation_order_matches_frozen_predicate": true
+      },
+      "sealed_join_recomputed": {
+        "all_expected_legs_present": true,
+        "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "derivation": "independent reparse of sealed identity + raw leg receipts",
+        "expected_leg_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "handoff_hash_matches_recorded": true,
+        "handoff_present": true,
+        "handoff_sha256_recomputed_by_checker": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_count": 3,
+        "legs": [
+          {
+            "bytes_consumed": 346,
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          }
+        ],
+        "legs_absent": [],
+        "legs_consumed_sealed_response": true,
+        "legs_missing_receipt": [],
+        "legs_with_mismatched_point_of_use": [],
+        "point_of_use_hash_valid": true,
+        "same_captured_response_bound_to_all_legs": true
+      },
+      "seccomp_filter_count": 1,
+      "seccomp_raw": "2",
+      "target_verified": true,
+      "timeline": {
+        "expected_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "forbidden_sequence_observed": false,
+        "missing_steps": [],
+        "no_forbidden_capability_window": true,
+        "observed_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "order_inversions": [],
+        "order_respected": true
+      }
+    },
+    "D3-E": {
+      "activation_evidenced_by_kernel": true,
+      "agrees_with_harness": true,
+      "arm": "D3-E",
+      "capability_bindings_recomputed": {
+        "all_bindings_reconciled": true,
+        "derived_from": "filter rebuilt from source vs on-disk bytes vs precommit freeze; sealed identity vs per-leg point-of-use; pre-leg authority manifest vs graded identities",
+        "joins": {
+          "policy_identity_binding": {
+            "anchor_source": "precommit",
+            "disk_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "filter_rebuilt_matches_disk": true,
+            "policy_rebuilt_matches_disk": true,
+            "precommit_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "precommit_frozen_matches_rebuilt": true,
+            "rebuilt_filter_sha256": "2d155ba65d4c584512235194d8359f9b0ec828e8b4d3062694526605c882b1fe",
+            "reconciled": true
+          },
+          "pre_leg_authority_manifest_binding": {
+            "actual_pre_manifest_sha256": "d831d10e6e658a0d0d5b90f5f93339b355ef30f634982a2085195f3a4aa752d0",
+            "forward_link_valid": true,
+            "graded_leg_sha256": "8825a9c9842b27e1fa74d1f462f0d9873ee315a8273358faaf6ed286eddd7ff4",
+            "leg_binary_measure_error": "",
+            "leg_binary_path": "/tmp/d3gen/build-audit2/d3-leg-on-brok",
+            "leg_identity_reconciled": true,
+            "post_manifest_present": true,
+            "pre_manifest_present": true,
+            "precommit_allowlist_sha256": "bacc3b3d45a9a5ef064d0497c2f63a45116dd51cd8f44b2b30e60927c44b909e",
+            "precommit_leg_sha256": "8825a9c9842b27e1fa74d1f462f0d9873ee315a8273358faaf6ed286eddd7ff4",
+            "reconciled": true,
+            "recorded_forward_link": "d831d10e6e658a0d0d5b90f5f93339b355ef30f634982a2085195f3a4aa752d0"
+          },
+          "sealed_response_binding": {
+            "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "legs_bound": [
+              "ADAPTER_ONLY_PASS_THROUGH",
+              "OFF_NOOP",
+              "ON"
+            ],
+            "legs_unbound_or_mismatched": [],
+            "reconciled": true
+          }
+        }
+      },
+      "cell_counts_recomputed": {
+        "after_manifest_sha256": "f5e2ee17782aa9b342aa0472ae84861c58c02055d9cd7bd264f5a62e206e6736",
+        "before_manifest_sha256": "d831d10e6e658a0d0d5b90f5f93339b355ef30f634982a2085195f3a4aa752d0",
+        "cell_binary_rehash_agrees": true,
+        "cell_measurement_valid": true,
+        "counted_by": "independent reparse of executed cell report; cell BINARY re-hashed by the checker; BOTH sealed pre/post-leg manifests; undeclared cell artifacts enumerated separately; never an inferred zero",
+        "counts_agree_with_enumeration": true,
+        "manifests_present": true,
+        "model_cell_binary_remeasured": {
+          "present": true,
+          "sha256": "1ba5d0b7aaf256b9d862f5cacf3cda2a2696ba1be8ad408f1f58afefbf67d542",
+          "size": 16728,
+          "st_dev": 66306,
+          "st_ino": 11620487
+        },
+        "model_cell_count_after": 1,
+        "model_cell_count_before": 1,
+        "model_cell_count_measured": 1,
+        "model_cell_count_unchanged": true,
+        "model_cell_identity_same": true,
+        "model_cell_report_present": true,
+        "model_cell_report_sha256": "e115238d553aab60e8b1d55893eb8557d95069b7eef9caeb3adcc26aef5cc2ba",
+        "order_cell_binary_remeasured": {
+          "present": true,
+          "sha256": "43a2e2d7a2c9e3270e47dfa64daf365ef159d12078228c9cf267b07762e42486",
+          "size": 16424,
+          "st_dev": 66306,
+          "st_ino": 11620488
+        },
+        "order_cell_count_after": 0,
+        "order_cell_count_before": 0,
+        "order_cell_count_measured": 0,
+        "order_cell_count_unchanged": true,
+        "order_cell_identity_same": true,
+        "reported_cells_run": 1,
+        "reported_provider_calls": 0,
+        "undeclared_cell_artifacts": []
+      },
+      "checker_derived_failure_code": "PROVIDER_BROKER_REACHABLE",
+      "checker_derived_failure_kind": "POSSESSION_INDIRECT",
+      "conjuncts": {
+        "ALL_CAPABILITY_BINDINGS_RECONCILED": true,
+        "D1_PROVIDER_OPPORTUNITY_DELTA_ZERO": true,
+        "EXEC_DENIED_AFTER_LEG_ENTRY": true,
+        "HONEST_COUNTERFACTUAL_LEGS_COMPLETE": true,
+        "KERNEL_DENIAL_POLICY_ACTIVE_AT_POINT_OF_USE": true,
+        "KERNEL_DENIAL_POLICY_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_ALLOWLIST_PRECOMMITTED": true,
+        "LEG_DESCRIPTOR_SET_MEASURED": true,
+        "LEG_ENTRY_IDENTITIES_PRECOMMITTED": true,
+        "NETWORK_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED": false,
+        "NO_PROVIDER_CAPABLE_DESCRIPTOR_INHERITED": true,
+        "ORDER_CELL_COUNT_UNCHANGED": true,
+        "PROCESS_CREATION_DENIED_AFTER_LEG_ENTRY": true,
+        "TOTAL_MODEL_CELL_COUNT_UNCHANGED": true
+      },
+      "denied_records": [
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.935835 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191422"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.935971 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffca5edf810) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191422"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.936106 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x78b8c3d65a10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191422"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.936276 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191422"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.935820 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191423"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.935950 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7fff3c8a20d0) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191423"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.936072 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7c90c551da10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191423"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.936151 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191423"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.935695 socket(AF_INET, SOCK_STREAM, IPPROTO_IP) = -1 EACCES (Permission denied)",
+          "syscall": "socket",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191424"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.935856 socketpair(AF_UNIX, SOCK_STREAM, 0, 0x7ffcfcc95260) = -1 EACCES (Permission denied)",
+          "syscall": "socketpair",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191424"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.935959 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x76723ed0fa10) = -1 EACCES (Permission denied)",
+          "syscall": "clone",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191424"
+        },
+        {
+          "errno_name": "EACCES",
+          "raw_line": "1789164313.936051 execve(\"/bin/true\", [\"true\"], NULL) = -1 EACCES (Permission denied)",
+          "syscall": "execve",
+          "trace_file": "/tmp/d3gen/d3run-repair10/arm-D3-E/trace-prefix..2191424"
+        }
+      ],
+      "denied_syscalls": [
+        "clone",
+        "execve",
+        "socket",
+        "socketpair"
+      ],
+      "disagreements": [],
+      "equality": {
+        "declared_but_unmeasured": [],
+        "declared_non_stdio_identities": [],
+        "measured_non_stdio_identities": [
+          "AF_UNIX:inode=100871619"
+        ],
+        "measurement_valid": true,
+        "no_provider_capable_descriptor_inherited": false,
+        "undeclared_but_measured": [
+          "AF_UNIX:inode=100871619"
+        ],
+        "verdict": "CAPABILITY_VIOLATION"
+      },
+      "falsified_conjuncts": [
+        "NO_PROVIDER_CAPABLE_BROKER_ENDPOINT_INHERITED"
+      ],
+      "kill_events": [],
+      "ledgers": {
+        "gate_attempts": 1,
+        "gate_dispatches": 1,
+        "mock_receives": 1
+      },
+      "leg_completed": true,
+      "leg_denial_errnos": [
+        13
+      ],
+      "predicate_value": false,
+      "provider_delta_recomputed": {
+        "after": {
+          "attempts": {
+            "bytes": 373,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 529,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "after_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_present": true,
+        "before": {
+          "attempts": {
+            "bytes": 373,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 529,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "before_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_present": true,
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes_matches_expected": true,
+        "delta_zero": true,
+        "expected": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "expected_is_falsifier_shape": false,
+        "fail_closed": false,
+        "falsifier_arm": false,
+        "falsifier_injection_present": true,
+        "offenders_present": false,
+        "raw_ledger_authority": {
+          "join": "recorded path resolves into this arm dir; the sealed pre-leg prefix bytes decode to the before-snapshot's record count; the sealed bytes are an exact prefix of the final ledger bytes",
+          "notes": [],
+          "raw_ledgers_authoritative": true,
+          "rows": {
+            "attempts": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-attempts.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 373,
+                "final_prefix_sha256": "edc83dc9c7f0f2ab461eca7fcd8249cac936889a6d7e9653e26fcee0293070d3",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 373,
+                "sealed_sha256": "edc83dc9c7f0f2ab461eca7fcd8249cac936889a6d7e9653e26fcee0293070d3"
+              },
+              "raw_after": {
+                "bytes": 373,
+                "records": 1,
+                "sha256": "edc83dc9c7f0f2ab461eca7fcd8249cac936889a6d7e9653e26fcee0293070d3"
+              },
+              "raw_before": {
+                "bytes": 373,
+                "records": 1,
+                "sha256": "edc83dc9c7f0f2ab461eca7fcd8249cac936889a6d7e9653e26fcee0293070d3"
+              },
+              "seal_consistent": true
+            },
+            "dispatches": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-dispatches.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 372,
+                "final_prefix_sha256": "5f39d6da3e4ef705cdfcf39ff554dc42956b5902bbcc9aa71964c67fe7cbac40",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 372,
+                "sealed_sha256": "5f39d6da3e4ef705cdfcf39ff554dc42956b5902bbcc9aa71964c67fe7cbac40"
+              },
+              "raw_after": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "5f39d6da3e4ef705cdfcf39ff554dc42956b5902bbcc9aa71964c67fe7cbac40"
+              },
+              "raw_before": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "5f39d6da3e4ef705cdfcf39ff554dc42956b5902bbcc9aa71964c67fe7cbac40"
+              },
+              "seal_consistent": true
+            },
+            "receives": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "mock-receives.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 529,
+                "final_prefix_sha256": "a1cdd5bceb02dd9741de5215b463127788366246f7c0af5009abe92f0a840e06",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 529,
+                "sealed_sha256": "a1cdd5bceb02dd9741de5215b463127788366246f7c0af5009abe92f0a840e06"
+              },
+              "raw_after": {
+                "bytes": 529,
+                "records": 1,
+                "sha256": "a1cdd5bceb02dd9741de5215b463127788366246f7c0af5009abe92f0a840e06"
+              },
+              "raw_before": {
+                "bytes": 529,
+                "records": 1,
+                "sha256": "a1cdd5bceb02dd9741de5215b463127788366246f7c0af5009abe92f0a840e06"
+              },
+              "seal_consistent": true
+            }
+          }
+        },
+        "snapshots_agree_with_bytes": true
+      },
+      "reason_recomputed": {
+        "checker_derived_bound_signals": {
+          "declared_broker_class": true,
+          "legs_with_broker_endpoint": [
+            {
+              "endpoints": [
+                "AF_UNIX:inode=100871619"
+              ]
+            }
+          ],
+          "non_stdio_descriptor_identities": [
+            "AF_UNIX:inode=100871619"
+          ]
+        },
+        "checker_derived_failure_code": "PROVIDER_BROKER_REACHABLE",
+        "checker_derived_failure_kind": "POSSESSION_INDIRECT",
+        "escalation_order_matches_frozen_predicate": true
+      },
+      "sealed_join_recomputed": {
+        "all_expected_legs_present": true,
+        "captured_response_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "derivation": "independent reparse of sealed identity + raw leg receipts",
+        "expected_leg_identities": [
+          "ON",
+          "OFF_NOOP",
+          "ADAPTER_ONLY_PASS_THROUGH"
+        ],
+        "handoff_hash_matches_recorded": true,
+        "handoff_present": true,
+        "handoff_sha256_recomputed_by_checker": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+        "join_key": "captured_response_sha256 == point_of_use_sha256",
+        "leg_count": 3,
+        "legs": [
+          {
+            "bytes_consumed": 346,
+            "leg": "ADAPTER_ONLY_PASS_THROUGH",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "leg": "OFF_NOOP",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          },
+          {
+            "bytes_consumed": 346,
+            "leg": "ON",
+            "matches_captured_response": true,
+            "point_of_use_sha256": "f3253448dddf30e89afc3e83ba4be9650c454704a04858c0c37a0774401ecf9e",
+            "provider_calls": 0
+          }
+        ],
+        "legs_absent": [],
+        "legs_consumed_sealed_response": true,
+        "legs_missing_receipt": [],
+        "legs_with_mismatched_point_of_use": [],
+        "point_of_use_hash_valid": true,
+        "same_captured_response_bound_to_all_legs": true
+      },
+      "seccomp_filter_count": 1,
+      "seccomp_raw": "2",
+      "target_verified": true,
+      "timeline": {
+        "expected_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "forbidden_sequence_observed": false,
+        "missing_steps": [],
+        "no_forbidden_capability_window": true,
+        "observed_order": [
+          "LEG_PROCESS_START",
+          "DENIAL_POLICY_INSTALLED",
+          "ENTRY_BARRIER_REACHED",
+          "DESCRIPTOR_SET_MEASURED_EXTERNALLY",
+          "POLICY_ACTIVATION_EVIDENCED",
+          "DESCRIPTOR_ALLOWLIST_RECONCILED",
+          "BUSINESS_LOGIC_RELEASED"
+        ],
+        "order_inversions": [],
+        "order_respected": true
+      }
+    }
+  },
+  "checker_agrees_with_harness": true,
+  "checker_verdict": "AGREES",
+  "checker_version": "D3_INDEPENDENT_CHECKER_v1.0",
+  "conjunct_count": 15,
+  "contract_bearing_falsifier_F1": {
+    "arm": "D3-X",
+    "conjunct_true_on_frozen_shape": true,
+    "f1_authority_notes": [],
+    "f1_authority_rows": {
+      "attempts": {
+        "baseline_records": 1,
+        "baseline_sha256": "f5af4e9f01ffa10521123ae39ae9b56e7e68fe314570a819d415c7ef93fc1a11",
+        "delta": 1,
+        "exact_prefix": true,
+        "post_f1_records": 2,
+        "post_f1_sha256": "7e60199af9e0b83e2efc84171460fcbf1421efd136cd1cc443db45ae11c8b62a",
+        "present": true
+      },
+      "dispatches": {
+        "baseline_records": 1,
+        "baseline_sha256": "f855d0df2478321b112c669199361ceab3864ef67b3c421fe5f28b898758f837",
+        "delta": 0,
+        "exact_prefix": true,
+        "post_f1_records": 1,
+        "post_f1_sha256": "f855d0df2478321b112c669199361ceab3864ef67b3c421fe5f28b898758f837",
+        "present": true
+      },
+      "receives": {
+        "baseline_records": 1,
+        "baseline_sha256": "ef8d904604f4f133f4b28ad41c9a653345077f32794f752eea06f65eb5ee3c8a",
+        "delta": 0,
+        "exact_prefix": true,
+        "post_f1_records": 1,
+        "post_f1_sha256": "ef8d904604f4f133f4b28ad41c9a653345077f32794f752eea06f65eb5ee3c8a",
+        "present": true
+      }
+    },
+    "f1_delta_derived_from_sealed_bytes": {
+      "attempts": 1,
+      "dispatches": 0,
+      "receives": 0
+    },
+    "f1_delta_expected_frozen": {
+      "attempts": 1,
+      "dispatches": 0,
+      "receives": 0
+    },
+    "f1_matches_frozen_shape": true,
+    "final_ledger_delta_includes_supplemental": {
+      "attempts": 2,
+      "dispatches": 1,
+      "receives": 0
+    },
+    "proves_delta_is_live_measurement": true,
+    "supplemental_f1b": {
+      "contract_bearing": false,
+      "delta": {
+        "attempts": 1,
+        "dispatches": 1,
+        "receives": 0
+      },
+      "is_full_traverse": false,
+      "present": true
+    }
+  },
+  "disagreements": [],
+  "failure_vocabulary": [
+    "PROVIDER_CAPABILITY_INHERITED",
+    "PROVIDER_CAPABILITY_ATTEMPT",
+    "PROVIDER_BROKER_REACHABLE"
+  ],
+  "falsifier_report": {
+    "D3-B": {
+      "code": "PROVIDER_CAPABILITY_INHERITED",
+      "delta_recomputed_by_checker": {
+        "after": {
+          "attempts": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "after_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_present": true,
+        "before": {
+          "attempts": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 530,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-B/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "before_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_present": true,
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes_matches_expected": true,
+        "delta_zero": true,
+        "expected": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "expected_is_falsifier_shape": false,
+        "fail_closed": false,
+        "falsifier_arm": false,
+        "falsifier_injection_present": true,
+        "offenders_present": false,
+        "raw_ledger_authority": {
+          "join": "recorded path resolves into this arm dir; the sealed pre-leg prefix bytes decode to the before-snapshot's record count; the sealed bytes are an exact prefix of the final ledger bytes",
+          "notes": [],
+          "raw_ledgers_authoritative": true,
+          "rows": {
+            "attempts": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-attempts.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 372,
+                "final_prefix_sha256": "43783a8be93c09269fc1544800a41054f7ff5d99aee12403c4fcac3fdc07679e",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 372,
+                "sealed_sha256": "43783a8be93c09269fc1544800a41054f7ff5d99aee12403c4fcac3fdc07679e"
+              },
+              "raw_after": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "43783a8be93c09269fc1544800a41054f7ff5d99aee12403c4fcac3fdc07679e"
+              },
+              "raw_before": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "43783a8be93c09269fc1544800a41054f7ff5d99aee12403c4fcac3fdc07679e"
+              },
+              "seal_consistent": true
+            },
+            "dispatches": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-dispatches.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 372,
+                "final_prefix_sha256": "6c9c4899ed9411dbe3801bad0e1b9bcdfab89731f082bb5bbe9ec1b6331a9c99",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 372,
+                "sealed_sha256": "6c9c4899ed9411dbe3801bad0e1b9bcdfab89731f082bb5bbe9ec1b6331a9c99"
+              },
+              "raw_after": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "6c9c4899ed9411dbe3801bad0e1b9bcdfab89731f082bb5bbe9ec1b6331a9c99"
+              },
+              "raw_before": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "6c9c4899ed9411dbe3801bad0e1b9bcdfab89731f082bb5bbe9ec1b6331a9c99"
+              },
+              "seal_consistent": true
+            },
+            "receives": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "mock-receives.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 530,
+                "final_prefix_sha256": "3e6371d72f72cc34c826f8797942c71448812730f9e217453b8e925269b7b4df",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 530,
+                "sealed_sha256": "3e6371d72f72cc34c826f8797942c71448812730f9e217453b8e925269b7b4df"
+              },
+              "raw_after": {
+                "bytes": 530,
+                "records": 1,
+                "sha256": "3e6371d72f72cc34c826f8797942c71448812730f9e217453b8e925269b7b4df"
+              },
+              "raw_before": {
+                "bytes": 530,
+                "records": 1,
+                "sha256": "3e6371d72f72cc34c826f8797942c71448812730f9e217453b8e925269b7b4df"
+              },
+              "seal_consistent": true
+            }
+          }
+        },
+        "snapshots_agree_with_bytes": true
+      },
+      "falsifies": true,
+      "semantic_ok": false,
+      "zero_provider_delta": true
+    },
+    "D3-E": {
+      "code": "PROVIDER_BROKER_REACHABLE",
+      "delta_recomputed_by_checker": {
+        "after": {
+          "attempts": {
+            "bytes": 373,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 529,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "after_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "after_matches_expected": true,
+        "after_present": true,
+        "before": {
+          "attempts": {
+            "bytes": 373,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-attempts.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "dispatches": {
+            "bytes": 372,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/gate-dispatches.jsonl",
+            "records": 1,
+            "unparsable": 0
+          },
+          "receives": {
+            "bytes": 529,
+            "exists": true,
+            "path": "/tmp/d3gen/d3run-repair10/arm-D3-E/mock-receives.jsonl",
+            "records": 1,
+            "unparsable": 0
+          }
+        },
+        "before_counts": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_counts_from_bytes": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "before_present": true,
+        "boundary_populated_before": true,
+        "conjunct_value": true,
+        "delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "delta_from_bytes_matches_expected": true,
+        "delta_zero": true,
+        "expected": {
+          "attempts": 1,
+          "dispatches": 1,
+          "receives": 1
+        },
+        "expected_delta": {
+          "attempts": 0,
+          "dispatches": 0,
+          "receives": 0
+        },
+        "expected_is_falsifier_shape": false,
+        "fail_closed": false,
+        "falsifier_arm": false,
+        "falsifier_injection_present": true,
+        "offenders_present": false,
+        "raw_ledger_authority": {
+          "join": "recorded path resolves into this arm dir; the sealed pre-leg prefix bytes decode to the before-snapshot's record count; the sealed bytes are an exact prefix of the final ledger bytes",
+          "notes": [],
+          "raw_ledgers_authoritative": true,
+          "rows": {
+            "attempts": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-attempts.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 373,
+                "final_prefix_sha256": "edc83dc9c7f0f2ab461eca7fcd8249cac936889a6d7e9653e26fcee0293070d3",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 373,
+                "sealed_sha256": "edc83dc9c7f0f2ab461eca7fcd8249cac936889a6d7e9653e26fcee0293070d3"
+              },
+              "raw_after": {
+                "bytes": 373,
+                "records": 1,
+                "sha256": "edc83dc9c7f0f2ab461eca7fcd8249cac936889a6d7e9653e26fcee0293070d3"
+              },
+              "raw_before": {
+                "bytes": 373,
+                "records": 1,
+                "sha256": "edc83dc9c7f0f2ab461eca7fcd8249cac936889a6d7e9653e26fcee0293070d3"
+              },
+              "seal_consistent": true
+            },
+            "dispatches": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "gate-dispatches.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 372,
+                "final_prefix_sha256": "5f39d6da3e4ef705cdfcf39ff554dc42956b5902bbcc9aa71964c67fe7cbac40",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 372,
+                "sealed_sha256": "5f39d6da3e4ef705cdfcf39ff554dc42956b5902bbcc9aa71964c67fe7cbac40"
+              },
+              "raw_after": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "5f39d6da3e4ef705cdfcf39ff554dc42956b5902bbcc9aa71964c67fe7cbac40"
+              },
+              "raw_before": {
+                "bytes": 372,
+                "records": 1,
+                "sha256": "5f39d6da3e4ef705cdfcf39ff554dc42956b5902bbcc9aa71964c67fe7cbac40"
+              },
+              "seal_consistent": true
+            },
+            "receives": {
+              "before_snapshot_matches_raw": true,
+              "ledger": "mock-receives.jsonl",
+              "live_before_state": {
+                "records": 1
+              },
+              "prefix": {
+                "appended_bytes": 0,
+                "final_bytes": 529,
+                "final_prefix_sha256": "a1cdd5bceb02dd9741de5215b463127788366246f7c0af5009abe92f0a840e06",
+                "prefix_reason": null,
+                "prefix_verified": true,
+                "sealed_bytes": 529,
+                "sealed_sha256": "a1cdd5bceb02dd9741de5215b463127788366246f7c0af5009abe92f0a840e06"
+              },
+              "raw_after": {
+                "bytes": 529,
+                "records": 1,
+                "sha256": "a1cdd5bceb02dd9741de5215b463127788366246f7c0af5009abe92f0a840e06"
+              },
+              "raw_before": {
+                "bytes": 529,
+                "records": 1,
+                "sha256": "a1cdd5bceb02dd9741de5215b463127788366246f7c0af5009abe92f0a840e06"
+              },
+              "seal_consistent": true
+            }
+          }
+        },
+        "snapshots_agree_with_bytes": true
+      },
+      "falsifies": true,
+      "semantic_ok": false,
+      "zero_provider_delta": true
+    }
+  },
+  "predicate_name": "COUNTERFACTUAL_PROVIDER_CAPABILITY_DENIED",
+  "predicate_text_matches_frozen": true
+}

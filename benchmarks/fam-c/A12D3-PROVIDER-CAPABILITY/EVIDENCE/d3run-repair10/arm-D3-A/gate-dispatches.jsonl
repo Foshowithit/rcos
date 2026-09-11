@@ -1,0 +1,1 @@
+{"attempt_id": "cell-attempt-1", "dispatch_id": "dispatch-1", "gate_identity": "d3-provider-gate", "mock_receive_id": "mock-receive-1", "mock_request_bytes_sha256": "1f42d7a30a2b7ef3b3bf68dcc705398394d3416e93067780feee0bf1b5135010", "outcome": "SUCCESS", "path": "provider_path", "request_bytes_sha256": "dbbfff80929977786d44dcb40d8828538334ff6289090538f845e01ccc7425fa"}

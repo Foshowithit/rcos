@@ -1,0 +1,11 @@
+1789164289.241662 execve("/tmp/d3gen/d3run-repair10/arm-D3-D/run-legs.sh", ["/tmp/d3gen/d3run-repair10/arm-D3"...], 0x7ffd3d96ffa8 /* 68 vars */) = 0
+1789164289.243441 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7b6887b21a10) = 2189260
+1789164289.243722 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7b6887b21a10) = 2189261
+1789164289.243942 clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7b6887b21a10) = 2189262
+1789164289.244116 wait4(-1, 0x7ffe764ff13c, WNOHANG, NULL) = 0
+1789164299.705454 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=2189262, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+1789164299.705690 wait4(-1, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], WNOHANG, NULL) = 2189260
+1789164299.706365 wait4(-1, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], WNOHANG, NULL) = 2189261
+1789164299.706506 wait4(-1, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], WNOHANG, NULL) = 2189262
+1789164299.706755 wait4(-1, 0x7ffe764ff13c, WNOHANG, NULL) = -1 ECHILD (No child processes)
+1789164299.706826 exit_group(0)         = ?

@@ -1,0 +1,1 @@
+{"is_real_provider": false, "mock_endpoint_identity": "d3-provider-mock", "role": "MOCK_PROVIDER_BOUNDARY", "socket": "/tmp/d3gen/d3run-repair10/arm-D3-C/mock-boundary.sock"}

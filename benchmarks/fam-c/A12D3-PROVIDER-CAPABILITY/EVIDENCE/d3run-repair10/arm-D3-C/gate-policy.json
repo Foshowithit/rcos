@@ -1,0 +1,6 @@
+{
+  "allow_dispatch": true,
+  "authorized_attempt_limit": 1,
+  "gate_policy_sha256": "461b862ec054a0981c505f2f9c688c221500b322e60143e8e5c6bc02eaa381b1",
+  "provider_endpoint_identity": "d3-provider-endpoint"
+}

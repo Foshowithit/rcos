@@ -1,0 +1,161 @@
+{
+  "descriptors": {
+    "canonical_set": [
+      {
+        "fd": 0,
+        "identity": "STDIO:0",
+        "kind": "STDIO"
+      },
+      {
+        "fd": 1,
+        "identity": "STDIO:1",
+        "kind": "STDIO"
+      },
+      {
+        "fd": 2,
+        "identity": "STDIO:2",
+        "kind": "STDIO"
+      }
+    ],
+    "descriptor_count": 3,
+    "descriptors": [
+      {
+        "fd": 0,
+        "identity": "STDIO:0",
+        "kind": "STDIO",
+        "link_target": "/dev/null",
+        "resolution": [
+          "stdio_excluded_from_business_identity"
+        ]
+      },
+      {
+        "fd": 1,
+        "identity": "STDIO:1",
+        "kind": "STDIO",
+        "link_target": "pipe:[100867469]",
+        "resolution": [
+          "stdio_excluded_from_business_identity"
+        ]
+      },
+      {
+        "fd": 2,
+        "identity": "STDIO:2",
+        "kind": "STDIO",
+        "link_target": "pipe:[100867470]",
+        "resolution": [
+          "stdio_excluded_from_business_identity"
+        ]
+      }
+    ],
+    "measured": true,
+    "measured_set_sha256": "35daadfd2036483fcb8d5de147ba8276451c0ee206c616e013813cc988107a95",
+    "measurement_source": "external_proc_fd_readlink",
+    "measurement_wall": 1789164275.0895293,
+    "non_stdio_descriptors": [],
+    "pid": 2187562,
+    "read_by": "a12d3_d3_descriptor_inspector (separate process)",
+    "target_identity": {
+      "alive": true,
+      "comm": "d3-leg-on-net",
+      "exe": "/tmp/d3gen/build-audit2/d3-leg-on-net",
+      "pid": 2187562,
+      "readable": true,
+      "starttime_ticks": 33421009,
+      "state": "S"
+    },
+    "target_mismatches": [],
+    "target_verified": true
+  },
+  "hold": {
+    "blocked": true,
+    "observed": {
+      "state": "S (sleeping)",
+      "wall": 1789164275.0893517,
+      "wchan": "sigsuspend"
+    },
+    "waited_seconds": 0.00011563301086425781
+  },
+  "measured_wall": 1789164275.090231,
+  "negative_head_to_head": {
+    "distinct_pids": true,
+    "leg_pid": 2187562,
+    "tracer_descriptors": {
+      "descriptor_count": 0,
+      "descriptors": [],
+      "error": "target_identity_mismatch:exe_mismatch",
+      "measured": false,
+      "measured_set_sha256": null,
+      "measurement_source": "external_proc_fd_readlink",
+      "measurement_wall": 1789164275.0902286,
+      "pid": 2187553,
+      "target_identity": {
+        "alive": true,
+        "comm": "strace",
+        "exe": "/usr/bin/strace",
+        "pid": 2187553,
+        "readable": true,
+        "starttime_ticks": 33421007,
+        "state": "S"
+      },
+      "target_mismatches": [
+        "exe_mismatch"
+      ],
+      "target_verified": false
+    },
+    "tracer_measured_as_if_leg": {
+      "activation_evidenced_by_kernel": false,
+      "at_least_one_filter_attached": false,
+      "evidence_source": "kernel_reported_proc_status",
+      "filter_mode_active": false,
+      "no_new_privs": false,
+      "no_new_privs_raw": "0",
+      "seccomp_filter_count": 0,
+      "seccomp_filters_raw": "0",
+      "seccomp_mode": 0,
+      "seccomp_mode_name": "DISABLED",
+      "seccomp_raw": "0",
+      "status_raw_available": true,
+      "status_raw_sha256": "1932738e101bec2f5de6653a0be8e6efa18dc5038c9bfb60fc7ab4377b9a663f",
+      "target_identity": {
+        "alive": true,
+        "comm": "strace",
+        "exe": "/usr/bin/strace",
+        "pid": 2187553,
+        "readable": true,
+        "starttime_ticks": 33421007,
+        "state": "S"
+      },
+      "target_mismatches": [
+        "exe_mismatch"
+      ],
+      "target_verified": false
+    },
+    "tracer_pid": 2187553
+  },
+  "seccomp": {
+    "activation_evidenced_by_kernel": true,
+    "at_least_one_filter_attached": true,
+    "evidence_source": "kernel_reported_proc_status",
+    "filter_mode_active": true,
+    "no_new_privs": true,
+    "no_new_privs_raw": "1",
+    "seccomp_filter_count": 1,
+    "seccomp_filters_raw": "1",
+    "seccomp_mode": 2,
+    "seccomp_mode_name": "FILTER",
+    "seccomp_raw": "2",
+    "status_raw_available": true,
+    "status_raw_sha256": "3ecd3c0102d17bacf8adee8e9fcf39af6a69580870b0444c5bc1bb1bb329e812",
+    "target_identity": {
+      "alive": true,
+      "comm": "d3-leg-on-net",
+      "exe": "/tmp/d3gen/build-audit2/d3-leg-on-net",
+      "pid": 2187562,
+      "readable": true,
+      "starttime_ticks": 33421009,
+      "state": "S"
+    },
+    "target_mismatches": [],
+    "target_verified": true
+  }
+}

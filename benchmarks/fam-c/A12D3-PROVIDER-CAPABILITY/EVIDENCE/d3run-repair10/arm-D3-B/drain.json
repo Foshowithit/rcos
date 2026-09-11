@@ -1,0 +1,24 @@
+{
+  "drain_wall": 1789164271.2210712,
+  "manifest": {
+    "files": {
+      "trace-prefix..2185864": {
+        "bytes": 1317,
+        "sha256": "93a356c8c6c418093cb068a97ba34fd47b2523f2b37429e16d05d4496125cf9e"
+      },
+      "trace-prefix..2185865": {
+        "bytes": 901,
+        "sha256": "5fc3750ce2d0ba0d60fb9779539d170180a52e403b1a034b308d3cfe9dd5606d"
+      },
+      "trace-prefix..2185866": {
+        "bytes": 718,
+        "sha256": "6789955b249f88c77d0586b5c9870371b08c70729e6167eb653eb0fa2c75920c"
+      },
+      "trace-prefix..2185867": {
+        "bytes": 720,
+        "sha256": "ea41d2aa5584784b7e98c281ea4900c1737bc0e1b0e83d4a8b1eb313f1f5e73c"
+      }
+    }
+  },
+  "manifest_sha256": "21e2eedf365c5d1e6e214cd7eefebf49991e0682c9e1215e8bd4fd35a787d452"
+}

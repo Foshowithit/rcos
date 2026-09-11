@@ -1,0 +1,5 @@
+{
+  "allow_dispatch": true,
+  "authorized_attempt_limit": 1,
+  "provider_endpoint_identity": "d3-provider-endpoint"
+}
