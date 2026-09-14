@@ -129,6 +129,16 @@ from dockersandbox import (DockerSandbox, ensure_roots, _hash_tree,
                             snapshot_verify_code,
                             VISIBLE_ROOT, WORK_ROOT)
 from seal import build_visible_root
+# Seal canonicalization: the ONE definition of the seal content hash. The
+# frozen rule (drop seal_content_sha256/seal_file_sha256/seal_sha256, then
+# json.dumps(sort_keys=True, indent=1) + "\n") lives in
+# harness/seal_canonical.py, is SHA-pinned by benchmarks/fam-c/
+# EXECUTION-LOCK.json, and is called from BOTH this producer and the
+# verifier (a12r, behind its pre-use pin gate). It is deliberately NOT
+# re-inlined here: a second copy of the rule would let the emitted content
+# hash and the verifier's recomputation drift apart permanently.
+from seal_canonical import content_sha256 as seal_content_sha256
+from seal_canonical import legacy_sha256 as seal_legacy_sha256
 from usage import (recorded_call, write_normalized_usage,
                    verify_normalized_usage, verify_request_binding,
                    verify_adapter_binding)
@@ -3069,17 +3079,33 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
             # in isolation.grading_plan); the receipt re-checks both.
             "grading_plan_sha256": _grading_plan_sha,
         }
-        seal["seal_sha256"] = hashlib.sha256(
-            (json.dumps({k: v for k, v in seal.items()
-                         if k != "seal_sha256"},
-                        sort_keys=True, indent=1) + "\n").encode()
-            ).hexdigest()
+        # Seal identity (C): TWO hashes, not one. seal_content_sha256 is
+        # the SHA256 of the canonical seal document with BOTH
+        # seal_content_sha256 and seal_file_sha256 excluded from the
+        # hashed content (the legacy seal_sha256 self-hash is excluded
+        # too, necessarily). seal_file_sha256 is the SHA256 of the exact
+        # raw file bytes, read back after the write. The verifier (a12r)
+        # independently recomputes BOTH -- the claims below are never
+        # trusted. seal_file_sha256 is a property of the artifact file,
+        # so it rides the return + receipt, never the seal document.
+        #
+        # BOTH rules are called from harness/seal_canonical.py, the single
+        # pinned definition (auditor ruling: canonicalization IS the
+        # definition of the content hash, so it exists ONCE). The emitted
+        # bytes are unchanged by that extraction -- the canonicalization is
+        # byte-identical, only its location moved.
+        seal["seal_content_sha256"] = seal_content_sha256(seal)
+        seal["seal_sha256"] = seal_legacy_sha256(seal)
         seal_path = os.path.join(outdir, "A13-SEAL.json")
         with open(seal_path, "w") as _f:
             _f.write(json.dumps(seal, sort_keys=True, indent=1) + "\n")
+        with open(seal_path, "rb") as _f:
+            _seal_file_sha256 = hashlib.sha256(_f.read()).hexdigest()
         return {"sealed": True, "reason": None, "seal": seal,
                 "seal_path": seal_path,
-                "seal_sha256": seal["seal_sha256"]}
+                "seal_sha256": seal["seal_sha256"],
+                "seal_content_sha256": seal["seal_content_sha256"],
+                "seal_file_sha256": _seal_file_sha256}
     finally:
         OB.region_exit()
         call, recorded_call = _saved_call, _saved_recorded_call
@@ -3116,6 +3142,11 @@ def grade_a13_legs(*, seal, outdir, taskdir):
         raise RuntimeError(
             "A13-SEAL-MISMATCH sealed bytes != seal sha; refusing to "
             "grade substituted artifacts")
+    # Seal identity (C): the file hash is read back from the exact raw
+    # seal bytes on disk (the same bytes the verifier re-hashes); the
+    # receipt carries this claim and the verifier recomputes it.
+    with open(os.path.join(outdir, "A13-SEAL.json"), "rb") as _sf:
+        _seal_file_sha256 = hashlib.sha256(_sf.read()).hexdigest()
     task = seal.get("task")
     _seal_legs = seal.get("legs") or {}
 
@@ -3277,6 +3308,10 @@ def grade_a13_legs(*, seal, outdir, taskdir):
         "host_grading_ledger_sha256": _grading_ledger_sha,
         "grading_plan_sha256": seal.get("grading_plan_sha256"),
         "seal_sha256": seal.get("seal_sha256"),
+        # Seal identity (C): binds the VERIFIER-RECOMPUTED content hash
+        # (a12r recomputes it from the seal bytes; this claim is checked,
+        # never trusted).
+        "causal_seal_content_sha256": seal.get("seal_content_sha256"),
     }
     grading = {
         "grading_schema": "a13-grading-v1",
@@ -3372,7 +3407,13 @@ def grade_a13_legs(*, seal, outdir, taskdir):
             "jail_config": _isolation.get("jail_config"),
             "daemon_container_events": _isolation.get(
                 "daemon_container_events")},
-        seal_sha256=seal.get("seal_sha256"))
+        seal_sha256=seal.get("seal_sha256"),
+        # Seal identity (C): the two content/file hashes plus the seal
+        # path the receipt claims (the verifier cross-checks the path
+        # against authoritative --seal and recomputes both hashes).
+        seal_content_sha256=seal.get("seal_content_sha256"),
+        seal_file_sha256=_seal_file_sha256,
+        seal_path=os.path.join(outdir, "A13-SEAL.json"))
     receipt_path = os.path.join(outdir, "A13-CAUSAL-RECEIPT.json")
     with open(receipt_path, "w") as _f:
         _f.write(json.dumps(receipt, sort_keys=True, indent=1) + "\n")
@@ -3972,6 +4013,8 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                     os.path.basename(a13["seal_path"])
                     if a13["sealed"] else None),
                 "a13_seal_sha256": a13["seal_sha256"],
+                "a13_seal_content_sha256": a13.get("seal_content_sha256"),
+                "a13_seal_file_sha256": a13.get("seal_file_sha256"),
                 "a13_grading_file": (
                     os.path.basename(g13["grading_path"])
                     if g13["graded"] else None),

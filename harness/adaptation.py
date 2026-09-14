@@ -1080,7 +1080,9 @@ def build_receipt(*, family, task, capability_id, determinant,
                   determinant_sha256, on, off_noop, pass_through,
                   checker_sha256, truth_sha256,
                   execution_harness_manifest_sha256,
-                  determinism=None, isolation=None, seal_sha256=None):
+                  determinism=None, isolation=None, seal_sha256=None,
+                  seal_content_sha256=None, seal_file_sha256=None,
+                  seal_path=None):
     """Pure A13 causal-receipt builder (schema a13-causal-receipt-v1).
 
     Binds the determinant, the three legs (program/ABI/consumers/
@@ -1139,6 +1141,16 @@ def build_receipt(*, family, task, capability_id, determinant,
              execution_harness_manifest_sha256)):
         _require_sha64(value, name)
     _require_sha64_or_none(seal_sha256, "seal_sha256")
+    # Seal identity (C): the content hash (canonical seal doc, both new
+    # fields excluded), the raw-file-bytes hash, and the seal path the
+    # receipt claims (the verifier cross-checks the path against the
+    # authoritative --seal and recomputes both hashes -- claims here are
+    # bindings, never trust).
+    _require_sha64_or_none(seal_content_sha256, "seal_content_sha256")
+    _require_sha64_or_none(seal_file_sha256, "seal_file_sha256")
+    if seal_path is not None and not isinstance(seal_path, str):
+        raise ValueError("ADAPTATION-MALFORMED seal_path must be a "
+                         "string or None (missing)")
     if not isinstance(determinant, dict) or sorted(determinant) != sorted(
             _DETERMINANT_KEYS):
         raise ValueError("ADAPTATION-MALFORMED-DETERMINANT determinant "
@@ -1435,6 +1447,12 @@ def build_receipt(*, family, task, capability_id, determinant,
             execution_harness_manifest_sha256,
         "causal_contribution_proven": proven,
         "seal_sha256": seal_sha256,
+        # Seal identity (C): the receipt's claims about the pre-region
+        # seal -- content hash, file-bytes hash, and path. All three are
+        # re-checked by the verifier against the authoritative --seal.
+        "seal_content_sha256": seal_content_sha256,
+        "seal_file_sha256": seal_file_sha256,
+        "seal_path": seal_path,
         # Top-level mirror of the isolation bundle (same object
         # values): document-level verifiers (a12u/a12r) read whole
         # proof surfaces, while the per-surface probe reads the

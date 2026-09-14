@@ -607,9 +607,16 @@ finally:
     subprocess.run(["git", "-C", REPO, "worktree", "remove", "--force",
                     _wt], capture_output=True, text=True)
 _b62b_ok = "ACQUISITION-FAILED-DENY" in _b62b
-print(f"B6-2b runner-refusal: {_b62b[:160]!r}")
+# F-1: never render a multi-finding refusal as a single-finding one. The old
+# fixed-width slice ([:160]) landed exactly on the ' | ' separator between the
+# first and second finding, hiding every finding after the first. Print the
+# finding count, then EVERY finding, untruncated.
+_b62b_findings = [f for f in _b62b.split(" | ") if f.strip()]
+print(f"B6-2b runner-refusal: {len(_b62b_findings)} finding(s)")
+for _i, _f in enumerate(_b62b_findings, 1):
+    print(f"B6-2b finding[{_i}/{len(_b62b_findings)}]: {_f}")
 check("B6-2b runner refuses the downstream cell before any model call "
-      "(ACQUISITION-FAILED-DENY)", _b62b_ok, _b62b[:150])
+      "(ACQUISITION-FAILED-DENY)", _b62b_ok, _b62b)
 
 # B6-3: missing adapter_py -> adapter-missing with null lineage; the T1
 # stack still COMPLETES and records NOT-PROMOTED.
