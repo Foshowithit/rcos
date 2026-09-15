@@ -11,7 +11,8 @@ import time
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-KEY = open("/home/chow/.agent-vault/keys/kenari.key").read().strip()
+KEY = open(os.environ.get("RCOS_LANE_Q_KEYFILE") or
+           os.path.expanduser("~/.agent-vault/keys/kenari.key")).read().strip()
 LANE = "kenari/agnes-2-0-flash:free"
 
 BASE = """You are solving a file-normalization task. Work from FIRST PRINCIPLES on the task input and interface below. You have never seen any prior solution, transcript, or training task. Output ONLY one JSON object, no other text.
