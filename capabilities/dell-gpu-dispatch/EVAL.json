@@ -1,0 +1,9 @@
+{
+  "capability": "dell-gpu-dispatch",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "gpu-encode", "kind": "deterministic", "check": "encode uses h264_nvenc and Blender runs with -t 16" },
+    { "id": "dell-only", "kind": "deterministic", "check": "the render job executes on the Dell; no render process runs on the Mac" },
+    { "id": "perceptual-match", "kind": "deterministic", "check": "output matches reference perceptually (aHash/dHash), not byte-identical" }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "capability": "chalk-capture-recipe",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "font-warmup", "kind": "deterministic", "check": "warmup frame rendered and both Caveat weights explicitly loaded before capture" },
+    { "id": "no-fallback-serif", "kind": "llm", "check": "no frame shows serif fallback where chalk lettering is specified" },
+    { "id": "av-sync", "kind": "deterministic", "check": "final mux has the VO track aligned to boards within the pad budget" }
+  ]
+}

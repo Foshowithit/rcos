@@ -1,0 +1,9 @@
+{
+  "capability": "filmstrip-verify",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "six-frames", "kind": "deterministic", "check": "exactly 6 frames extracted at even timestamps across the duration" },
+    { "id": "distinct-motion", "kind": "llm", "check": "per-frame motion notes describe a distinct visible change in every frame" },
+    { "id": "audio-bed", "kind": "deterministic", "check": "volumedetect mean_volume reported and within the mix target" }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "capability": "muse-image-lane",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "vault-key", "kind": "deterministic", "check": "request authenticates from the Mac vault key ref; the key is never printed or committed" },
+    { "id": "spelled-text", "kind": "llm", "check": "every spelled word in the image matches the brief exactly" },
+    { "id": "dimensions", "kind": "deterministic", "check": "delivered asset matches the lane's native 2240x1120 shape" }
+  ]
+}

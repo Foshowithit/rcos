@@ -1,0 +1,9 @@
+{
+  "capability": "hog-qa-suite",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "five-of-five", "kind": "deterministic", "check": "all 5 headless suites pass on the wave under test" },
+    { "id": "zero-console-errors", "kind": "deterministic", "check": "zero console errors across all viewports" },
+    { "id": "judge-ship", "kind": "deterministic", "check": "hog-eyes verdict for the wave is ship:true" }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "capability": "qr-camo-embed",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "scans", "kind": "deterministic", "check": "the embedded code scans to the exact target URL via zxing" },
+    { "id": "invisible", "kind": "llm", "check": "no visible QR geometry at a normal viewing distance" }
+  ]
+}

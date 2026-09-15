@@ -1,0 +1,9 @@
+{
+  "capability": "browser-verify-artifacts",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "http-serve", "kind": "deterministic", "check": "page served over http(s); file:// gets a zero" },
+    { "id": "zero-console-errors", "kind": "deterministic", "check": "console error count captured during the pass is exactly 0" },
+    { "id": "rendered-proof", "kind": "deterministic", "check": "a screenshot or dataURL capture of the rendered state is archived" }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "capability": "operator-ui-contract-test",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "check-green", "kind": "deterministic", "check": "scripts/check.js exits 0 on the tree under test" },
+    { "id": "no-secrets", "kind": "deterministic", "check": "the diff under push contains no keys, tokens, or vault paths" }
+  ]
+}
