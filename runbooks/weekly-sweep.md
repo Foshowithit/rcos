@@ -49,3 +49,18 @@ Commit the audit result.
 
 - Sweep: `automation-f62e750b-e22a-486a-a32f-f8efaa4c57e3` (registered 2026-09-15)
 - Audit: `PENDING — register from a fresh session (CronCreate allowed only one creation in the build session); exact prompt preserved in the "Cron prompts" section above`
+
+## Reuse triggers
+
+Log reuses immediately when the real work happens: `bin/rcos reuse --id <id>` from `/Users/adam26/zcode-rcos`, then a git commit.
+
+| capability | reuse event | command |
+|---|---|---|
+| `operator-ui-contract-test` | after every real `node scripts/check.js` pre-push run in dsh-operator-ui | `bin/rcos reuse --id operator-ui-contract-test` |
+| `filmstrip-verify` | after every real 6-frame video verification | `bin/rcos reuse --id filmstrip-verify` |
+| `browser-verify-artifacts` | after every real archived browser proof | `bin/rcos reuse --id browser-verify-artifacts` |
+| `muse-image-lane` | after every real lane image delivery | `bin/rcos reuse --id muse-image-lane` |
+| `dell-gpu-dispatch` | after every real Dell render dispatch | `bin/rcos reuse --id dell-gpu-dispatch` |
+| `qr-camo-embed` | after each real QR camo embed use | `bin/rcos reuse --id qr-camo-embed` |
+| `chalk-capture-recipe` | after each real chalk capture use | `bin/rcos reuse --id chalk-capture-recipe` |
+| `hog-qa-suite` | after each real HOG QA suite run | `bin/rcos reuse --id hog-qa-suite` |
