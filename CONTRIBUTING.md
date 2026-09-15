@@ -23,7 +23,7 @@
 - Before pushing, run the same check locally:
 
 ```bash
-git grep -n -i -E 'sk-[A-Za-z0-9]{8,}|gho_[A-Za-z0-9]+|ghp_[A-Za-z0-9]+|api[_-]?key\s*[:=]\s*["'\'']?[A-Za-z0-9_\-]{8,}|bearer [A-Za-z0-9_\-\.]{8,}|BEGIN (RSA )?PRIVATE KEY' -- . ':!.git' || echo "CLEAN"
+git grep -n -i -E '(^|[^A-Za-z0-9])sk-[A-Za-z0-9]{8,}|(^|[^A-Za-z0-9])gh[op]_[A-Za-z0-9]+|api[_-]?key[[:space:]]*[:=][[:space:]]*["A-Za-z0-9/+_=-]{8,}|bearer [A-Za-z0-9_.-]{8,}|BEGIN (RSA )?PRIVATE KEY' -- . ':!.git' || echo "CLEAN"
 ```
 
 ## Commit hygiene
