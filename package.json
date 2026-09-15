@@ -1,0 +1,9 @@
+{
+  "name": "zcode-rcos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ZCode Mac cell of RCOS — capability registry with eval-gated promotion",
+  "scripts": {
+    "test": "node --test tests/"
+  }
+}

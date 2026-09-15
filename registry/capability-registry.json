@@ -1,0 +1,101 @@
+{
+  "registry_version": "v1",
+  "capabilities": [
+    {
+      "id": "filmstrip-verify",
+      "name": "Filmstrip video verification protocol",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "zcode memory video-watch-protocol.md; proven on ep1-chalk + HOG demo video"
+    },
+    {
+      "id": "muse-image-lane",
+      "name": "Muse image generation lane",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "zcode memory muse-image-lane-20260913; shipped HOG gen2 art wave"
+    },
+    {
+      "id": "dell-gpu-dispatch",
+      "name": "Dell GPU-first render/encode dispatch",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "shared memory HARDWARE RULE 09-03; NVENC + Blender -t 16 proven"
+    },
+    {
+      "id": "browser-verify-artifacts",
+      "name": "Browser-verify web artifacts",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "zcode memory browser-verify-web-artifacts; DraftForge + dsh-operator-ui proofs"
+    },
+    {
+      "id": "qr-camo-embed",
+      "name": "QR camo embed recipe",
+      "kind": "script",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "zcode memory qr-camo-embed-recipe; workspace/default/qr-camo-header"
+    },
+    {
+      "id": "chalk-capture-recipe",
+      "name": "Chalk explainer capture recipe",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "ep1-chalk-v2 recipe outputs/ep1-chalk-v2/; Caveat warmup + fonts.load fix"
+    },
+    {
+      "id": "hog-qa-suite",
+      "name": "HOG QA headless suite pattern",
+      "kind": "script",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "game-fleet/qa/run-local.mjs; 5/5 waves shipped through it"
+    },
+    {
+      "id": "operator-ui-contract-test",
+      "name": "DSH plugin contract test pattern",
+      "kind": "script",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "dsh-operator-ui/scripts/check.js; required before every push since v0.1.1"
+    }
+  ]
+}
