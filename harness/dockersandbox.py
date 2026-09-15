@@ -33,6 +33,17 @@ import stat
 import subprocess
 import time
 import uuid
+import sys as _sys
+
+# Claim-grade containment registry + the N1 boundary predicate
+# (harness/containment.py, machine-readable half of harness/SECURITY-SPEC.md).
+# Imported UNCONDITIONALLY and deliberately NOT wrapped in try/except: a
+# missing or broken containment module must break this launcher, never
+# silently degrade it onto a non-security-bearing path. Fail closed.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in _sys.path:
+    _sys.path.insert(0, _HERE)
+import containment as _containment
 
 IMAGE = ("python:3.12-slim@sha256:"
          "78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea")
@@ -212,6 +223,17 @@ class DockerSandbox:
 
     def __init__(self, assigned_workdir, visible_root,
                  expected_task_snapshot=None):
+        # CLAIM-GRADE GATE (GPT Ruling 3 — N1 backend-boundary hardening).
+        # DockerSandbox is the ONLY claim-grade containment backend. The
+        # daemon is proven reachable HERE, before a single byte is staged,
+        # and the live probe is recorded on the instance so the run manifest
+        # can bind the containment backend that was actually used. If the
+        # daemon is unreachable this raises ContainmentRefusal and the
+        # caller receives NO sandbox: there is no shim fallback, no
+        # downgraded mode, and no host-process substitute anywhere on this
+        # path. See harness/SECURITY-SPEC.md and harness/containment.py.
+        self.containment_probe = _containment.require_docker_daemon()
+        self.containment_classification = _containment.CLASSIFICATION_SECURITY
         ensure_roots()
         work = _check_source(assigned_workdir, "work")
         vis = _check_source(visible_root, "task")

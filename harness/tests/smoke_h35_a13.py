@@ -532,6 +532,9 @@ check("A13-REGISTRY unknown schema / program / uncovered surface "
 import inspect as _inspect3  # noqa: E402
 
 
+# NON-SECURITY-BEARING TEST DOUBLE (GPT Ruling 3; harness/SECURITY-SPEC.md
+# section 3). Runs the candidate as a HOST process, carries NO containment
+# guarantee, and can never satisfy CLAIM_GRADE_CONTAINMENT_VALID.
 class _ShimJail:
     """Local engine-jail shim (H23 shape): binds exactly one host
     visible root, runs real subprocesses with path mapping.
@@ -1106,8 +1109,9 @@ _ngrade_runs = sum(
 # enclosing_cell_provider_call_total) live at receipt top level and
 # per-leg by design (asserted by the H35b-RECEIPT checks above) --
 # they are not isolation evidence.
-check("H35b-ISOLATION-KEYS real receipt carries all 15 receipt "
-      "isolation slots with well-typed ledger/journal/grading evidence",
+check("H35b-ISOLATION-KEYS real receipt carries the complete required "
+      "receipt isolation schema with well-typed ledger/journal/grading "
+      "evidence",
       sorted(_iso4r) == sorted(
           ("execution_identity",
            "tripwire_violations", "tripwire_first_event",

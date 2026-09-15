@@ -159,6 +159,13 @@ import adaptation as AD
 # The isolated legs obtain jail builders and isolation observations
 # through this fixed module accessor -- never through parameters.
 import a13_observer as OB
+# Claim-grade containment registry + the N1 boundary predicate: the
+# machine-readable half of harness/SECURITY-SPEC.md. DockerSandbox is the
+# only claim-grade containment backend; a shim test double can never
+# satisfy the predicate (see harness/containment.py). Imported
+# unconditionally -- a missing module must break this runner, not silently
+# downgrade claim-grade execution.
+import containment as _containment
 # Item-7: the frozen ORDER.md expansion + pre-call cell authorization.
 from order import (verify_expansion as order_verify_expansion,
                    load_expansion as order_load_expansion,
@@ -3803,6 +3810,29 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     if sb.task_snapshot != staged_tree:
         raise RuntimeError("CONTEXT-SNAPSHOT-DENY sandbox task_snapshot != "
                            "context_task_snapshot_hash source")
+    # CLAIM-GRADE PRECONDITION (GPT Ruling 3 -- N1 backend-boundary
+    # hardening). The arrival jail above is a literal DockerSandbox(...)
+    # construction, NOT the jail_factory seam, so a claim-grade run cannot
+    # be handed a test double. Assert that STRUCTURALLY -- exact class
+    # identity, pinned image digest, containment flags in force -- before a
+    # single token is spent, instead of trusting that the line above was
+    # never edited. Dev-mode runs (wire=False) are not claim-grade and are
+    # not gated here. This raises; it never downgrades, never warns, never
+    # substitutes a host-process shim.
+    if wire:
+        _cb = _containment.classify(sb)
+        if not (_cb["backend"] == _containment.BACKEND_DOCKER
+                and _cb["class_identity_exact"]
+                and _cb["image_is_pinned"]
+                and _cb["containment_flags_present"]):
+            raise _containment.ContainmentRefusal(
+                "CLAIM-GRADE-CONTAINMENT-REFUSED at "
+                "run_arm_h1.main:pre-execution: backend=%r "
+                "class_identity_exact=%r image_is_pinned=%r "
+                "containment_flags_missing=%r -- claim-grade execution "
+                "requires the production container backend."
+                % (_cb["backend"], _cb["class_identity_exact"],
+                   _cb["image_is_pinned"], _cb["containment_flags_missing"]))
     # Execute the arrival through the ONE runtime path (A11b.2): the
     # arrival's own decision picks engine vs solver; the arm only gates
     # decision legality. No evaluator/truth/checker is mounted.
@@ -3988,6 +4018,18 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     manifest = {"lane": lane, "family": family, "task": task, "arm": arm,
                 "parse_mode": parse_mode, "lane_receipt": receipt,
                 "sandbox": sb.manifest(), "task_snapshot": sb.task_snapshot,
+                # GPT Ruling 3: the run manifest MUST identify the
+                # containment backend that was actually used, with the
+                # structural evidence behind the claim (exact class
+                # identity, daemon-written container ids, pinned image,
+                # containment flags, the security-spec marker that names
+                # DockerSandbox). verify_manifest_binding() re-evaluates
+                # CLAIM_GRADE_CONTAINMENT_VALID against these persisted
+                # bytes -- not against a live object.
+                "containment": _containment.bind(
+                    sb, note="run_arm_h1.main arrival jail: literal "
+                             "DockerSandbox construction (production "
+                             "class), never the jail_factory seam"),
                 "container_returncode": execr["container_returncode"],
                 "checker_returncode": execr["checker_returncode"],
                 "checker_output": execr["checker_output"],
@@ -4169,6 +4211,19 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
 
     # Manifest is final NOW: write it once, then genesis binds this object.
     json.dump(manifest, open(os.path.join(outdir, "H1-RUN-MANIFEST.json"), "w"), indent=1)
+
+    # CLAIM-GRADE GATE (GPT Ruling 3 -- N1 backend-boundary hardening).
+    # The manifest is on disk; re-read it and evaluate
+    # CLAIM_GRADE_CONTAINMENT_VALID against the PERSISTED containment
+    # binding. wire=True IS the claim-grade signal (manifest dev_mode is
+    # its negation), so a claim-grade run that cannot prove its containment
+    # backend refuses HERE -- before _wire_chain, before any cell is
+    # recorded, before any claim is emitted. It does not fall back to a
+    # shim and it does not continue with a downgraded guarantee.
+    if wire:
+        _containment.require_claim_grade(
+            _containment.verify_manifest_binding(outdir),
+            "run_arm_h1.main:post-manifest:wire")
 
     if wire:
         # P0-1: consume the path + sha256 values execute_arrival bound for

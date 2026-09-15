@@ -152,6 +152,9 @@ sys.exit(0)
 """
 
 
+# NON-SECURITY-BEARING TEST DOUBLE (GPT Ruling 3; harness/SECURITY-SPEC.md
+# section 3). Runs the candidate as a HOST process, carries NO containment
+# guarantee, and can never satisfy CLAIM_GRADE_CONTAINMENT_VALID.
 class LocalJail:
     """Hermetic in-jail shim for the production helper: maps the jail
     paths (/work, /task) onto host temp dirs and executes via subprocess.
@@ -187,6 +190,9 @@ class LocalJail:
                               timeout=timeout)
 
 
+# NON-SECURITY-BEARING TEST DOUBLE (GPT Ruling 3; harness/SECURITY-SPEC.md
+# section 3). Runs the candidate as a HOST process, carries NO containment
+# guarantee, and can never satisfy CLAIM_GRADE_CONTAINMENT_VALID.
 class CandidateJail(LocalJail):
     """Hermetic stand-in for the production SECOND jail
     (DockerSandbox(cand_work, cand_staging)): maps the candidate jail's

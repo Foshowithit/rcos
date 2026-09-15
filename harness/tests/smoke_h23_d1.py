@@ -115,6 +115,9 @@ print(f"H23 docker available for real-jail twins: {HAVE_DOCKER}"
       + ("" if HAVE_DOCKER else f" ({_DOCKER_WHY})"))
 
 
+# NON-SECURITY-BEARING TEST DOUBLE (GPT Ruling 3; harness/SECURITY-SPEC.md
+# section 3). Runs the candidate as a HOST process, carries NO containment
+# guarantee, and can never satisfy CLAIM_GRADE_CONTAINMENT_VALID.
 class ShimJail:
     """H23 two-jail shim (LocalJail-style): each instance binds exactly ONE
     host visible root and executes real subprocesses with path mapping.
@@ -670,6 +673,9 @@ check("B6-3 missing adapter_py -> adapter-missing (null lineage); T1 "
 _w8, _sb8, _o8 = docker_pair("b64")
 
 
+# NON-SECURITY-BEARING TEST DOUBLE (GPT Ruling 3; harness/SECURITY-SPEC.md
+# section 3). Runs the candidate as a HOST process, carries NO containment
+# guarantee, and can never satisfy CLAIM_GRADE_CONTAINMENT_VALID.
 class _BrokenJail:
     def run(self, argv, timeout=120):
         raise PermissionError(

@@ -269,6 +269,9 @@ HAVE_DOCKER = docker_ok() and os.environ.get("H34_FORCE_SHIM") != "1"
 print(f"H34 docker real-jail path: {HAVE_DOCKER}")
 
 
+# NON-SECURITY-BEARING TEST DOUBLE (GPT Ruling 3; harness/SECURITY-SPEC.md
+# section 3). Runs the candidate as a HOST process, carries NO containment
+# guarantee, and can never satisfy CLAIM_GRADE_CONTAINMENT_VALID.
 class ShimSandbox:
     """Dockerless stand-in (H23/H33 pattern): local subprocess exec with
     /work<->work + /task<->visible mapping; task_snapshot via the real
@@ -464,6 +467,9 @@ finally:
     _restore_cap()
 
 
+# NON-SECURITY-BEARING TEST DOUBLE (GPT Ruling 3; harness/SECURITY-SPEC.md
+# section 3). Runs the candidate as a HOST process, carries NO containment
+# guarantee, and can never satisfy CLAIM_GRADE_CONTAINMENT_VALID.
 class _EngineShim:
     def __init__(self, work, visible):
         self.work = work
@@ -525,6 +531,9 @@ for _b, _ds, _fs in os.walk(_T1_TASKDIR):
         shutil.copy2(_s, _d)
 
 
+# NON-SECURITY-BEARING TEST DOUBLE (GPT Ruling 3; harness/SECURITY-SPEC.md
+# section 3). Runs the candidate as a HOST process, carries NO containment
+# guarantee, and can never satisfy CLAIM_GRADE_CONTAINMENT_VALID.
 class _Jail:
     def __init__(self, work, visible):
         self.work = work
