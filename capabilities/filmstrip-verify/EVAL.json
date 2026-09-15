@@ -4,6 +4,7 @@
   "gates": [
     { "id": "six-frames", "kind": "deterministic", "check": "exactly 6 frames extracted at even timestamps across the duration" },
     { "id": "distinct-motion", "kind": "llm", "check": "per-frame motion notes describe a distinct visible change in every frame" },
-    { "id": "audio-bed", "kind": "deterministic", "check": "volumedetect mean_volume reported and within the mix target" }
+    { "id": "audio-bed", "kind": "deterministic", "check": "volumedetect mean_volume reported and within the mix target" },
+    { "id": "no-slideshow", "kind": "llm", "check": "motion is continuous across frames — no static holds carried by crossfades or pans over stills; every frame shows distinct visible change driven by scene motion, not transition effects" }
   ]
 }

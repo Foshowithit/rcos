@@ -2,7 +2,7 @@
 
 Ordered by expected frequency of the triggering work. All 7 candidates sit at 0 evals; each needs 2 shipped evals with lineage to promote.
 
-## 1. filmstrip-verify — gates: six-frames, distinct-motion, audio-bed — evals: 0
+## 1. filmstrip-verify — gates: six-frames, distinct-motion, audio-bed, no-slideshow — evals: 0
 Ship 1: next real video verification with archived 6-frame strip + volumedetect.
 Ship 2: the following real video verification with the same evidence.
 
@@ -22,7 +22,7 @@ Ship 2: the following real Dell render dispatch.
 Ship 1: next real HOG wave passing 5/5 suites with zero console errors and hog-eyes ship.
 Ship 2: the following real HOG wave passing the same gates.
 
-## 6. chalk-capture-recipe — gates: font-warmup, no-fallback-serif, av-sync — evals: 0
+## 6. chalk-capture-recipe — gates: font-warmup, no-fallback-serif, av-sync, no-slideshow — evals: 0
 Ship 1: next real chalk capture (warmup frame, Caveat weights loaded, VO aligned).
 Ship 2: the following real chalk capture with the same evidence.
 
@@ -32,3 +32,4 @@ Ship 2: the following real QR camo embed with the same evidence.
 
 ## Honesty rule
 No eval without fresh task evidence; a blocked verdict is a good outcome.
+The anti-slideshow bar is load-bearing for every video capability.

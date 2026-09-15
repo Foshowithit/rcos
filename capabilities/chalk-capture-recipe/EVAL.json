@@ -4,6 +4,7 @@
   "gates": [
     { "id": "font-warmup", "kind": "deterministic", "check": "warmup frame rendered and both Caveat weights explicitly loaded before capture" },
     { "id": "no-fallback-serif", "kind": "llm", "check": "no frame shows serif fallback where chalk lettering is specified" },
-    { "id": "av-sync", "kind": "deterministic", "check": "final mux has the VO track aligned to boards within the pad budget" }
+    { "id": "av-sync", "kind": "deterministic", "check": "final mux has the VO track aligned to boards within the pad budget" },
+    { "id": "no-slideshow", "kind": "llm", "check": "capture shows continuous hand/board motion — the chalk line visibly draws across frames, never a sequence of finished-board stills joined by cuts" }
   ]
 }
