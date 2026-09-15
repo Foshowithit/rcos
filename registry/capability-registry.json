@@ -107,7 +107,7 @@
           "run_id": "dogfood-check-2"
         }
       ],
-      "reuse_count": 0,
+      "reuse_count": 1,
       "last_eval": "2026-09-15",
       "lineage": "dsh-operator-ui/scripts/check.js; required before every push since v0.1.1"
     }
