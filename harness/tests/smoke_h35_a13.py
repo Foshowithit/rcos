@@ -361,6 +361,11 @@ check("A13-RECEIPT exact key sets (no smuggled content anywhere)",
                                "execution_harness_manifest_sha256",
                                "causal_contribution_proven",
                                "seal_sha256",
+                               # Seal identity (C), producer commit 8fc4b9e:
+                               # content hash, raw-file-bytes hash, seal path.
+                               # Additive: the exact-set strength is unchanged.
+                               "seal_content_sha256", "seal_file_sha256",
+                               "seal_path",
                                "provider_call_delta", "order_cell_delta",
                                "enclosing_cell_provider_call_total",
                                "isolation", "execution_identity",
@@ -375,6 +380,13 @@ check("A13-RECEIPT exact key sets (no smuggled content anywhere)",
            "daemon_container_events", "jail_launches",
            "host_process_ledger", "host_ledger_sha256",
            "process_journal", "grading",
+           # Temporal grading schema, producer commit 82e95170 (item B):
+           # up-front grading_plan + post-region grading_result, and the
+           # execution-role vs grading-role ledgers. Additive: the exact-set
+           # strength is unchanged.
+           "grading_plan", "grading_result",
+           "host_execution_ledger", "host_execution_ledger_sha256",
+           "host_grading_ledger", "host_grading_ledger_sha256",
            "execution_identity"))
       and sorted(_RCPT["legs"]) == ["off-noop", "on", "pass-through"]
       and sorted(_RCPT["legs"]["on"]) == sorted(
@@ -900,7 +912,12 @@ check("H35b-SEAL exact shape (no smuggled content; seal binds "
            "frozen_checker_sha256",
            "execution_harness_manifest_sha256", "isolation",
            "execution_identity",
-           "seal_sha256"))
+           # Seal identity (C) + temporal grading schema: the seal document
+           # carries the content hash and the up-front grading-plan digest.
+           # seal_file_sha256/seal_path are properties of the artifact FILE
+           # and ride the return + receipt, never the seal document.
+           "seal_sha256", "seal_content_sha256",
+           "grading_plan_sha256"))
       and _a4["seal"]["execution_identity"] \
       == _a4["seal"]["isolation"]["execution_identity"]
       and sorted(_a4["seal"]["legs"]) == ["off-noop", "on",
@@ -915,6 +932,12 @@ check("H35b-SEAL exact shape (no smuggled content; seal binds "
            "launch_records", "jail_launches", "jail_config",
            "daemon_container_events", "host_process_ledger",
            "host_ledger_sha256", "process_journal",
+           # Temporal grading schema (82e95170): the pre-region seal carries
+           # the up-front plan and the execution-role ledger; the grading-role
+           # ledger and the completed result are added post-region by the
+           # receipt.
+           "grading_plan", "host_execution_ledger",
+           "host_execution_ledger_sha256",
            "grading", "execution_identity")))
 check("H35b-SEAL grading slot is pre-grade honest (checker bound, "
       "execution pending -- the receipt completes it post-region)",
@@ -1093,7 +1116,13 @@ check("H35b-ISOLATION-KEYS real receipt carries all 15 receipt "
            "launch_records", "jail_config",
            "daemon_container_events", "jail_launches",
            "host_process_ledger", "host_ledger_sha256",
-           "process_journal", "grading"))
+           "process_journal", "grading",
+           # Temporal grading schema (82e95170): the real receipt carries the
+           # up-front plan, the completed result, and BOTH role-specific
+           # ledgers alongside the merged host_process_ledger.
+           "grading_plan", "grading_result",
+           "host_execution_ledger", "host_execution_ledger_sha256",
+           "host_grading_ledger", "host_grading_ledger_sha256"))
       and isinstance(_rled, list) and len(_rled) == 2 + _ngrade_runs
       and all(isinstance(e, dict) and isinstance(e.get("pid"), int)
               and not isinstance(e.get("pid"), bool)
