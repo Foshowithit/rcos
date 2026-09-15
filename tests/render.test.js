@@ -11,7 +11,8 @@ test('dashboard is deterministic and summarizes the registry', () => {
   const a = renderDashboard(SEED);
   const b = renderDashboard(JSON.parse(JSON.stringify(SEED)));
   assert.equal(a, b);
-  assert.match(a, /8 candidates/);
+  assert.match(a, /7 candidates/);
+  assert.match(a, /1 promoted/);
   assert.match(a, /filmstrip-verify/);
   assert.match(a, /muse-image-lane/);
   assert.match(a, /<!doctype html>/i);
@@ -26,6 +27,6 @@ test('promoted capabilities sort first with eval dots', () => {
     { task_id: 't-2', verdict: 'ship', run_id: 'r-2' }
   ];
   const html = renderDashboard(reg);
-  assert.match(html, /1 promoted/);
+  assert.match(html, /2 promoted/);
   assert.ok(html.indexOf('filmstrip-verify') < html.indexOf('muse-image-lane'));
 });

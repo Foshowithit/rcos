@@ -47,5 +47,5 @@ Commit the audit result.
 
 ## Automation ids
 
-- Sweep: `<CRON_ID_SWEEP>` (registered YYYY-MM-DD)
-- Audit: `<CRON_ID_AUDIT>` (registered YYYY-MM-DD)
+- Sweep: `automation-f62e750b-e22a-486a-a32f-f8efaa4c57e3` (registered 2026-09-15)
+- Audit: `PENDING — register from a fresh session (CronCreate allowed only one creation in the build session); exact prompt preserved in the "Cron prompts" section above`

@@ -47,7 +47,8 @@ test('propose -> eval-submit x2 -> promote works end to end', () => {
   assert.equal(run(home, 'eval-submit', '--id', 'cli-demo', '--task', 't-2', '--verdict', 'ship', '--run', 'r-2', '--date', '2026-09-14').status, 0);
   assert.equal(run(home, 'promote', '--id', 'cli-demo').status, 0);
   const q = run(home, 'query', '--status', 'promoted', '--json');
-  assert.equal(JSON.parse(q.stdout).length, 1);
+  // seed already holds 1 promoted (operator-ui-contract-test); cli-demo makes 2
+  assert.equal(JSON.parse(q.stdout).length, 2);
 });
 
 test('usage and domain errors use exit codes 1 and 2', () => {
@@ -70,7 +71,8 @@ test('audit exits 0 on the seed; render writes a deterministic dashboard', () =>
   assert.match(r1.stdout, /dashboard\.html/);
   const html1 = fs.readFileSync(path.join(home, 'dashboard.html'), 'utf8');
   assert.match(html1, /filmstrip-verify/);
-  assert.match(html1, /8 candidates/);
+  assert.match(html1, /7 candidates/);
+  assert.match(html1, /1 promoted/);
   const r2 = run(home, 'render');
   assert.equal(r2.status, 0);
   assert.equal(fs.readFileSync(path.join(home, 'dashboard.html'), 'utf8'), html1);
