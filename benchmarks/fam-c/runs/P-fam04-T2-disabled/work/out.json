@@ -1,0 +1,47 @@
+{
+  "edges": [
+    [
+      "fetch",
+      "compile"
+    ],
+    [
+      "compile",
+      "unit-test"
+    ],
+    [
+      "compile",
+      "lint"
+    ],
+    [
+      "unit-test",
+      "package"
+    ],
+    [
+      "lint",
+      "package"
+    ],
+    [
+      "package",
+      "deploy-staging"
+    ],
+    [
+      "deploy-staging",
+      "smoke"
+    ],
+    [
+      "smoke",
+      "deploy-prod"
+    ]
+  ],
+  "nodes": [
+    "fetch",
+    "compile",
+    "unit-test",
+    "lint",
+    "package",
+    "deploy-staging",
+    "smoke",
+    "deploy-prod"
+  ],
+  "is_dag": true
+}

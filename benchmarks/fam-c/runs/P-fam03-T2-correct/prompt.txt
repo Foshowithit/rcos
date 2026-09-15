@@ -1,0 +1,139 @@
+You are solving the task below using a PROVIDED capability. You have never seen its acquisition, no transcripts, no prior tasks. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T2):
+```
+# fam03-T2 — dedup JSON envelope by kind+target
+Count events in `batch.json` (array under `events`). Identity =
+(kind,target) pair. Emit `OUTPUT.json`: `{total, unique, removed}`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, batch.json, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- batch.json (493 bytes) ---
+{
+ "batch": "t2",
+ "events": [
+  {
+   "kind": "open",
+   "target": "A"
+  },
+  {
+   "kind": "login",
+   "target": "B"
+  },
+  {
+   "kind": "open",
+   "target": "A"
+  },
+  {
+   "kind": "render",
+   "target": "C"
+  },
+  {
+   "kind": "login",
+   "target": "B"
+  },
+  {
+   "kind": "flush",
+   "target": "D"
+  },
+  {
+   "kind": "open",
+   "target": "A"
+  },
+  {
+   "kind": "login",
+   "target": "B"
+  },
+  {
+   "kind": "render",
+   "target": "C"
+  },
+  {
+   "kind": "flush",
+   "target": "D"
+  }
+ ]
+}
+```
+
+PROMOTED CAPABILITY INTERFACE (only procedural knowledge you receive):
+manifest: {
+ "id": "event-dedup-v1",
+ "version": 1,
+ "applicability": {
+  "description": "Count and deduplicate pre-parsed events under an explicitly supplied identity rule: either the complete line/string or a tuple of named event fields.",
+  "requires_markers": [
+   "a field map with identity set to line or a list of field names",
+   "records with an events array",
+   "parseable JSON input and output"
+  ],
+  "claims": [
+   "Reports total event count, unique identity count, and removed duplicate count",
+   "Treats full line/string identity exactly",
+   "Composes any explicitly named event fields into one identity",
+   "Preserves the first-seen semantic values of fields while ignoring duplicate occurrence order",
+   "Accepts an optional service tag in the field map without changing the identity rule"
+  ]
+ },
+ "limitations": [
+  "Input records must already be parsed; source-format parsing is adapter work",
+  "No case folding, normalization, fuzzy matching, time windows, or service-based grouping is performed",
+  "A composite identity follows the listed field names; omitted fields and explicit null values are not distinguished",
+  "Identity ordering is not semantically significant for equality"
+ ]
+}
+
+ADAPTER NOTES:
+For a new source, write a parser that converts each source event into a record under events. Keep the original line as a line/string value when the rule is full-line identity, or expose the relevant fields as flat record keys and set identity to their names. Include service-tag metadata separately in the field map or record; add it to the identity list only when the task rule requires distinguishing services. Then pass the field-map JSON, records JSON, and output path to the engine.
+
+ENGINE SOURCE (frozen artifact; you do not modify it, you supply its inputs):
+```python
+import json
+import sys
+
+def load(path):
+    with open(path, encoding='utf-8') as f:
+        return json.load(f)
+
+def main():
+    try:
+        field_map = load(sys.argv[1])
+        records = load(sys.argv[2])
+        identity = field_map.get('identity') if isinstance(field_map, dict) else None
+        events = records.get('events') if isinstance(records, dict) else None
+        if not isinstance(events, list):
+            raise ValueError('records must contain an events list')
+
+        if identity == 'line':
+            keys = []
+            for event in events:
+                value = event if isinstance(event, str) else event.get('line') if isinstance(event, dict) else None
+                keys.append(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')))
+        else:
+            fields = identity if isinstance(identity, list) else identity.get('fields') if isinstance(identity, dict) else None
+            if not isinstance(fields, list) or not all(isinstance(f, str) for f in fields):
+                raise ValueError('identity must be line or a list of field names')
+            keys = [tuple(json.dumps(event.get(field), ensure_ascii=False, sort_keys=True, separators=(',', ':')) for field in fields) for event in events]
+
+        total = len(events)
+        unique = len(set(keys))
+        result = {'total': total, 'unique': unique, 'removed': total - unique}
+        with open(sys.argv[3], 'w', encoding='utf-8') as f:
+            json.dump(result, f, ensure_ascii=False)
+            f.write('\n')
+        return 0
+    except Exception as exc:
+        print('crash: ' + str(exc), file=sys.stderr)
+        return 1
+
+if __name__ == '__main__':
+    sys.exit(main())
+```
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"records": {<input records dict for the engine, per its interface convention>}, "field_map": {<map per interface convention>}, "notes": "<one line>"}
+No explanations; output the object only.

@@ -1,0 +1,17 @@
+{
+ "capability_id": "event-dedup-v1",
+ "version": 1,
+ "artifacts": {
+  "engine.py": "98cf8e2a473d423926755f89f1fb5859ac818184e46860641c5693be53918340"
+ },
+ "manifest_sha256": "8ef11a399fa39d4b72da987489b31ab15a256ce5954109dc156fce9e99279624",
+ "training_receipts": [
+  "runs/P-fam03-T0/usage.json",
+  "runs/P-fam03-T1/usage.json"
+ ],
+ "builder_identity": {
+  "provider": "router9",
+  "model": "minimax-m3"
+ },
+ "locked_at": "2026-09-08T06:30:47Z"
+}

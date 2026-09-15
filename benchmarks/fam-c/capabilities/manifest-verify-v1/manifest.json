@@ -1,0 +1,25 @@
+{
+ "id": "manifest-verify-v1",
+ "version": 1,
+ "applicability": {
+  "description": "Verify a set of flat file-records against a manifest specifying per-field size and/or sha256 constraints. Used when a manifest enumerates fields with expected byte counts or content hashes.",
+  "requires_markers": [
+   "manifest contains 'size' or 'sha256' expectations per field",
+   "records are flat dicts mapping field name to value",
+   "a field-map maps record path -> field -> constraint dict"
+  ],
+  "claims": [
+   "byte-length of string/bytes fields matches expected size when specified",
+   "sha256 of field content matches expected digest when specified",
+   "mismatches are reported with path + per-field reason",
+   "fields without any constraint contribute to 'unverified' status"
+  ]
+ },
+ "limitations": [
+  "does not interpret semantic meaning of fields",
+  "does not handle nested record structures beyond flat dicts",
+  "does not verify ordering, absence-of-fields, or cross-field consistency",
+  "non-string/non-bytes values are stringified before hashing, which may not match the source encoding",
+  "size for non-bytes values is measured on UTF-8 bytes of str(value)"
+ ]
+}

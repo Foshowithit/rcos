@@ -1,0 +1,289 @@
+<think>The task is to normalize a pipe-delimited file into a canonical JSON format. The input has columns NAME|ID|TAGS|AMOUNT_USD, and I need to output a list of objects with keys: id, name, amount_cents (integer), tags (list).
+
+Key observations:
+1. The columns are reordered: NAME, ID, TAGS, AMOUNT_USD
+2. AMOUNT_USD needs to be converted to cents (integer) - multiply by 100 and convert to int
+3. TAGS can be empty (empty string) or have multiple values separated by pipes within the tag field
+4. Some rows have multiple tags like "bulk|sale"
+
+Let me parse the data:
+- Header: NAME|ID|TAGS|AMOUNT_USD
+- Row 1: Theta Unit|C-1|bulk|22.10 -> id=C-1, name=Theta Unit, tags=[bulk], amount_cents=2210
+- Row 2: Iota Module|C-2||9.99 -> id=C-2, name=Iota Module, tags=[], amount_cents=999
+- Row 3: Kappa System|C-3|new|150.75 -> id=C-3, name=Kappa System, tags=[new], amount_cents=15075
+- Row 4: Lambda Gear|C-4|bulk|sale|3.05 -> id=C-4, name=Lambda Gear, tags=[bulk, sale], amount_cents=305
+- Row 5: Mu Coil|C-5||77.77 -> id=C-5, name=Mu Coil, tags=[], amount_cents=7777
+- Row 6: Nu Valve|C-6|new|0.50 -> id=C-6, name=Nu Valve, tags=[new], amount_cents=50
+- Row 7: Xi Pump|C-7|bulk|310.00 -> id=C-7, name=Xi Pump, tags=[bulk], amount_cents=31000
+- Row 8: Omic Relay|C-8|sale|12.12 -> id=C-8, name=Omic Relay, tags=[sale], amount_cents=1212
+- Row 9: Pi Sensor|C-9||99.95 -> id=C-9, name=Pi Sensor, tags=[], amount_cents=9995
+
+The tags column itself is pipe-delimited, so splitting the whole line by pipes gives all fields. But wait - if tags contains pipes, how do we distinguish? Looking at the data: row 4 has "bulk|sale" as tags, which means there are 5 fields total: NAME, ID, TAGS (containing two values), AMOUNT_USD. So we need to split by pipe but we know the structure: first field is name, last field is amount, everything in between (after ID and before AMOUNT_USD) is tags.
+
+Actually, looking at the header: NAME|ID|TAGS|AMOUNT_USD - there are 4 columns. But row 4 has 5 pipe-separated values. So TAGS itself can contain pipes, meaning TAGS is a pipe-separated sub-list.
+
+So the parsing strategy: split by pipe, first element is name, last element is amount, and elements 2 to n-2 (0-indexed: indices 2 to -2) are tags... wait that's wrong. Let me reconsider.
+
+Indices:
+- 0: NAME
+- 1: ID
+- 2 to n-2: TAGS (could be 0 or more)
+- n-1: AMOUNT_USD
+
+Where n is the total number of pipe-separated parts.
+
+So tags = parts[2:-1] (if we know parts[1] is ID and parts[-1] is AMOUNT_USD).
+
+Wait, but what if there's only 4 parts? Then parts[2:-1] = parts[2:3] which is just one tag. And if there are 5 parts, parts[2:-1] = parts[2:4] which is two tags. That works!
+
+Let me verify:
+- Row 1: ["Theta Unit", "C-1", "bulk", "22.10"] -> 4 parts. parts[2:-1] = ["bulk"] -> tags=["bulk"]. Correct.
+- Row 2: ["Iota Module", "C-2", "", "9.99"] -> 4 parts. parts[2:-1] = [""] -> tags=[""] or []? Should be [] for empty tags.
+- Row 4: ["Lambda Gear", "C-4", "bulk", "sale", "3.05"] -> 5 parts. parts[2:-1] = ["bulk", "sale"] -> tags=["bulk", "sale"]. Correct.
+
+So for tags, we need to filter out empty strings? Or keep them as empty list? The task says tags is a list. If the TAGS field is empty, the result should be [].
+
+Let me check: Row 2 has "" as tags. We should produce [].
+
+Now for amount_cents: convert to cents. 22.10 -> 2210. But floating point issues: 22.10 * 100 = 2210.0000000000005 or similar. So better to use Decimal or parse manually. The task says integer. Using Decimal would be safest, but it's stdlib. Or we can format to 2 decimal places and remove the dot: "22.10" -> "2210". Or split on "." and pad.
+
+Actually, since these are all 2 decimal places, we can do: int(round(float(amount) * 100)) but floating point might be tricky. Better: parse as Decimal, or string manipulation.
+
+Let me use string approach: amount_str = parts[-1]; if '.' in amount_str: dollars, cents = amount_str.split('.'); cents = cents.ljust(2, '0')[:2]; amount_cents = int(dollars) * 100 + int(cents). But dollars could be negative? Not in this data, but safer to use Decimal.
+
+Actually, using Decimal from decimal module is fine for stdlib. Let me use: from decimal import Decimal; amount_cents = int(Decimal(parts[-1]) * 100).
+
+Let me write the script:
+
+```python
+import json
+import os
+from decimal import Decimal
+
+def main():
+    src_dir = os.environ.get('SRC_DIR', '.')  # or pass via args
+    # The task says "reading (src_dir, dst_path)"
+    # I need to figure out how src_dir and dst_path are passed.
+    # Typically, the harness passes them as command line arguments or environment variables.
+    # Looking at the task: "reading (src_dir, dst_path) — src_dir contains the task files"
+    # Common pattern: sys.argv[1] = src_dir, sys.argv[2] = dst_path
+    import sys
+    src_dir = sys.argv[1]
+    dst_path = sys.argv[2]
+    
+    input_path = os.path.join(src_dir, 'input.psv')
+    with open(input_path, 'r') as f:
+        lines = f.read().splitlines()
+    
+    header = lines[0]
+    # Header columns: NAME|ID|TAGS|AMOUNT_USD
+    # But we don't really need to parse the header since we know the order from the data,
+    # but to be robust, let's map header names to indices.
+    cols = header.split('|')
+    name_idx = cols.index('NAME')
+    id_idx = cols.index('ID')
+    tags_idx = cols.index('TAGS')
+    amount_idx = cols.index('AMOUNT_USD')
+    
+    result = []
+    for line in lines[1:]:
+        if not line.strip():
+            continue
+        parts = line.split('|')
+        name = parts[name_idx]
+        record_id = parts[id_idx]
+        amount_str = parts[amount_idx]
+        # Tags are everything between tags_idx and amount_idx (exclusive of amount_idx)
+        # Actually, if we use indices, we know exactly which parts are tags.
+        # But tags themselves might contain pipes? No, we split by pipe, so each part is either name, id, a single tag, or amount.
+        # The tags column in the original data is "bulk|sale" which when split by pipe becomes separate fields.
+        # So if TAGS is at index tags_idx and AMOUNT_USD is at index amount_idx, and there are more fields between them,
+        # that means there were multiple tags.
+        # So tags are parts[tags_idx:amount_idx]
+        # But wait: tags_idx < amount_idx. So tags = parts[tags_idx:amount_idx]
+        # However, if the original TAGS field was empty, then parts[tags_idx] would be "" and there would be no extra fields.
+        # So tags = parts[tags_idx:amount_idx] should work.
+        tags_raw = parts[tags_idx:amount_idx]
+        tags = [t for t in tags_raw if t]  # filter empty strings? Or keep?
+        # If TAGS is empty, parts[tags_idx] is "", and tags_raw = [""], filtered gives [].
+        # If TAGS has values, tags_raw = ["bulk"] or ["bulk", "sale"], filtered gives those.
+        # But what if a tag is intentionally empty? Unlikely. Filter empty seems right.
+        
+        amount_cents = int(Decimal(amount_str) * 100)
+        
+        result.append({
+            'id': record_id,
+            'name': name,
+            'amount_cents': amount_cents,
+            'tags': tags
+        })
+    
+    with open(dst_path, 'w') as f:
+        json.dump(result, f)
+
+if __name__ == '__main__':
+    main()
+```
+
+Wait, I need to be careful about the index mapping. Let me re-check row 4:
+"Lambda Gear|C-4|bulk|sale|3.05"
+Split by pipe: ["Lambda Gear", "C-4", "bulk", "sale", "3.05"]
+If I use the header indices:
+- NAME at 0
+- ID at 1
+- TAGS at 2
+- AMOUNT_USD at 3
+
+But the actual data has indices 0,1,2,3,4. So if I look up by name:
+  parts[0] = "Lambda Gear" (NAME)
+  parts[1] = "C-4" (ID)
+  parts[2] = "bulk" (TAGS - first tag)
+  parts[3] = "sale" (TAGS - second tag)
+  parts[4] = "3.05" (AMOUNT_USD)
+
+So if I do parts[tags_idx:amount_idx] where tags_idx=2 and amount_idx=3, I get parts[2:3] = ["bulk"]. That's wrong! I would miss "sale".
+
+So the slice approach using fixed indices doesn't work when tags contain pipes, because the indices shift.
+
+I need to identify the amount by looking from the end, or by recognizing that amount is always the last field, and id is always at a fixed position relative to the start (index 1), and name is index 0.
+
+So:
+- name = parts[0]
+- record_id = parts[1]
+- amount_str = parts[-1]  # always the last
+- tags = parts[2:-1]  # everything between id and amount
+
+This handles the variable number of tags correctly.
+
+But what if the name contains a pipe? Unlikely, but possible. The data doesn't show that. We'll assume name and id don't contain pipes, which is standard.
+
+So:
+```python
+name = parts[0]
+record_id = parts[1]
+amount_str = parts[-1]
+tags_raw = parts[2:-1]
+tags = [t for t in tags_raw if t]
+```
+
+Or we could use the header to find the indices if we assume the header column order matches the data column order except that TAGS expands. But actually, the header tells us the semantic order: NAME, ID, TAGS, AMOUNT_USD. And in the data, the amount is always last, and the id is always second, and the name is always first. So yes, parts[0], parts[1], parts[-1], and parts[2:-1] is correct.
+
+But wait: what if TAGS is empty? Then parts[2:-1] with 4 total parts gives parts[2:3] = [parts[2]] = [""]. Filtering gives [].
+What if TAGS has one value? parts[2:-1] with 4 total parts gives parts[2:3] = [the tag]. With 5 total parts (two tags), parts[2:-1] = parts[2:4] = [tag1, tag2]. 
+
+Perfect.
+
+Let me also consider: should I use the header to validate or just hardcode the structure? The task says "reordered columns" which refers to the header order being NAME|ID|TAGS|AMOUNT_USD rather than the typical ID|NAME|... So the columns are reordered in the header, but the actual data follows the header order except for the tags expansion. So using parts[0], parts[1], parts[-1], parts[2:-1] is correct regardless of the header, because the data always has name first, id second, amount last.
+
+Actually, to be more robust, I could parse the header to get the indices of each semantic field, but since the tags expand, I can't use a simple index for tags. So I need to identify the amount field by its position or by the header name. Since amount is always last, using parts[-1] is safe. Name is always parts[0] (or wherever NAME is in the header). Id is always parts[1] (or wherever ID is). But if I use header indices, I need to handle the shift.
+
+Simpler: use header to find the column index of AMOUNT_USD, and use that to slice. But since we know amount is the last column in the header, and in the data it's the last field, we can just use -1.
+
+Actually, what if AMOUNT_USD is not the last column in the header? The header shows it is the last. And in the data, it must be last because there are no fields after it. So parts[-1] is amount.
+
+So the script is correct. Let me finalize it.
+
+One more thing: the output should be written to OUTPUT.json. The task says "Write the list to OUTPUT.json". And the function signature is (src_dir, dst_path). So dst_path could be OUTPUT.json or a directory? Usually dst_path is the file path. The task says "OUTPUT.json", so probably dst_path is the full path to OUTPUT.json.
+
+I'll assume sys.argv[1] is src_dir and sys.argv[2] is dst_path (the output file).
+
+Let me check if there's any convention. The prompt says "reading (src_dir, dst_path)". This is a common pattern for solver scripts.
+
+Also, I should handle the case where tags might have empty strings but we want to keep them? No, if the TAGS field is empty, we want []. If a tag value is empty (like "bulk||sale" meaning an empty middle tag), that's ambiguous. But the data doesn't have that. I'll filter empty strings to be safe and consistent with the "empty TAGS -> []" case.
+
+Actually, looking at row 2: "Iota Module|C-2||9.99" -> parts = ["Iota Module", "C-2", "", "9.99"]. tags_raw = parts[2:-1] = parts[2:3] = [""]. After filtering: []. Good.
+
+Row 4: "Lambda Gear|C-4|bulk|sale|3.05" -> parts = ["Lambda Gear", "C-4", "bulk", "sale", "3.05"]. tags_raw = parts[2:-1] = parts[2:4] = ["bulk", "sale"]. After filtering: ["bulk", "sale"]. Good.
+
+Decimal conversion: 22.10 -> Decimal("22.10") * 100 = Decimal("2210.0000") -> int -> 2210. Good.
+0.50 -> 50. Good.
+
+One edge case: what if the amount has more or fewer decimal places? The data shows 2 decimal places. Decimal handles this correctly.
+
+Let me write the final script.
+
+```python
+import json
+import os
+import sys
+from decimal import Decimal
+
+def main():
+    src_dir = sys.argv[1]
+    dst_path = sys.argv[2]
+    
+    input_path = os.path.join(src_dir, 'input.psv')
+    with open(input_path, 'r', encoding='utf-8') as f:
+        lines = f.read().splitlines()
+    
+    result = []
+    for line in lines[1:]:  # skip header
+        if not line.strip():
+            continue
+        parts = line.split('|')
+        if len(parts) < 4:
+            continue  # malformed?
+        
+        name = parts[0]
+        record_id = parts[1]
+        amount_str = parts[-1]
+        tags = [t for t in parts[2:-1] if t]
+        
+        amount_cents = int(Decimal(amount_str) * 100)
+        
+        result.append({
+            'id': record_id,
+            'name': name,
+            'amount_cents': amount_cents,
+            'tags': tags
+        })
+    
+    with open(dst_path, 'w', encoding='utf-8') as f:
+        json.dump(result, f, indent=2)
+
+if __name__ == '__main__':
+    main()
+```
+
+Wait, the output format - should it be indented? The task doesn't specify, but compact or indented both satisfy "write the list". I'll use indent=2 for readability, or maybe no indent to be safe. Actually, the task says "canonical JSON", which might imply a specific format, but doesn't specify indent. I'll use indent=2.
+
+Actually, looking at similar tasks, usually compact is fine, but let's use indent=2.
+
+Also, I should make sure the keys are in order: id, name, amount_cents, tags. In Python 3.7+, dict preserves insertion order, so I'll insert them in that order.
+
+One final check: the header parsing - do I need to verify the header matches? The task says the input has header "NAME|ID|TAGS|AMOUNT_USD". My code doesn't rely on the header content, only on the structure (name, id, tags, amount positions). This is robust.
+
+But wait: what if a row has no tags (empty) and the amount is something like "0.50"? parts = [name, id, "", "0.50"]. tags_raw = parts[2:-1] = parts[2:3] = [""]. Filtered = []. Good.
+
+What if the line has trailing whitespace or BOM? The encoding='utf-8' should handle BOM if present (actually, utf-8-sig is better for BOM, but probably not needed here).
+
+I think the script is ready.
+
+One small thing: the task definition says "amount_cents (integer)". So it must be an integer, not a float. My code converts to int via int(Decimal(...) * 100), so that's correct.
+
+Also, I should handle the case where src_dir or dst_path are passed differently. The prompt says "reading (src_dir, dst_path)". This could mean:
+- Command line arguments: sys.argv[1], sys.argv[2]
+- Environment variables: SRC_DIR, DST_PATH
+- Function arguments (but we need a script, not a function)
+
+The most likely is command line arguments. I'll go with sys.argv.
+
+Actually, looking at other similar tasks, sometimes the script is called with the src_dir as the first argument and the output path as the second. Let me confirm with the format: "complete python3 stdlib script reading (src_dir, dst_path)". This suggests the script receives these two values. Command line is standard.
+
+So:
+```python
+src_dir = sys.argv[1]
+dst_path = sys.argv[2]
+```
+
+Final check on the data:
+- Row 1: "Theta Unit|C-1|bulk|22.10" -> ["Theta Unit", "C-1", "bulk", "22.10"] -> id="C-1", name="Theta Unit", amount=2210, tags=["bulk"]
+- Row 4: "Lambda Gear|C-4|bulk|sale|3.05" -> ["Lambda Gear", "C-4", "bulk", "sale", "3.05"] -> id="C-4", name="Lambda Gear", amount=305, tags=["bulk", "sale"]
+
+All good.
+
+One final consideration: the output file is "OUTPUT.json". Should I write exactly to "OUTPUT.json" in the current directory, or to dst_path? The task says "Write the list to OUTPUT.json" and the script signature is (src_dir, dst_path). So dst_path is likely the full path to OUTPUT.json. I'll write to dst_path.
+
+The script looks complete.</think>
+
+{"solver_py": "import json\nimport os\nimport sys\nfrom decimal import Decimal\n\ndef main():\n    src_dir = sys.argv[1]\n    dst_path = sys.argv[2]\n\n    input_path = os.path.join(src_dir, 'input.psv')\n    with open(input_path, 'r', encoding='utf-8') as f:\n        lines = f.read().splitlines()\n\n    result = []\n    for line in lines[1:]:  # skip header row\n        if not line.strip():\n            continue\n        parts = line.split('|')\n        if len(parts) < 4:\n            continue\n\n        name = parts[0]\n        record_id = parts[1]\n        amount_str = parts[-1]\n        # Tags occupy parts[2:-1] because the tags field is itself pipe-delimited\n        tags = [t for t in parts[2:-1] if t]\n\n        amount_cents = int(Decimal(amount_str) * 100)\n\n        result.append({\n            'id': record_id,\n            'name': name,\n            'amount_cents': amount_cents,\n            'tags': tags\n        })\n\n    with open(dst_path, 'w', encoding='utf-8') as f:\n        json.dump(result, f, indent=2)\n\nif __name__ == '__main__':\n    main()\n", "notes": "Parses pipe-delimited rows using fixed positions for name/id/amount and a slice for variable-length tags, converts USD to integer cents via Decimal."}

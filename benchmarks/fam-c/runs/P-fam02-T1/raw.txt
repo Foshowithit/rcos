@@ -1,0 +1,506 @@
+<think>The task is to write a Python script that:
+1. Reads from `pages/q1.json`, `pages/q2.json`, `pages/q3.json` in sequence (following `next` field)
+2. Has transient faults - `faults.json` says `pages/q2.json` will fail 2 times before succeeding
+3. Retries failed reads (max 5 attempts per page)
+4. Logs every attempt in `retry.log`
+5. Merges all items into `OUTPUT.json`
+
+Let me think about the approach:
+
+1. The function signature should be `solve(src_dir, dst_path)` - actually wait, let me re-read. "reading (src_dir, dst_path)". So the script reads from src_dir and writes to dst_path. But the task says "Merge into OUTPUT.json" - so the output should be at `OUTPUT.json` in src_dir? Or at dst_path?
+
+Looking at the format: `writing the output contract described in the task definition`. The task says "Merge into OUTPUT.json". So the output is `OUTPUT.json`.
+
+Wait, the function signature is `(src_dir, dst_path)`. So maybe:
+- src_dir: where the input files are (pages/, faults.json, VISIBLE.md, prompt.md)
+- dst_path: where to write the result? Or is OUTPUT.json written to src_dir?
+
+Let me think... The task definition says "Merge into OUTPUT.json". But the function takes src_dir and dst_path. I think dst_path is the path to OUTPUT.json. Or maybe dst_path is a directory and we write OUTPUT.json inside it?
+
+Actually, looking at the typical pattern, I think:
+- src_dir contains the task files
+- dst_path is where to write the final output file (OUTPUT.json)
+
+But wait, the task says "Merge into `OUTPUT.json`". This suggests the output file is named OUTPUT.json. So maybe dst_path is the full path to OUTPUT.json, or dst_path is a directory and we write OUTPUT.json inside it.
+
+Let me assume dst_path is the full path to the output file (which should be named OUTPUT.json or the script should create it). Actually, looking at the prompt format: "writing the output contract described in the task definition". The output contract is "OUTPUT.json".
+
+I think the cleanest interpretation:
+- src_dir: directory containing the input files
+- dst_path: path where the output should be written (could be a directory or file path)
+
+Let me write it so that dst_path is treated as a file path, and we write the merged data there. If dst_path ends with .json or is a file, write to it. If it's a directory, write OUTPUT.json inside it.
+
+Actually, re-reading: "writing the output contract". The output contract is the file OUTPUT.json with the merged content. So I'll write to dst_path/OUTPUT.json if dst_path is a directory, or to dst_path if it's a file. But to be safe, let me just write to dst_path directly, assuming the caller knows what they want.
+
+Wait, but the task says "Merge into OUTPUT.json". So the final file should be named OUTPUT.json. Let me check if there's a standard...
+
+Actually, looking at similar tasks, I think the convention is:
+- src_dir: where to read from
+- dst_path: where to write the output file (likely the full path including filename)
+
+But the filename isn't specified in dst_path... Hmm.
+
+Let me look at the exact wording again: "writing the output contract described in the task definition". The output contract is "OUTPUT.json". So I think the script should write a file called OUTPUT.json. 
+
+The safest approach: if dst_path is a directory, write OUTPUT.json inside it. If dst_path looks like a file path (has .json extension or parent directory exists), write to that path. But to be robust, I'll just append OUTPUT.json if dst_path is a directory, or use dst_path as-is if it's a file path.
+
+Actually, let me just use dst_path as the output file path. The task says "Merge into OUTPUT.json" which describes what the output content represents, but the actual writing location is dst_path.
+
+Let me reconsider: the function signature is `(src_dir, dst_path)`. This is a common pattern where:
+- src_dir is the source directory containing input files
+- dst_path is the destination file path for the output
+
+So I'll write the merged result to dst_path.
+
+Now for the logic:
+1. Read faults.json to get failure counts for pages
+2. Start with q1.json
+3. For each page:
+   - Try to read it (with retries based on fault count)
+   - Log each attempt to retry.log
+   - If still fails after max attempts (5), it's a failure (but with fault count of 2, 3 attempts should succeed)
+4. Merge items from each page
+5. Write merged result to dst_path (or OUTPUT.json)
+
+The fault simulation: pages/q2.json will fail 2 times. This means on the first 2 attempts to read it, it should fail (raise an exception), and on the 3rd attempt it succeeds.
+
+How to simulate the failure? Since we can't actually make the file fail, we need to simulate it. But wait - the task says "pages may fail transiently". This is part of the simulation - the script needs to handle the case where reading a page fails. But in reality, the files exist and can be read. 
+
+Wait, maybe I need to actually corrupt/delete the file temporarily? That seems risky. Or maybe I need to track a counter and simulate failures based on faults.json?
+
+Looking at the task again: "but pages may fail transiently (`faults.json` declares fail counts). Retry failed reads (max 5 attempts per page) until success"
+
+This suggests that the reading mechanism itself fails, and we need to retry. But in the test environment, the files are there. How do we simulate the failure?
+
+I think the solution is: the script should track how many times it has attempted to read each page, and if faults.json says it should fail N times, it should raise an exception on the first N attempts and succeed on attempt N+1.
+
+So the logic would be:
+- Maintain a counter for each page: how many times we've tried
+- If counter < failure count, raise an exception (simulate failure)
+- Else, return the actual content
+
+This makes sense! The script simulates the transient failures based on the fault configuration.
+
+Let me write the code:
+
+```python
+import json
+import os
+import sys
+
+def solve(src_dir, dst_path):
+    # Load faults
+    with open(os.path.join(src_dir, 'faults.json'), 'r') as f:
+        faults = json.load(f)
+    failures = faults.get('failures', {})
+    
+    # Setup retry log
+    log_path = os.path.join(src_dir, 'retry.log')
+    
+    # Track attempts per page
+    attempts = {}
+    
+    def read_page(page_name):
+        # Simulate failures based on faults.json
+        if page_name in failures:
+            fail_count = failures[page_name]
+            current_attempt = attempts.get(page_name, 0) + 1
+            attempts[page_name] = current_attempt
+            
+            # Log the attempt
+            with open(log_path, 'a') as log:
+                log.write(f"Attempt {current_attempt} for {page_name}\n")
+            
+            if current_attempt <= fail_count:
+                raise IOError(f"Simulated transient failure for {page_name}")
+        
+        # Read the actual file
+        page_path = os.path.join(src_dir, 'pages', os.path.basename(page_name))
+        with open(page_path, 'r') as f:
+            return json.load(f)
+    
+    # Wait, the log logic is tricky. We need to log EVERY attempt, including successful ones.
+    # And we need to handle the case where a page is not in faults (should succeed on first try).
+    
+    # Actually, let me reconsider. The task says "Log every attempt in retry.log".
+    # So we need to log all attempts.
+    
+    # Also, for pages not in faults, should we still log? Probably yes - one attempt.
+    
+    # Let me restructure:
+    merged_items = []
+    current_page = 'pages/q1.json'
+    
+    while current_page is not None:
+        page_name = current_page
+        fail_count = failures.get(page_name, 0)
+        
+        success = False
+        for attempt in range(1, 6):  # max 5 attempts
+            attempts[page_name] = attempt
+            
+            # Log attempt
+            with open(log_path, 'a') as log:
+                log.write(f"Attempt {attempt} for {page_name}\n")
+            
+            if attempt <= fail_count:
+                # Simulate failure
+                continue  # or raise and catch
+            else:
+                # Read the page
+                page_path = os.path.join(src_dir, page_name)
+                with open(page_path, 'r') as f:
+                    data = json.load(f)
+                merged_items.extend(data.get('items', []))
+                current_page = data.get('next')
+                if current_page:
+                    current_page = f"pages/{current_page}.json" if not current_page.startswith('pages/') else current_page
+                success = True
+                break
+        
+        if not success:
+            # Failed after max attempts
+            break
+    
+    # Write output
+    output = {"items": merged_items}
+    
+    # Determine output path
+    if os.path.isdir(dst_path):
+        output_path = os.path.join(dst_path, 'OUTPUT.json')
+    else:
+        output_path = dst_path
+    
+    with open(output_path, 'w') as f:
+        json.dump(output, f)
+```
+
+Wait, there's an issue with the `next` field. Looking at the pages:
+- q1.json has `"next": "q2"`
+- q2.json has `"next": "q3"`
+- q3.json has `"next": null`
+
+So `next` is just the filename without path. I need to construct the full path or handle it properly.
+
+Also, I need to be careful about the logging - I should open the log file once or handle it properly. And I need to reset/initialize the log file (maybe overwrite or append?).
+
+The task says "Log every attempt in retry.log". It doesn't specify whether to overwrite or append. Typically for logs, you append, but since this is a fresh run, maybe overwrite. I'll open in 'w' mode to start fresh, or 'a' to append. Let me use 'w' to start fresh for each run.
+
+Actually, looking at the simulation: on attempt 1 for q2.json, fail. Log it. Attempt 2 for q2.json, fail. Log it. Attempt 3 for q2.json, succeed. Log it.
+
+For q1.json (no faults), attempt 1, succeed. Log it.
+For q3.json (no faults), attempt 1, succeed. Log it.
+
+So the log should have entries for each attempt.
+
+Let me also think about the path handling. `next` in the pages is just "q2", "q3", null. So I need to map this to "pages/q2.json", etc.
+
+Actually, looking at the task: the input directory has a `pages` subdirectory. The `next` field gives just the basename. So I should handle the path resolution.
+
+Let me write a cleaner version:
+
+```python
+import json
+import os
+
+def solve(src_dir, dst_path):
+    faults_path = os.path.join(src_dir, 'faults.json')
+    with open(faults_path, 'r') as f:
+        faults = json.load(f)
+    failures = faults.get('failures', {})
+    
+    log_path = os.path.join(src_dir, 'retry.log')
+    # Clear log file
+    open(log_path, 'w').close()
+    
+    merged_items = []
+    # Start with first page
+    current_page = 'q1.json'
+    
+    while current_page:
+        # Construct full page name for fault lookup
+        page_key = f"pages/{current_page}"
+        fail_count = failures.get(page_key, 0)
+        
+        page_path = os.path.join(src_dir, 'pages', current_page)
+        
+        success = False
+        for attempt in range(1, 6):
+            # Log every attempt
+            with open(log_path, 'a') as log:
+                log.write(f"Attempt {attempt} for {page_key}: {'failed' if attempt <= fail_count else 'success'}\n")
+            
+            if attempt <= fail_count:
+                continue
+            
+            # Read page
+            try:
+                with open(page_path, 'r') as f:
+                    data = json.load(f)
+                merged_items.extend(data.get('items', []))
+                next_page = data.get('next')
+                current_page = next_page + '.json' if next_page else None
+                success = True
+                break
+            except Exception as e:
+                # If real read fails (shouldn't happen in this test), log and continue
+                with open(log_path, 'a') as log:
+                    log.write(f"Read error for {page_key}: {e}\n")
+                continue
+        
+        if not success:
+            # Failed after 5 attempts
+            break
+    
+    # Write output
+    output = {"items": merged_items}
+    
+    # Determine output path
+    if dst_path.endswith('/') or os.path.isdir(dst_path):
+        if not dst_path.endswith('/'):
+            dst_path += '/'
+        output_path = os.path.join(dst_path, 'OUTPUT.json')
+    else:
+        output_path = dst_path
+    
+    with open(output_path, 'w') as f:
+        json.dump(output, f)
+```
+
+Wait, I need to check: does the output need to be exactly `{"items": [...]}` or something else? The task says "Merge into OUTPUT.json". Looking at the pages, each has `{"items": [...], "next": ...}`. So merging likely means combining all the `items` arrays into one. The output should probably be `{"items": [combined_items]}`.
+
+Let me double check the fault logic. The faults.json says `{"failures": {"pages/q2.json": 2}}`. This means q2.json will fail 2 times. So on attempt 1 (fail), attempt 2 (fail), attempt 3 (success). That's what I have.
+
+One edge case: what if the page key in faults doesn't match? In the file it's "pages/q2.json". In my code I construct it as f"pages/{current_page}". Since current_page comes from the `next` field which is "q2", that gives "pages/q2.json". Good.
+
+But wait: the first page is q1.json. We start with current_page = 'q1.json'. We don't read it from a `next` field. So we need to initialize it properly. The task says "Same as T0 over pages/q1.json…". So we start with q1.json.
+
+Also, I should make sure that when a page fails (simulated), we don't actually consume the read. The simulation is just about retrying. So the loop structure with `continue` for failed attempts is correct.
+
+Actually, looking at my logic: when attempt <= fail_count, we `continue` to the next attempt. This means we log the attempt as failed and move to the next iteration. Good.
+
+When attempt > fail_count, we try to read the file. If it's a real failure (file missing or corrupt), we'd handle it, but in this test case it should always succeed since the files exist.
+
+One issue: I'm logging the attempt status in the log file before actually trying to read. For simulated failures, I log "failed". For the actual read attempt, I should log "success" only after successfully reading. But actually, the log entry says "Attempt X for pages/qN.json: failed/success". That's fine.
+
+But wait: for the successful attempt (attempt 3 for q2), I log "success" before actually reading. That's a bit presumptive. Let me adjust:
+
+Actually, it's fine because we know that after fail_count attempts, the next one will succeed. But to be more accurate, I could only log success after actually reading. However, for the simulated failure case, I'm not doing any I/O, so logging "failed" is fine.
+
+Let me reconsider the logging requirement: "Log every attempt". It doesn't specify the format. So any format that shows the attempts should work.
+
+Let me also consider: should retry.log be in src_dir? Yes, the task says "Log every attempt in retry.log". Since src_dir contains the task files, retry.log should probably be written there.
+
+Now, about dst_path: I'm not 100% sure if it's a directory or file path. Let me handle both cases:
+- If dst_path is an existing directory or ends with '/', write OUTPUT.json inside it
+- Otherwise, treat it as a file path
+
+Actually, the safest is to check if dst_path exists and is a directory. If so, append OUTPUT.json. Otherwise, use as-is.
+
+But wait, the output file might need to be exactly at dst_path. Let me think about this differently. The task says "Merge into OUTPUT.json". This is the output contract. The dst_path parameter is provided by the caller. Maybe dst_path IS the path to OUTPUT.json?
+
+Actually, looking at the prompt format: "writing the output contract described in the task definition". The output contract is the file OUTPUT.json with certain contents. The dst_path is where to write it. I think dst_path should be the full path to the output file.
+
+But to be safe, let me write to dst_path if it's a file path, or to dst_path/OUTPUT.json if it's a directory.
+
+One more thing: the merged items. From the pages:
+- q1: [{"k": "a", "v": 10}]
+- q2: [{"k": "b", "v": 20}]
+- q3: [{"k": "c", "v": 30}]
+
+Merged: [{"k": "a", "v": 10}, {"k": "b", "v": 20}, {"k": "c", "v": 30}]
+
+So output should be: `{"items": [{"k": "a", "v": 10}, {"k": "b", "v": 20}, {"k": "c", "v": 30}]}`
+
+This looks correct.
+
+Let me finalize the code. I'll also make sure to handle the case where reading fails (even though it shouldn't in this test):
+
+Actually, I realize there might be a subtlety. The task says "a missing page after retries is a failure". This means if after 5 attempts the page still doesn't exist or can't be read, we should stop and maybe not write output or write partial output? The task doesn't specify what to do on failure. I'll assume we stop processing and write what we have so far (or nothing).
+
+In this test, all pages will be read successfully (q2 after 2 retries), so it should work fine.
+
+Let me write the final code:
+
+```python
+import json
+import os
+
+def solve(src_dir, dst_path):
+    # Load faults configuration
+    faults_path = os.path.join(src_dir, 'faults.json')
+    with open(faults_path, 'r') as f:
+        faults_data = json.load(f)
+    failures = faults_data.get('failures', {})
+    
+    # Setup log file path
+    log_path = os.path.join(src_dir, 'retry.log')
+    # Initialize/clear log file
+    with open(log_path, 'w') as log:
+        pass
+    
+    merged_items = []
+    current_page_name = 'q1.json'
+    
+    while current_page_name:
+        page_key = f"pages/{current_page_name}"
+        fail_count = failures.get(page_key, 0)
+        page_file_path = os.path.join(src_dir, 'pages', current_page_name)
+        
+        page_read_success = False
+        for attempt_num in range(1, 6):
+            # Log this attempt
+            with open(log_path, 'a') as log_file:
+                if attempt_num <= fail_count:
+                    log_file.write(f"Attempt {attempt_num} for {page_key}: failed\n")
+                    continue
+                else:
+                    log_file.write(f"Attempt {attempt_num} for {page_key}: reading\n")
+            
+            # If we reach here, attempt_num > fail_count, so this attempt should succeed
+            try:
+                with open(page_file_path, 'r') as page_file:
+                    page_data = json.load(page_file)
+                
+                # Successfully read
+                with open(log_path, 'a') as log_file:
+                    log_file.write(f"Attempt {attempt_num} for {page_key}: success\n")
+                
+                merged_items.extend(page_data.get('items', []))
+                next_page = page_data.get('next')
+                current_page_name = next_page + '.json' if next_page else None
+                page_read_success = True
+                break
+            except Exception as e:
+                with open(log_path, 'a') as log_file:
+                    log_file.write(f"Attempt {attempt_num} for {page_key}: error - {e}\n")
+                continue
+        
+        if not page_read_success:
+            # Failed to read after max attempts
+            break
+    
+    # Prepare output
+    output_data = {"items": merged_items}
+    
+    # Determine output file path
+    if os.path.isdir(dst_path):
+        output_file_path = os.path.join(dst_path, 'OUTPUT.json')
+    else:
+        output_file_path = dst_path
+    
+    # Write output
+    with open(output_file_path, 'w') as out_file:
+        json.dump(output_data, out_file)
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) >= 3:
+        solve(sys.argv[1], sys.argv[2])
+    else:
+        print("Usage: python solver.py <src_dir> <dst_path>")
+```
+
+Wait, there's an issue with the logging in the failed attempt case. I'm using `continue` which goes to the next iteration of the for loop, but I already wrote to the log file inside the if block. Let me restructure to avoid the continue inside the with block or make it cleaner:
+
+Actually, the code is fine. When attempt_num <= fail_count, we log and continue. When it's > fail_count, we log "reading", then try to read, then log "success" or handle error.
+
+But there's a subtle issue: I'm opening the log file twice for the successful case (once for "reading", once for "success"). That's fine, just a bit inefficient.
+
+Let me clean it up:
+
+```python
+import json
+import os
+
+def solve(src_dir, dst_path):
+    # Load faults configuration
+    faults_path = os.path.join(src_dir, 'faults.json')
+    with open(faults_path, 'r') as f:
+        faults_data = json.load(f)
+    failures = faults_data.get('failures', {})
+    
+    # Setup log file path
+    log_path = os.path.join(src_dir, 'retry.log')
+    # Initialize/clear log file
+    open(log_path, 'w').close()
+    
+    merged_items = []
+    current_page_name = 'q1.json'
+    
+    while current_page_name:
+        page_key = f"pages/{current_page_name}"
+        fail_count = failures.get(page_key, 0)
+        page_file_path = os.path.join(src_dir, 'pages', current_page_name)
+        
+        page_read_success = False
+        for attempt_num in range(1, 6):
+            should_fail = attempt_num <= fail_count
+            
+            # Log this attempt
+            with open(log_path, 'a') as log_file:
+                if should_fail:
+                    log_file.write(f"Attempt {attempt_num} for {page_key}: failed (transient)\n")
+                    continue
+            
+            # Attempt to read the page
+            try:
+                with open(page_file_path, 'r') as page_file:
+                    page_data = json.load(page_file)
+                
+                # Success
+                with open(log_path, 'a') as log_file:
+                    log_file.write(f"Attempt {attempt_num} for {page_key}: success\n")
+                
+                merged_items.extend(page_data.get('items', []))
+                next_page = page_data.get('next')
+                current_page_name = next_page + '.json' if next_page else None
+                page_read_success = True
+                break
+            except Exception as e:
+                with open(log_path, 'a') as log_file:
+                    log_file.write(f"Attempt {attempt_num} for {page_key}: error - {e}\n")
+                # Continue to next attempt
+        
+        if not page_read_success:
+            # Failed to read after max attempts
+            break
+    
+    # Prepare output
+    output_data = {"items": merged_items}
+    
+    # Determine output file path
+    if os.path.isdir(dst_path):
+        output_file_path = os.path.join(dst_path, 'OUTPUT.json')
+    else:
+        output_file_path = dst_path
+    
+    # Write output
+    with open(output_file_path, 'w') as out_file:
+        json.dump(output_data, out_file)
+```
+
+This looks good. The `continue` inside the `with` block for the log file is valid Python. When we continue, we go to the next iteration of the for loop.
+
+Actually, wait. I need to be careful about the `continue` inside the `with` block. The `with` block will properly close the file before continuing. Yes, that's fine.
+
+One final check: the task says "Merge into OUTPUT.json". This might mean the file is literally named OUTPUT.json. So if dst_path is provided as a directory, I should create OUTPUT.json inside it. If dst_path is a file path, I should probably name it OUTPUT.json or use the provided path? 
+
+Given the instruction "writing the output contract described in the task definition", and the output contract is "OUTPUT.json", I think the script should ensure the output file is called OUTPUT.json. But if dst_path is explicitly given, maybe I should respect that. 
+
+Actually, let me look at this from a different angle. The function signature is `(src_dir, dst_path)`. In many such task solvers, `dst_path` is the path where the output should be written. It could be:
+1. A directory: then write OUTPUT.json inside
+2. A file path: write to that path
+
+I'll handle both. But actually, looking at the phrasing "writing the output contract", maybe dst_path is just where to write, and the filename doesn't matter as long as the content is correct. But to be safe and match "OUTPUT.json", I'll name it OUTPUT.json if dst_path is a directory.
+
+Actually, you know what, let me just use dst_path as the output file path directly. If the caller wants it named OUTPUT.json, they can pass that. If they pass a directory, I'll handle it. This is the most flexible approach.
+
+One more thing: I should make sure the output directory exists. If dst_path is a directory that doesn't exist, I should create it? Or assume it exists? I'll assume it exists or use os.makedirs to be safe. But probably it exists.
+
+Let me also think: does the task expect the output to be exactly the merged items, or wrapped in an object? Looking at the pages, they have `{"items": [...], "next": ...}`. The merged output should probably be `{"items": [all_items]}` without the next field. That's what I have.
+
+Okay, I think the solution is ready. Let me write it out clean.</think>
+
+{"solver_py": "import json\nimport os\n\ndef solve(src_dir, dst_path):\n    # Load faults configuration\n    faults_path = os.path.join(src_dir, 'faults.json')\n    with open(faults_path, 'r') as f:\n        faults_data = json.load(f)\n    failures = faults_data.get('failures', {})\n    \n    # Setup log file path (in src_dir)\n    log_path = os.path.join(src_dir, 'retry.log')\n    # Clear log file\n    open(log_path, 'w').close()\n    \n    merged_items = []\n    current_page_name = 'q1.json'\n    \n    while current_page_name:\n        page_key = 'pages/' + current_page_name\n        fail_count = failures.get(page_key, 0)\n        page_file_path = os.path.join(src_dir, 'pages', current_page_name)\n        \n        page_read_success = False\n        for attempt_num in range(1, 6):  # max 5 attempts\n            should_fail_simulated = attempt_num <= fail_count\n            \n            # Log every attempt\n            with open(log_path, 'a') as log_file:\n                if should_fail_simulated:\n                    log_file.write('Attempt ' + str(attempt_num) + ' for ' + page_key + ': transient failure\\n')\n                    continue\n            \n            # Not simulated to fail - attempt real read\n            try:\n                with open(page_file_path, 'r') as page_file:\n                    page_data = json.load(page_file)\n                \n                with open(log_path, 'a') as log_file:\n                    log_file.write('Attempt ' + str(attempt_num) + ' for ' + page_key + ': success\\n')\n                \n                merged_items.extend(page_data.get('items', []))\n                next_page = page_data.get('next')\n                current_page_name = next_page + '.json' if next_page else None\n                page_read_success = True\n                break\n            except Exception as e:\n                with open(log_path, 'a') as log_file:\n                    log_file.write('Attempt ' + str(attempt_num) + ' for ' + page_key + ': read error - ' + str(e) + '\\n')\n        \n        if not page_read_success:\n            break\n    \n    # Prepare merged output\n    output_data = {'items': merged_items}\n    \n    # Determine output file path\n    if os.path.isdir(dst_path):\n        output_file_path = os.path.join(dst_path, 'OUTPUT.json')\n    else:\n        output_file_path = dst_path\n    \n    # Ensure parent directory exists\n    parent_dir = os.path.dirname(output_file_path)\n    if parent_dir and not os.path.exists(parent_dir):\n        os.makedirs(parent_dir)\n    \n    # Write output\n    with open(output_file_path, 'w') as out_file:\n        json.dump(output_data, out_file)\n\nif __name__ == '__main__':\n    import sys\n    if len(sys.argv) >= 3:\n        solve(sys.argv[1], sys.argv[2])\n", "notes": "Simulates transient failures based on faults.json, retries up to 5 times per page, logs every attempt to retry.log, merges items into OUTPUT.json."}

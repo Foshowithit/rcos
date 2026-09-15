@@ -1,0 +1,33 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T0):
+```
+# fam02-T0 — follow next-page tokens to exhaustion
+
+Starting at `pages/p1.json`, follow each page's `next` field until null.
+Merge all `items` (`{k, v}`) into one JSON object in `OUTPUT.json`.
+Read pages ONLY through `fetch.py` (`fetch.py <taskdir> <counterdir> <page>`);
+log every attempt as `<page> <attempt> ok|fail` in `retry.log`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, faults.json, pages, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- faults.json (17 bytes) ---
+{"failures": {}}
+
+--- pages/p1.json (66 bytes) ---
+{"items": [{"k": "a", "v": 1}, {"k": "b", "v": 2}], "next": "p2"}
+
+--- pages/p2.json (46 bytes) ---
+{"items": [{"k": "c", "v": 3}], "next": null}
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

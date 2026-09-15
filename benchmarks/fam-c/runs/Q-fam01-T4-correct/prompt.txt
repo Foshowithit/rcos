@@ -1,0 +1,134 @@
+You are solving the task below using a PROVIDED capability. You have never seen its acquisition, no transcripts, no prior tasks. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T4):
+```
+# fam01-T4 — normalize records file
+Normalize `input.csv` to canonical JSON: a list of
+`{id, name, amount_cents (integer), tags (list)}`.
+Write the list to `OUTPUT.json`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, input.csv, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- input.csv (91 bytes) ---
+id,name,amount_usd,tags
+D-1,Omicron Box,11.00,red
+D-2,Pi Crate,23.50,sale
+SUMMARY,,,34.50,
+
+```
+
+PROMOTED CAPABILITY INTERFACE (only procedural knowledge you receive):
+manifest: {
+ "id": "record-normalize-v1",
+ "version": 1,
+ "applicability": {
+  "description": "Normalize heterogeneous record collections into a canonical schema {id, name, amount_cents, tags}. Engine consumes pre-parsed records plus a field map declaring which source keys correspond to id/name/amount/tags; it coerces USD-formatted strings to integer cents, splits delimited tag fields, and preserves input order.",
+  "requires_markers": [
+   "records contain a monetary field formatted as USD string (e.g. $1,234.56, 12.50, -5.00, ($3.00))",
+   "records contain a tags field as delimited string or as a list",
+   "the source key names for id/name/amount/tags are identifiable, possibly with alternates",
+   "a field map is provided binding canonical names to those source keys"
+  ],
+  "claims": [
+   "emits JSON list of objects with exactly {id, name, amount_cents, tags}",
+   "coerces USD strings to integer cents handling '$', thousands commas, decimals, leading '-', and accounting parentheses",
+   "splits delimited tag strings into a trimmed non-empty list",
+   "accepts tag fields already given as a list",
+   "accepts alternate candidate keys per canonical field (string-or-list)",
+   "preserves input record order",
+   "exits 0 on success and 1 on any exception"
+  ]
+ },
+ "limitations": [
+  "engine does not parse source formats; adapter must deliver pre-parsed records",
+  "USD-only currency semantics; non-USD symbols beyond '$' are stripped but not converted",
+  "no nested-key resolution in engine; adapter must flatten or supply dotted keys",
+  "single tag delimiter per run as configured in field map",
+  "no tag deduplication or case normalization",
+  "no schema validation beyond the four canonical fields",
+  "amount coercion assumes the value represents whole or fractional dollars, not cents"
+ ]
+}
+
+ADAPTER NOTES:
+The adapter turns a new record format into the engine's two inputs: (1) records.json — a JSON list of flat dicts, one per source record, using the raw source keys verbatim; (2) field_map.json — a JSON object with keys 'id', 'name', 'amount', 'tags' each mapped to either a string (the source key) or a list of candidate keys tried in order, plus optional 'tag_sep' (default ','). For CSV: read with csv.DictWriter/DictReader, dump rows to records.json, derive field_map from the header (e.g. {id:['OrderID','order_id'], name:'Item', amount:'Price', tags:'Labels', tag_sep:'|'}). For nested JSON: walk to the record array (e.g. payload['results'][0]['items']), flatten if nested keys are needed, and emit. Pass USD strings exactly as they appear in source — the engine handles '$', thousands commas, decimals, leading minus, and accounting parentheses. Adapter is responsible for any source-specific quirks (timezone, encoding, date parsing); engine does no other type coercion.
+
+ENGINE SOURCE (frozen artifact; you do not modify it, you supply its inputs):
+```python
+#!/usr/bin/env python3
+import sys, json
+
+def parse_usd_to_cents(s):
+    if s is None:
+        return 0
+    s = str(s).strip()
+    neg = s.startswith('-') or (s.startswith('(') and s.endswith(')'))
+    if s.startswith('('):
+        s = s[1:-1].strip()
+    s = s.lstrip('$').strip()
+    s = s.replace(',', '')
+    if neg and not s.startswith('-'):
+        s = '-' + s
+    neg = s.startswith('-')
+    if neg:
+        s = s[1:]
+    if '.' in s:
+        a, b = s.split('.', 1)
+        b = (b + '00')[:2]
+    else:
+        a, b = s, '00'
+    cents = (int(a) if a else 0) * 100 + int(b)
+    return -cents if neg else cents
+
+def pick(rec, keys):
+    if isinstance(keys, str):
+        keys = [keys]
+    if not keys:
+        return None
+    for k in keys:
+        if k in rec and rec[k] is not None:
+            return rec[k]
+    return None
+
+def main():
+    try:
+        with open(sys.argv[1]) as f:
+            fmap = json.load(f)
+        with open(sys.argv[2]) as f:
+            records = json.load(f)
+        sep = fmap.get('tag_sep', ',')
+        out = []
+        for rec in records:
+            name_val = pick(rec, fmap.get('name', ''))
+            tags_val = pick(rec, fmap.get('tags', ''))
+            if isinstance(tags_val, list):
+                tags = [str(t).strip() for t in tags_val if str(t).strip()]
+            elif tags_val is None:
+                tags = []
+            else:
+                tags = [t.strip() for t in str(tags_val).split(sep) if t.strip()]
+            out.append({
+                'id': pick(rec, fmap.get('id', '')),
+                'name': name_val if name_val is not None else '',
+                'amount_cents': parse_usd_to_cents(pick(rec, fmap.get('amount', ''))),
+                'tags': tags,
+            })
+        with open(sys.argv[3], 'w') as f:
+            json.dump(out, f, indent=2, ensure_ascii=False)
+        sys.exit(0)
+    except Exception as e:
+        sys.stderr.write(str(e) + '\n')
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()
+
+```
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"records": {<input records dict for the engine, per its interface convention>}, "field_map": {<map per interface convention>}, "notes": "<one line>"}
+No explanations; output the object only.

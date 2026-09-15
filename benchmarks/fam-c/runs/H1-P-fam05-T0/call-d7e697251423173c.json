@@ -1,0 +1,24 @@
+{
+ "call_id": "d7e697251423173c",
+ "tag": "H1-P-fam05-T0-disabled",
+ "endpoint": "https://api.router9.com/v1",
+ "model_requested": "minimax-m3",
+ "wall_s": 7.7,
+ "timestamp": "2026-09-08T17:01:14Z",
+ "usage_raw": {
+  "total_tokens": 2443,
+  "total_characters": 0,
+  "prompt_tokens": 478,
+  "completion_tokens": 1965,
+  "completion_tokens_details": {
+   "reasoning_tokens": 1496
+  },
+  "prompt_tokens_details": {
+   "cached_tokens": 128
+  }
+ },
+ "usage_raw_sha256": "48e40e4d07363eec2dd9045df9e1d9d44b4dbe24afa50d42d4fb08e63fedb34e",
+ "normalizer_id": "openai-chat-total-input-v1",
+ "normalizer_version": "usage-norm-v1",
+ "normalizer_rule": "primary_work = input_tokens_uncached + output_tokens; cached tokens retained separately, never zeroed, never mixed into uncached"
+}

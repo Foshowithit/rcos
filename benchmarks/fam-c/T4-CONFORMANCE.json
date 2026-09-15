@@ -1,0 +1,189 @@
+{
+ "version": "t4-conformance-v5",
+ "rule": "atomic-conjunction-grammar-v5",
+ "negation_markers": [
+  "absent",
+  "arent",
+  "cannot",
+  "cant",
+  "couldnt",
+  "didnt",
+  "disallow",
+  "disallowed",
+  "disallows",
+  "doesnt",
+  "dont",
+  "except",
+  "exclude",
+  "excluded",
+  "excludes",
+  "excluding",
+  "false",
+  "forbid",
+  "forbidden",
+  "forbids",
+  "inapplicable",
+  "invalid",
+  "isnt",
+  "lacking",
+  "lacks",
+  "missing",
+  "n_a",
+  "na",
+  "negated",
+  "negation",
+  "neither",
+  "never",
+  "no",
+  "non",
+  "none",
+  "nor",
+  "not",
+  "not_required",
+  "null",
+  "prohibit",
+  "prohibited",
+  "prohibits",
+  "unapplicable",
+  "unavailable",
+  "unless",
+  "unsupported",
+  "void",
+  "without",
+  "wont"
+ ],
+ "disjunction_markers": [
+  "either",
+  "or"
+ ],
+ "structural_separators": [
+  "/",
+  ","
+ ],
+ "recognized_conformance_atoms": [
+  "acyclic",
+  "acyclicity",
+  "aggregate",
+  "basis",
+  "common",
+  "dedup",
+  "disjoint",
+  "duplicates",
+  "identical",
+  "input",
+  "local",
+  "order",
+  "pages",
+  "record",
+  "repeats",
+  "row",
+  "same",
+  "sha256",
+  "summary",
+  "topological",
+  "unit",
+  "units",
+  "v1"
+ ],
+ "families": {
+  "fam01": {
+   "t4_semantic_id": "fam01.rows_are_records",
+   "requires_predicates": [
+    [
+     "summary",
+     "row"
+    ],
+    [
+     "aggregate",
+     "record"
+    ],
+    [
+     "aggregate",
+     "row"
+    ]
+   ]
+  },
+  "fam02": {
+   "t4_semantic_id": "fam02.pages_disjoint",
+   "requires_predicates": [
+    [
+     "pages",
+     "disjoint"
+    ]
+   ]
+  },
+  "fam03": {
+   "t4_semantic_id": "fam03.repeats_are_duplicates",
+   "requires_predicates": [
+    [
+     "repeats",
+     "duplicates"
+    ],
+    [
+     "identical",
+     "repeats"
+    ],
+    [
+     "dedup"
+    ]
+   ]
+  },
+  "fam04": {
+   "t4_semantic_id": "fam04.promised_acyclic",
+   "requires_predicates": [
+    [
+     "acyclic"
+    ],
+    [
+     "acyclicity"
+    ],
+    [
+     "topological",
+     "order"
+    ],
+    [
+     "input",
+     "acyclic"
+    ]
+   ]
+  },
+  "fam05": {
+   "t4_semantic_id": "fam05.local_v1_sha256",
+   "requires_predicates": [
+    [
+     "local",
+     "sha256"
+    ],
+    [
+     "v1",
+     "sha256"
+    ],
+    [
+     "local",
+     "v1"
+    ],
+    [
+     "sha256",
+     "basis"
+    ]
+   ]
+  },
+  "fam06": {
+   "t4_semantic_id": "fam06.common_unit_basis",
+   "requires_predicates": [
+    [
+     "unit",
+     "basis"
+    ],
+    [
+     "same",
+     "units"
+    ],
+    [
+     "common",
+     "unit"
+    ]
+   ]
+  }
+ }
+}

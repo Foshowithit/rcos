@@ -1,0 +1,32 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T2):
+```
+# fam04-T2 — validate DAG, edge-list format
+Read `graph.txt` (`a -> b` per line, `#` comments). Same output
+contract in `OUTPUT.json`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, graph.txt, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- graph.txt (207 bytes) ---
+# build pipeline with test and deploy stages
+fetch -> compile
+compile -> unit-test
+compile -> lint
+unit-test -> package
+lint -> package
+package -> deploy-staging
+deploy-staging -> smoke
+smoke -> deploy-prod
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

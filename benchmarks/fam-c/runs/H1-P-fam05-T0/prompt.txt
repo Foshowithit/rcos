@@ -1,0 +1,20 @@
+You are solving the task below from scratch. No registry/capability/prior solution exists. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION:
+# fam05-T0 — verify manifest (colon format)
+`MANIFEST` lines are `path:size:sha256`. Verify each file's actual size
+and sha256. Write `OUTPUT.json`: `{"ok": [...], "bad": [{"path", "reason"}], "unverified": [...]}` (entries that cannot be checked against local sha256 files go under `unverified`).
+
+
+TASK DIRECTORY LISTING: MANIFEST, VISIBLE.md, alpha.txt, beta.txt, prompt.md
+TASK FILE CONTENTS (exact bytes):
+--- MANIFEST ---
+alpha.txt:10:84d89877f0d4041efb6bf91a16f0248f2fd573e6af05c19f96bedb9f882f7882
+beta.txt:20:4e76ad8354461437c04ef9b9b242540b6406d782ff2c3fb28afdab5b423f88fe
+
+--- alpha.txt ---
+0123456789
+--- beta.txt ---
+01234567890123456789
+
+Output object: {"solver_py": <complete Python script taking (src_dir, dst_path) and writing the ordinary task output>, "notes": "one line"}. No explanations/fences.

@@ -1,0 +1,24 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T1):
+```
+# fam04-T1 — validate DAG, alternate schema
+Read `graph.json` ({vertices, links[{from,to}]}). Same output contract
+as T0 in `OUTPUT.json`. Any valid topological order accepted.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, graph.json, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- graph.json (150 bytes) ---
+{"vertices": ["x", "y", "z", "w"], "links": [{"from": "x", "to": "y"}, {"from": "x", "to": "z"}, {"from": "y", "to": "w"}, {"from": "z", "to": "w"}]}
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

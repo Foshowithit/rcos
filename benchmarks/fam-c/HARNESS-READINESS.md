@@ -1,0 +1,576 @@
+# Fam-C Harness Readiness (frozen spec — implementation follows per slice)
+
+Every requirement below is a machine-testable invariant, not guidance.
+Each carries: requirement, proof mechanism, failure mode (what blocks
+execution), and the adversarial test that demonstrates it. Slices land
+as sealed units: H1 (causal isolation) → H2 (evidence) → H3 (governance).
+
+Conventions: `LANE in {A,B,C,D}` per PREREG §1; treatment lanes = A,C;
+control lanes = B,D. `K` = the locked capability for the family under
+test. All paths relative to the experiment root unless stated.
+
+---
+
+## Slice H1 — CAUSAL ISOLATION (build first; nothing else matters if wrong)
+
+### H-BD-001 — B/D hard inaccessibility
+
+Requirement: a control-lane agent can neither resolve, enumerate, read,
+load, invoke, nor infer treatment capability artifacts through ANY path:
+filesystem, registry API, router query, model context, cache, history,
+environment, or network fetch of the benchmark repo.
+Proof: isolated registry namespace per lane + filesystem deny rules +
+tool/API deny rules + negative probe (below) executed green pre-run.
+Failure: experimental execution blocked until green.
+Test: from a B/D sandbox, attempt every capability access path
+(direct read, glob, registry list/get, router ask-for-K, prompt-inject
+a guessed capability ID, fetch PREREG-declared artifact URL).
+Expected: DENIED / NOT_FOUND on all paths, logged.
+
+### H-CTX-002 — treatment/control context symmetry
+
+Requirement: for each paired task, the treatment and control contexts
+are byte-identical except the capability-access bit (present/absent).
+No extra hints, richer descriptions, producer commentary, curated
+integration notes, or differing tool manifests.
+Proof: context-builder emits a canonical context bundle + sha256 per
+arm; a symmetry checker diffs treatment vs control bundles and passes
+iff the ONLY difference is the capability-access block.
+Failure: pair void; must rebuild contexts, never patch mid-run.
+Test: fixture pair with a deliberately injected asymmetry → checker
+must FAIL closed.
+
+Implementation (round-2 item 6): the runner stages the agent-visible root
+ONCE (sealed copy: prompt.md + VISIBLE-declared fixtures) and builds BOTH
+the model context and the docker `/task` mount from those exact staged
+bytes — never from two independent reads of the frozen task dir. The
+manifest records `context_task_snapshot_hash`, which must equal the
+sandbox `task_snapshot` (same staged bytes → same hash; drift refuses
+before the call). One canonical envelope object carries the shared task
+bytes verbatim in both arms; the delimited capability-access block
+(`<<<CAPABILITY-ACCESS-BEGIN>>>` … `<<<CAPABILITY-ACCESS-END>>>`) appears
+exactly once in treatment and never in control; `check_arm_symmetry()`
+fails closed on any one-byte shared-region asymmetry, stray/duplicated
+delimiter, missing frozen section header, preamble/output-schema drift,
+or content past the envelope.
+
+A11.3 (audit round 3 — the round-2 proof was weaker than the requirement):
+the requirement is BYTE IDENTITY, so the machine proof is now exactly that.
+Treatment and control are composed from ONE neutral preamble
+(`You are solving the task below.`) and ONE output contract; the treatment
+prompt is the control prompt with the delimited capability block inserted,
+and `strip_capability_block(treatment) == control` must hold byte-for-byte
+(including the single framing newline the block consumes on each side).
+`_first_diff()` reports the exact divergent index when it does not.
+The legacy fixture that asserted the weaker "same sections, different
+preamble" rule was DELETED, not supplemented: `smoke_h6_symmetry.py`
+probes byte identity, the single preamble, the single output contract, a
+one-byte divergence, and treatment-only drift (33/33).
+
+### H-SES-003 — session/workdir/state isolation
+
+Requirement: every task invocation starts in a fresh model session with
+a private workdir, private registry view, private cache, private
+history, and private scratch. No shared writable state across lanes,
+tasks, or arms. Session IDs unique per invocation and logged.
+Proof: isolation enforcer creates per-run sandbox dirs (0600), distinct
+registry namespaces, and asserts no cross-lane readable paths before
+each run; post-run audit greps run manifests for shared paths/IDs.
+Failure: run refused pre-start; affected pairs invalidated post-hoc.
+Test: plant a canary file in lane A's workdir; attempt read from lane
+B/C/D sandboxes → must be DENIED. Duplicate a session ID → enforcer
+must refuse to start.
+
+### H-EVAL-004 — evaluator sealing
+
+Requirement: no experimental agent can read truth, checkers, evaluator
+outputs, or grade manifests before its run completes. Sealing is
+enforced by filesystem boundary + harness mediation, never by prompt
+("do not look") alone.
+Proof: evaluator files live outside all agent-visible roots (per
+VISIBLE.md seals); the grading step runs in the harness process, not
+the agent; a pre-run seal audit asserts no agent-visible path resolves
+to evaluator content.
+Test: from an agent sandbox, attempt to open truth.json, check.py,
+K.md, DESIGN-T4.md, sibling task dirs, and the repo URL → all DENIED /
+NOT_FOUND. Attempt via tool/API indirection too, not just direct read.
+
+---
+
+## Slice H2 — EVIDENCE (usage, identity, reuse fields, contribution)
+
+### H-USE-005 — token/cache accounting
+
+Requirement: every model call records RAW provider usage (uncached
+input, cached input kept separate, output tokens, model-reported cost
+where exposed, wall time, call count). Primary metric derives ONLY
+from recorded raw usage; missing usage invalidates the run — never
+reconstructed heuristically, never cached-as-uncached.
+Proof: usage-capture wrapper persists the raw provider response usage
+block per call; an accounting checker recomputes all metrics from raw
+blocks and fails any run with absent or merged token fields.
+Failure: run invalid (missing evidence), not estimated.
+Test: fixture call with usage stripped → accounting checker FAILs;
+fixture with cached tokens relabeled uncached → FAILs.
+
+A1 implementation (audit round 2 item 1): provider-bound v2 adapters
+(`router9-openai-chat-v2` for lane P, `kenari-openai-chat-v2` for lane Q;
+see LANES.md + usage.py PROVIDER_NORMALIZERS). The runner writes the
+immutable `call-<id>.normalized.json` artifact IMMEDIATELY after every
+recorded call (never post-hoc), binds its hash + derived metrics
+(primary_work / uncached / output / cached / call count) into the
+model-call chain link, and admissibility re-verifies every artifact
+(self-sha + raw-file binding + metric re-derivation) — tampering the raw
+receipt OR the normalized artifact excludes the run. New receipts also
+carry `request_body_sha256` over the exact bytes POSTed.
+
+A11.2 (audit round 3): the exact request BYTES are now persisted per call
+as `call-<id>.request.json` with `request_body_file_sha256` alongside the
+digest, and `verify_request_binding()` re-reads those bytes and fails on
+any mismatch (REQUEST-BINDING-INCOMPLETE / REQUEST-BINDING-MISMATCH), so
+a mutated temperature / max_tokens / model / messages in ANY representation
+(messages, identity record, receipt digest, persisted file) is detected.
+`verify_adapter_binding()` additionally refuses a v2 adapter used off its
+bound lane/endpoint/model (`USAGE-ADAPTER-BINDING-DENY`): a v2 adapter id
+IS a lane binding, and v1 ids are historical unbound adapters that may only
+appear where no lane/model claim is made. Admissibility enforces both
+before the identity-binding gate.
+
+A11b-P1 (audit round 3b, wording — the auditor's own correction, adopted):
+**primary_work = uncached_input_tokens + output_tokens.** Input tokens are
+NOT inherently uncached: only the *cached fraction* of the input is served
+from cache, and the cached fraction is recorded separately (never merged
+into, never subtracted from, never relabeled as uncached). The primary
+metric therefore counts exactly the input tokens the provider reports as
+uncached, plus output tokens; any run whose raw usage block cannot
+distinguish cached from uncached input is INVALID (missing evidence), not
+estimated. `usage.py` records both fields from the raw provider block and
+`normalized.json` re-derivation fails if either is absent or merged.
+
+### H-ID-006 — provider/model identity capture
+
+Requirement: every model call logs provider endpoint, requested model
+id, provider-echoed model/version where exposed, request/run IDs,
+timestamps, and full generation parameters. P/Q identity established
+provider-side, never by model self-report (per LANES.md rule).
+Proof: identity records committed per run; auditor replays endpoint +
+model id and confirms distinct families; any self-report-only identity
+claim fails the check.
+Failure: closed — runs without established identity do not count
+toward any gate.
+Test: fixture with mismatched requested-vs-echoed model id → FAIL;
+fixture with identity fields absent → FAIL.
+
+Item-3 implementation (audit round 2 item 3): nonempty provider
+response/request id REQUIRED (IDENTITY-INCOMPLETE otherwise); the exact
+`request_body_sha256` from the usage receipt plus the complete explicit
+generation-param set are preserved in every identity record; the runner
+sends AND records ONE param set (no drifting literals); the model-call
+chain link cross-verifies identity↔receipt binding and carries the
+provider id + body hash + params; admissibility re-verifies the binding
+per receipt — stripping the echo, stripping the provider id, or altering
+model/params on either side fails the chain and excludes the run. A11.2
+adds `messages_sha256` + `messages_count` to the identity record, so the
+exact prompt bytes the lane was asked to answer are bound into identity as
+well as into the persisted request file.
+
+### H-REUSE-007 — full reuse lifecycle + material-contribution evidence
+
+Requirement: replace every flat reused[] with the PREREG §12 field
+split (available, candidate_ids, selected, loaded, invoked,
+output_consumed, materially_contributed, rejected + reason). In
+particular `materially_contributed` requires an OBJECTIVE evidence
+predicate — never model self-report. Frozen predicate for this series:
+the capability's emitted artifact hash appears as an input (by hash)
+to a downstream node whose output the evaluator consumed, OR the
+run is byte-identical with/without the capability step removed
+(ablation receipt). Absent such evidence, consumed≠contributed.
+Proof: reuse-log validator enforces field presence + the contribution
+predicate against artifact hashes; self-report-only contribution
+claims fail.
+Failure: reuse claim downgraded to invoked-only; genuine_reuse
+predicate (§19) cannot be satisfied by that run.
+Test: fixture log claiming contribution with no hash linkage → FAIL;
+fixture with hash-linked artifact chain → PASS.
+
+---
+
+## Slice H3 — GOVERNANCE (lock enforcement, invalid-run machine, manifests)
+
+### Authority locks (round-2 item 4 — no re-freeze)
+
+Three independent authorities, validated by `preflight.py` (all green
+required; the runner refuses to start otherwise):
+
+- V1 INSTANCE-FREEZE — frozen instance bytes vs the git-resolved
+  FREEZE-HASHES manifest at `d1292434` (+ ancestry proof).
+- V2 PROTOCOL-LOCK — this document, PREREG/ORDER/LANES, and preflight.py
+  itself vs `PROTOCOL-LOCK.json`: frozen bytes or a listed forward
+  amendment, never unlisted drift.
+- V3 EXECUTION-LOCK — executing harness bytes vs `EXECUTION-LOCK.json`
+  (`open-round2` placeholder until the #14 final lock).
+
+### H-LOCK-008 — CAPABILITY_LOCK enforcement
+
+Requirement: T2–T4 consume EXACTLY the locked artifact hash recorded in
+CAPABILITY_LOCK. Nothing can mutate, repromote, or re-resolve K
+downstream: the loader resolves by hash, verifies bytes pre-execution,
+and refuses on mismatch. Promotion writes once; downstream is read-only.
+Proof: lock contains id/version/impl_sha/manifest_sha/training
+receipts; loader hash-verifies before every invocation and logs the
+check; post-run audit re-verifies all invocation hashes against lock.
+Failure: run refused (pre-execution mismatch) or invalidated (post-hoc
+mismatch).
+Test: tamper one byte of the locked artifact post-lock → loader must
+REFUSE; replay a run against a re-resolved (non-lock) hash → audit FAILs.
+
+### H-INV-009 — invalid/infrastructure state machine
+
+Requirement: the frozen invalid-run taxonomy (§19 + preflight precedent)
+is encoded literally as a state machine, not operator judgment. Agent
+or model failure (reasoning failure, tool misuse, self-caused timeout,
+bad code, capability-invocation failure, malformed-output eval
+failure) is an EXPERIMENTAL OUTCOME, permanently recorded. Only a
+qualifying infrastructure failure (machine/provider/harness preventing
+task receipt or execution, per taxonomy) permits exactly ONE whole-pair
+replacement under identical frozen settings; originals remain immutable
+and linked. A second consecutive infrastructure failure on the same
+pair → missing evidence → INCONCLUSIVE per frozen precedence.
+Proof: replacement controller enforces single-replacement + identical
+settings + linkage; any second replacement attempt, single-arm
+replacement, or agent-failure-marked-infrastructure is rejected.
+Failure: offending runs invalid; affected pairs excluded with cause.
+Test: mark an agent-timeout run infrastructure → controller must
+REJECT; attempt a second replacement on one pair → REJECT; attempt a
+single-arm replacement → REJECT; valid infra failure → exactly one
+linked whole-pair replacement ALLOWED.
+
+### H-ORD-011 — execution order is enumerated and enforced
+
+Requirement: the frozen ORDER.md sequence is the only authorized execution
+order; a run that is not the next authorized cell cannot start.
+Implementation (round-2 item 7): `harness/order.py` parses ORDER.md
+mechanically (family order, block order PQ→QP, per-family task order and
+letter permutation, seed) and expands it into enumerated cells, each with a
+stable `cell_id`; the committed `ORDER-EXPANSION.json` is that expansion and
+is never hand-edited (preflight V2 re-derives it from ORDER.md and fails on
+any drift). Before any model call the runner requires `--block PQ|QP`,
+resolves the requested (block, family, task, lane, arm) to its cell, and
+refuses on: a cell outside the frozen universe, an unknown block/lane/arm,
+a duplicate already-completed cell, or ANY earlier cell still incomplete
+(covers fam01 before fam05, QP before PQ completes, and wrong arm order
+within a family). The manifest stamps block/cell_id/cell_index/cell_letter/
+cell_universe/cell_event/cell_kind/capability_id/order_sha256 for the run.
+Preflight V3 also checks the runner's whole IMPORT CLOSURE against
+EXECUTION-LOCK.json, so a module that executes during a run cannot ride
+outside the execution authority; `harness/mint_execution_lock.py --check`
+re-verifies that mechanically (and mints the amendment after an intentional
+change).
+
+A11.4 (audit round 3 — the expansion started at T2, so it enumerated
+downstream cells whose capability had never been acquired and could not
+instantiate PREREG §2): the expansion now covers the FULL per-family event
+sequence — `T0, T1, PROMOTION, CAPABILITY_LOCK` for universe A, then the
+same four for universe C, then `T2, T3, T4` × A/B/C/D in the frozen letter
+order. 240 events, 192 model calls. The A-vs-C acquisition order is
+resolved explicitly (PQ/A/fam05/T0 precedes PQ/C/fam05/T0), C's acquisition
+is refused until A's own promotion+lock complete, B/D carry no acquisition
+event (no K), and each universe has its own `capability_id`
+(`<family>-<block>-<universe>-K`). `authorize_event()` gates
+acquisition/promotion/lock events with the same fail-closed order logic.
+
+A11.5 (audit round 3 — a C run could be pointed at A's registry because the
+gate only checked "somewhere under Fam-C"): every estimand cell's namespace
+is DERIVED by the scheduler — `state/<block>/<universe>/<family>/capability`
+and `state/<block>/<universe>/<family>/runs/<cell_id>` — never accepted as
+a free operator path. A wired run whose capability dir or run dir is not the
+derived path is refused before any call (FOREIGN-REGISTRY-DENY /
+run-dir-denial), so A's and C's registries, runs, logs and caches cannot
+overlap.
+
+A11.6 (audit round 3 — order progress advanced on manifest presence):
+`completed_cells()` consumes `cell_state()`, which requires the derived run
+dir to exist as a real directory, the manifest to be wired/non-dev and to
+match the authorized cell on cell_id/block/family/task/kind/universe, the
+evidence chain to re-verify, and admissibility to classify the run ELIGIBLE.
+A malformed, tampered, dangling, dev, foreign-cell or inadmissible run no
+longer advances the frozen order.
+
+Test: `harness/tests/smoke_h7_order.py` (67/67 adversarial refusals +
+validated-state probes + real runner subprocess refusals, no model call).
+
+### H-CAL-012 — P/Q calibration pair (CALIBRATION / NEVER-ESTIMAND)
+
+Requirement: exactly ONE P/Q calibration pair runs through the FINAL
+identity+usage path before the execution lock is minted, proving both lanes
+answer with the requested params and produce the full evidence set (echoed
+model id, nonempty provider response id, raw usage + hash, normalized usage
++ hash, request-body binding) — without contributing anything to the
+estimand.
+
+Implementation (round-2 item 2): `benchmarks/fam-c/harness-run/calibrate.py`.
+A calibration call is a CALIBRATION / NEVER-ESTIMAND call: it is not a cell
+of ORDER.md, never enters `ORDER-EXPANSION.json` or the runner's completion
+ledger, writes no `H1-RUN-MANIFEST.json` (so admissibility returns EXCLUDED
+and estimand-grade stays 0), and lives under `runs/_calibration/`. Modes:
+`--plan` (default) prints the exact calls and performs none; `--offline`
+rehearses the entire capture→identity→normalize→verify→bind path against a
+synthetic provider response with zero network, plus the fail-closed
+controls (tampered raw usage, missing echoed model, missing provider id);
+`--live` makes the REAL calls and requires BOTH `--i-know-this-spends` and
+`--approve-quota`, so a live calibration can never be accidental. A lane
+failure is INCONCLUSIVE missing evidence, never a substituted model and
+never retried.
+A11.1 (audit round 3): the live branch previously discarded the provider
+response object, so identity could not be established from a real call. It
+now makes exactly ONE recorded call with `return_response=True`, requires
+the provider object (ValueError if absent), and records
+`messages`/`messages_sha256`, persists the exact request bytes, and
+re-verifies both request and adapter binding on the live path — the same
+checks the offline rehearsal exercises.
+
+Status: scaffold + offline rehearsal green (`smoke_h8_calibration.py`,
+48/48, including the stub-transport live-branch probe and the A11.2
+mutation probes). The real pair is time-gated — the Q lane (free tier)
+quota resets 00:00 UTC — and runs after items 1–13, immediately before the
+EXECUTION-LOCK mint.
+
+### H-MAN-010 — evidence/manifest chain
+
+Requirement: every run is auditable afterward as an unbroken hash chain:
+frozen commit → run manifest (inputs, code, lane, order) → model calls
+(usage + identity) → capability events (select/load/invoke/consume
+hashes) → evaluator (sealed truth hash, checker hash, verdict) →
+grade. No headline may contain information not traceable to this chain
+plus immutable manifests.
+Proof: manifest writer emits the chain per run; a chain auditor
+re-verifies every link (hash presence + equality) and fails the run on
+any broken link.
+Failure: run excluded from all tallies until the chain is repaired —
+repairs append new linked records, never rewrite.
+Test: fixture chain with one link hash altered → auditor FAILs;
+fixture chain missing the evaluator link → FAILs.
+
+---
+
+## Adversarial smoke suite (run pre-P/Q; all must FAIL CLOSED as noted)
+
+```text
+B reads K directly                    → FAIL CLOSED (H-BD-001)
+B asks router for K                   → FAIL CLOSED (H-BD-001)
+D guesses capability ID               → FAIL CLOSED (H-BD-001)
+C receives extra producer summary     → FAIL (H-CTX-002)
+two lanes share session ID            → FAIL (H-SES-003)
+two lanes share writable workdir      → FAIL (H-SES-003)
+agent opens truth/check.py            → FAIL CLOSED (H-EVAL-004)
+semantic ID enters consumer context   → INVALID (auditor IDs confined)
+cached tokens counted as uncached     → FAIL accounting (H-USE-005)
+material_contributed from self-report → FAIL (H-REUSE-007)
+locked capability hash changes        → FAIL CLOSED (H-LOCK-008)
+agent timeout marked infrastructure   → FAIL (H-INV-009)
+replacement reruns one arm only       → FAIL (H-INV-009)
+second replacement attempted          → FAIL (H-INV-009)
+```
+
+## Slice order (sealed units)
+
+- Slice H1 (§§H-BD-001…H-EVAL-004): spec above + implementation +
+  adversarial smoke for H1 + attack. NOTHING downstream begins until
+  H1 is green — beautiful accounting on a contaminated experiment is
+  worthless.
+- Slice H2 (§§H-USE-005…H-REUSE-007): spec above + implementation +
+  smoke + attack.
+- Slice H3 (§§H-LOCK-008…H-MAN-010): spec above + implementation +
+  full 14-line smoke + attack.
+
+## A11b — audit round 3b findings (P0-1…P0-6 + P1)
+
+The auditor's round-3b review accepted A11.1/A11.3 and found six P0
+implementation gaps plus one wording defect. Each is closed below with
+production code (no fixture-only paths) and an executable proof.
+
+```text
+P0-1 request binding       request bytes persisted + hashed BEFORE the POST,
+                           digest bound into the chain link and re-read by
+                           verify_request_binding()               → smoke_h9 18/18
+P0-2 common output contract ONE arm-independent contract
+                           {"decision","execution_payload","notes"} with a
+                           named fail-closed validator and a single
+                           arm-independent extract()                 → smoke_h11 24/24
+P0-3 production manifest    cell_state() demands EXACT equality over the 13
+                           production manifest fields (cell_id, cell_index,
+                           block, family, task, cell_event, cell_kind,
+                           cell_universe, cell_letter, lane, arm,
+                           capability_id, order_sha256) + real verify_chain()
+                           + admissibility ELIGIBLE            → smoke_h7 67/67
+P0-4 governance cells       cell_state() dispatches by cell kind: model-run
+                           cells need manifest+chain+admissibility,
+                           PROMOTION cells need the receipt + both
+                           acquisition chain tips re-derived, CAPABILITY_LOCK
+                           cells need the lock bound to the promotion receipt
+                           hash; no fabricated model-run manifest → smoke_h12 44/44
+P0-5 A→C order as protocol  the A→C acquisition ordering is protocol, not
+                           merely executable behaviour: the exact
+                           ORDER-EXPANSION.json SHA256 is pinned in
+                           PROTOCOL-LOCK at PROTOCOL FINAL (open until then)
+P0-6 namespace ancestry     every component from state/ downward is lstat-
+                           checked (directory, not symlink, harness-owned,
+                           not group/world writable) on the WRITE path
+                           (derive_paths/check_namespace) AND re-checked on
+                           the READ path (cell_state); the harness creates
+                           the tree itself component-wise at 0755 with
+                           ensure_namespace() so a umask of 002 can no longer
+                           leave 0775 intermediates that the rule refuses
+                                                              → smoke_h10 20/20
+P1   accounting wording    primary_work = uncached_input + output_tokens;
+                           input tokens are not inherently uncached   → §H-USE-005
+```
+
+Real-run status unchanged: no calibration call and no Fam-C estimand cell
+has been executed (`estimand-grade wired manifests: 0`; the only wired
+manifest in the tree is the H1-P-fam05-T0 harness-validation fixture, which
+is harness validation and never estimand data). The `--offline` calibration
+transport seam proves the code path without spending a provider call.
+
+Integration verification for A11b (offline: no network, no model, no docker,
+no provider call): three-authority preflight V1 0 / V2 0 / V3 0; harness
+smokes 448/448 closed (graph 12, H1 12, H1-docker 33, H2 33, H3 59, H4 30,
+H5 15, H6 33, H7 67, H8 48, H9 18, H10 20, H11 24, H12 44); both runner
+selfchecks green; `calibrate.py --offline` 2/2 lanes green; the general-seat
+independent falsification probe 23/23. The EXECUTION-LOCK was re-minted as a
+listed amendment over the five changed modules and the PROTOCOL-LOCK carries
+a listed forward amendment for these bytes — no unlisted drift anywhere.
+
+## A12 — audit round-2 findings (promotion, estimand locks, decision-driven reuse)
+
+Round 2 returned three implementation units (A12.1 promotion controller,
+A12.2 estimand-aware CAPABILITY_LOCK, A12.3 USE/REJECT/fresh lifecycle) plus
+one shared-contract wording defect. All are closed in production code with
+executable proofs; this slice spends no provider call and executes no
+estimand cell.
+
+```text
+A12.1 promotion controller  harness/promotion.py is the ONLY route that may
+                           mint a capability lock. The operator names an
+                           AUTHORIZED EVENT, never a chain tip, a cell id or
+                           an output directory: advance() derives the next
+                           event from the frozen ORDER-EXPANSION and refuses
+                           out of order (ACQUISITION-REQUIRED /
+                           PROMOTION-DENY). The candidate is causally rooted
+                           in THIS universe's own acquisition evidence — the
+                           T0 arrival payload re-derived on disk — and T1 must
+                           declare and use that same candidate sha256. The
+                           promotion receipt names exactly the three
+                           capability artifacts and binds candidate +
+                           provenance + the authorization cell index; a lock
+                           may only lock hashes the validated receipt named.
+                                                              → smoke_h13
+A12.2 estimand-aware lock   CAPABILITY_LOCK schema v2 carries the estimand
+                           provenance set (block/universe/family,
+                           acquisition_chain_tips, source_cells,
+                           producer_identity, protocol_lock_sha256,
+                           execution_lock_sha256, semantic_core,
+                           preconditions, limitations, t4_semantic_id,
+                           evidence_grade, candidate_sha256,
+                           candidate_provenance_sha256). verify_lock() is the
+                           single validator; a pre-A12 lock is
+                           LOCK-INADMISSIBLE; an estimand-grade lock without
+                           a RATIFIED auditor T4 semantic id is refused; a
+                           capability consumed from an estimand-grade lock by
+                           a run that does not declare estimand grade is
+                           inadmissible (H1 runs are harness-validation
+                           evidence, never estimand data).      → smoke_h3 82/82
+A12.3 USE/REJECT/fresh      the ARRIVAL DECISION drives the reuse ledger: the
+                           runner writes the record in every wired case from
+                           the observed path (use_capability → selected /
+                           loaded / invoked / consumed true; fresh with a
+                           capability available → reuse_rejected true with the
+                           arrival's own recorded reason; fresh with none →
+                           capability_available false), and order.cell_state()
+                           validates that ledger against the manifest, the
+                           arrival and the family's lock grade. A T4 cell that
+                           rejects K is a legal COMPLETE outcome. The legacy
+                           runner `--promote` flag is retired (hard refusal at
+                           the CLI and in main()).               → smoke_h16 27/27
+neutral decision line      one sentence, byte-identical in BOTH arms, in the
+                           shared output contract: choose use_capability only
+                           when a capability-access block is present and
+                           applicable; otherwise choose fresh.
+                                                              → smoke_h16 tail identity
+production acquisition     the experiment is no longer deadlocked at cell 0:
+                           run_arm_h1.py takes the mandated pair
+                           --acquisition-event T0|T1 --acquisition-universe
+                           A|C, authorizes the cell through
+                           order.authorize_event (never the downstream
+                           authorize path), stamps arm=acquisition, builds
+                           the prompt with NO capability-access block, refuses
+                           any non-fresh decision on an acquisition cell, and
+                           writes the same evidence set (chain, identity,
+                           normalized usage, reuse ledger) as any other wired
+                           cell.                                    → smoke_h14
+```
+
+Additional round-2 closures carried in this slice: a model run with zero
+primary work (or a wired run with no usage receipt) is inadmissible
+(ZERO-WORK); production `main()` no longer dies on undefined checker/truth
+names (it consumes the path+sha values execute_arrival bound for THIS run);
+`chain.audit()` verifies the genesis link on its own terms instead of
+trusting it; and `cell_state()` can no longer report a locally-valid cell
+COMPLETE while an earlier cell of the frozen order is not complete.
+
+Hardening added while integrating the above (each with a failing probe first):
+
+- **Provenance is re-derived at the lock, not trusted from the receipt.**
+  `emit_capability_lock()` re-runs the full A12.1 provenance gate on the
+  receipt before minting. Without it, a receipt forged for this cell plus
+  artifact bytes copied in from another universe (hash-matching, so the
+  artifact check alone cannot tell) minted a lock; `smoke_h13` now refuses it.
+- **`t4_ratified` is derived from the frozen auditor registry, never
+  asserted.** Flipping the boolean on an unratified id no longer upgrades a
+  receipt; the id must equal the `T4-SEMANTIC-IDS.json` entry for that
+  capability (`smoke_h13`).
+- **Presence is not truthiness.** A frozen contract may legitimately declare
+  no limitations (fam05's `K.md` does not), so an empty `limitations` list is
+  a real value; the fields that must carry content are checked separately so
+  an empty provenance map can never pass as "present".
+- **The semantic core keeps the contract's own line structure** — the
+  validator requires `semantic_core` to appear verbatim in the frozen `K.md`,
+  so a normalized single-space join would have made every receipt
+  inadmissible.
+- **V3 closes over the whole harness package root**, not just the runner's
+  import graph: `harness/promotion.py` mints locks and promotion receipts, so
+  it must sit inside the execution authority. `mint_execution_lock.py` adds
+  every `harness/*.py` it finds unlisted (tests are never candidates — the
+  closure maps a module name to `harness/<name>.py`).
+- **`harness/tests/fixture_modelrun.py`** builds a genuinely ELIGIBLE
+  hermetic run through the real writers only (receipt, normalized artifact,
+  identity binding, chain, arrival, reuse record). Fixtures the production
+  classifier rejects cannot prove anything about the production classifier:
+  `smoke_h3`'s estimand-eligible fixture and `smoke_h12`'s cell fixtures now
+  use it, and H12 drives the real C-universe cells (global order) before A's
+  downstream T2.
+
+## Slice A12j-D10 record (2026-09-09)
+
+General-seat defect found while producing the D9 evidence run, fixed
+here (no estimand semantics touched): the docker source-stability
+binding could mount a torn snapshot when the source froze mid-truncate
+across the staging window (measured 1/10 plain, up to 3/5 under load).
+The binding now requires staged == CURRENT source plus a bounded
+quiescence confirmation (total sleep <= 50 ms, at most 3 attempts),
+with every refusal named (`STABILITY-DENY ...`) and the staged dir
+cleaned up on every refusal. Residual limit: a source frozen in a torn
+state for the entire window is indistinguishable from a stable source;
+the guard never proves "the source never changed". H1-docker smoke
+carries the deterministic injected-mutation refuse check, the
+stable-source control, and the honest churn property (refused OR
+mounted-not-torn).
+
+## Status
+
+- [ ] H1 specified (this document) — implementation open
+- [ ] H1 implemented + smoke green
+- [ ] H2 specified (this document) — implementation open
+- [ ] H2 implemented + smoke green
+- [ ] H3 specified (this document) — implementation open
+- [ ] H3 implemented + full smoke green

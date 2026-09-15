@@ -1,0 +1,26 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T0):
+```
+# fam04-T0 — validate DAG, emit topological order
+Read `graph.json` ({nodes, edges}). Verify acyclicity, then write
+`OUTPUT.json` `{"valid": true, "order": [...]}` with a valid
+topological order. If cyclic, write `{"valid": false, "cycle": [...]}`
+tracing the cycle back to its start.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, graph.json, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- graph.json (62 bytes) ---
+{"nodes": ["a", "b", "c"], "edges": [["a", "b"], ["b", "c"]]}
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

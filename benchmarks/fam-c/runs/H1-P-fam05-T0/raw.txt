@@ -1,0 +1,152 @@
+<think>Let me analyze the task carefully.
+
+We have:
+- A MANIFEST file with lines in format `path:size:sha256`
+- Two files to verify: alpha.txt (size 10, sha256 84d89877...) and beta.txt (size 20, sha256 4e76ad83...)
+- The directory also contains VISIBLE.md and prompt.md which are NOT in MANIFEST
+
+The task is:
+1. Read MANIFEST
+2. For each line, parse path, size, sha256
+3. Verify actual file size and sha256
+4. Output JSON with:
+   - `ok`: list of files that pass verification
+   - `bad`: list of files that fail verification (with reason)
+   - `unverified`: list of files that cannot be checked (e.g., missing local sha256 files)
+
+Wait, the task says "entries that cannot be checked against local sha256 files go under `unverified`". This is interesting - it suggests there's a concept of "local sha256 files". 
+
+Looking at the task directory listing: MANIFEST, VISIBLE.md, alpha.txt, beta.txt, prompt.md
+
+Hmm, maybe there are expected to be sha256 files somewhere? Or maybe the task means if the file doesn't exist or can't be read?
+
+Actually, I think "unverified" might apply to files in MANIFEST that don't exist on disk. Let me re-read.
+
+"entries that cannot be checked against local sha256 files go under `unverified`"
+
+I think this means: if a file listed in MANIFEST doesn't exist locally, it goes to "unverified". If it exists but size/sha256 don't match, it goes to "bad". If everything matches, it goes to "ok".
+
+Let me write a Python script that:
+1. Reads MANIFEST
+2. For each entry, parses path:size:sha256
+3. Checks if file exists
+4. If exists, computes actual size and sha256, compares
+5. Outputs the result
+
+For our specific case:
+- alpha.txt exists, has size 10, sha256 should match 84d89877f0d4041efb6bf91a16f0248f2fd573e6af05c19f96bedb9f882f7882
+- beta.txt exists, has size 20, sha256 should match 4e76ad8354461437c04ef9b9b242540b6406d782ff2c3fb28afdab5b423f88fe
+
+Let me verify the sha256 values:
+- "0123456789" -> sha256 should be...
+  Actually, let me trust the manifest. We just need to verify.
+
+The output should be:
+- ok: ["alpha.txt", "beta.txt"]
+- bad: []
+- unverified: []
+
+Or maybe just the paths. Let me write the script.
+
+```python
+import os
+import hashlib
+import json
+
+def solve(src_dir, dst_path):
+    manifest_path = os.path.join(src_dir, "MANIFEST")
+    with open(manifest_path, 'r') as f:
+        manifest_lines = f.read().strip().split('\n')
+    
+    ok = []
+    bad = []
+    unverified = []
+    
+    for line in manifest_lines:
+        if not line.strip():
+            continue
+        parts = line.split(':')
+        if len(parts) < 3:
+            continue
+        path = parts[0]
+        expected_size = int(parts[1])
+        expected_sha256 = parts[2]
+        
+        full_path = os.path.join(src_dir, path)
+        if not os.path.exists(full_path):
+            unverified.append(path)
+            continue
+        
+        # Compute actual size and sha256
+        with open(full_path, 'rb') as f:
+            data = f.read()
+        actual_size = len(data)
+        actual_sha256 = hashlib.sha256(data).hexdigest()
+        
+        if actual_size != expected_size:
+            bad.append({"path": path, "reason": f"size mismatch: expected {expected_size}, got {actual_size}"})
+        elif actual_sha256 != expected_sha256:
+            bad.append({"path": path, "reason": f"sha256 mismatch: expected {expected_sha256}, got {actual_sha256}"})
+        else:
+            ok.append(path)
+    
+    result = {"ok": ok, "bad": bad, "unverified": unverified}
+    with open(dst_path, 'w') as f:
+        json.dump(result, f)
+
+def main():
+    import sys
+    src_dir = sys.argv[1]
+    dst_path = sys.argv[2]
+    solve(src_dir, dst_path)
+
+if __name__ == "__main__":
+    main()
+```
+
+Wait, I need to think about what "unverified" means more carefully. The task says "entries that cannot be checked against local sha256 files go under unverified". 
+
+Maybe there's a local sha256 directory? Like `.sha256/` directory? But the task directory listing doesn't show one. Maybe it's referring to sha256 sums files or something.
+
+Actually, looking at the task directory listing again: MANIFEST, VISIBLE.md, alpha.txt, beta.txt, prompt.md
+
+There's no sha256 file mentioned. The phrase "cannot be checked against local sha256 files" might just mean "cannot be checked because the file is missing". Or it could mean something else.
+
+Given the simple nature of this task, I'll interpret "unverified" as: files listed in MANIFEST that don't exist on disk (or can't be read).
+
+Let me verify my expected output:
+- alpha.txt: exists, should match
+- beta.txt: exists, should match
+
+So output should be:
+```json
+{
+  "ok": ["alpha.txt", "beta.txt"],
+  "bad": [],
+  "unverified": []
+}
+```
+
+Let me also check the sha256 of "0123456789":
+Actually I can't easily compute this, but the task expects us to write a generic script that does this verification.
+
+The script I wrote should work. Let me finalize it.
+
+Actually, looking at the format of the bad entries: `{"path", "reason"}`. This looks like a typo for `{"path", "reason"}` meaning `{"path": ..., "reason": ...}`. So the bad entries are objects with path and reason keys.
+
+I think my script is correct. Let me output it.
+
+One more thought: should the `ok` list contain strings or objects? The task says `"ok": [...]`. Looking at the bad format which has objects with keys, and unverified is just `[...]`, I'll assume ok is a list of strings (paths).
+
+Actually, re-reading: `{"ok": [...], "bad": [{"path", "reason"}], "unverified": [...]}` 
+
+The bad format is explicitly specified as objects. The ok and unverified are just lists. They could be strings or objects. The simplest interpretation is:
+- ok: list of path strings (verified successfully)
+- bad: list of objects with path and reason (verification failed)
+- unverified: list of path strings (could not check)
+
+That seems right.
+
+Final script:</think>
+
+{"solver_py": "import os, hashlib, json, sys\n\ndef solve(src_dir, dst_path):\n    manifest_path = os.path.join(src_dir, 'MANIFEST')\n    with open(manifest_path, 'r') as f:\n        lines = f.read().splitlines()\n    ok = []\n    bad = []\n    unverified = []\n    for line in lines:\n        line = line.strip()\n        if not line:\n            continue\n        parts = line.split(':')\n        if len(parts) < 3:\n            continue\n        path = parts[0]\n        try:\n            expected_size = int(parts[1])\n        except ValueError:\n            bad.append({'path': path, 'reason': f'invalid size in manifest: {parts[1]}'})\n            continue\n        expected_sha = parts[2]\n        full = os.path.join(src_dir, path)\n        if not os.path.isfile(full):\n            unverified.append(path)\n            continue\n        with open(full, 'rb') as fh:\n            data = fh.read()\n        actual_size = len(data)\n        actual_sha = hashlib.sha256(data).hexdigest()\n        if actual_size != expected_size:\n            bad.append({'path': path, 'reason': f'size mismatch: expected {expected_size}, got {actual_size}'})\n        elif actual_sha != expected_sha:\n            bad.append({'path': path, 'reason': f'sha256 mismatch: expected {expected_sha}, got {actual_sha}'})\n        else:\n            ok.append(path)\n    result = {'ok': ok, 'bad': bad, 'unverified': unverified}\n    with open(dst_path, 'w') as f:\n        json.dump(result, f)\n\nif __name__ == '__main__':\n    solve(sys.argv[1], sys.argv[2])\n", "notes": "Parses MANIFEST lines path:size:sha256; ok if both match, bad if mismatch, unverified if file missing."}

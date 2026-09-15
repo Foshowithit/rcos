@@ -1,0 +1,1 @@
+{"task": "fam04/T2", "lane": "Q", "arm": "disabled", "verdict": "fix", "detail": "output schema/path mismatch under disabled solver"}

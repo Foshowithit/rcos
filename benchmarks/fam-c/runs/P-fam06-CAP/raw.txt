@@ -1,0 +1,154 @@
+<think>The user wants a reusable reconciliation capability that can handle unseen source schemas. They want:
+1. A Python engine script
+3. A manifest describing the capability
+4. Adapter notes
+
+Output must be ONLY JSON, under 100 lines, no fences. Claims only T0 (deterministic, simple) and T1 (deterministic, multi-source).
+
+Let me design this:
+
+**Engine design:**
+- Takes argv: field_map_path, records_path, out_path
+- field_map_path: a JSON file describing how to extract canonical fields from source records (schema adapter)
+- records_path: JSON file with records from source A (e.g., orders) and source B (e.g., shipments)
+- Produces reconciled output
+
+**Field map format:**
+```json
+{
+  "match_keys": {"order_id": ["source_a.order_id", "source_b.order_id"]},
+  "field_mappings": {
+    "quantity": {"a": "qty_ordered", "b": "qty_received"},
+    "status": {"a": "order_status", "b": "shipment_status"}
+  }
+}
+```
+
+**Classification:**
+- equal: all mapped fields match
+- missing_in_b: key only in A
+- missing_in_a: key only in B
+- conflicts: key in both but fields don't match
+- unreconcilable: parse errors or missing match keys
+
+Let me write this concisely.
+
+```python
+#!/usr/bin/env python3
+import json, sys
+
+def get_field(rec, path):
+    parts = path.split('.')
+    cur = rec
+    for p in parts:
+        if isinstance(cur, dict) and p in cur:
+            cur = cur[p]
+        else:
+            return None
+    return cur
+
+def normalize(val):
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        return val
+    return str(val).strip().lower()
+
+def main():
+    field_map_path, records_path, out_path = sys.argv[1], sys.argv[2], sys.argv[3]
+    with open(field_map_path) as f:
+        fmap = json.load(f)
+    with open(records_path) as f:
+        data = json.load(f)
+    
+    a_records = data.get('a', [])
+    b_records = data.get('b', [])
+    match_key_paths = fmap['match_keys']
+    field_mappings = fmap['field_mappings']
+    
+    def build_index(records, key_paths):
+        idx = {}
+        for rec in records:
+            key_vals = tuple(get_field(rec, kp) for kp in key_paths)
+            if all(v is not None for v in key_vals):
+                idx[key_vals] = rec
+            else:
+                idx[key_vals] = rec  # unreconcilable
+        return idx
+    
+    a_idx = {}
+    a_bad = []
+    for rec in a_records:
+        key_vals = tuple(get_field(rec, kp) for kp in match_key_paths)
+        if all(v is not None for v in key_vals):
+            a_idx[key_vals] = rec
+        else:
+            a_bad.append(rec)
+    
+    b_idx = {}
+    b_bad = []
+    for rec in b_records:
+        key_vals = tuple(get_field(rec, kp) for kp in match_key_paths)
+        if all(v is not None for v in key_vals):
+            b_idx[key_vals] = rec
+        else:
+            b_bad.append(rec)
+    
+    matched = []
+    conflicts = []
+    missing_in_b = []
+    missing_in_a = []
+    
+    for key, a_rec in a_idx.items():
+        if key not in b_idx:
+            missing_in_b.append({'key': list(key), 'record_a': a_rec})
+            continue
+        b_rec = b_idx[key]
+        field_results = {}
+        all_equal = True
+        for canonical, paths in field_mappings.items():
+            a_val = normalize(get_field(a_rec, paths.get('a')))
+            b_val = normalize(get_field(b_rec, paths.get('b')))
+            field_results[canonical] = {'a': a_val, 'b': b_val, 'equal': a_val == b_val}
+            if a_val != b_val:
+                all_equal = False
+        if all_equal:
+            matched.append({'key': list(key), 'fields': field_results})
+        else:
+            conflicts.append({'key': list(key), 'record_a': a_rec, 'record_b': b_rec, 'fields': field_results})
+    
+    for key, b_rec in b_idx.items():
+        if key not in a_idx:
+            missing_in_a.append({'key': list(key), 'record_b': b_rec})
+    
+    unreconcilable = [{'source': 'a', 'record': r} for r in a_bad] + [{'source': 'b', 'record': r} for r in b_bad]
+    
+    result = {
+        'matched': matched,
+        'missing_in_b': missing_in_b,
+        'missing_in_a': missing_in_a,
+        'conflicts': conflicts,
+        'unreconcilable': unreconcilable,
+        'stats': {
+            'total_a': len(a_records),
+            'total_b': len(b_records),
+            'matched': len(matched),
+            'conflicts': len(conflicts),
+            'missing_in_b': len(missing_in_b),
+            'missing_in_a': len(missing_in_a),
+            'unreconcilable': len(unreconcilable)
+        }
+    }
+    
+    with open(out_path, 'w') as f:
+        json.dump(result, f, indent=2)
+
+if __name__ == '__main__':
+    main()
+```
+
+Now let me assemble the full JSON output. I need to be under 100 lines total.
+
+Let me count lines carefully and make it tight.</think>
+
+{"engine_py":"#!/usr/bin/env python3\nimport json, sys\n\ndef get_field(rec, path):\n    cur = rec\n    for p in path.split('.'):\n        if isinstance(cur, dict) and p in cur:\n            cur = cur[p]\n        else:\n            return None\n    return cur\n\ndef norm(v):\n    if v is None: return None\n    if isinstance(v, (int, float)): return v\n    return str(v).strip().lower()\n\ndef index_by(records, key_paths):\n    idx, bad = {}, []\n    for rec in records:\n        key = tuple(get_field(rec, kp) for kp in key_paths)\n        if all(v is not None for v in key):\n            idx[key] = rec\n        else:\n            bad.append(rec)\n    return idx, bad\n\ndef main():\n    fmap_path, rec_path, out_path = sys.argv[1:4]\n    fmap = json.load(open(fmap_path))\n    data = json.load(open(rec_path))\n    match_keys = fmap['match_keys']\n    fmaps = fmap['field_mappings']\n    a_idx, a_bad = index_by(data.get('a', []), match_keys)\n    b_idx, b_bad = index_by(data.get('b', []), match_keys)\n    matched, conflicts, miss_b, miss_a = [], [], [], []\n    for key, a_rec in a_idx.items():\n        if key not in b_idx:\n            miss_b.append({'key': list(key), 'record_a': a_rec}); continue\n        b_rec = b_idx[key]\n        fields, ok = {}, True\n        for canon, paths in fmaps.items():\n            av = norm(get_field(a_rec, paths.get('a')))\n            bv = norm(get_field(b_rec, paths.get('b')))\n            fields[canon] = {'a': av, 'b': bv, 'equal': av == bv}\n            if av != bv: ok = False\n        entry = {'key': list(key), 'fields': fields}\n        (matched if ok else conflicts).append(entry if ok else {'key': list(key), 'record_a': a_rec, 'record_b': b_rec, 'fields': fields})\n    for key, b_rec in b_idx.items():\n        if key not in a_idx:\n            miss_a.append({'key': list(key), 'record_b': b_rec})\n    unrecon = [{'source': s, 'record': r} for s, b in [('a', a_bad), ('b', b_bad)] for r in b]\n    result = {'matched': matched, 'missing_in_b': miss_b, 'missing_in_a': miss_a,\n              'conflicts': conflicts, 'unreconcilable': unrecon,\n              'stats': {'total_a': len(data.get('a', [])), 'total_b': len(data.get('b', [])),\n                        'matched': len(matched), 'conflicts': len(conflicts),\n                        'missing_in_b': len(miss_b), 'missing_in_a': len(miss_a),\n                        'unreconcilable': len(unrecon)}}\n    json.dump(result, open(out_path, 'w'), indent=2)\n\nif __name__ == '__main__': main()\n","manifest":{"id":"reconcile-v1","version":1,"applicability":{"description":"Reconcile two pre-parsed record sets (sources A and B) under a schema-agnostic field map: matches keys, classifies as equal/missing/conflicts/unreconcilable. Operates on in-memory JSON dicts, not raw CSV/JSONL.","requires_markers":["field_map.match_keys (non-empty list)","field_map.field_mappings (object)","records.a and/or records.b as list of dicts"],"claims":["T0: deterministic classification given fixed inputs and field_map","T1: deterministic reconciliation across multiple key fields and arbitrary field paths via dot notation"]},"limitations":["No nested array reconciliation (object-of-arrays not supported)","No type coercion beyond numeric vs string normalization","No fuzzy/approximate key matching (exact equality only)","Match keys must be non-null in both sources to be reconcilable","Date/time fields normalized as strings (no timezone normalization)"]},"adapter_notes":"Pre-parse any source (CSV, JSON, JSONL, XML) into {a:[...], b:[...]} dict lists. Provide field_map.json describing match_keys as ordered list of dot-paths (e.g. ['order.id','order.line']) and field_mappings as {canonical_name: {a:'path.a', b:'path.b'}}. Records missing any match_key go to unreconcilable. Equal classification requires all mapped fields to compare equal after normalization; any mismatch yields a conflict with full field-level diff. Unmapped source fields are ignored. To extend: add normalization rules per canonical field in field_map.normalizers (left as future work)."}

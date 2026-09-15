@@ -1,0 +1,9 @@
+{
+ "task": "fam05/T2",
+ "lane": "P",
+ "arm": "correct",
+ "verdict": "fix",
+ "detail": "P hallucinated a.txt/b.txt entries absent from T2; engine unverified list mismatched truth",
+ "usage_receipt": "runs/P-fam05-T2-correct/usage.json",
+ "raw": "runs/P-fam05-T2-correct/raw.txt"
+}

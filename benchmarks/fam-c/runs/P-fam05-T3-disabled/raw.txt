@@ -1,0 +1,159 @@
+<think>Let me analyze this task carefully.
+
+The task is to verify files against a manifest. The manifest lists:
+- FILES=sub/n1.txt,sub/n2.txt,top.txt
+- SIZES=45,9,63
+- SHAS=52789e3423b72beeb898456a4f49662e46b0cbb960784c5ef4b1399d327e7c27,a08d116c20341f0aadbacaedfae937da31006e7eb7bd4c6e723449776a1c13ba,93378fdea13e1d912d953fedf1155adf0c184626216bf333f9b4f50b704bff63
+
+But the actual file contents are:
+- sub/n1.txt (45 bytes): "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+- sub/n2.txt (3 bytes): "bX9"
+- top.txt (63 bytes): "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+
+Wait, sub/n2.txt is only 3 bytes but the manifest says it should be 9 bytes. That's a mismatch.
+
+Also, the SHA256 of "bX9" is definitely not a08d116c20341f0aadbacaedfae937da31006e7eb7bd4c6e723449776a1c13ba.
+
+Let me compute the SHAs:
+- sub/n1.txt: 45 'a' characters. SHA256 of 45 'a' characters... let me think. Actually, I'll just write the script and compute.
+
+Wait, the task says "entries that cannot be checked against local sha256 files go under `unverified`". What does this mean? I think it means if the file doesn't exist locally, it goes under unverified. If it exists but has wrong size or sha, it goes under bad.
+
+Let me write the solver script:
+
+```python
+import hashlib
+import os
+import sys
+import json
+
+def solve(manifest_path, files_dir, out_path):
+    with open(manifest_path, 'r') as f:
+        lines = f.readlines()
+    
+    files = []
+    sizes = []
+    shas = []
+    for line in lines:
+        line = line.strip()
+        if line.startswith('FILES='):
+            files = line[len('FILES='):].split(',')
+        elif line.startswith('SIZES='):
+            sizes = [int(s) for s in line[len('SIZES='):].split(',')]
+        elif line.startswith('SHAS='):
+            shas = line[len('SHAS='):].split(',')
+    
+    ok = []
+    bad = []
+    unverified = []
+    
+    for i, fname in enumerate(files):
+        fpath = os.path.join(files_dir, fname)
+        if not os.path.exists(fpath):
+            unverified.append(fname)
+            continue
+        
+        actual_size = os.path.getsize(fpath)
+        expected_size = sizes[i]
+        expected_sha = shas[i]
+        
+        with open(fpath, 'rb') as f:
+            data = f.read()
+        actual_sha = hashlib.sha256(data).hexdigest()
+        
+        if actual_size != expected_size:
+            bad.append({"path": fname, "reason": f"size mismatch: expected {expected_size}, got {actual_size}"})
+        elif actual_sha != expected_sha:
+            bad.append({"path": fname, "reason": f"sha mismatch: expected {expected_sha}, got {actual_sha}"})
+        else:
+            ok.append(fname)
+    
+    result = {"ok": ok, "bad": bad, "unverified": unverified}
+    with open(out_path, 'w') as f:
+        json.dump(result, f)
+
+if __name__ == '__main__':
+    solve(sys.argv[1], sys.argv[2], sys.argv[3])
+```
+
+Let me check the SHAs:
+- 45 'a' characters: sha256("a"*45)
+- "bX9" (3 bytes): sha256(b"bX9")
+- 63 'c' characters: sha256("c"*63)
+
+I can't easily compute these mentally, but the script will handle it.
+
+The expected outputs:
+- sub/n1.txt: 45 'a' chars, but expected SHA is 52789e3... Let me compute. Actually, looking at the content, the file is 45 bytes which matches the expected size. But the SHA may or may not match.
+
+Wait, the task is asking me to write the solver script, not to run it. So I just need to output the JSON with the script.
+
+Let me also reconsider the "unverified" concept. "entries that cannot be checked against local sha256 files" - this is a bit ambiguous. It could mean:
+1. Files that don't exist locally
+2. Files for which SHA verification isn't possible for some other reason
+
+I think it's interpretation 1: if the file doesn't exist locally, we can't verify it, so it's "unverified".
+
+Let me finalize the script.
+
+Actually, looking again, the response format asks for `{"solver_py": "...", "notes": "..."}`. So I need to output the Python script as a string in JSON.
+
+Let me write it carefully:
+
+```python
+import hashlib
+import os
+import sys
+import json
+
+def solve(manifest_path, files_dir, out_path):
+    with open(manifest_path, 'r') as f:
+        content = f.read()
+    
+    files = []
+    sizes = []
+    shas = []
+    for line in content.splitlines():
+        if line.startswith('FILES='):
+            files = line[len('FILES='):].split(',')
+        elif line.startswith('SIZES='):
+            sizes = [int(s) for s in line[len('SIZES='):].split(',')]
+        elif line.startswith('SHAS='):
+            shas = line[len('SHAS='):].split(',')
+    
+    ok = []
+    bad = []
+    unverified = []
+    
+    for i, fname in enumerate(files):
+        fpath = os.path.join(files_dir, fname)
+        if not os.path.exists(fpath):
+            unverified.append(fname)
+            continue
+        
+        actual_size = os.path.getsize(fpath)
+        expected_size = sizes[i]
+        expected_sha = shas[i]
+        
+        with open(fpath, 'rb') as f:
+            data = f.read()
+        actual_sha = hashlib.sha256(data).hexdigest()
+        
+        if actual_size != expected_size:
+            bad.append({"path": fname, "reason": f"size mismatch: expected {expected_size}, got {actual_size}"})
+        elif actual_sha != expected_sha:
+            bad.append({"path": fname, "reason": f"sha mismatch: expected {expected_sha}, got {actual_sha}"})
+        else:
+            ok.append(fname)
+    
+    result = {"ok": ok, "bad": bad, "unverified": unverified}
+    with open(out_path, 'w') as f:
+        json.dump(result, f)
+
+if __name__ == '__main__':
+    solve(sys.argv[1], sys.argv[2], sys.argv[3])
+```
+
+This should work. Let me output it as JSON.</think>
+
+{"solver_py": "import hashlib\nimport os\nimport sys\nimport json\n\ndef solve(manifest_path, files_dir, out_path):\n    with open(manifest_path, 'r') as f:\n        content = f.read()\n\n    files = []\n    sizes = []\n    shas = []\n    for line in content.splitlines():\n        if line.startswith('FILES='):\n            files = line[len('FILES='):].split(',')\n        elif line.startswith('SIZES='):\n            sizes = [int(s) for s in line[len('SIZES='):].split(',')]\n        elif line.startswith('SHAS='):\n            shas = line[len('SHAS='):].split(',')\n\n    ok = []\n    bad = []\n    unverified = []\n\n    for i, fname in enumerate(files):\n        fpath = os.path.join(files_dir, fname)\n        if not os.path.exists(fpath):\n            unverified.append(fname)\n            continue\n\n        actual_size = os.path.getsize(fpath)\n        expected_size = sizes[i]\n        expected_sha = shas[i]\n\n        with open(fpath, 'rb') as f:\n            data = f.read()\n        actual_sha = hashlib.sha256(data).hexdigest()\n\n        if actual_size != expected_size:\n            bad.append({\"path\": fname, \"reason\": f\"size mismatch: expected {expected_size}, got {actual_size}\"})\n        elif actual_sha != expected_sha:\n            bad.append({\"path\": fname, \"reason\": f\"sha mismatch: expected {expected_sha}, got {actual_sha}\"})\n        else:\n            ok.append(fname)\n\n    result = {\"ok\": ok, \"bad\": bad, \"unverified\": unverified}\n    with open(out_path, 'w') as f:\n        json.dump(result, f)\n\nif __name__ == '__main__':\n    solve(sys.argv[1], sys.argv[2], sys.argv[3])\n", "notes": "Reads FILES/SIZES/SHAS from manifest, verifies each file locally; missing files go to unverified."}

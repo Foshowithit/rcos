@@ -1,0 +1,36 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T4):
+```
+# fam02-T4 — paginated acquisition with declared policy
+Same protocol over `pages/t1.json…`: follow `next`, retry via
+`fetch.py`, log in `retry.log`, merge into `OUTPUT.json`.
+A `POLICY` file in the task dir declares duplicate handling; follow it.
+
+```
+
+TASK DIRECTORY LISTING: POLICY, VISIBLE.md, faults.json, pages, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- POLICY (164 bytes) ---
+duplicate_policy: latest-wins
+# When one id appears on multiple pages with different values, the
+# LATEST page (higher page order) carries the authoritative value.
+
+--- faults.json (17 bytes) ---
+{"failures": {}}
+
+--- pages/t1.json (66 bytes) ---
+{"items": [{"k": "a", "v": 1}, {"k": "b", "v": 2}], "next": "t2"}
+
+--- pages/t2.json (67 bytes) ---
+{"items": [{"k": "b", "v": 22}, {"k": "c", "v": 3}], "next": null}
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

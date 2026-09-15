@@ -1,0 +1,65 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T3):
+```
+# fam01-T3 — INI-style record normalization
+
+Normalize `input.env` (`[id]` sections with `name`/`usd`/`tags` keys;
+`tags` may be absent) to canonical JSON: a list of
+`{id, name, amount_cents (integer), tags (list)}`.
+Write the list to `OUTPUT.json`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, input.env, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- input.env (359 bytes) ---
+# inventory export, do not reorder
+
+[R-1]
+name=Lambda Core
+usd=55.55
+tags=red
+
+[R-2]
+name=Mu Shell
+usd=8.40
+
+[R-3]
+name=Nu Frame
+usd=199.99
+tags=bulk|sale
+
+[R-4]
+name=Omicron Axle
+usd=14.14
+tags=
+
+[R-5]
+name=Pi Rotor
+usd=500.00
+tags=bulk
+
+[R-6]
+name=Rho Seal
+usd=2.02
+tags=new|sale
+
+[R-7]
+name=Sigma Belt
+usd=73.33
+
+[R-8]
+name=Tau Disc
+usd=19.95
+tags=red|new
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

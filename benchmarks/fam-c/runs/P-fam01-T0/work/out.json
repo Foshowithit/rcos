@@ -1,0 +1,27 @@
+[
+  {
+    "id": "A-1",
+    "name": "Alpha Widget",
+    "amount_cents": 1250,
+    "tags": [
+      "red",
+      "sale"
+    ]
+  },
+  {
+    "id": "A-2",
+    "name": "Beta Gadget",
+    "amount_cents": 799,
+    "tags": []
+  },
+  {
+    "id": "A-3",
+    "name": "Gamma Thing",
+    "amount_cents": 10000,
+    "tags": [
+      "blue",
+      "new",
+      "sale"
+    ]
+  }
+]

@@ -1,0 +1,6 @@
+{
+ "provider": "https://kenari.id/v1",
+ "model_requested": "agnes-2-0-flash:free",
+ "model_family": "Kenari-Agnes",
+ "normalizer": "openai-chat-total-input-v1"
+}

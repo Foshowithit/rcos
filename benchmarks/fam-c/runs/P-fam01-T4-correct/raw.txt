@@ -1,0 +1,521 @@
+<think>The user wants me to normalize a CSV file to canonical JSON. Let me analyze the input:
+
+```
+id,name,amount_usd,tags
+D-1,Omicron Box,11.00,red
+D-2,Pi Crate,23.50,sale
+SUMMARY,,,34.50,
+```
+
+The records are:
+1. D-1, Omicron Box, 11.00, red
+2. D-2, Pi Crate, 23.50, sale
+3. SUMMARY, "", "", 34.50, "" (empty name, empty tags)
+
+Wait, looking at the CSV more carefully:
+- Line 1: id,name,amount_usd,tags (header)
+- Line 2: D-1,Omicron Box,11.00,red
+- Line 3: D-2,Pi Crate,23.50,sale
+- Line 4: SUMMARY,,,34.50, (this has only one field with commas, but it should have 4 fields)
+
+Let me recount the bytes: "SUMMARY,,,34.50,\n" - that's SUMMARY then comma comma comma 34.50 comma. So it's: SUMMARY, "", "", 34.50, "" 
+
+Wait that's 5 commas which means 6 fields? Let me look again: "SUMMARY,,,34.50," 
+- S-U-M-M-A-R-Y = "SUMMARY"
+- , = separator
+- "" = empty
+- , = separator  
+- "" = empty
+- , = separator
+- "34.50" = amount
+- , = separator
+- "" = empty (trailing empty)
+
+But that's 5 separators which means 6 fields. The header has 4 fields (3 separators). Let me recount:
+
+"SUMMARY,,,34.50,"
+S, U, M, M, A, R, Y, ,, ,, 3, 4, ., 5, 0, ,
+
+Position: S(0) U(1) M(2) M(3) A(4) R(5) Y(6) ,(7) ,(8) ,(9) 3(10) 4(11) .(12) 5(13) 0(14) ,(15)
+
+So commas at positions 7, 8, 9, 15. That's 4 commas = 5 fields. Wait no, 4 commas = 5 fields separated.
+
+Actually let me count the values:
+- "SUMMARY" (before first comma)
+- "" (between first and second comma)
+- "" (between second and third comma)
+- "34.50" (between third and fourth comma)
+- "" (after fourth comma, trailing)
+
+So the record would be: {id: "SUMMARY", name: "", amount_usd: "", tags: "34.50"}
+
+Wait that doesn't make sense either. Let me think again. The header has: id,name,amount_usd,tags (3 commas = 4 fields).
+
+The record "SUMMARY,,,34.50," has commas at positions 7, 8, 9, and 15 (the trailing one). So:
+- Field 1: SUMMARY
+- Field 2: "" (empty, between commas 7 and 8)
+- Field 3: "" (empty, between commas 8 and 9)
+- Field 4: "34.50" (between commas 9 and 15)
+- Trailing empty: "" (after comma 15)
+
+But a CSV row should have only 4 fields. The trailing comma might just be a formatting artifact. Let me check using Python's csv module behavior - it would typically treat this as 5 fields, or 4 if there's a trailing newline.
+
+Actually, looking at "SUMMARY,,,34.50,\n" - that's the content with newline. Python's csv reader by default would parse this as 5 fields: ["SUMMARY", "", "", "34.50", ""].
+
+Hmm, but that creates a problem - the field mapping would be off. Let me check the header again: "id,name,amount_usd,tags" - 4 fields.
+
+Hmm, this is a bit tricky. Let me consider what the most likely interpretation is:
+
+Looking at the file size of 91 bytes:
+"id,name,amount_usd,tags\n" = 24 bytes (including newline)
+"D-1,Omicron Box,11.00,red\n" = 25 bytes (including newline)
+"D-2,Pi Crate,23.50,sale\n" = 23 bytes (including newline)
+"SUMMARY,,,34.50,\n" = 17 bytes (including newline)
+Total = 24+25+23+17 = 89 bytes. But the file is 91 bytes.
+
+Hmm, maybe there's some extra whitespace. Let me not worry about exact byte counts and focus on the content.
+
+Actually the most natural interpretation is that "SUMMARY,,,34.50," is a malformed row meant to represent: id="SUMMARY", name="", amount_usd="", tags="34.50". But that would mean 4 fields with the trailing comma being a quirk.
+
+Or it could be: id="SUMMARY", name="", amount_usd="34.50", tags="" - with one empty field dropped.
+
+Let me look at the actual content more carefully. The header is "id,name,amount_usd,tags". The data row "SUMMARY,,,34.50," has 5 values separated by commas (4 commas, 5 fields). 
+
+If the trailing comma means the last field is empty, then we have 5 fields and 1 extra. If we drop the trailing empty, we get 4 fields: ["SUMMARY", "", "", "34.50"]. This would mean tags="34.50" which is weird.
+
+If we instead consider that the row was meant to be "SUMMARY,,34.50," (3 commas, 4 fields): id="SUMMARY", name="", amount_usd="34.50", tags="". That makes more sense semantically - it's a summary row with just the amount.
+
+Hmm, but the input clearly shows "SUMMARY,,,34.50," with two consecutive commas.
+
+Wait, I should reconsider. Let me look at the literal text: "SUMMARY,,,34.50,"
+
+Actually you know what, this might be a case where there's a comma missing in the data. Let me just take it literally and use Python's csv.DictReader behavior. DictReader would return a dict with keys from the header and values from the row. If the row has more fields than the header, the extras are ignored or appended depending on settings.
+
+By default, if a row has more fields than the header, csv.DictReader raises an error in newer Python versions. But with `restkey` and `restval` options, you can handle this.
+
+Actually, looking more carefully - perhaps the original intent was "SUMMARY,,,34.50" where the trailing comma was a mistake or it represents something different.
+
+I think the most likely intent given the "SUMMARY" name and the "34.50" value (which is 11.00 + 23.50 = 34.50) is that this is a summary row with id=SUMMARY, name="", amount=34.50, tags="". But the extra comma makes it ambiguous.
+
+For the purposes of this task, let me go with the literal CSV parsing. If we have:
+- header: ["id", "name", "amount_usd", "tags"]
+- row: ["SUMMARY", "", "", "34.50", ""]  (5 fields)
+
+This would not match the header. The DictReader would either error or put extras in restkey.
+
+Let me think about this differently. Maybe the input is actually meant to be parsed as the row having fields:
+- id = "SUMMARY"
+- name = ""
+- amount_usd = "34.50"  (the third comma could be the separator)
+- tags = ""
+
+But that's only if there are 3 commas. The literal text has 4 commas.
+
+OK, I'll just go with the literal CSV parsing and use whatever DictReader does. Actually, in Python's csv.DictReader, if there are more fields than header, by default it just stops at the header length or uses restkey. Let me check.
+
+Actually, I think the simplest approach is to just output what makes sense. Given the SUMMARY label and the total amount, the most sensible interpretation is that this is a summary row. But we should preserve the actual data.
+
+Let me look at the engine: it iterates records, picks id/name/amount/tags from each, and emits. It doesn't filter. So if I pass all 3 records through, including the SUMMARY one with weird fields, the output will reflect that.
+
+I think the cleanest approach is:
+- Parse the CSV strictly
+- Record 1: {id: "D-1", name: "Omicron Box", amount_usd: "11.00", tags: "red"}
+- Record 2: {id: "D-2", name: "Pi Crate", amount_usd: "23.50", tags: "sale"}
+- Record 3: {id: "SUMMARY", name: "", amount_usd: "", tags: "34.50"} or similar
+
+The field map would be:
+- id: "id"
+- name: "name"
+- amount: "amount_usd"
+- tags: "tags"
+
+Then the engine would output:
+1. {id: "D-1", name: "Omicron Box", amount_cents: 1100, tags: ["red"]}
+2. {id: "D-2", name: "Pi Crate", amount_cents: 2350, tags: ["sale"]}
+3. {id: "SUMMARY", name: "", amount_cents: 0, tags: ["34.50"]}
+
+Hmm, that last one is weird but it's what the literal data says.
+
+Wait, let me re-examine. With the literal CSV parsing using csv.DictReader:
+- If row has more fields than header, behavior depends on Python version.
+- In Python 3, csv.DictReader raises an error if a row has more fields than fieldnames.
+
+So this CSV would actually error out on parsing the SUMMARY row!
+
+Let me look at the input again: "SUMMARY,,,34.50,"
+
+Hmm, wait. Let me count the commas very carefully:
+"SUMMARY,,,34.50,"
+After "SUMMARY", we have ",,,34.50,"
+
+That's: comma, comma, comma, "34.50", comma. So 4 commas after SUMMARY.
+
+If the header has 4 fields and the row has 5 fields (SUMMARY + 4 separators), it's an extra field.
+
+Actually, I think I may be miscounting. Let me write it out character by character:
+S-U-M-M-A-R-Y-,-,-,-3-4-.-5-0-,-
+
+Positions 1-7: SUMMARY (7 chars)
+Position 8: ,
+Position 9: ,
+Position 10: ,
+Positions 11-15: 34.50 (5 chars)
+Position 16: ,
+
+So: SUMMARY (field 1), empty (field 2), empty (field 3), 34.50 (field 4), empty (field 5).
+
+The header has 4 fields, the row has 5 fields. There would be a mismatch.
+
+But wait, csv.DictReader by default might handle this with restkey. Let me think about what an adapter would do here. The adapter reads CSV with DictReader, dumps rows to records.json. So it would use csv.DictReader.
+
+In Python, csv.DictReader:
+- If a row has fewer fields than fieldnames, the missing values default to None (or restval).
+- If a row has more fields than fieldnames, the extra fields are stored in restkey (default None).
+
+So for the SUMMARY row, we'd get something like:
+{id: "SUMMARY", name: "", amount_usd: "", tags: "34.50", None: ""}
+
+Or with restval, the last empty might be a different key.
+
+Hmm, this is getting complicated. Let me just assume the most natural reading and proceed.
+
+Actually, you know what, let me look at the file size more carefully. The input is 91 bytes. Let me see if "SUMMARY,,,34.50,\n" is really what's there.
+
+"id,name,amount_usd,tags\n" - let me count: i(1)d(2),(3)n(4)a(5)m(6)e(7),(8)a(9)m(10)o(11)u(12)n(13)t(14)_(15)u(16)s(17)d(18),(19)t(20)a(21)g(22)s(23)\n(24) = 24 bytes
+
+"D-1,Omicron Box,11.00,red\n" - D(1)-(2)1(3),(4)O(5)m(6)i(7)c(8)r(9)o(10)n(11) (12)B(13)o(14)x(15),(16)1(17)1(18).(19)0(20)0(21),(22)r(23)e(24)d(25)\n(26) = 26 bytes
+
+"D-2,Pi Crate,23.50,sale\n" - D(1)-(2)2(3),(4)P(5)i(6) (7)C(8)r(9)a(10)t(11)e(12),(13)2(14)3(15).(16)5(17)0(18),(19)s(20)a(21)l(22)e(23)\n(24) = 24 bytes
+
+"SUMMARY,,,34.50,\n" - S(1)U(2)M(3)M(4)A(5)R(6)Y(7),(8),(9),(10)3(11)4(12).(13)5(14)0(15),(16)\n(17) = 17 bytes
+
+Total = 24 + 26 + 24 + 17 = 91 bytes. 
+
+So the file is exactly as I described. The SUMMARY row has 5 fields but the header has 4.
+
+Hmm, this is tricky. But let me just proceed with what makes sense.
+
+Looking at this again, I think the most likely intent is that the SUMMARY row was supposed to be a total row, with id="SUMMARY" and amount_usd="34.50". The CSV format is a bit broken, but the intent is clear.
+
+OK, let me just generate the response. I'll include all 3 records as they would be parsed by csv.DictReader. For the SUMMARY row, I'll assume the most natural reading where the fields align with the header as much as possible.
+
+Actually, let me reconsider. Maybe the way to handle this is to read the CSV with csv.DictReader, and if a row has extra fields, those become a special key. But since the engine picks specific keys, the extra field would be ignored.
+
+So the records would be:
+1. {id: "D-1", name: "Omicron Box", amount_usd: "11.00", tags: "red"}
+2. {id: "D-2", name: "Pi Crate", amount_usd: "23.50", tags: "sale"}
+3. {id: "SUMMARY", name: "", amount_usd: "", tags: "34.50"} (with possibly an extra field)
+
+For the engine:
+- Record 1: {id: "D-1", name: "Omicron Box", amount_cents: 1100, tags: ["red"]}
+- Record 2: {id: "D-2", name: "Pi Crate", amount_cents: 2350, tags: ["sale"]}
+- Record 3: {id: "SUMMARY", name: "", amount_cents: 0, tags: ["34.50"]} - this seems wrong but it's literal
+
+Hmm, OR maybe the intent was:
+3. {id: "SUMMARY", name: "", amount_usd: "34.50", tags: ""} 
+
+with tags being "" but engine would emit tags: [] (since empty string splits to empty).
+
+I think the most charitable interpretation is that the SUMMARY row is a total row. The amount is 34.50 (sum of 11.00 + 23.50), and the row was meant to summarize. The CSV is malformed with an extra comma.
+
+Let me go with what csv.DictReader would actually produce. Since the row has 5 fields and the header has 4, the extra field would be stored in restkey. Let me just say the records are:
+
+[
+  {"id": "D-1", "name": "Omicron Box", "amount_usd": "11.00", "tags": "red"},
+  {"id": "D-2", "name": "Pi Crate", "amount_usd": "23.50", "tags": "sale"},
+  {"id": "SUMMARY", "name": "", "amount_usd": "", "tags": "34.50"}
+]
+
+And the field map:
+{
+  "id": "id",
+  "name": "name",
+  "amount": "amount_usd",
+  "tags": "tags"
+}
+
+The engine output would be:
+[
+  {"id": "D-1", "name": "Omicron Box", "amount_cents": 1100, "tags": ["red"]},
+  {"id": "D-2", "name": "Pi Crate", "amount_cents": 2350, "tags": ["sale"]},
+  {"id": "SUMMARY", "name": "", "amount_cents": 0, "tags": ["34.50"]}
+]
+
+Wait, but the last record is weird. Let me reconsider.
+
+Actually, maybe the way csv.DictReader handles this is that the extra empty field after the last comma gets discarded or merged. Let me think about this differently.
+
+In Python, when you have CSV with more fields than headers, csv.DictReader will store the extras in `restkey`. So the dict would be:
+{"id": "SUMMARY", "name": "", "amount_usd": "", "tags": "34.50", None: ""}
+
+Where the last empty field goes to restkey (default None).
+
+In this case, the engine would still process tags="34.50" and split it into ["34.50"].
+
+Alternatively, if I use `extrasaction='ignore'` or similar, the extras are just dropped.
+
+Either way, the field assignment for the SUMMARY row is:
+- id: "SUMMARY"
+- name: ""
+- amount_usd: ""
+- tags: "34.50" (or the empty extras)
+
+This is a bit odd but it's what the data says.
+
+OK let me just go with this. I'll write the records as the literal CSV parsing would produce.
+
+Actually, let me reconsider one more time. Looking at "SUMMARY,,,34.50," - what if this is meant to be read as:
+- SUMMARY: id
+- (empty): name
+- 34.50: amount_usd  
+- (empty): tags
+
+And there's just an extra comma in the middle (between name and amount_usd)?
+
+That would require "SUMMARY,,34.50," with only 3 commas after SUMMARY. But the file has 4 commas.
+
+OR what if the row is actually "SUMMARY,,,34.50" with the trailing comma being a line ending artifact? Some CSV writers add trailing commas. Then:
+- SUMMARY: id
+- (empty): name
+- (empty): amount_usd
+- 34.50: tags
+
+Still odd.
+
+You know, I think the best interpretation given the context (the amount is 34.50 = 11.00 + 23.50) is that this is a SUMMARY/totals row. The amount field is "34.50". The CSV format is just a bit malformed.
+
+Let me just go with the literal CSV parsing. The engine will handle whatever data we give it.
+
+Wait, I want to reconsider once more. The csv.DictReader might just take the first 4 fields and ignore the rest. Let me check what it actually does.
+
+From Python docs: "If a row has more fields than fieldnames, the remaining data is put in a list and stored in the field restkey (default None). If a row has fewer fields than fieldnames, the missing values are filled-in with the value of restval (default None)."
+
+So for "SUMMARY,,,34.50," with 5 fields and 4 fieldnames, the result would be:
+{"id": "SUMMARY", "name": "", "amount_usd": "", "tags": "34.50", None: ""}
+
+The None key has the extra empty string.
+
+Now, when we pass this to the engine, it would:
+- pick id: "SUMMARY"
+- pick name: "" (empty string)
+- pick amount: "" (empty string), parse_usd_to_cents("") returns 0 (stripped to "", then no dollar, no comma, no sign, no decimal, so a="", b="00", cents = 0*100 + 0 = 0)
+
+Wait, let me trace through parse_usd_to_cents(""):
+- s = "" (after strip)
+- neg = False (doesn't start with - or ())
+- s = "" (no parenthesis)
+- s = "" (no $)
+- s = "" (no comma)
+- neg = False
+- a = "", b = "00" (no decimal)
+- cents = 0*100 + 0 = 0
+- return 0
+
+So amount_cents = 0 for the SUMMARY record.
+
+- pick tags: "34.50" (since the engine uses pick which gets the first non-None value)
+- tags_val = "34.50" (string)
+- tags = ["34.50"] (split by comma, no comma, just ["34.50"])
+
+So the SUMMARY record would be:
+{"id": "SUMMARY", "name": "", "amount_cents": 0, "tags": ["34.50"]}
+
+That's not ideal but it's what the data says.
+
+OK, I'll just go with this. The output is what it is based on the literal CSV.
+
+Hmm wait, one more consideration. What if the intent is that the SUMMARY row should be skipped or treated specially? But the task says to normalize records, and the engine doesn't have a concept of skipping records.
+
+Let me just produce the output with all 3 records as parsed.
+
+Now, for the response format, I need to output:
+{"records": {<input records dict for the engine, per its interface convention>}, "field_map": {<map per interface convention>}, "notes": "<one line>"}
+
+Wait, "records" is a dict, not a list? Let me re-read.
+
+"records": {<input records dict for the engine, per its interface convention>}
+
+The engine takes records.json which is "a JSON list of flat dicts". So records should be a list. But the response format says "<input records dict for the engine>". That's a bit ambiguous - "dict" could mean "dictionary" or just "data structure".
+
+Looking at the adapter notes: "(1) records.json — a JSON list of flat dicts". So it's a list of dicts.
+
+The response format says "records": {<input records dict for the engine, per its interface convention>}. I think this is poorly worded and means "records" as a list of records (dicts). The interface is JSON list of flat dicts.
+
+OK so my response should have:
+- records: a list of dicts (the CSV rows)
+- field_map: a dict mapping canonical names to source keys
+
+Let me construct the response:
+
+records = [
+  {"id": "D-1", "name": "Omicron Box", "amount_usd": "11.00", "tags": "red"},
+  {"id": "D-2", "name": "Pi Crate", "amount_usd": "23.50", "tags": "sale"},
+  {"id": "SUMMARY", "name": "", "amount_usd": "", "tags": "34.50"}
+]
+
+field_map = {
+  "id": "id",
+  "name": "name",
+  "amount": "amount_usd",
+  "tags": "tags"
+}
+
+notes: "CSV parsed with DictReader; SUMMARY row literal-parsed"
+
+Hmm, but I'm not 100% sure about the SUMMARY row's tags field. Let me think again.
+
+Actually, you know what, I realize there's another way to interpret "SUMMARY,,,34.50,". What if it's actually:
+- SUMMARY
+- (empty)
+- (empty)  
+- 34.50
+- (empty trailing)
+
+And the trailing empty is just a formatting artifact? In some CSV dialects, a trailing comma with no value is the same as no trailing comma.
+
+If we use csv.DictReader, the behavior depends on the dialect. The default dialect is "excel" which treats the trailing comma as introducing an extra empty field.
+
+Hmm, you know what, let me just try a different interpretation. What if the row is actually just 4 fields and the trailing comma is a typo? Like "SUMMARY,,34.50," with one less comma? Then:
+- SUMMARY: id
+- (empty): name
+- 34.50: amount_usd
+- (empty): tags
+
+This makes more semantic sense. The SUMMARY row has a total amount of 34.50.
+
+But the file literally has "SUMMARY,,,34.50," with 4 commas after SUMMARY. I have to go with the literal interpretation.
+
+OK let me just produce the response. I'll include the SUMMARY row as parsed literally.
+
+Actually wait, I want to think about this from yet another perspective. Maybe the input is meant to be parsed differently. What if the SUMMARY row is intentionally there as a "broken" row to test the engine's robustness?
+
+In that case, the engine should still produce some output. Whatever it produces, that's what we accept.
+
+OK final answer:
+
+records = [
+  {"id": "D-1", "name": "Omicron Box", "amount_usd": "11.00", "tags": "red"},
+  {"id": "D-2", "name": "Pi Crate", "amount_usd": "23.50", "tags": "sale"},
+  {"id": "SUMMARY", "name": "", "amount_usd": "", "tags": "34.50"}
+]
+
+field_map = {
+  "id": "id",
+  "name": "name",
+  "amount": "amount_usd",
+  "tags": "tags"
+}
+
+notes: "Headers map directly: id->id, name->name, amount_usd->amount, tags->tags"
+
+Wait, I want to reconsider one more time. Looking at the response format: "records": {<input records dict for the engine, per its interface convention>}
+
+The interface convention is "a JSON list of flat dicts". So "records" should be a JSON array (list) of objects. In JSON, this would be:
+"records": [...]
+
+But the response format shows {<input records dict>}, suggesting it might be an object/dict. Hmm.
+
+Looking more carefully: "<input records dict for the engine>" - I think "dict" here means "dictionary-like structure" or "data structure". The engine's input is a JSON list, so my response should be a JSON list.
+
+Actually, you know what, looking at the response format examples more carefully:
+{"records": {<input records dict for the engine, per its interface convention>}, "field_map": {<map per interface convention>}, "notes": "<one line>"}
+
+The <input records dict> and <field_map> are placeholders for the actual values. The braces {} in the format string are syntax for the JSON object wrapper, not for the content type.
+
+So "records" should contain the records data structure (which is a JSON array of flat dicts per the interface), and "field_map" should contain the field map (a JSON object).
+
+OK so my response:
+{
+  "records": [
+    {"id": "D-1", "name": "Omicron Box", "amount_usd": "11.00", "tags": "red"},
+    {"id": "D-2", "name": "Pi Crate", "amount_usd": "23.50", "tags": "sale"},
+    {"id": "SUMMARY", "name": "", "amount_usd": "", "tags": "34.50"}
+  ],
+  "field_map": {
+    "id": "id",
+    "name": "name",
+    "amount": "amount_usd",
+    "tags": "tags"
+  },
+  "notes": "Header-driven mapping; SUMMARY row literal-parsed (extra trailing field in CSV)."
+}
+
+This is my final answer.
+
+Actually wait, I realize I should double check by tracing through the engine with my input:
+
+Engine reads field_map.json:
+{"id": "id", "name": "name", "amount": "amount_usd", "tags": "tags"}
+
+Engine reads records.json:
+[
+  {"id": "D-1", "name": "Omicron Box", "amount_usd": "11.00", "tags": "red"},
+  {"id": "D-2", "name": "Pi Crate", "amount_usd": "23.50", "tags": "sale"},
+  {"id": "SUMMARY", "name": "", "amount_usd": "", "tags": "34.50"}
+]
+
+Engine processes each record:
+
+Record 1:
+- id = pick(rec, "id") = "D-1"
+- name = pick(rec, "name") = "Omicron Box"
+- amount = pick(rec, "amount_usd") = "11.00"
+- parse_usd_to_cents("11.00"):
+  - s = "11.00"
+  - neg = False
+  - s = "11.00" (no $)
+  - s = "11.00" (no comma)
+  - a = "11", b = "00"
+  - cents = 11*100 + 0 = 1100
+  - return 1100
+- tags = pick(rec, "tags") = "red"
+- tags is string, split by "," -> ["red"]
+- Output: {"id": "D-1", "name": "Omicron Box", "amount_cents": 1100, "tags": ["red"]}
+
+Record 2:
+- Similar, output: {"id": "D-2", "name": "Pi Crate", "amount_cents": 2350, "tags": ["sale"]}
+
+Record 3:
+- id = "SUMMARY"
+- name = ""
+- amount = "" (empty)
+- parse_usd_to_cents(""):
+  - s = ""
+  - neg = False
+  - s = "" (no $)
+  - s = "" (no comma)
+  - s = "" (no decimal)
+  - a = "", b = "00"
+  - cents = 0*100 + 0 = 0
+  - return 0
+- tags = "34.50"
+- tags is string, split by "," -> ["34.50"]
+- Output: {"id": "SUMMARY", "name": "", "amount_cents": 0, "tags": ["34.50"]}
+
+So the final OUTPUT.json would be:
+[
+  {"id": "D-1", "name": "Omicron Box", "amount_cents": 1100, "tags": ["red"]},
+  {"id": "D-2", "name": "Pi Crate", "amount_cents": 2350, "tags": ["sale"]},
+  {"id": "SUMMARY", "name": "", "amount_cents": 0, "tags": ["34.50"]}
+]
+
+This is a bit weird with the SUMMARY row, but it's what the data says.
+
+OK, my final response:
+
+{
+  "records": [
+    {"id": "D-1", "name": "Omicron Box", "amount_usd": "11.00", "tags": "red"},
+    {"id": "D-2", "name": "Pi Crate", "amount_usd": "23.50", "tags": "sale"},
+    {"id": "SUMMARY", "name": "", "amount_usd": "", "tags": "34.50"}
+  ],
+  "field_map": {
+    "id": "id",
+    "name": "name",
+    "amount": "amount_usd",
+    "tags": "tags"
+  },
+  "notes": "Header-driven mapping; SUMMARY row literal-parsed (extra trailing field in CSV yields tags='34.50')."
+}</think>
+
+{"records": [{"id": "D-1", "name": "Omicron Box", "amount_usd": "11.00", "tags": "red"}, {"id": "D-2", "name": "Pi Crate", "amount_usd": "23.50", "tags": "sale"}, {"id": "SUMMARY", "name": "", "amount_usd": "", "tags": "34.50"}], "field_map": {"id": "id", "name": "name", "amount": "amount_usd", "tags": "tags"}, "notes": "Header-driven mapping; SUMMARY row literal-parsed, extra trailing field becomes tags='34.50'."}

@@ -1,0 +1,3 @@
+
+
+{"solver_py": "import json, os\nsrc_dir = '.'\ndst_path = os.path.join(src_dir, 'OUTPUT.json')\nlines = open(os.path.join(src_dir, 'events.jsonl')).read().strip().split('\\n')\ntotal = len(lines)\nseen = set()\nfor line in lines:\n    obj = json.loads(line)\n    seen.add((obj['ev'], obj['t']))\nunique = len(seen)\nremoved = total - unique\nout = {'total': total, 'unique': unique, 'removed': removed}\nwith open(dst_path, 'w') as f:\n    json.dump(out, f)", "notes": "Counts 8 total lines, 4 unique (ev,t) pairs, 4 removed duplicates."}

@@ -1,0 +1,1339 @@
+{
+ "lock": "EXECUTION-LOCK",
+ "status": "open-round2",
+ "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
+ "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
+ "harness_manifest_sha256": "1684d5802899791aac0a92103b500da0dc3a3b183b38f6cc624e239b2bccd8e8",
+ "harness_files": {
+  "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
+  "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
+  "harness/chain.py": "cd5ba7b92c889e239d2513276a53483fd6007d3f147809cab583d039850a3df5",
+  "harness/lock.py": "0213e6a5b128d9f0e4f8d239bc65c4bca667e9ae5400ee1283e99e5b13a16cd1",
+  "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
+  "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
+  "harness/seal_canonical.py": "25a9da15107780105300acebf3451e38194f9b8afe409bcab4248a42a578a4c7",
+  "harness/dockersandbox.py": "7f8eac0b9a2672365d234efe0052d90c6af5b7001992252ff1f257e58c1c88e0",
+  "harness/admissibility.py": "a37b34545a5e4250c53cf1bc9f6f67ded6bc7e880a958f1a627c1a3b0f49b713",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "9504bfce005ef11fb3f4b6080ce16123095ed45340ca0e606fffe687d8fba8a9",
+  "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
+  "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
+  "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
+  "harness/mint_execution_lock.py": "36b7a4e8834e56bfd0040f629a4aef2a4eb81ec3625977f7e9d2c79b7221f472",
+  "harness/promotion.py": "a6ded5e324fd8c9519ae8f67dd87c233c397f8b4dda52afb6e04103de92c30d6",
+  "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
+  "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
+  "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
+  "harness/specificity.py": "166ee886f77f07c37302891277b0832616a608548fbf0ac9042d24bfec9690b7",
+  "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193",
+  "harness/contract_shape.py": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2",
+  "harness/frozen_visible.py": "9033d26c176d0dc3c681fecbdc8de111e057730032f2ad4dd671e2c4433e4dd9",
+  "harness/adaptation.py": "d16378260df341cad23ae2784eebcb3057ecf07aa5f5a4fb0e57c10cff7dece1",
+  "harness/a13_observer.py": "2f77b0c2db57b713c9836d0d1e3ae5473cf61d126c9c43dfeb70212208de65bc",
+  "harness/containment.py": "1f1a933ee5f117d7116e610c2b445c5b1c3270e0ec4b90f8b855068d75e72e37"
+ },
+ "amendments": [
+  {
+   "from_manifest": "1641a6641a95653c5b36e36f90e9e72aa2b464ec055ef074c2ee1424e3b9b69e",
+   "to_manifest": "88915eb0e0584a86ad3568b951acf697590fed49c05e69ae065fa8951ebf940a",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "511f58ac77c5316ff4ae0908c93123dcf39696b031d89f1d4bded9a4ba62525e",
+     "to_sha": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "750cd86279bdb803542b35c05e87262c091ec0829af36eb34029046e2128e595",
+     "to_sha": "6631ec8ce14635beadf291ebb510b366265ca4d0bcdf54fae2fae5eef32b19c1"
+    }
+   },
+   "reason": "item 6 single VISIBLE snapshot + canonical envelope + arm symmetry gate (runner); jail-visibility attempt_read oracle + source/staged namespace (dockersandbox)",
+   "slice": "a8-item-6",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "88915eb0e0584a86ad3568b951acf697590fed49c05e69ae065fa8951ebf940a",
+   "to_manifest": "b391a09e6505fe1c24918b9126dfce4877f2fa835c4e7a74e8631f44853f07c4",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "6631ec8ce14635beadf291ebb510b366265ca4d0bcdf54fae2fae5eef32b19c1",
+     "to_sha": "8511810b00d390c2d17e3ff85a71abb13c02991a02c8ae70aae701f4b72b30a4"
+    }
+   },
+   "reason": "item 6: extract prepare_arm() (single staged snapshot -> canonical envelope -> arm prompt), add offline --selfcheck-prompt proof on real fam05/T0, document refuse-start gates",
+   "slice": "a8-item-6",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "b391a09e6505fe1c24918b9126dfce4877f2fa835c4e7a74e8631f44853f07c4",
+   "to_manifest": "e6e221d1a1ce524b64f76c1e19fa75fa8c99afc8cf6ac8ba4e3536ebeaaa61e9",
+   "files": {
+    "harness/order.py": {
+     "from_sha": null,
+     "to_sha": "3f5a4c161f02044f309f49f3b0b56cb2f4a23b71741014b15a90241c9f4f3304"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "8511810b00d390c2d17e3ff85a71abb13c02991a02c8ae70aae701f4b72b30a4",
+     "to_sha": "62b5120eb93a1579e4cd5069bcc2126123c435ab0ef97b770df4998b4ea6cd31"
+    }
+   },
+   "reason": "item 7: order.py expansion/authorization module added to the executing set; runner --block cell authorization + order/cell manifest binding + foreign-registry refusal",
+   "slice": "a9-item-7",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "e6e221d1a1ce524b64f76c1e19fa75fa8c99afc8cf6ac8ba4e3536ebeaaa61e9",
+   "to_manifest": "9a4aab1832dcc1605eac11565729dd7c7c9ff81f1e3f3483e1b7b234c4e396d6",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "62b5120eb93a1579e4cd5069bcc2126123c435ab0ef97b770df4998b4ea6cd31",
+     "to_sha": "60e306bf2773d68d9642c9a7ffb8d709a34299f63bb51665f00547b95a9d49e7"
+    }
+   },
+   "reason": "runner argv: --block parsed before opts init (item-7 cell authorization CLI)",
+   "slice": "a9-item-7",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "9a4aab1832dcc1605eac11565729dd7c7c9ff81f1e3f3483e1b7b234c4e396d6",
+   "to_manifest": "fd2afb16d37680a7fd49e114f6dde57a5f5a6c93e7118a55a83b62c8c2a57bff",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "60e306bf2773d68d9642c9a7ffb8d709a34299f63bb51665f00547b95a9d49e7",
+     "to_sha": "be720e78bf0d98e2062febfd844d5347cb20174b54d7162d5526e35e61a7f0d5"
+    }
+   },
+   "reason": "runner usage doc: --block required (item 7)",
+   "slice": "a9-item-7",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "fd2afb16d37680a7fd49e114f6dde57a5f5a6c93e7118a55a83b62c8c2a57bff",
+   "to_manifest": "11b97b30a46411eb697b9ca0d684ad70f609b1bab199e7ad3963fbd163bd0050",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "be720e78bf0d98e2062febfd844d5347cb20174b54d7162d5526e35e61a7f0d5",
+     "to_sha": "62a5c62c580f4ab76587f26cd5abe7312b8de97c9a9457d53d44e389df961ca9"
+    }
+   },
+   "reason": "selfcheck_wire fixture moved inside the Fam-C registry surface (foreign-registry refusal is absolute)",
+   "slice": "a9-item-7",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "11b97b30a46411eb697b9ca0d684ad70f609b1bab199e7ad3963fbd163bd0050",
+   "to_manifest": "cc3020f13d8d776f8be9389f3fb0ffb5e86e4d51c5dca2ccea1d037c87310132",
+   "files": {
+    "harness/usage.py": {
+     "from_sha": "03fbafcc9e0a3769bbcc253234b77ffc8d898a7e648cf7ba9ae0962ba7a329ce",
+     "to_sha": "1a1e699e566e4aba2a267de8c00dab806876c772e084c01c53dae28b53c8f52b"
+    },
+    "harness/identity.py": {
+     "from_sha": "9bb80248c40d6d12f2b0100ba0fa02f01ce9f6e50362bb5ce2bcfb8c0c22f65c",
+     "to_sha": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918"
+    },
+    "harness/admissibility.py": {
+     "from_sha": "93166ddc146eaa6132fdd9863cfd165da7df841c13d7df851aae307db405b4ee",
+     "to_sha": "0b648e3044d3fef5279566e9427c93e966d082a32c757d621ceb51458a7f7b41"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "62a5c62c580f4ab76587f26cd5abe7312b8de97c9a9457d53d44e389df961ca9",
+     "to_sha": "c11fdf05591a7f8d1a3bc52ef6e24293bc84ed6e1d9d3f8642ba6aa6eb68c9ad"
+    },
+    "harness/order.py": {
+     "from_sha": "3f5a4c161f02044f309f49f3b0b56cb2f4a23b71741014b15a90241c9f4f3304",
+     "to_sha": "95b9585fade5e6346ab3006c0aedc09a8c4b1779b62ea069b37f6289a1125846"
+    }
+   },
+   "reason": "round-3 A11: A11.1 calibration live branch returns+persists the provider response; A11.2 exact request bytes + adapter/request binding enforcement; A11.3 H6 byte-identical except capability block (legacy weaker fixture deleted); A11.4 ORDER expansion covers T0/T1/PROMOTION/CAPABILITY_LOCK for A and C plus downstream T2/T3/T4; A11.5 per-universe derived registries/outdirs (A/C isolation); A11.6 order progress consumes validated cell_state()",
+   "slice": "a11.1-6",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "cc3020f13d8d776f8be9389f3fb0ffb5e86e4d51c5dca2ccea1d037c87310132",
+   "to_manifest": "6bd6a903f36e46f3169d0962bbdad02884dfae7ca6bf9d8f2f3176ecf45237f6",
+   "files": {
+    "harness/usage.py": {
+     "from_sha": "1a1e699e566e4aba2a267de8c00dab806876c772e084c01c53dae28b53c8f52b",
+     "to_sha": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b"
+    },
+    "harness/chain.py": {
+     "from_sha": "47c2e758ea8014d752185085a52b3979d4a0a17e3fb970dd89d055b50f070a5a",
+     "to_sha": "6d7f0a7efd70d21d04b7b6fc4207de6cc0d679089ab6339e2218045be609bc64"
+    },
+    "harness/lock.py": {
+     "from_sha": "028668d3f5caecbf4b3bb72b52d9ed3bc73f7b4528554a0c3840d486efc30952",
+     "to_sha": "d819f4e1f9fc0915a7a50df44f88781ddca299fdf612607af422e4422076ea4b"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "c11fdf05591a7f8d1a3bc52ef6e24293bc84ed6e1d9d3f8642ba6aa6eb68c9ad",
+     "to_sha": "df77ece0f5911da51fdd390853ea4f228017d2c6f59f7b3a4b833492fc2e62ed"
+    },
+    "harness/order.py": {
+     "from_sha": "95b9585fade5e6346ab3006c0aedc09a8c4b1779b62ea069b37f6289a1125846",
+     "to_sha": "5d7a6b1114ad4ef15120581a9ff4e147f25c637996c372643f5e3a1872bcaf8b"
+    }
+   },
+   "reason": "A11b.1-P0-1 request-byte persistence, A11b.2-P0-2 unified output contract, A11b.3-P0-3 13-field manifest equality + real chain verify, A11b.4-P0-4 kind-dispatched cell_state + H12, A11b.6-P0-6 namespace ancestry on read+write with ensure_namespace; no estimand code path changed",
+   "slice": "A11b",
+   "status_after": "A11b-closed-offline"
+  },
+  {
+   "from_manifest": "6bd6a903f36e46f3169d0962bbdad02884dfae7ca6bf9d8f2f3176ecf45237f6",
+   "to_manifest": "6e42be9171a2409746b6c7717515e04437e36f218d74a5ad9b885625659f957e",
+   "files": {
+    "harness/invalid.py": {
+     "from_sha": null,
+     "to_sha": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571"
+    },
+    "harness/isolation.py": {
+     "from_sha": null,
+     "to_sha": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4"
+    },
+    "harness/mint_execution_lock.py": {
+     "from_sha": null,
+     "to_sha": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4"
+    },
+    "harness/promotion.py": {
+     "from_sha": null,
+     "to_sha": "f6396004b170de6d15e8f1b41417d87150045298d48a85d6783e7dee2956d161"
+    },
+    "harness/sandbox.py": {
+     "from_sha": null,
+     "to_sha": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1"
+    },
+    "harness/symmetry.py": {
+     "from_sha": null,
+     "to_sha": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4"
+    },
+    "harness/chain.py": {
+     "from_sha": "6d7f0a7efd70d21d04b7b6fc4207de6cc0d679089ab6339e2218045be609bc64",
+     "to_sha": "20c06a0769c692704788dfa80cc4bfddf2777f9ea90112469d0a186ee87202d7"
+    },
+    "harness/lock.py": {
+     "from_sha": "d819f4e1f9fc0915a7a50df44f88781ddca299fdf612607af422e4422076ea4b",
+     "to_sha": "7e679c0b0f7bd1ce5305d3c2032ffe5b41bcf498c92b141aac02886a828079e9"
+    },
+    "harness/admissibility.py": {
+     "from_sha": "0b648e3044d3fef5279566e9427c93e966d082a32c757d621ceb51458a7f7b41",
+     "to_sha": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "df77ece0f5911da51fdd390853ea4f228017d2c6f59f7b3a4b833492fc2e62ed",
+     "to_sha": "4c3eb31a71fd943ef97aea0711abc4012155f9ef1481f6237cf634118392448e"
+    },
+    "harness/order.py": {
+     "from_sha": "5d7a6b1114ad4ef15120581a9ff4e147f25c637996c372643f5e3a1872bcaf8b",
+     "to_sha": "c9405e9de8ffb27233f4979de1889b24f55fdd68fcccf0cf5a6fceed55155848"
+    }
+   },
+   "reason": "A12: promotion controller + estimand lock + decision-driven reuse + acquisition executor + admissibility ZERO-WORK; V3 now covers the whole harness package root",
+   "slice": "a12",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "6e42be9171a2409746b6c7717515e04437e36f218d74a5ad9b885625659f957e",
+   "to_manifest": "03f3aea647a5808f8e17dbbd7c429e1de9d3eba901e2e7728e8e714f98775bfe",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "4c3eb31a71fd943ef97aea0711abc4012155f9ef1481f6237cf634118392448e",
+     "to_sha": "c11ac91cb96f39aee788f1749e90ed09b13765b37e6d6da99d83d00925c2f0fc"
+    },
+    "harness/promotion.py": {
+     "from_sha": "f6396004b170de6d15e8f1b41417d87150045298d48a85d6783e7dee2956d161",
+     "to_sha": "e188e39a0e69cf9b6835a082049aec7fd147e1d220f8df2a5dad58fcc4864821"
+    }
+   },
+   "reason": "A12b.1 de-leak consumer artifacts from hidden K.md/T4 (promotion.py _mint_artifacts); A12b.3 argv-ABI engine (ENGINE_TEMPLATE subprocess candidate.py, no exec); A12b.4 ledger-driven chain lifecycle + model_echoed capture binding (run_arm_h1.py _wire_chain)",
+   "slice": "a12b-slice1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "03f3aea647a5808f8e17dbbd7c429e1de9d3eba901e2e7728e8e714f98775bfe",
+   "to_manifest": "3bf86cc744f0a79bdc9b6ee379332a50803e4ce51148b1a6575aea03c4fcd316",
+   "files": {
+    "harness/promotion.py": {
+     "from_sha": "e188e39a0e69cf9b6835a082049aec7fd147e1d220f8df2a5dad58fcc4864821",
+     "to_sha": "a1af89808630cc83571565007f873748c284bf716492d1c3bd724088d7ed64b2"
+    }
+   },
+   "reason": "A12b.7 sharpened gate: promotion sources receipt contract solely from producer arrival declaration (_producer_contract); per-cell flat evaluator+identity evidence; preregistered-lane echo check (lazy LANES import)",
+   "slice": "a12b-slice1-followup",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "3bf86cc744f0a79bdc9b6ee379332a50803e4ce51148b1a6575aea03c4fcd316",
+   "to_manifest": "07036ff90b0bebcc2833f0007e4926dc7c22be384c35fc36aea8c808420e58ea",
+   "files": {
+    "harness/promotion.py": {
+     "from_sha": "a1af89808630cc83571565007f873748c284bf716492d1c3bd724088d7ed64b2",
+     "to_sha": "37a14525ed70a9239140522f7ff90a2418dd0904b8f834b6583f39f44195ef6c"
+    }
+   },
+   "reason": "A12b.1 addendum: deleted promotion.capability_contract K.md parser (producer declaration is the sole contract source; no K.md code-reads remain in the controller); fixture-local stand-in reader; receipt drops contract_sha256",
+   "slice": "a12b-slice1-addendum",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "07036ff90b0bebcc2833f0007e4926dc7c22be384c35fc36aea8c808420e58ea",
+   "to_manifest": "7fb59d3bc213bb44e6edd8aedde2dfca97a75bb483a9f1f05f6e1ec2120ad694",
+   "files": {
+    "harness/t4_ids.py": {
+     "from_sha": null,
+     "to_sha": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c"
+    },
+    "harness/order.py": {
+     "from_sha": "c9405e9de8ffb27233f4979de1889b24f55fdd68fcccf0cf5a6fceed55155848",
+     "to_sha": "f9973c02e73122d18143b56065fcf28359da2e331ce473d49eacf1c5691e6c0d"
+    },
+    "harness/promotion.py": {
+     "from_sha": "37a14525ed70a9239140522f7ff90a2418dd0904b8f834b6583f39f44195ef6c",
+     "to_sha": "52fb6c68631c03ab2b659a7ec2ff231e2d5083dbe540e42298ba0854d1a3d932"
+    }
+   },
+   "reason": "A12b.5 frozen governed T4 semantic-ID registry: new harness/t4_ids.py single resolver; promotion.py and order.py rewired to it (private registry reads deleted)",
+   "slice": "a12b.5",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "7fb59d3bc213bb44e6edd8aedde2dfca97a75bb483a9f1f05f6e1ec2120ad694",
+   "to_manifest": "c9bc78931e54ad7eacbcad6764005b778fdaacf9ba4c16e8f7d35fd85a20dbbc",
+   "files": {
+    "harness/chain.py": {
+     "from_sha": "20c06a0769c692704788dfa80cc4bfddf2777f9ea90112469d0a186ee87202d7",
+     "to_sha": "cd5ba7b92c889e239d2513276a53483fd6007d3f147809cab583d039850a3df5"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "c11ac91cb96f39aee788f1749e90ed09b13765b37e6d6da99d83d00925c2f0fc",
+     "to_sha": "57d35119d57ca0d6c8cdfc96c4ae63454b9e5fa5bbc5b810ea3fc7e7e0bd32e3"
+    },
+    "harness/order.py": {
+     "from_sha": "f9973c02e73122d18143b56065fcf28359da2e331ce473d49eacf1c5691e6c0d",
+     "to_sha": "77c92fc21c2db40a0b107234cdecd3e43cee5eeefe2268ce77a193839e3d4a51"
+    },
+    "harness/promotion.py": {
+     "from_sha": "52fb6c68631c03ab2b659a7ec2ff231e2d5083dbe540e42298ba0854d1a3d932",
+     "to_sha": "4de54fdcf06ffd39e973f9f62fa2afcf29814c867a95b4fe24ca176abb64ffbd"
+    }
+   },
+   "reason": "A12b.2 T1 candidate-validation surface: run_arm_h1 prompt block + chain event + T1 execution wiring; chain.py admits the candidate-validation link kind; promotion.py fail-closed derive_candidate; order.py re-derives T1 validation",
+   "slice": "a12b.2",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "c9bc78931e54ad7eacbcad6764005b778fdaacf9ba4c16e8f7d35fd85a20dbbc",
+   "to_manifest": "6a7cf4ebae5700b2ed11531005560226e55d6a23122bb98b5f1f9f50ee5630b5",
+   "files": {
+    "harness/lock.py": {
+     "from_sha": "7e679c0b0f7bd1ce5305d3c2032ffe5b41bcf498c92b141aac02886a828079e9",
+     "to_sha": "2190551176ce817785e207d19fbdffe690eeb04c68af6dbdd66fbe3261cacb39"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "57d35119d57ca0d6c8cdfc96c4ae63454b9e5fa5bbc5b810ea3fc7e7e0bd32e3",
+     "to_sha": "f2831a709676be88145f37cd585eb4ab55ce9a612c86c52fc829a1d6dd4c7abf"
+    },
+    "harness/order.py": {
+     "from_sha": "77c92fc21c2db40a0b107234cdecd3e43cee5eeefe2268ce77a193839e3d4a51",
+     "to_sha": "6a1d266428c59cf7a7014566609b7dc6705b4c0260f58d71733fc30192dd5dec"
+    },
+    "harness/promotion.py": {
+     "from_sha": "4de54fdcf06ffd39e973f9f62fa2afcf29814c867a95b4fe24ca176abb64ffbd",
+     "to_sha": "749ed50e356fcd203393262ccbdb24d1e585dff127e09863a88e622828ea0091"
+    }
+   },
+   "reason": "A12b.6 actual-contract conformance: lock.py lock conformance fields (limitation_present/non_discriminating/conformance_cause) + specificity_gate; promotion.py mechanical derivation into receipt provenance; order.py receipt validation + lock emission/binding; run_arm_h1 selfcheck fixture fields",
+   "slice": "a12b.6",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "6a7cf4ebae5700b2ed11531005560226e55d6a23122bb98b5f1f9f50ee5630b5",
+   "to_manifest": "42e1cae744a3c69b8f41340e15fc95249dae579db1ccc4c818bffb91c01c73ad",
+   "files": {
+    "harness/specificity.py": {
+     "from_sha": null,
+     "to_sha": "c33f9de007cc7de1da4afc03f50e62fd37297663287db5d826a907f0fa017f9e"
+    }
+   },
+   "reason": "A12b slice 3 specificity production caller: new harness/specificity.py (discover_locks/report/CLI over lock.specificity_gate for the A15 readiness consumer); new hermetic H18 suite (tests stay outside the execution authority)",
+   "slice": "a12b-slice3",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "42e1cae744a3c69b8f41340e15fc95249dae579db1ccc4c818bffb91c01c73ad",
+   "to_manifest": "dd4911d957cac6341e00f32b417156035c47dca5134efc13fd637e56f9e78045",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "f2831a709676be88145f37cd585eb4ab55ce9a612c86c52fc829a1d6dd4c7abf",
+     "to_sha": "c10527f4432fa15e2b30eb5e3280b4af7d3a7d1c0098c2d540b9c16f7e64be59"
+    },
+    "harness/order.py": {
+     "from_sha": "6a1d266428c59cf7a7014566609b7dc6705b4c0260f58d71733fc30192dd5dec",
+     "to_sha": "95edccce8105e5a6ea9b47c3d45d7ea50945d0670421760748eaa0db59c1f361"
+    },
+    "harness/promotion.py": {
+     "from_sha": "749ed50e356fcd203393262ccbdb24d1e585dff127e09863a88e622828ea0091",
+     "to_sha": "05c8471ddea1da82ee0251c764705815bd0f0047a4d314f30a7969f6d21b9aa4"
+    }
+   },
+   "reason": "A12c slice A auditor P0 #1+#2: T1 adapter_py instruction (frozen ABI) + 7-step candidate validation (adapter executed in-jail, frozen candidate sha-verified, HOST-SIDE frozen T1 checker over CANDIDATE-OUTPUT.json, 9-key chain event) + 9-field fail-closed predicate in promotion.py/order.py",
+   "slice": "a12c-sliceA",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "dd4911d957cac6341e00f32b417156035c47dca5134efc13fd637e56f9e78045",
+   "to_manifest": "40c89e3a4cbc19cdefb91b4aaca96c85d64ef61df5e95d5c8090fe541cc3e17f",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "c10527f4432fa15e2b30eb5e3280b4af7d3a7d1c0098c2d540b9c16f7e64be59",
+     "to_sha": "18fc105ed578f8b7ae0caae889e2a473bfd8341d41b7ab9db8312f21b9339dca"
+    },
+    "harness/order.py": {
+     "from_sha": "95edccce8105e5a6ea9b47c3d45d7ea50945d0670421760748eaa0db59c1f361",
+     "to_sha": "2a9d477514e27f2061b2a780605787e109e7c307ae4e1bc50e8777306758c660"
+    },
+    "harness/promotion.py": {
+     "from_sha": "05c8471ddea1da82ee0251c764705815bd0f0047a4d314f30a7969f6d21b9aa4",
+     "to_sha": "4e4f385e612cc48bed0941a1b4e52ed2d43cce8ce70736694e6168af8e593e7a"
+    }
+   },
+   "reason": "A12c slice B auditor P0 #3+#4 + consumer-visible producer contract: T0 acquisition prompt gains the producer capability_contract instruction (_OUT_T0, arms byte-unchanged); consumer manifest aggressively minimal (producer_contract semantic_core/preconditions/limitations + interface + usage, no provenance); adapter_notes.md and ENGINE_TEMPLATE stripped of source cells/chain/grade/lock wording; order.py provenance cross-checks the receipt against the frozen T0 arrival declaration instead of hidden K.md; fixture stand-in declares independently written six-family text (no K.md reader); new hermetic H20 suite (tests stay outside the execution authority)",
+   "slice": "a12c-slice-b",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "40c89e3a4cbc19cdefb91b4aaca96c85d64ef61df5e95d5c8090fe541cc3e17f",
+   "to_manifest": "ceb04dece8615f2f23d981ffd153aa572a05b2d835280c756111bdc965d57077",
+   "files": {
+    "harness/order.py": {
+     "from_sha": "2a9d477514e27f2061b2a780605787e109e7c307ae4e1bc50e8777306758c660",
+     "to_sha": "3cc2acf5c2ee15aa82b39c347d7fdff09dbeded4b394f575abc8c7ef73f905e7"
+    },
+    "harness/specificity.py": {
+     "from_sha": "c33f9de007cc7de1da4afc03f50e62fd37297663287db5d826a907f0fa017f9e",
+     "to_sha": "57f6381249ef4bc82744e3244ad05653d6515743f18c58845efeb04bae30e5d1"
+    }
+   },
+   "reason": "A12c slice C1: order.py drops the last K.md comment coupling (C1-0, behavior-unchanged); specificity.py reframed as T4-CONFORMANCE-READINESS (contract_conformance_ready, renamed verdicts, corrupt/symlinked locks inadmissible never skipped)",
+   "slice": "a12c-slice-c1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "ceb04dece8615f2f23d981ffd153aa572a05b2d835280c756111bdc965d57077",
+   "to_manifest": "9dc315bd354d783439cff3a21e7e3292ba44300895714794786ed115559f1b14",
+   "files": {
+    "harness/conformance.py": {
+     "from_sha": null,
+     "to_sha": "dc49da6a0bea9418ce28da57b5901b0e6f6b7b72c4ab3dcf7121d5911154e507"
+    },
+    "harness/lock.py": {
+     "from_sha": "2190551176ce817785e207d19fbdffe690eeb04c68af6dbdd66fbe3261cacb39",
+     "to_sha": "a37a231cfe9b5bbcba837729c15ee7c3fd877d15b22d2a2f6118576607858fa2"
+    },
+    "harness/order.py": {
+     "from_sha": "3cc2acf5c2ee15aa82b39c347d7fdff09dbeded4b394f575abc8c7ef73f905e7",
+     "to_sha": "d2231f52b495c01921a805f9c72169b8f6c6d24b525dcd3f6804d9f6716032af"
+    },
+    "harness/promotion.py": {
+     "from_sha": "4e4f385e612cc48bed0941a1b4e52ed2d43cce8ce70736694e6168af8e593e7a",
+     "to_sha": "509c10f981ad3edcd108451e626def671bc80ebd282e0531b8d50e2be00ad767"
+    }
+   },
+   "reason": "A12c slice C2 auditor P0 #6: new harness/conformance.py frozen bridge (load/normalize/matches/supported_t4_ids/verdict, fail closed); promotion.py verdict-derived receipt fields (supported_t4_ids/conformance_map_sha256); lock.py bridge consistency + live-map binding; order.py provenance re-derivation",
+   "slice": "a12c-slice-c2",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "9dc315bd354d783439cff3a21e7e3292ba44300895714794786ed115559f1b14",
+   "to_manifest": "c5d40fe43a4fda60b47ab9efb603c70c30d08403b463ec89794ae5c3a586e7ba",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "18fc105ed578f8b7ae0caae889e2a473bfd8341d41b7ab9db8312f21b9339dca",
+     "to_sha": "dbb0108cc241978bca8a2ab034758ff0c9559f961a82c2627bb5190efb51b2df"
+    }
+   },
+   "reason": "A12c slice C2 follow-up: runner wire-selfcheck fixture carries the frozen bridge fields (supported_t4_ids/conformance_map_sha256, set-consistent) so --selfcheck still mints its fixture lock",
+   "slice": "a12c-slice-c2",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "c5d40fe43a4fda60b47ab9efb603c70c30d08403b463ec89794ae5c3a586e7ba",
+   "to_manifest": "e1415642e14f4a2f8d5c0a3ccdaab4dff30ed1f36f6797c101f598a527ae1620",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "dbb0108cc241978bca8a2ab034758ff0c9559f961a82c2627bb5190efb51b2df",
+     "to_sha": "30c6299e87cb3c1ae4a91386e6d0a9dc25d4e7d253c4db8c20251a223b39c808"
+    },
+    "harness/order.py": {
+     "from_sha": "d2231f52b495c01921a805f9c72169b8f6c6d24b525dcd3f6804d9f6716032af",
+     "to_sha": "0e0af9a2deda788f6371653185e4be2c46b5468911c2fd8953a6556c3db66070"
+    },
+    "harness/promotion.py": {
+     "from_sha": "509c10f981ad3edcd108451e626def671bc80ebd282e0531b8d50e2be00ad767",
+     "to_sha": "64b77aa7966ce1b94d45d689009330c2ce69d1c48be3c1dd1641dbf36d07462a"
+    }
+   },
+   "reason": "A12d slice D1 (auditor A12d.1/A12d.2/A12d.7): two-jail T1 candidate validation (adapter raw-task jail + candidate-only jail) returning failed validation as committed evidence; adapted-input-only downstream engine jail with manifest engine_jail record; candidate-input lineage manifest (CANDIDATE-INPUT-MANIFEST.json) with chain + promotion/order re-derivation; NOT-PROMOTED terminal outcome + downstream NOT-EVALUABLE + ACQUISITION-FAILED-DENY; task_verdict on T1 manifests",
+   "slice": "a12d-slice-d1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "e1415642e14f4a2f8d5c0a3ccdaab4dff30ed1f36f6797c101f598a527ae1620",
+   "to_manifest": "7a005724e6d51c7d39cf24b3271082278643d55313e471f6a0cbc687482ad1b2",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "30c6299e87cb3c1ae4a91386e6d0a9dc25d4e7d253c4db8c20251a223b39c808",
+     "to_sha": "18032f867ab3b9e197675100c295cae59d1e378c57f943d87c149c5f0db6a6b0"
+    },
+    "harness/order.py": {
+     "from_sha": "0e0af9a2deda788f6371653185e4be2c46b5468911c2fd8953a6556c3db66070",
+     "to_sha": "750dd29bcdcc55fff16fa6682cb2924612b11f753971f224d9611689295d6588"
+    },
+    "harness/promotion.py": {
+     "from_sha": "64b77aa7966ce1b94d45d689009330c2ce69d1c48be3c1dd1641dbf36d07462a",
+     "to_sha": "5f5b7a1c40656e6ef4a0678e469ebd5c650c3d4d80de1e7b4bf3dc571ed1b009"
+    }
+   },
+   "reason": "A12d slice D1 record-then-refuse: acquisition_failed() predicate derived from committed chains (NOT-PROMOTED/NOT-EVALUABLE without requiring a prior controller call); promote_universe records PROMOTION-OUTCOME.json then refuses PROMOTION-DENY; runner/authorize use the predicate",
+   "slice": "a12d-slice-d1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "7a005724e6d51c7d39cf24b3271082278643d55313e471f6a0cbc687482ad1b2",
+   "to_manifest": "7a448cecb0ceab911adc6a72092fb9a3a56470f67c56b190d11d6da3547390e2",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "18032f867ab3b9e197675100c295cae59d1e378c57f943d87c149c5f0db6a6b0",
+     "to_sha": "59d69c294e03b81807c0e2d05e5a273449e30ba8f7b0dc2c0e67b373b7bc6dbc"
+    }
+   },
+   "reason": "A12d slice D1 hardening: candidate jail workdir decoupled to its own WORK_ROOT dir (mount policy still enforced at both jail constructions; scratch dir never policy-bound)",
+   "slice": "a12d-slice-d1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "7a448cecb0ceab911adc6a72092fb9a3a56470f67c56b190d11d6da3547390e2",
+   "to_manifest": "b32db64bfe98c1ae1f417ec18d4ce6114a0c158ae67ed0acdc6015adec1bdcbf",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "59d69c294e03b81807c0e2d05e5a273449e30ba8f7b0dc2c0e67b373b7bc6dbc",
+     "to_sha": "2a7cad0f4d3deb2b57f44cf4fd2e17bdcebe737b822b6f4a7c02ddbc55025b44"
+    }
+   },
+   "reason": "A12d slice D1 clarification: jail_factory seam (default DockerSandbox) on validate_t1_candidate + execute_arrival/main engine path with shim-equivalent mounts record; H23 two-jail ShimJail primaries + real-docker twins",
+   "slice": "a12d-slice-d1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "b32db64bfe98c1ae1f417ec18d4ce6114a0c158ae67ed0acdc6015adec1bdcbf",
+   "to_manifest": "123754485207d758c925725a4f9a6ea4f274900f105594f970532f6989265f88",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "2a7cad0f4d3deb2b57f44cf4fd2e17bdcebe737b822b6f4a7c02ddbc55025b44",
+     "to_sha": "63d502e4701916e5ae2cb4561c8253dc25e002d98ac30ea2eaf5679195378383"
+    }
+   },
+   "reason": "A12d slice D1: missing adapter input stages EMPTY and the candidate still runs (failure is the evidence); candidate-input-missing retained only for mid-flight vanishing",
+   "slice": "a12d-slice-d1",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "123754485207d758c925725a4f9a6ea4f274900f105594f970532f6989265f88",
+   "to_manifest": "532476dce36d0b7d89523c9eabb5e5d3d72ef4042fa401273b307f02ed31b36b",
+   "files": {
+    "harness/lock.py": {
+     "from_sha": "a37a231cfe9b5bbcba837729c15ee7c3fd877d15b22d2a2f6118576607858fa2",
+     "to_sha": "35f223238382a84331e255695118a2f5987bff32d3aa302126189e848aea9c07"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "63d502e4701916e5ae2cb4561c8253dc25e002d98ac30ea2eaf5679195378383",
+     "to_sha": "d56742951341b88ae5070812b6380221d43ad53f0e37940db0bc85525e9d838c"
+    },
+    "harness/order.py": {
+     "from_sha": "750dd29bcdcc55fff16fa6682cb2924612b11f753971f224d9611689295d6588",
+     "to_sha": "e40710d5fea5d09c8e41492a3c2a5c6bbceed64ec4974b6d6f08f1946b8c7149"
+    },
+    "harness/promotion.py": {
+     "from_sha": "5f5b7a1c40656e6ef4a0678e469ebd5c650c3d4d80de1e7b4bf3dc571ed1b009",
+     "to_sha": "80d9a91b8c9cf8a95ebc5b39254455b23ff9e5170af056f211d00b92008a09e5"
+    },
+    "harness/conformance.py": {
+     "from_sha": "dc49da6a0bea9418ce28da57b5901b0e6f6b7b72c4ab3dcf7121d5911154e507",
+     "to_sha": "d9552ab32e6321b5ffa1625e10971c99645c58eb2e05efbe1496fbbc5ea6bf71"
+    }
+   },
+   "reason": "A12d slice D2 (auditor A12d.3/A12d.4): producer contract schema v2 (preconditions as {requires} objects, empty lists legal) + affirmative-requires conformance bridge v2 (negation markers, requires_predicates, limitations never evidence) in harness/conformance.py, harness/promotion.py, harness/lock.py, harness/order.py; T0 prompt states the v2 shape (benchmarks/fam-c/harness-run/run_arm_h1.py)",
+   "slice": "a12d-slice-d2",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "532476dce36d0b7d89523c9eabb5e5d3d72ef4042fa401273b307f02ed31b36b",
+   "to_manifest": "122fd709c0a44493a532ecadf52796d002068f2c958a4a4db4f3398135ce9b4e",
+   "files": {
+    "harness/promotion.py": {
+     "from_sha": "80d9a91b8c9cf8a95ebc5b39254455b23ff9e5170af056f211d00b92008a09e5",
+     "to_sha": "7bc2cae79e1fce911db154f797a13d89214a55b7cdad108d0528b83e0917e582"
+    },
+    "harness/specificity.py": {
+     "from_sha": "57f6381249ef4bc82744e3244ad05653d6515743f18c58845efeb04bae30e5d1",
+     "to_sha": "681e1bbf93465e6384158002e4970b25e74370471d0857616addc5d32371315e"
+    }
+   },
+   "reason": "A12d slice D3 (auditor A12d.5/A12d.6): consumer-minimal capability bytes (manifest key set minus block/universe, opaque cap-alias capability_id, namespace-free family label) + order-derived T4-conformance-readiness reporter (order.expand 24 lock cells, cell_state sole admissibility, live v2 map binding, stray as only disk walk); H20/H18 migrated to the new contract at grown counts, new H25 acceptance suite",
+   "slice": "a12d-slice-d3",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "122fd709c0a44493a532ecadf52796d002068f2c958a4a4db4f3398135ce9b4e",
+   "to_manifest": "78aeedfb3fb325a61f735783dec5355695020608af0ad2526e5bb0ef3b96d154",
+   "files": {
+    "harness/specificity.py": {
+     "from_sha": "681e1bbf93465e6384158002e4970b25e74370471d0857616addc5d32371315e",
+     "to_sha": "740074c5e8c8f79d4ef573135ef7e7a6e476cd3eb0bd483c1824d6646f253c9f"
+    }
+   },
+   "reason": "A12d slice D3 (auditor A12d.5/A12d.6): consumer-minimal capability bytes (manifest key set minus block/universe, opaque cap-alias capability_id, namespace-free family label) + order-derived T4-conformance-readiness reporter (order.expand 24 lock cells, cell_state sole admissibility, live v2 map binding, stray as only disk walk, path-naming inadmissible entries); H20/H21/H18 migrated to the new contract at grown counts, new H25 acceptance suite",
+   "slice": "a12d-slice-d3",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "78aeedfb3fb325a61f735783dec5355695020608af0ad2526e5bb0ef3b96d154",
+   "to_manifest": "b1bd47b6cd4652412d1cc99445e2c24b6347e0158bc8878d88944c86efa79d56",
+   "files": {
+    "harness/lock.py": {
+     "from_sha": "35f223238382a84331e255695118a2f5987bff32d3aa302126189e848aea9c07",
+     "to_sha": "dc600e7a510fbd0bb396af74d669294e017ff28b5d68ce549bb17ae584af0608"
+    },
+    "harness/specificity.py": {
+     "from_sha": "740074c5e8c8f79d4ef573135ef7e7a6e476cd3eb0bd483c1824d6646f253c9f",
+     "to_sha": "4390b76f1dd1013a4e7c7050c0de97113abfd4185195f0391caf42efcda8a1ea"
+    },
+    "harness/conformance.py": {
+     "from_sha": "d9552ab32e6321b5ffa1625e10971c99645c58eb2e05efbe1496fbbc5ea6bf71",
+     "to_sha": "10ada2c99ed7f17514b6d22152d28f93cd3178db05ccf2740435bd119e252480"
+    }
+   },
+   "reason": "A12d slice D4 (auditor D3-post P0/P1): atomic-requirement grammar v3 (t4-conformance-v3, disjunction_markers [either,or] + structural_separators [/,comma], disjunctive requires INADMISSIBLE) + capability-lock-v3 schema bump + stray-symlink closure in _stray_capability_dirs; new H26 acceptance suite, H22/H3/H16/H24 synced",
+   "slice": "a12d-slice-d4",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "b1bd47b6cd4652412d1cc99445e2c24b6347e0158bc8878d88944c86efa79d56",
+   "to_manifest": "1baf02485b8f86ea0a49e025dabc144d47a47c99a2896baa05164ec6f4c95801",
+   "files": {
+    "harness/lock.py": {
+     "from_sha": "dc600e7a510fbd0bb396af74d669294e017ff28b5d68ce549bb17ae584af0608",
+     "to_sha": "0213e6a5b128d9f0e4f8d239bc65c4bca667e9ae5400ee1283e99e5b13a16cd1"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "d56742951341b88ae5070812b6380221d43ad53f0e37940db0bc85525e9d838c",
+     "to_sha": "6e54869b74f47638a795f81ab1bddedcb1823b5d2e90d2c0a678c8f7021a1971"
+    },
+    "harness/order.py": {
+     "from_sha": "e40710d5fea5d09c8e41492a3c2a5c6bbceed64ec4974b6d6f08f1946b8c7149",
+     "to_sha": "0aa5757b970d9b3881ab70f92a8093040f403e838c44fc0b83853071553920b5"
+    },
+    "harness/promotion.py": {
+     "from_sha": "7bc2cae79e1fce911db154f797a13d89214a55b7cdad108d0528b83e0917e582",
+     "to_sha": "7c992cf4b2043c3f842b91c6b775b1e793fb7fbcb94c05cee89c08c91759dd47"
+    },
+    "harness/specificity.py": {
+     "from_sha": "4390b76f1dd1013a4e7c7050c0de97113abfd4185195f0391caf42efcda8a1ea",
+     "to_sha": "166ee886f77f07c37302891277b0832616a608548fbf0ac9042d24bfec9690b7"
+    },
+    "harness/conformance.py": {
+     "from_sha": "10ada2c99ed7f17514b6d22152d28f93cd3178db05ccf2740435bd119e252480",
+     "to_sha": "957ed96249001f16462a4a664a10c8678ce80267dc5002b2521dea1d85c719b1"
+    }
+   },
+   "reason": "A12d slice D5 (auditor D4-post P0/P1): structural atomic-conjunction grammar v4 (t4-conformance-v4, atomic_vocabulary 23-token derived list, requires_all-only conformance, conditional clauses unrepresentable) + stray-symlink closure (any unexpected symlink beneath state/ fails) + capability-lock-v4 schema bump (declared_limitations_present rename, specificity never consults it); T0 producer prompt teaches the v4 contract shape; new H27 acceptance suite, H3/H13/H16/H17/H18/H20/H21/H22/H24/H25/H26 synced",
+   "slice": "a12d-slice-d5",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "1baf02485b8f86ea0a49e025dabc144d47a47c99a2896baa05164ec6f4c95801",
+   "to_manifest": "5ab1666197a49da90bca115a1c364495c93bfdd35179ecf158add02a3edddb67",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "6e54869b74f47638a795f81ab1bddedcb1823b5d2e90d2c0a678c8f7021a1971",
+     "to_sha": "c543a2b4ce07d7264125f9f0e0f059624ee0248ad627da54585755692897ebac"
+    },
+    "harness/promotion.py": {
+     "from_sha": "7c992cf4b2043c3f842b91c6b775b1e793fb7fbcb94c05cee89c08c91759dd47",
+     "to_sha": "e33ceef79659934bb322a593da38edd85363df42a041b2691125fcef2aa308d2"
+    },
+    "harness/conformance.py": {
+     "from_sha": "957ed96249001f16462a4a664a10c8678ce80267dc5002b2521dea1d85c719b1",
+     "to_sha": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193"
+    }
+   },
+   "reason": "A12d slice D6 (auditor D5-post P0): vocabulary role split \u2014 promotion structural-only (no recognition-set read), conformance v5 recognition-only (recognized_conformance_atoms, unknown atoms non-bearing never denied), T0 prompt hygiene reword; H22/H24/H26/H27 re-pointed to the new semantics",
+   "slice": "a12d-slice-d6",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "5ab1666197a49da90bca115a1c364495c93bfdd35179ecf158add02a3edddb67",
+   "to_manifest": "b6282587ab80c1be2ac1b56d41061c89b105f9e9f4d703ca6b741fd9ae626336",
+   "files": {
+    "harness/promotion.py": {
+     "from_sha": "e33ceef79659934bb322a593da38edd85363df42a041b2691125fcef2aa308d2",
+     "to_sha": "8d5144b47e8f5ecf97d7e2405ef696994ad5e6550bfc8b55404af9c4ac24a764"
+    }
+   },
+   "reason": "A12d slice D6 (auditor D5-post P0): vocabulary role split \u2014 promotion structural-only (no recognition-set read, docstrings name no key), conformance v5 recognition-only (recognized_conformance_atoms, unknown atoms non-bearing never denied), T0 prompt hygiene reword; H22/H24/H26/H27 re-pointed to the new semantics",
+   "slice": "a12d-slice-d6",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "b6282587ab80c1be2ac1b56d41061c89b105f9e9f4d703ca6b741fd9ae626336",
+   "to_manifest": "663e7e4b516f04b52f1ffbbdd03472f3da7eb503904d5aa9c660c70ed0636451",
+   "files": {
+    "harness/promotion.py": {
+     "from_sha": "8d5144b47e8f5ecf97d7e2405ef696994ad5e6550bfc8b55404af9c4ac24a764",
+     "to_sha": "5ecee5b4c7dd87cfac298d3fbc36504e82a78e703dc4a7c1fe9688f503d1b3bb"
+    }
+   },
+   "reason": "A12d slice D7 (auditor D6-post P0/P1): exact three-key producer contract in promotion (contract alias deleted, missing/extra key denied naming the key, D6 unknown-atom semantics kept); V2 unique-linear-lineage rule in preflight (validate_file_chain, reachable-set deleted); H28 sealed suite added (tests stay outside the execution authority)",
+   "slice": "a12d-slice-d7",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "663e7e4b516f04b52f1ffbbdd03472f3da7eb503904d5aa9c660c70ed0636451",
+   "to_manifest": "694ae0a82ce179561918c124873847783dee1406c9c7e800a3e3b1c021b62e71",
+   "files": {
+    "harness/contract_shape.py": {
+     "from_sha": null,
+     "to_sha": "c0206085c93aefb2a66b0d58795291b6edd33beb19105b3f2aa80a65a1f8559d"
+    },
+    "harness/order.py": {
+     "from_sha": "0aa5757b970d9b3881ab70f92a8093040f403e838c44fc0b83853071553920b5",
+     "to_sha": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268"
+    },
+    "harness/promotion.py": {
+     "from_sha": "5ecee5b4c7dd87cfac298d3fbc36504e82a78e703dc4a7c1fe9688f503d1b3bb",
+     "to_sha": "e74ea8da707209f212afd9bb66bf1367de86d40274a21628e0883c0ad8e17426"
+    }
+   },
+   "reason": "A12d slice D8 (auditor D7-post P0): new harness/contract_shape.py single shared producer-contract-shape authority (no I/O, no globals, no vocabulary knowledge); harness/promotion.py _producer_contract and harness/order.py PROMOTION provenance check both call it (inline shape approximations deleted, same finding text through both authorities)",
+   "slice": "a12d-slice-d8",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "694ae0a82ce179561918c124873847783dee1406c9c7e800a3e3b1c021b62e71",
+   "to_manifest": "e6ecc3f26d8acb8e2cecc12c0993db587642dcbbd02f364e15ce293096a7295a",
+   "files": {
+    "harness/contract_shape.py": {
+     "from_sha": "c0206085c93aefb2a66b0d58795291b6edd33beb19105b3f2aa80a65a1f8559d",
+     "to_sha": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2"
+    }
+   },
+   "reason": "A12d slice D8 follow-up: duplicate-finding literal made contiguous in source (runtime finding text byte-identical; static one-implementation wording check)",
+   "slice": "a12d-slice-d8",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "e6ecc3f26d8acb8e2cecc12c0993db587642dcbbd02f364e15ce293096a7295a",
+   "to_manifest": "40f4b8452f93d87f18b3c758d635150e1df39eec675eefb1846b383eef533c05",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "27a71020b956eed9066cef4906b4c9248a64483873c3a50df4a29db59092dfb9",
+     "to_sha": "bcef7d975431848fc10b56b9b6df0fd47016012bf2b8d14e8b961ddfb71ac8fb"
+    }
+   },
+   "reason": "A12j slice D10: source-stability binding now requires staged==CURRENT source plus bounded quiescence confirmation (total sleep <= 50 ms, at most 3 attempts), with named STABILITY-DENY refusals and staged-dir cleanup on every refusal (general-seat defect found in D9 evidence run: torn snapshot mountable when truncate straddled the window)",
+   "slice": "a12j-slice-d10",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "40f4b8452f93d87f18b3c758d635150e1df39eec675eefb1846b383eef533c05",
+   "to_manifest": "791e7f2af557f0ff75a408ca3f057494a416ba9581cfcdb907c61ce7f42543cd",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "bcef7d975431848fc10b56b9b6df0fd47016012bf2b8d14e8b961ddfb71ac8fb",
+     "to_sha": "2399c006605fd61f984381a5782f4c35946ebd3d527186b8a6f7c31b9ca3ca0e"
+    }
+   },
+   "reason": "A12l slice D11: DockerSandbox contract-B wording (byte-integrity, no event-detection guarantee) in the class docstring + corrected staging comment; no behavioral change",
+   "slice": "a12l-slice-d11",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "791e7f2af557f0ff75a408ca3f057494a416ba9581cfcdb907c61ce7f42543cd",
+   "to_manifest": "4629510fcda9341eb5c5a4e51cf6c0085aec012ce824dc309f8f5a31096ff931",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "2399c006605fd61f984381a5782f4c35946ebd3d527186b8a6f7c31b9ca3ca0e",
+     "to_sha": "495dcb443855b1429ad8f2f6cd3fb77e2b4518c3227a31b42225b31eef6e3a89"
+    }
+   },
+   "reason": "A12l slice D11 second commit: expected_task_snapshot production-binding name in the DockerSandbox contract-B docstring (no behavioral change)",
+   "slice": "a12l-slice-d11",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "4629510fcda9341eb5c5a4e51cf6c0085aec012ce824dc309f8f5a31096ff931",
+   "to_manifest": "5fb159352435bca17d08e8f90b5e65a6d8537afea34a5d89f9f9e646aedcd3a2",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "495dcb443855b1429ad8f2f6cd3fb77e2b4518c3227a31b42225b31eef6e3a89",
+     "to_sha": "713cddb62cf12e77e2493d69b7d8f696725a134b4ce1e07e9e8c2547dbabfc46"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "c543a2b4ce07d7264125f9f0e0f059624ee0248ad627da54585755692897ebac",
+     "to_sha": "9431a48f04bc677acad8571f60e1fcf76fdfbb00bfd10bc920f8376964d0a90b"
+    }
+   },
+   "reason": "A12l slice D11 third commit (auditor D10 verdict): expected_task_snapshot production binding in run_arm_h1.main + canonical-manifest wording in dockersandbox",
+   "slice": "a12l-slice-d11",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "5fb159352435bca17d08e8f90b5e65a6d8537afea34a5d89f9f9e646aedcd3a2",
+   "to_manifest": "36f5039cde22b484aa03905f48395f349a4d0830be0ad49a333cc48cce145351",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "713cddb62cf12e77e2493d69b7d8f696725a134b4ce1e07e9e8c2547dbabfc46",
+     "to_sha": "5bc9b5c8a08e6a537709c5a7d2cea745f904791ce3ff46cee28c540b230602d9"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "9431a48f04bc677acad8571f60e1fcf76fdfbb00bfd10bc920f8376964d0a90b",
+     "to_sha": "644fd37221c903edc1d1a93aced25ec0730db9f99ed7844fa223f891962bc457"
+    }
+   },
+   "reason": "A12l slice D11 round-4 (general-seat review): expected_task_snapshot constructor parameter with SNAPSHOT-DENY refusal + production call site passes independently derived expected snapshot",
+   "slice": "a12l-slice-d11",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "36f5039cde22b484aa03905f48395f349a4d0830be0ad49a333cc48cce145351",
+   "to_manifest": "5c0d3d35fe88f22d5111d08d0a7aea6c86847a3e695cf32411c5ae089235ea2a",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "5bc9b5c8a08e6a537709c5a7d2cea745f904791ce3ff46cee28c540b230602d9",
+     "to_sha": "cebd4c4f07e75b7ba81afa755d30f659a4423d3228b9856fd4b39f9d73581b43"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "644fd37221c903edc1d1a93aced25ec0730db9f99ed7844fa223f891962bc457",
+     "to_sha": "329f2fecba818f19234478cc529d6b386772235cea5de9ac07b5ea7f4d4299ca"
+    }
+   },
+   "reason": "A12l slice D11 round-5 (general-seat review item 1): frozen-taskdir expected walk in run_arm_h1.main passed as expected_task_snapshot kwarg; SNAPSHOT-DENY authorized text; verify_task_snapshot transitivity note",
+   "slice": "a12l-slice-d11",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "5c0d3d35fe88f22d5111d08d0a7aea6c86847a3e695cf32411c5ae089235ea2a",
+   "to_manifest": "7661084b3ff976d7e9892a629b72d7250bd93e9148da21d72797e856afe9afff",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "329f2fecba818f19234478cc529d6b386772235cea5de9ac07b5ea7f4d4299ca",
+     "to_sha": "f78df3a9dc8535f1ec13c698570103c1de3e03d15ebb139d8a78599ad32a7e3b"
+    }
+   },
+   "reason": "A12l slice D11 round-6 (general-seat review final item): frozen-taskdir expected walk with copied-root dir entries + frozen==staged pre-refusal in run_arm_h1.main",
+   "slice": "a12l-slice-d11",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "7661084b3ff976d7e9892a629b72d7250bd93e9148da21d72797e856afe9afff",
+   "to_manifest": "c7cb7007dfecac58be4f3e1a4ef547054b7eb5200530601d4c8d4cbe8dacdf43",
+   "files": {
+    "harness/frozen_visible.py": {
+     "from_sha": null,
+     "to_sha": "398e7dec6e8544ee126c06556b80e7b6d658ac071f9fd059c0023c12fed998e7"
+    },
+    "harness/admissibility.py": {
+     "from_sha": "d46b2a2a10aa54369948c23d2e30e4d6c60d844f69b8bdad87a7563037891820",
+     "to_sha": "cfdbb0336f40476d848caacf8e67d5c32034ea168df7dc36d4b398c667a79b41"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "f78df3a9dc8535f1ec13c698570103c1de3e03d15ebb139d8a78599ad32a7e3b",
+     "to_sha": "929f3ed0d0ff30ba528500188816f9854d50c191c209709bcd05126b0db50a9e"
+    }
+   },
+   "reason": "A12n slice D12 (auditor D11-post P0/P1/P1): frozen_visible.py new module (immutable expected-visible derivation + provenance helper), admissibility.py (verify returns manifest, marker-gated classify provenance), run_arm_h1.py main (pre-model FROZEN-VISIBLE gate, same-object sandbox binding, manifest provenance fields)",
+   "slice": "a12n-slice-d12",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "c7cb7007dfecac58be4f3e1a4ef547054b7eb5200530601d4c8d4cbe8dacdf43",
+   "to_manifest": "347e76e3cecbd3130a40fae14000ea3d389065808bd6a9920e8451de42b3fad5",
+   "files": {
+    "harness/admissibility.py": {
+     "from_sha": "cfdbb0336f40476d848caacf8e67d5c32034ea168df7dc36d4b398c667a79b41",
+     "to_sha": "00dfecaeb73e26ede4e77847bb51b4b711eb68a23b0081130eacaf90d615c387"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "929f3ed0d0ff30ba528500188816f9854d50c191c209709bcd05126b0db50a9e",
+     "to_sha": "1940bab22ce07e565883d82a0872471c073c43cfc295aef3312fc5f13b5b530a"
+    },
+    "harness/frozen_visible.py": {
+     "from_sha": "398e7dec6e8544ee126c06556b80e7b6d658ac071f9fd059c0023c12fed998e7",
+     "to_sha": "a7b64b212a1d0aca24189f88f170e93c0971c5e5946fd6e2267385540e5d6f38"
+    }
+   },
+   "reason": "A12n slice D12b grading-evaluator provenance: freeze-derived expected checker/truth sha256 (frozen_visible.derive_expected_evaluator + materialize_frozen_evaluator + marker-gated verify_expected_provenance), evaluator shas in the verify_instance_frozen authority object, pre-model and point-of-use EVALUATOR-DRIFT-DENY with frozen-materialized execution in run_arm_h1.execute_arrival/main, executed + expected evaluator provenance in the run manifest",
+   "slice": "a12n-slice-d12b",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "347e76e3cecbd3130a40fae14000ea3d389065808bd6a9920e8451de42b3fad5",
+   "to_manifest": "f077f01c9a31947ba74f5f71dcd09a8d0d9d5b7836b59e6a1a3f22ebcfb6ab47",
+   "files": {
+    "harness/admissibility.py": {
+     "from_sha": "00dfecaeb73e26ede4e77847bb51b4b711eb68a23b0081130eacaf90d615c387",
+     "to_sha": "a37b34545a5e4250c53cf1bc9f6f67ded6bc7e880a958f1a627c1a3b0f49b713"
+    },
+    "harness/frozen_visible.py": {
+     "from_sha": "a7b64b212a1d0aca24189f88f170e93c0971c5e5946fd6e2267385540e5d6f38",
+     "to_sha": "36f18cb9cc50ecf7d50235b0c1cb1b56add0f6b1a7f22f35de898a391ec3a35f"
+    }
+   },
+   "reason": "A12n slice D12c (general-seat findings A + B): provenance as precondition/conjunct in classify_run_dir (every gate evaluated, first failure with established wording); rule-bound required-field set fixed by the frozen rule in verify_expected_provenance (any surviving marker requires the full visible + evaluator set, missing subset refused by name, no-markers-at-all keeps the named legacy guard)",
+   "slice": "a12n-slice-d12c",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "f077f01c9a31947ba74f5f71dcd09a8d0d9d5b7836b59e6a1a3f22ebcfb6ab47",
+   "to_manifest": "7b32aa22b6fc1b4bde2da15c7c4e8aaa33505c2d1e1343be963e18b8e9fffaee",
+   "files": {
+    "harness/frozen_visible.py": {
+     "from_sha": "36f18cb9cc50ecf7d50235b0c1cb1b56add0f6b1a7f22f35de898a391ec3a35f",
+     "to_sha": "fc94d7512b473ec5f5b7671dfa3af322e6dd0866951590d22b365bdb296afe28"
+    }
+   },
+   "reason": "A12n slice D12d hermetic-prefix fix: families/ prefix derived from the fam-c dir relative to the git top level (_base_prefix) in derive_expected_visible + derive_expected_evaluator; h3 miniature brought to the D12 contract (frozen VISIBLE.md in the fixture freeze commit)",
+   "slice": "a12n-slice-d12d",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "7b32aa22b6fc1b4bde2da15c7c4e8aaa33505c2d1e1343be963e18b8e9fffaee",
+   "to_manifest": "9c28d46ded78be8db71e07f95bdfe4d60a52c13b13f8043abfe6a30521feea59",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "1940bab22ce07e565883d82a0872471c073c43cfc295aef3312fc5f13b5b530a",
+     "to_sha": "f186b090029b20c2ddb0a3bf01b11639954cc13057a8811e05fb56bfb4d181aa"
+    },
+    "harness/promotion.py": {
+     "from_sha": "e74ea8da707209f212afd9bb66bf1367de86d40274a21628e0883c0ad8e17426",
+     "to_sha": "a6ded5e324fd8c9519ae8f67dd87c233c397f8b4dda52afb6e04103de92c30d6"
+    }
+   },
+   "reason": "A12n slice D13 finite provenance closure: D12e staged_tree + context_task_snapshot_hash vs frozen authority pre-model; P0-1 _snapshot_verified_capability (prompt + jail consume ONLY the run-private lock-verified snapshot, snapshot evidence in manifest + chain); P0-2 sealed graded output package with pre/post checker hash (EVALUATOR-INPUT-DRIFT-DENY) + T1 candidate-output seal as experimental evidence; P0-3 run-time response/arrival/payload/solver shas in manifest + chain model-call link with T1/promotion re-read require (_bound_arrival)",
+   "slice": "a12n-slice-d13",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "9c28d46ded78be8db71e07f95bdfe4d60a52c13b13f8043abfe6a30521feea59",
+   "to_manifest": "ffdbe34199494496d26829d2bb8739ded7f0e4c92e46a43af2291c001378d423",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "f186b090029b20c2ddb0a3bf01b11639954cc13057a8811e05fb56bfb4d181aa",
+     "to_sha": "925699655ed3a7e04f4ec5537bf0c9cd204d75d299ca4aee7fe535c6be2e8c49"
+    },
+    "harness/frozen_visible.py": {
+     "from_sha": "fc94d7512b473ec5f5b7671dfa3af322e6dd0866951590d22b365bdb296afe28",
+     "to_sha": "9033d26c176d0dc3c681fecbdc8de111e057730032f2ad4dd671e2c4433e4dd9"
+    }
+   },
+   "reason": "A12n slice D13c residual seal-sourcing closure: seal sourced from the committed /work solver bytes (never the run-dir copy) with pre-checker equality require and post-checker re-hash of both files plus explicit graded == output require on the authority path; T1 mirror grades the jail-produced work file; verify_expected_provenance enforces graded == output marker-gated whenever the seal is recorded",
+   "slice": "a12n-slice-d13c",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "ffdbe34199494496d26829d2bb8739ded7f0e4c92e46a43af2291c001378d423",
+   "to_manifest": "b504e49b6d52465c5ff10eab1d2608b1a4be526f98de4b5185c2a2abf1b24433",
+   "files": {
+    "harness/adaptation.py": {
+     "from_sha": null,
+     "to_sha": "6b0f62b54181aeace5d76e66c32475867d7d03d510f7cdb06a68d74a32f5fae4"
+    }
+   },
+   "reason": "A13 canonical adaptation: new frozen module harness/adaptation.py (F_v1/F_v2/NOOP_v1 version functions with source-text identity, frozen schema registry, ABI/serialization/policy declarations, determinant + contract composition, pure causal-receipt builder, freeze-derived task bytes reader)",
+   "slice": "a13-slice-a13",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "b504e49b6d52465c5ff10eab1d2608b1a4be526f98de4b5185c2a2abf1b24433",
+   "to_manifest": "5f2760504e6e4ceae85e2b23eac67f77ec89d24534bd588d09351bf02b1496e1",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "925699655ed3a7e04f4ec5537bf0c9cd204d75d299ca4aee7fe535c6be2e8c49",
+     "to_sha": "c229a3ba00a65aef4e8e6262cf5d7ddf98a594d63ac5c7fb61774c79eaa92b5f"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "6b0f62b54181aeace5d76e66c32475867d7d03d510f7cdb06a68d74a32f5fae4",
+     "to_sha": "fee064a3bb46be3727d866fd8b6b1d9bd67e532148e513a6b8454eb710861b44"
+    }
+   },
+   "reason": "A13 executed counterfactual legs (auditor ruling): adaptation.py ships frozen passthrough_v1 + noop ABI identity + prove_determinism + derive_causal_contribution and binds per-leg execution evidence in build_receipt (causal always derived, missing recorded as None); run_arm_h1.py wires execute_a13_legs into the wired use_capability engine cell (ON harvested, OFF-noop + pass-through sub-executed, same frozen checker; receipt into manifest for chain genesis; derived causal into reuse ledger); one ORDER cell, one provider call, estimand unchanged",
+   "slice": "a13-slice2-executed-legs",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "5f2760504e6e4ceae85e2b23eac67f77ec89d24534bd588d09351bf02b1496e1",
+   "to_manifest": "1e7e1f8ddd96df9aa1a03b563b56fcda9106e886145ffad6850132a15b446edc",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "c229a3ba00a65aef4e8e6262cf5d7ddf98a594d63ac5c7fb61774c79eaa92b5f",
+     "to_sha": "999ef4de5f9802b6381fa58bc5bd3daee9b1e755b544a8139d1c0beb25739b69"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "fee064a3bb46be3727d866fd8b6b1d9bd67e532148e513a6b8454eb710861b44",
+     "to_sha": "7a5012556334bc928d2d31a4a922633001d63d836a98dd40bcc8b5a68169e1e9"
+    }
+   },
+   "reason": "A13 v2.2 counting rule + isolation bindings (auditor): derivation requires rc-verdict consistency (ON ship-from-rc0; counterfactuals count only with rc1 + fix + recomputing report hash + non-empty crash-free output via shared checker); receipt carries per-leg checker_output/report-hash, captured_response_sha256 + cell_id, and top-level provider/order deltas; runner records grading text per leg and passes the single-response/single-cell binding",
+   "slice": "a13-slice2-v22-counting",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "1e7e1f8ddd96df9aa1a03b563b56fcda9106e886145ffad6850132a15b446edc",
+   "to_manifest": "2988c26b46bf8254e1613faf9660ca602adbc292819a9638141be4c86e1416f9",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "999ef4de5f9802b6381fa58bc5bd3daee9b1e755b544a8139d1c0beb25739b69",
+     "to_sha": "88fd697cf7ca301c89baeab3e13e71638ed7bccfb236487e92680d1738bd9a1c"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "7a5012556334bc928d2d31a4a922633001d63d836a98dd40bcc8b5a68169e1e9",
+     "to_sha": "d56a4d8ce51b4665bf0fff8afa078548858a7aef2c503aec530c6842dd0bca64"
+    }
+   },
+   "reason": "Auditor binding rulings: canonical checker_report_sha256 evidence field (renamed from checker_output_sha256; auditor-named, apparatus-accepted) on all three legs; 15-marker crash scan mirroring the apparatus guard exactly; rerun-equality prose scoped to rerun identity for this pair (never proof F is deterministic under every execution)",
+   "slice": "a13-slice2-auditor-rulings",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "2988c26b46bf8254e1613faf9660ca602adbc292819a9638141be4c86e1416f9",
+   "to_manifest": "9fead61fc53f41eb95f3f8dd8826187610436ddd466b57a8383b92d561fcd6ab",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "88fd697cf7ca301c89baeab3e13e71638ed7bccfb236487e92680d1738bd9a1c",
+     "to_sha": "041728227d508c87561397258117ea960c00354117a11937a3217ec804aa251e"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "d56a4d8ce51b4665bf0fff8afa078548858a7aef2c503aec530c6842dd0bca64",
+     "to_sha": "4a13e3aff881c70fefee576b6d75360db8eceeb415aa331eaab1ec7ad7050a02"
+    }
+   },
+   "reason": "Invariant-gap finding (ii): receipt records provider_call_count + order_cell_count (1 and 1 on a real single-call cell) beside the region deltas and the per-leg shared captured-response/cell bindings; recorded values for verifier equalities, never builder-asserted (derivation does not consume counts)",
+   "slice": "a13-slice2-counts-binding",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "9fead61fc53f41eb95f3f8dd8826187610436ddd466b57a8383b92d561fcd6ab",
+   "to_manifest": "6ef142d9fbf4ff00b3e597ae7158f7d1003e7192ee71c535a15ce97256b6de69",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "041728227d508c87561397258117ea960c00354117a11937a3217ec804aa251e",
+     "to_sha": "5987ef99a91c654ffd72f84fe561cd43516324a8966525111e64ee74e9558911"
+    }
+   },
+   "reason": "Invariant-gap static half: execute_a13_legs entry parameters renamed off capability-handle vocabulary (jail_builder/raw_jail/recorded_call_count) while forwarding to the frozen A12d seam names; no behavior change (params only); the counterfactual entry stays provably free of injected callables/handles",
+   "slice": "a13-slice2-ingress-clean",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "6ef142d9fbf4ff00b3e597ae7158f7d1003e7192ee71c535a15ce97256b6de69",
+   "to_manifest": "48a7c029021065942c15bb49b3847e12559fa3e74bb2dc6eb774ef91d628fcdc",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "5987ef99a91c654ffd72f84fe561cd43516324a8966525111e64ee74e9558911",
+     "to_sha": "5b39e007a4ad036e29d6966b1637f7d3d238c6174923f51f80f7b6287a079efd"
+    }
+   },
+   "reason": "Isolation-rule conformance (entry params only, no behavior change): off_leg_executor replaces jail_builder (forwards to the frozen A12d jail_factory seam); raw sb passthrough dropped (sb=None on the engine-only path, which never reads it); recorded_call_count replaces provider_call_count (same recorded count, handle-free name)",
+   "slice": "a13-slice2-ingress-names",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "48a7c029021065942c15bb49b3847e12559fa3e74bb2dc6eb774ef91d628fcdc",
+   "to_manifest": "69201cafc0013036869df2fc0a9c1126cfe4128afaf6b3ef427a8ac5df812489",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "5b39e007a4ad036e29d6966b1637f7d3d238c6174923f51f80f7b6287a079efd",
+     "to_sha": "5cfbd7e395aaaa9698244babc812b5810b13cb469d207bae7e6d1a7901535ffa"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "4a13e3aff881c70fefee576b6d75360db8eceeb415aa331eaab1ec7ad7050a02",
+     "to_sha": "60ba7e1a024eb2bfe8dfee8ba3362df20f40189d7faa8b5850b3b3edbedc4918"
+    }
+   },
+   "reason": "Corrected invariant-gap spec (deltas + observed total, no hardcoded counts): isolation carries enclosing_cell_provider_call_total (runner-observed, never hardcoded 1) with region-measured provider delta (runner-owned counter before/after) and cell-continuity order delta; runtime tripwire swaps the provider-call boundary to raise for the legs duration (try/finally restored); sb passthrough dropped; entry params handle-free",
+   "slice": "a13-slice2-delta-counter-tripwire",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "69201cafc0013036869df2fc0a9c1126cfe4128afaf6b3ef427a8ac5df812489",
+   "to_manifest": "877cc43c2de0ceb593c3e8cda7061b433e07d3427401debad7e9b71ddd5babfe",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "5cfbd7e395aaaa9698244babc812b5810b13cb469d207bae7e6d1a7901535ffa",
+     "to_sha": "13c2749fccd15e140aca49e5b073b12ec243d612c07cb66062af16570ba68ab2"
+    }
+   },
+   "reason": "Review-invariant comment at the single provider-invocation site (no behavior change): all cell provider traffic funnels through call() -> recorded_call(); any future second site must bump the runner-owned counter",
+   "slice": "a13-slice2-bump-comment",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "877cc43c2de0ceb593c3e8cda7061b433e07d3427401debad7e9b71ddd5babfe",
+   "to_manifest": "c97ad96076b469ba77ae7265666d3ceeb3e7a19c10d4b035b36f091973c06910",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "13c2749fccd15e140aca49e5b073b12ec243d612c07cb66062af16570ba68ab2",
+     "to_sha": "6b3b28354eb4c222dcd426cd99b542111745f79efe48beed419d8d6b492bcb9b"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "60ba7e1a024eb2bfe8dfee8ba3362df20f40189d7faa8b5850b3b3edbedc4918",
+     "to_sha": "af047c2164891595f0a0d24dfc0eec491bc1fcac693c21d474d60d69226bf961"
+    }
+   },
+   "reason": "Auditor region/post-region split: execute_arrival gains grade=False execution-without-grading (default-preserving); OFF leg runs ungraded in-region via the harness-owned jail-builder slot (no callable params); helper seals artifacts+isolation (A13-SEAL.json) without grading or receipt; new grade_a13_legs verifies seal, grades sealed bytes post-region (ON re-grade must equal harvested), writes separate grading artifact, finalizes receipt with seal binding; main wires seal->grade->ledger->manifest; no verdict-domain change",
+   "slice": "a13-slice2-region-postgrade",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "c97ad96076b469ba77ae7265666d3ceeb3e7a19c10d4b035b36f091973c06910",
+   "to_manifest": "3e6394fbed32b72f37623836d98f796a0b905cea0b90be88a80bad38dbbd8ee1",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "6b3b28354eb4c222dcd426cd99b542111745f79efe48beed419d8d6b492bcb9b",
+     "to_sha": "0dd9b298a82c17518825d7e4439f68eb176dd3dd0a24889f41136612a1a3b6b0"
+    }
+   },
+   "reason": "Isolation-traversal hygiene (no behavior change): evidence shape validator hoisted from recursive closure to module-level named global so the transitive static proof resolves it; seal/grade split unchanged",
+   "slice": "a13-slice2-seal-validator-hoist",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "3e6394fbed32b72f37623836d98f796a0b905cea0b90be88a80bad38dbbd8ee1",
+   "to_manifest": "5f6cefd672c4325069dceeda784757493c4d6b2940c00a5f70ebe8b0fe9d331a",
+   "files": {
+    "harness/a13_observer.py": {
+     "from_sha": null,
+     "to_sha": "2f77b0c2db57b713c9836d0d1e3ae5473cf61d126c9c43dfeb70212208de65bc"
+    },
+    "harness/dockersandbox.py": {
+     "from_sha": "cebd4c4f07e75b7ba81afa755d30f659a4423d3228b9856fd4b39f9d73581b43",
+     "to_sha": "9641d5dcb4bc2f9167f6070e9e94e6684414e140582dc0d8d87539b67bc83953"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "0dd9b298a82c17518825d7e4439f68eb176dd3dd0a24889f41136612a1a3b6b0",
+     "to_sha": "438144cd2c500e74cc4360910f2806a3101f71d26ff8d463c96da4e66358dbc9"
+    },
+    "harness/mint_execution_lock.py": {
+     "from_sha": "2394806d71cd6985389bd2ecfd3d123caf54e0f271f7e8efc13bb362fd8d10d4",
+     "to_sha": "36b7a4e8834e56bfd0040f629a4aef2a4eb81ec3625977f7e9d2c79b7221f472"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "af047c2164891595f0a0d24dfc0eec491bc1fcac693c21d474d60d69226bf961",
+     "to_sha": "9648e95eed500d65471db4a623f21bf278b9d2e518a1fe1699af91c8a2154876"
+    }
+   },
+   "reason": "A13 auditor rulings 1+2: DockerSandbox two-launch history (cidfile) + snapshot payload single-source; observer role identities + entry-pid/cgroup helpers + sealed jail_launches; adaptation snapshot plan + role identity + combined budget + receipt jail_launches slot; runner two role-tagged launch records + jail_launches + module-level bind helpers + finite-float scalars; H35 shim two-launch history + shape asserts (commit 8c4274b)",
+   "slice": "a13-ruling12-two-role-launches",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "5f6cefd672c4325069dceeda784757493c4d6b2940c00a5f70ebe8b0fe9d331a",
+   "to_manifest": "32e4b5e113bcfd7e37af90c4712f4075f0d12d79f36c149e24cda5e043c9eafa",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "9641d5dcb4bc2f9167f6070e9e94e6684414e140582dc0d8d87539b67bc83953",
+     "to_sha": "574558f77e8585a24fbb73113ace30195b1992201a209a6abdfa7a184eeb72cc"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "438144cd2c500e74cc4360910f2806a3101f71d26ff8d463c96da4e66358dbc9",
+     "to_sha": "b302daff8a045c14e66ef76d0ca72bebb285e29bec113490f10e39cfe318467b"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "9648e95eed500d65471db4a623f21bf278b9d2e518a1fe1699af91c8a2154876",
+     "to_sha": "20ee435d8e53119659fce43a1826a6545190604f08fa4df174f57e53379e5abd"
+    }
+   },
+   "reason": "Finding-1 extension: DockerSandbox Popen launcher-pid capture; runner seal-time host ledger (2 jail-launch entries) + inline process journal; grade checker-Popen ledger entries + grading attestation + append-only ledger growth; adaptation 19 isolation slots; H35 shim Popen pids + ISOLATION-KEYS producer control (commit 9380a44)",
+   "slice": "a13-finding1ext-four-keys",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "32e4b5e113bcfd7e37af90c4712f4075f0d12d79f36c149e24cda5e043c9eafa",
+   "to_manifest": "5e0bd6d65f7cca27f622ff896e7dfdc26692d1d4e27833a23930355b19851096",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "b302daff8a045c14e66ef76d0ca72bebb285e29bec113490f10e39cfe318467b",
+     "to_sha": "d9b4801b7dcbe200db32f109e36a023044782d642606f8889246b0760806c4c9"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "20ee435d8e53119659fce43a1826a6545190604f08fa4df174f57e53379e5abd",
+     "to_sha": "c19439963560c592eeb9aca5afa042ad33708e2adb0a3b83f437a76df3ec2fb4"
+    }
+   },
+   "reason": "Round-31/32 identity: runner seal-time identity bundle (fresh map + canonical manifest + lock sha) + seal grading slot; adaptation 20 slots; H35 identity control (commit 2f44ab6)",
+   "slice": "a13-identity-bundle",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "5e0bd6d65f7cca27f622ff896e7dfdc26692d1d4e27833a23930355b19851096",
+   "to_manifest": "5895fe025653d0a7ed48c2446e1346334e855abc7de6feacfbbd5d517e98cc77",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "d9b4801b7dcbe200db32f109e36a023044782d642606f8889246b0760806c4c9",
+     "to_sha": "d5677b65896cb57a02760e3d82f3c4f35724c6843f183a83d0c1172975589715"
+    },
+    "harness/adaptation.py": {
+     "from_sha": "c19439963560c592eeb9aca5afa042ad33708e2adb0a3b83f437a76df3ec2fb4",
+     "to_sha": "290fcefd5eabb35d94437e0eb245133211e4a1be384e533e6347ff807dbf2056"
+    }
+   },
+   "reason": "Closure digest (16 files incl observer) + top-level identity bundle copies on seal/receipt; H35 placements (commit HEAD)",
+   "slice": "a13-closure-digest-toplevel",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "3932d3bee6271485c4defae8c834ccc0563ca3bcdfffccf43f0516a999d7e298",
+   "to_manifest": "9577da312760987c515480cdd59385347bcc3974a316ac5a220557a33230f5a6",
+   "files": {
+    "harness/adaptation.py": {
+     "from_sha": "290fcefd5eabb35d94437e0eb245133211e4a1be384e533e6347ff807dbf2056",
+     "to_sha": "d16378260df341cad23ae2784eebcb3057ecf07aa5f5a4fb0e57c10cff7dece1"
+    }
+   },
+   "reason": "Pre-A13 lock refresh: harness/adaptation.py was edited 2026-09-10 20:45:26 (A13 causal-receipt builder: 3 seal-identity params seal_content_sha256/seal_file_sha256/seal_path + six temporal-grading slots; frozen-slot arity twenty->twenty-six) BEFORE the lock was minted at 21:51:39, so the lock recorded a stale expectation 290fcefd5eab for live bytes d16378260df3. Inventory of all 24 locked entries taken in the fleet record rcos-drift-triage-20260914/INVENTORY.md shows DRIFT COUNT = 1 (this file alone; 23 MATCH), so this re-mint bakes in no third unrecognized drift. Operator-authorized, conditional on that inventory. Pre-mint lock preserved at EXECUTION-LOCK.json.pre-mint.bak.",
+   "slice": "a13-item-0-lock-refresh",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "9577da312760987c515480cdd59385347bcc3974a316ac5a220557a33230f5a6",
+   "to_manifest": "bab320d5553234859d98931efeb7b633e38adbb138e910ce315fb75858fae5d9",
+   "files": {
+    "harness/containment.py": {
+     "from_sha": null,
+     "to_sha": "f3063594ef770209b2bf2359cfbb7862fcde536fe94407cbfac88f07633dbf0b"
+    },
+    "harness/dockersandbox.py": {
+     "from_sha": "574558f77e8585a24fbb73113ace30195b1992201a209a6abdfa7a184eeb72cc",
+     "to_sha": "ade169c811a3737e7c70d79fefd634b827958811c24f3a05f48df1df1c2f12f8"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "62a5cad39b90b05fb4525ddd5fae0c81fcdef2f85df3ea0ff97c1b9a322462d5",
+     "to_sha": "476a4d456c208084e518077664b86fdea3637176baf878a0d79d0543171f7f94"
+    }
+   },
+   "reason": "GPT Ruling 3 N1 backend-boundary hardening: new harness/SECURITY-SPEC.md claim-grade backend registry + new harness/containment.py predicate module + DockerSandbox fail-closed construction gate + runner pre-execution and post-manifest claim-grade gates and manifest containment binding",
+   "slice": "n1-backend-boundary-hardening",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "bab320d5553234859d98931efeb7b633e38adbb138e910ce315fb75858fae5d9",
+   "to_manifest": "e3932208059d7dffbddbbab3e4497b3d9989b01f35df22262ffeff0109b7ffcf",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "ade169c811a3737e7c70d79fefd634b827958811c24f3a05f48df1df1c2f12f8",
+     "to_sha": "9b3fe5795e61e6184290cbd9d3e22f842b6a1ef34ada1db2761afc69e8f3fca5"
+    },
+    "harness/containment.py": {
+     "from_sha": "f3063594ef770209b2bf2359cfbb7862fcde536fe94407cbfac88f07633dbf0b",
+     "to_sha": "1f1a933ee5f117d7116e610c2b445c5b1c3270e0ec4b90f8b855068d75e72e37"
+    }
+   },
+   "reason": "Ruling 3 N1 backend-boundary hardening: positive control found the post-manifest gate refused every run (verify_manifest_binding wrapper was not unwrapped) and confirmed the shim clause must be structural; harness/containment.py + harness/dockersandbox.py + run_arm_h1.py re-frozen.",
+   "slice": "n1-backend-boundary-hardening",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "e3932208059d7dffbddbbab3e4497b3d9989b01f35df22262ffeff0109b7ffcf",
+   "to_manifest": "1684d5802899791aac0a92103b500da0dc3a3b183b38f6cc624e239b2bccd8e8",
+   "files": {
+    "harness/dockersandbox.py": {
+     "from_sha": "9b3fe5795e61e6184290cbd9d3e22f842b6a1ef34ada1db2761afc69e8f3fca5",
+     "to_sha": "7f8eac0b9a2672365d234efe0052d90c6af5b7001992252ff1f257e58c1c88e0"
+    },
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "476a4d456c208084e518077664b86fdea3637176baf878a0d79d0543171f7f94",
+     "to_sha": "9504bfce005ef11fb3f4b6080ce16123095ed45340ca0e606fffe687d8fba8a9"
+    }
+   },
+   "reason": "Repo-hygiene portability pass: scrubbed 40 absolute /home/chow/chow-work/rcos paths to __file__-relative resolution across 18 files (harness/dockersandbox.py, harness/tests/smoke_*.py, benchmarks/fam-c/harness-run/*.py, slices/v3-crossmodel/*.py), converted BANNED_PREFIXES to an account-relative tuple so the ban follows the invoking account, and repaired ensure_roots bootstrap (makedirs under a group-writable umask created 0o775 roots that the guard's own 0o077 check then refused, so a fresh root could never bootstrap); same patch fixed smoke_h1_docker/run_arm_h1 pinned-byte drift.",
+   "slice": "repo-hygiene-portability",
+   "status_after": "open-round2"
+  }
+ ],
+ "minted": {
+  "base": "fca3df0",
+  "slice": "a7-item-4"
+ },
+ "frozen_constants": {
+  "a13_jail_config": {
+   "cap_drop": [
+    "ALL"
+   ],
+   "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+   "memory": "1g",
+   "network": "none",
+   "pids_limit": 64,
+   "read_only": true,
+   "tmpfs": [
+    "/tmp:rw,noexec,nosuid,size=64m"
+   ],
+   "user": "WHO (invoking harness uid:gid)"
+  },
+  "a13_off_combined_docker_budget": 2,
+  "a13_process_plan": {
+   "off-noop": 1,
+   "on": 0,
+   "pass-through": 0
+  },
+  "a13_role_identity": {
+   "engine_exec": {
+    "argv_exact": [
+     "python3",
+     "/work/engine.py",
+     "/task/field_map.json",
+     "/task/records.json",
+     "/work/OUTPUT.json"
+    ],
+    "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+    "interpreter_path": "python3",
+    "interpreter_sha256": "0e6475dfda68a9b2d93501449fc47593ca169010e8f4881577b97463fd0c1263",
+    "mounts": [
+     {
+      "container": "/work",
+      "mode": "rw"
+     },
+     {
+      "container": "/task",
+      "mode": "ro"
+     }
+    ],
+    "network": "none",
+    "script_path": "/work/engine.py"
+   },
+   "snapshot_verify": {
+    "argv_head": [
+     "python3",
+     "-c"
+    ],
+    "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+    "interpreter_path": "python3",
+    "interpreter_sha256": "0e6475dfda68a9b2d93501449fc47593ca169010e8f4881577b97463fd0c1263",
+    "mounts": [
+     {
+      "container": "/work",
+      "mode": "rw"
+     },
+     {
+      "container": "/task",
+      "mode": "ro"
+     }
+    ],
+    "network": "none",
+    "payload_sha256": "b5f52b1eaefd54d3623be34d9d0a2c541b856490a54c95a92a8a7073561ae76f"
+   }
+  },
+  "a13_snapshot_verify_plan": {
+   "off-noop": 1,
+   "on": 0,
+   "pass-through": 0
+  },
+  "expected_provider_calls_per_cell": 1
+ }
+}

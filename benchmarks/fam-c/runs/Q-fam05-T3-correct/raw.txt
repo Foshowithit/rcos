@@ -1,0 +1,3 @@
+
+
+{"records": {"sub/n1.txt": {"content": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, "sub/n2.txt": {"content": "bX9"}, "top.txt": {"content": "ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}}, "field_map": {"sub/n1.txt": {"content": {"size": 45, "sha256": "52789e3423b72beeb898456a4f49662e46b0cbb960784c5ef4b1399d327e7c27"}}, "sub/n2.txt": {"content": {"size": 9, "sha256": "a08d116c20341f0aadbacaedfae937da31006e7eb7bd4c6e723449776a1c13ba"}}, "top.txt": {"content": {"size": 63, "sha256": "93378fdea13e1d912d953fedf1155adf0c184626216bf333f9b4f50b704bff63"}}}, "notes": "Manifest provides per-file size and sha256 constraints; sub/n2.txt has size 3 vs expected 9 and sha256 mismatch"}
