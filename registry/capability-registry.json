@@ -90,11 +90,25 @@
       "name": "DSH plugin contract test pattern",
       "kind": "script",
       "version": "1.0.0",
-      "status": "candidate",
-      "admitted_after": [],
-      "evals": [],
+      "status": "promoted",
+      "admitted_after": [
+        "dsh-operator-ui-push-readiness",
+        "dsh-operator-ui-post-phase1"
+      ],
+      "evals": [
+        {
+          "task_id": "dsh-operator-ui-push-readiness",
+          "verdict": "ship",
+          "run_id": "dogfood-check-1"
+        },
+        {
+          "task_id": "dsh-operator-ui-post-phase1",
+          "verdict": "ship",
+          "run_id": "dogfood-check-2"
+        }
+      ],
       "reuse_count": 0,
-      "last_eval": null,
+      "last_eval": "2026-09-15",
       "lineage": "dsh-operator-ui/scripts/check.js; required before every push since v0.1.1"
     }
   ]
