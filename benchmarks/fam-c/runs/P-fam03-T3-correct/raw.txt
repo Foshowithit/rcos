@@ -1,0 +1,24 @@
+<think>The task is to deduplicate JSON-lines events by (ev, t) pair. I need to:
+
+1. Parse the events.jsonl file - it has 8 lines
+2. Create a field_map with identity set to ["ev", "t"]
+3. Create records dict with "events" array containing the parsed events
+4. The engine will compute total, unique, and removed counts
+
+Let me trace through:
+- Line 1: {"ev": "open", "t": "A"} 
+- Line 2: {"ev": "login", "t": "B"}
+- Line 3: {"ev": "open", "t": "A"} - duplicate of 1
+- Line 4: {"ev": "sync", "t": "C"}
+- Line 5: {"ev": "login", "t": "B"} - duplicate of 2
+- Line 6: {"ev": "open", "t": "A"} - duplicate of 1
+- Line 7: {"ev": "close", "t": "C"}
+- Line 8: {"ev": "sync", "t": "C"} - duplicate of 4
+
+Total: 8
+Unique pairs: (open,A), (login,B), (sync,C), (close,C) = 4
+Removed: 4
+
+The field_map should have identity as a list ["ev", "t"].</think>
+
+{"records": {"events": [{"ev": "open", "t": "A"}, {"ev": "login", "t": "B"}, {"ev": "open", "t": "A"}, {"ev": "sync", "t": "C"}, {"ev": "login", "t": "B"}, {"ev": "open", "t": "A"}, {"ev": "close", "t": "C"}, {"ev": "sync", "t": "C"}]}, "field_map": {"identity": ["ev", "t"]}, "notes": "Identity is the (ev,t) tuple per task rule; no service tag added."}

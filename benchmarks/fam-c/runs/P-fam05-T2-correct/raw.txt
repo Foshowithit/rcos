@@ -1,0 +1,114 @@
+<think>We need to construct the JSON inputs for the engine. The manifest has 4 entries (c.txt, d.txt, e.txt, f.txt), each with size and sha256. The field_map maps record_path -> field -> constraint dict. The records map record_path -> {field_name: raw_value}.
+
+Looking at the manifest format: "FILENAME SIZE SHA256". The adapter notes say: "for env-style (KEY=VAL or KEY VAL) split on first delimiter and treat keys as fields, using the record's overall path as the record_path key." Wait, but the manifest is a flat list with three columns: filename, size, sha256. The adapter splits on first delimiter? Actually the manifest line is like "c.txt 12 59ffe...". 
+
+Hmm, the adapter notes describe various manifest formats. Our manifest has size and sha256. The field_map structure: { record_path: { field_name: { 'size': N, 'sha256': 'hex' } } }. Here record_path is the file path (e.g., "c.txt"), and field_name... what is the field name? In a flat file, the field is the content itself? 
+
+Actually, looking at the capability: "byte-length of string/bytes fields matches expected size when specified, sha256 of field content matches expected digest when specified". The record is a flat dict mapping field name to value. For files, the entire file content is one field. What should we call the field? 
+
+Since the manifest has size and sha256 for the file as a whole, I think the field name could be something like "content" or the filename itself. Looking at the adapter: "for env-style (KEY=VAL or KEY VAL) split on first delimiter and treat keys as fields". In our case, there's no clear field name. But looking at the line "c.txt 12 59ffe...", splitting on first space gives key="c.txt", val="12 59ffe...". Then treat "c.txt" as the field? That doesn't make sense because record_path would also be "c.txt".
+
+Actually wait - re-reading: "for env-style (KEY=VAL or KEY VAL) split on first delimiter and treat keys as fields, using the record's overall path as the record_path key." This means: the record_path is determined by something else (like the filename of the manifest itself? No...). Actually "the record's overall path" - maybe the path is derived from where the record lives, and the keys become fields within.
+
+Hmm, let me think differently. The manifest is a flat file listing. The adapter needs to produce field_map and records. The records are the actual file contents. Each file's content goes into one field. 
+
+I think the most sensible interpretation: record_path = filename (e.g., "c.txt"), and the field within is something like the sha256 value or a generic name. But actually, given the manifest only specifies one set of constraints per file, and the record is the file content, the field name could just be the filename itself, or "data", or the sha256.
+
+Actually, looking more carefully at the adapter notes: "for colon manifests split on ':', for JSON traverse nested layouts flattening dot-paths, for env-style (KEY=VAL or KEY VAL) split on first delimiter and treat keys as fields". Our manifest is not colon-delimited, not JSON. It's space-delimited with 3 columns. The first column is the filename which becomes the record_path. The second is size, third is sha256. These become the constraint for that file's content.
+
+So field_map should be:
+{
+  "c.txt": {"content": {"size": 12, "sha256": "59ffe12a..."}},
+  "d.txt": {"content": {"size": 34, "sha256": "..."}},
+  ...
+}
+
+Or maybe the field name is the sha256 hex itself? No, that's weird. Let me think... In env-style KEY=VAL, KEY is the field name. But our line has 3 parts. The adapter says "split on first delimiter". If we treat the whole line as KEY VAL, KEY would be "c.txt" and VAL would be "12 59ffe...". Then "c.txt" is the field name, and record_path is the overall path of the record (which would be... the manifest path? No).
+
+Wait, I think the manifest IS the record source. Actually, re-reading: "The adapter converts a NEW manifest+raw-files pair into the two JSON inputs". So manifest is one thing, raw-files are separate. The records come from raw files. The field_map comes from manifest.
+
+For raw files, each file's content is a record. record_path = filename. field_name = ??? 
+
+Actually, maybe the field_map maps record_path to a dict of field constraints, but the field name corresponds to something in the record. If the record is {"content": "xxxxxxx..."}, then field name is "content".
+
+Let me look at what makes sense. The record for c.txt should be `{"content": "xxxxxxxxxxxx"}` (the file contents). The field_map for c.txt should have a constraint on "content".
+
+Actually, there might be another interpretation: the field name could be the filename within the record. Like record = {c.txt: "xxx..."} but that's weird.
+
+Let me just pick a reasonable field name. I'll use the filename as the key in the field_map, and the record will have the content under that same key.
+
+Actually wait - in the adapter notes for env-style: "using the record's overall path as the record_path key". So the record_path is something like the filename, and the fields are parsed from the line. But the line's key becomes a field name within the record. So if we split "c.txt 12 59ffe..." on first space, key="c.txt", value="12 59ffe...". But that doesn't help because we still need to parse size and sha256.
+
+Actually, I think the adapter description is for a different manifest format (env vars). For our specific manifest, we need to adapt. The manifest has format: "FILENAME SIZE SHA256". The adapter should parse this into field_map where record_path = filename, and the constraint is on the content field.
+
+Let me just construct:
+- field_map: {"c.txt": {"content": {"size": 12, "sha256": "..."}}, ...}
+- records: {"c.txt": {"content": "xxxxxxxxxxxx"}, ...}
+
+Actually, I realize the field name might not matter as long as it matches between field_map and records. Let me use a simple name like "data" or use the filename as both record_path and field_name (nested), but that might confuse things.
+
+Let me re-examine: "a field-map maps record path -> field -> constraint dict". So it's `path -> field -> constraint`. And records are `path -> field -> value`. The field name appears in both.
+
+I'll use "content" as the field name.
+
+Now, the records need to preserve original byte/str form. The file c.txt contains "xxxxxxxxxxxx\n"? Let me check the task description: "--- c.txt (12 bytes) --- xxxxxxxxxxxx". So it's exactly 12 x's with no newline. Good.
+
+Let me compute sha256 to verify but actually the engine will compute it. I just need to provide the content correctly.
+
+Contents:
+- a.txt: "12345" (5 bytes)
+- b.txt: "12345678" (8 bytes)
+- c.txt: "xxxxxxxxxxxx" (12 bytes)
+- d.txt: "yyyyyyy..." (34 y's)
+- e.txt: "zzzzzzz" (7 bytes)
+- f.txt: "wwww..." (100 w's)
+
+Only c, d, e, f are in the manifest. So we include all files as records? The manifest only covers c, d, e, f. a.txt and b.txt have no entry, meaning they'd be "unverified" by the engine.
+
+Yes, the engine: if spec is None (no entry in field_map for that path), it's unverified. So we should include a.txt and b.txt in records but they won't have entries in field_map.
+
+So final JSON inputs:
+
+field_map:
+```json
+{
+  "c.txt": {"content": {"size": 12, "sha256": "59ffe12a70df15109e0345955e3230a978f31ebc28d8fe3e42d306afb28b8e81"}},
+  "d.txt": {"content": {"size": 34, "sha256": "b90db8b04822b9312e3f4e23368478010f5785c8ee75bfda24ac7a3802141f8d"}},
+  "e.txt": {"content": {"size": 7, "sha256": "3878221012d3785e4f21eef37119410a7ed8ebb5de28ef82c0cad48d8cdc5d04"}},
+  "f.txt": {"content": {"size": 100, "sha256": "6ff1386a6f0d444e2af43e9a9e1cdc1394709fc87b5c2a625e16041fec2b1131"}}
+}
+```
+
+records:
+```json
+{
+  "a.txt": {"content": "12345"},
+  "b.txt": {"content": "12345678"},
+  "c.txt": {"content": "xxxxxxxxxxxx"},
+  "d.txt": {"content": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"},
+  "e.txt": {"content": "zzzzzzz"},
+  "f.txt": {"content": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"}
+}
+```
+
+Wait, let me count the y's and w's. The task says d.txt is 34 bytes and shows "yyyyyyy..." (I'll trust it's 34). f.txt is 100 bytes. Let me carefully replicate.
+
+d.txt: "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy" - let me count: y-y-y-y (4) y-y-y-y (8) y-y-y-y (12) y-y-y-y (16) y-y-y-y (20) y-y-y-y (24) y-y-y-y (28) y-y-y-y (32) y-y (34). Yes 34.
+
+f.txt: "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww" - count groups of 10: 10*10=100. Yes.
+
+Actually, I should double-check c.txt content "xxxxxxxxxxxx" = 12 x's. Yes.
+
+Let me verify the sha256 for c.txt mentally? sha256("xxxxxxxxxxxx")... actually I can't easily compute this. The engine will compute it. I'll trust the manifest values.
+
+Now the response format requires: {"records": {...}, "field_map": {...}, "notes": "..."}
+
+Let me produce the final JSON. The notes should be a one-liner.
+
+Actually, I need to be careful: the engine reads JSON files. The field_map and records I produce will be written to disk. So I just provide the dicts.
+
+One more consideration: should I include trailing newlines? The task says "(12 bytes)" for c.txt showing exactly "xxxxxxxxxxxx" (12 chars). So no trailing newline. Good.
+
+Final answer:</think>
+
+{"records": {"a.txt": {"content": "12345"}, "b.txt": {"content": "12345678"}, "c.txt": {"content": "xxxxxxxxxxxx"}, "d.txt": {"content": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"}, "e.txt": {"content": "zzzzzzz"}, "f.txt": {"content": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww"}}, "field_map": {"c.txt": {"content": {"size": 12, "sha256": "59ffe12a70df15109e0345955e3230a978f31ebc28d8fe3e42d306afb28b8e81"}}, "d.txt": {"content": {"size": 34, "sha256": "b90db8b04822b9312e3f4e23368478010f5785c8ee75bfda24ac7a3802141f8d"}}, "e.txt": {"content": {"size": 7, "sha256": "3878221012d3785e4f21eef37119410a7ed8ebb5de28ef82c0cad48d8cdc5d04"}}, "f.txt": {"content": {"size": 100, "sha256": "6ff1386a6f0d444e2af43e9a9e1cdc1394709fc87b5c2a625e16041fec2b1131"}}}, "notes": "Files a/b unverified (no manifest entry); c/d/e/f checked for size+sha256 of content field."}

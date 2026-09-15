@@ -1,0 +1,34 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T0):
+```
+# fam06-T0 — reconcile two CSVs by id
+Match `a.csv` against `b.csv` on id. Equal amounts match; unequal
+amounts conflict. Write `OUTPUT.json`:
+`{matched:[ids], missing_in_b:[ids], missing_in_a:[ids], conflicts:[{id,a,b}], unreconcilable:[ids]} (entries that cannot be compared on one consistent basis go under `unreconcilable`)`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, a.csv, b.csv, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- a.csv (28 bytes) ---
+id,amount
+A,100
+B,200
+C,300
+
+--- b.csv (28 bytes) ---
+id,amount
+A,100
+B,200
+D,400
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

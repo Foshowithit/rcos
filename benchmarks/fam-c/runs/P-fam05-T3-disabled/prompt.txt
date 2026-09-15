@@ -1,0 +1,35 @@
+You are solving a file-verification task from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK INPUT, file manifest.env:
+```
+FILES=sub/n1.txt,sub/n2.txt,top.txt
+SIZES=45,9,63
+SHAS=52789e3423b72beeb898456a4f49662e46b0cbb960784c5ef4b1399d327e7c27,a08d116c20341f0aadbacaedfae937da31006e7eb7bd4c6e723449776a1c13ba,93378fdea13e1d912d953fedf1155adf0c184626216bf333f9b4f50b704bff63
+
+```
+TASK DIRECTORY LISTING: VISIBLE.md, a.txt, b.txt, manifest.env, prompt.md, sub, top.txt
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- a.txt (5 bytes) ---
+12345
+--- b.txt (8 bytes) ---
+12345678
+--- manifest.env (250 bytes) ---
+FILES=sub/n1.txt,sub/n2.txt,top.txt
+SIZES=45,9,63
+SHAS=52789e3423b72beeb898456a4f49662e46b0cbb960784c5ef4b1399d327e7c27,a08d116c20341f0aadbacaedfae937da31006e7eb7bd4c6e723449776a1c13ba,93378fdea13e1d912d953fedf1155adf0c184626216bf333f9b4f50b704bff63
+
+--- top.txt (63 bytes) ---
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+--- sub/n1.txt (45 bytes) ---
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+--- sub/n2.txt (3 bytes) ---
+bX9
+```
+
+GOAL: verify each listed file's actual size and sha256 against the manifest. Output contract: {"ok": [...], "bad": [{"path", "reason"}], "unverified": [...]} (entries that cannot be checked against local sha256 files go under `unverified`).
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (manifest_path, files_dir, out_path) and writing the output contract>", "notes": "<one line>"}
+No explanations; output the object only.

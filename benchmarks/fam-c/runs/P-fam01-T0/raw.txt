@@ -1,0 +1,75 @@
+<think>We need to write a Python script that reads input.csv from src_dir, normalizes it to JSON list of {id, name, amount_cents (integer), tags (list)}, and writes to OUTPUT.json at dst_path.
+
+The CSV has columns: id, name, amount_usd, tags. Tags are pipe-separated. Empty tags means []. amount_usd is in dollars, convert to cents (multiply by 100, round to integer? The task says "USD amounts convert at 100 cents" — so likely multiply by 100. But floating point: 12.50 * 100 = 1250.0, 7.99 * 100 = 799.0 (but 7.99 * 100 is actually 798.9999999999999 due to float). Need to be careful. Use Decimal or round. Or parse as string and split on dot.
+
+Better approach: use Decimal for precise conversion.
+
+Let me write the script.
+
+```python
+import csv
+import json
+import os
+from decimal import Decimal
+
+def solve(src_dir, dst_path):
+    input_path = os.path.join(src_dir, 'input.csv')
+    with open(input_path, 'r', newline='') as f:
+        reader = csv.DictReader(f)
+        result = []
+        for row in reader:
+            amount_cents = int((Decimal(row['amount_usd']) * 100).to_integral_value())
+            tags_str = row['tags']
+            if tags_str:
+                tags = tags_str.split('|')
+            else:
+                tags = []
+            result.append({
+                'id': row['id'],
+                'name': row['name'],
+                'amount_cents': amount_cents,
+                'tags': tags
+            })
+    
+    with open(dst_path, 'w') as f:
+        json.dump(result, f, indent=2)
+
+if __name__ == '__main__':
+    import sys
+    src_dir = sys.argv[1]
+    dst_path = sys.argv[2]
+    solve(src_dir, dst_path)
+```
+
+Wait, the task says the script should accept (src_dir, dst_path) as parameters. But how is it called? The response format says "reading (src_dir, dst_path)". So likely the script will be called with these as arguments, or we should define a function that takes them. Let me make it accept both command line args and the direct call pattern.
+
+Actually, looking at typical task runners, they might import the script and call solve(src_dir, dst_path). Or run it as `python script.py src_dir dst_path`. To be safe, I'll have the script accept command line args, and also define solve function.
+
+Let me check: 12.50 * 100 = 1250, 7.99 * 100 = 798.999... so Decimal is important. With Decimal('7.99') * 100 = Decimal('799.00'), then to_integral_value gives 799. Good.
+
+Also, what about "100.00"? Decimal('100.00') * 100 = Decimal('10000.00'), integral = 10000.
+
+For empty tags, the CSV field will be empty string ''.
+
+Let me finalize.
+
+One more thing: the task says "empty tags mean []". So tags='' -> [].
+
+The output should be a JSON list. The contract says: list of {id, name, amount_cents (integer), tags (list)}.
+
+I'll output as JSON list.
+
+Let me double-check the CSV format: it's standard CSV with header. The tags column uses | as separator.
+
+Example output:
+[
+  {"id": "A-1", "name": "Alpha Widget", "amount_cents": 1250, "tags": ["red", "sale"]},
+  {"id": "A-2", "name": "Beta Gadget", "amount_cents": 799, "tags": []},
+  {"id": "A-3", "name": "Gamma Thing", "amount_cents": 10000, "tags": ["blue", "new", "sale"]}
+]
+
+Note: 7.99 USD = 799 cents (since 7.99 * 100 = 799).
+
+Let me write the final script.</think>
+
+{"solver_py": "import csv\nimport json\nimport os\nimport sys\nfrom decimal import Decimal\n\ndef solve(src_dir, dst_path):\n    input_path = os.path.join(src_dir, 'input.csv')\n    result = []\n    with open(input_path, 'r', newline='') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            amount_cents = int((Decimal(row['amount_usd']) * 100).to_integral_value())\n            tags_str = row['tags']\n            tags = tags_str.split('|') if tags_str else []\n            result.append({\n                'id': row['id'],\n                'name': row['name'],\n                'amount_cents': amount_cents,\n                'tags': tags,\n            })\n    with open(dst_path, 'w') as f:\n        json.dump(result, f, indent=2)\n\nif __name__ == '__main__':\n    solve(sys.argv[1], sys.argv[2])\n", "notes": "Parses CSV with Decimal to avoid float rounding when converting USD to cents."}

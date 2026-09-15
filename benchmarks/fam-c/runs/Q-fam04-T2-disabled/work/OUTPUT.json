@@ -1,0 +1,49 @@
+{
+  "is_dag": true,
+  "num_nodes": 8,
+  "num_edges": 8,
+  "topological_order": [
+    "fetch",
+    "compile",
+    "unit-test",
+    "lint",
+    "package",
+    "deploy-staging",
+    "smoke",
+    "deploy-prod"
+  ],
+  "edges": [
+    [
+      "fetch",
+      "compile"
+    ],
+    [
+      "compile",
+      "unit-test"
+    ],
+    [
+      "compile",
+      "lint"
+    ],
+    [
+      "unit-test",
+      "package"
+    ],
+    [
+      "lint",
+      "package"
+    ],
+    [
+      "package",
+      "deploy-staging"
+    ],
+    [
+      "deploy-staging",
+      "smoke"
+    ],
+    [
+      "smoke",
+      "deploy-prod"
+    ]
+  ]
+}

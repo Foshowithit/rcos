@@ -1,0 +1,3 @@
+
+
+{"solver_py": "import json, os\nsrc, dst = 'V:/mnt/task', '/tmp/OUTPUT.json'\nrows=[]\nwith open(os.path.join(src,'input.psv')) as f:\n    lines=[l.strip() for l in f if l.strip()]\nfor line in lines[1:]:\n    parts=line.split('|')\n    name,id_,last=parts[0],parts[1],parts[-1]\n    tags=parts[2:-1]\n    cents=int(round(float(last)*100))\n    rows.append({'id':id_,'name':name,'2_cents':cents,'tags':tags})\nwith open(dst,'w') as f:\n    json.dump(rows,f,separators=(',',':'))", "notes": "Parsed pipe-delimited input handling variable tag columns, converted USD to integer cents"}

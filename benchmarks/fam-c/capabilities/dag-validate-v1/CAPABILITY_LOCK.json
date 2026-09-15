@@ -1,0 +1,17 @@
+{
+ "capability_id": "dag-validate-v1",
+ "version": 1,
+ "artifacts": {
+  "engine.py": "1c1d9aa0075255326b6dbb5c9efae43cca840baf13174d1ce4a8f5cdf267f67f"
+ },
+ "manifest_sha256": "69e35c17a666bb3319b769a98c3315850fe918e0f839234da37cf453d294c237",
+ "training_receipts": [
+  "runs/P-fam04-T0/usage.json",
+  "runs/P-fam04-T1/usage.json"
+ ],
+ "builder_identity": {
+  "provider": "router9",
+  "model": "minimax-m3"
+ },
+ "locked_at": "2026-09-08T13:28:51Z"
+}

@@ -1,0 +1,27 @@
+<think>The user wants me to solve a task where I need to:
+1. Read `graph.json` which contains vertices and links
+2. Validate it's a DAG (Directed Acyclic Graph)
+3. Output a valid topological order in `OUTPUT.json`
+4. The output contract is the same as T0 (which I don't have explicit details about, but likely involves writing the topological order)
+
+Since this is T1 with "alternate schema" - the schema here uses string names for vertices and links with "from"/"to" keys (instead of integer indices like T0 might have).
+
+I need to write a Python script that:
+- Takes src_dir (containing graph.json) and dst_path
+- Reads graph.json
+- Validates it's a DAG
+- Computes a topological order
+- Writes the result to dst_path
+
+The output contract from T0 - typically for a topological sort task, the output would be an ordered list of vertices. Let me assume the output is something like `{"order": [...]}` or just a list. Since the task says "same output contract as T0", and T1 is alternate schema, the output format should be the same, just the input schema is different.
+
+Without seeing T0's exact output, I'll guess it's a JSON object with an "order" key containing the topological ordering of vertex names. Let me write the script.
+
+Actually, looking at common topological sort output contracts, it's often:
+```json
+{"order": ["x", "y", "z", "w"]}
+```
+
+Let me write the script using Kahn's algorithm.</think>
+
+{"solver_py": "import json, os, sys\n\ndef main():\n    src_dir, dst_path = sys.argv[1], sys.argv[2]\n    with open(os.path.join(src_dir, 'graph.json')) as f:\n        g = json.load(f)\n    vertices = g['vertices']\n    links = g['links']\n    name_to_id = {v: i for i, v in enumerate(vertices)}\n    n = len(vertices)\n    adj = [[] for _ in range(n)]\n    indeg = [0] * n\n    for l in links:\n        u = name_to_id[l['from']]\n        v = name_to_id[l['to']]\n        adj[u].append(v)\n        indeg[v] += 1\n    # Kahn's algorithm\n    queue = [i for i in range(n) if indeg[i] == 0]\n    order = []\n    while queue:\n        queue.sort()  # deterministic\n        u = queue.pop(0)\n        order.append(vertices[u])\n        for v in adj[u]:\n            indeg[v] -= 1\n            if indeg[v] == 0:\n                queue.append(v)\n    if len(order) != n:\n        # cycle detected\n        result = {\"valid\": False, \"order\": []}\n    else:\n        result = {\"valid\": True, \"order\": order}\n    with open(dst_path, 'w') as f:\n        json.dump(result, f)\n\nif __name__ == '__main__':\n    main()\n", "notes": "Validates DAG via Kahn's algorithm and emits topological order using vertex names from alternate schema."}

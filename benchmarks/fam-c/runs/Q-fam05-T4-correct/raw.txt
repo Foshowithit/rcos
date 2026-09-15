@@ -1,0 +1,3 @@
+
+
+{"records": {"alpha.txt": "0123456789", "beta.txt": "0123456789012345678"}, "field_map": {"alpha.txt": {"blake3": "deadbeef"}, "beta.txt": {"blake3": "cafef00d"}}, "notes": "Manifest uses blake3 hashes but engine only supports sha256; no size or sha256 constraints present so all records will be unverified"}

@@ -1,0 +1,134 @@
+You are solving the task below using a PROVIDED capability. You have never seen its acquisition, no transcripts, no prior tasks. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T4):
+```
+# fam04-T4 — validate graph file
+Read `graph.json` and write `OUTPUT.json` with the validation result:
+`{"valid": true, "order": [...]}` for a DAG, or `{"valid": false,
+"cycle": [...]}` tracing any directed cycle back to its start.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, graph.json, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- graph.json (74 bytes) ---
+{"nodes": ["a", "b", "c"], "edges": [["a", "b"], ["b", "c"], ["c", "a"]]}
+
+```
+
+PROMOTED CAPABILITY INTERFACE (only procedural knowledge you receive):
+manifest: {
+ "id": "dag-validate-v1",
+ "version": 1,
+ "applicability": {
+  "description": "Validates acyclicity of graph-structured JSON records under variable schemas (nodes/edges, vertices/links, arcs, etc.) by normalizing field names via a field_map before Kahn topological sort with DFS cycle extraction.",
+  "requires_markers": [
+   "graph record dict containing node/edge lists",
+   "field_map listing candidate keys for nodes/edges/node_id/edge_source/edge_target"
+  ],
+  "claims": [
+   "T0:deterministic output regardless of input edge order via sorted Kahn queue",
+   "T1:reports valid:true with stable topological order, or valid:false with extracted cycle path"
+  ]
+ },
+ "limitations": [
+  "does not support multi-edges or hyperedges",
+  "does not validate schema beyond field-name resolution",
+  "nodes referenced only by edges are auto-promoted into the node set",
+  "field_map defaults are best-effort; custom schemas require explicit mapping"
+ ]
+}
+
+ADAPTER NOTES:
+Provide field_map_path containing a JSON object with keys: nodes (list of candidate top-level keys), edges (list), node_id (list of candidate node identifier fields), edge_source (list), edge_target (list). Records path holds the raw graph dict. Script normalizes into canonical {id, source, target} form, runs Kahn's algorithm; on cycle falls back to colored DFS to extract the offending path. Output is a single JSON object written to out_path.
+
+ENGINE SOURCE (frozen artifact; you do not modify it, you supply its inputs):
+```python
+#!/usr/bin/env python3
+import sys, json
+
+def gv(o, ks, df):
+    for k in ks:
+        if k in o: return o[k]
+    for k in df:
+        if k in o: return o[k]
+    return None
+
+def norm(g, fm):
+    nk = fm.get('nodes', ['nodes', 'vertices'])
+    ek = fm.get('edges', ['edges', 'links', 'arcs'])
+    nodes = next((g[k] for k in nk if k in g), [])
+    edges = next((g[k] for k in ek if k in g), [])
+    nk2 = fm.get('node_id', []) + ['id', 'name', 'node_id', 'vertex_id']
+    sk = fm.get('edge_source', []) + ['source', 'from', 'src', 'u', 'tail']
+    tk = fm.get('edge_target', []) + ['target', 'to', 'dst', 'v', 'head']
+    nlist, seen = [], set()
+    for n in nodes:
+        nid = gv(n, nk2, ['id', 'name']) or f"__n{len(nlist)}"
+        nlist.append(nid); seen.add(nid)
+    elist = []
+    for e in edges:
+        s, t = gv(e, sk, ['source']), gv(e, tk, ['target'])
+        if s is None or t is None: continue
+        for x in (s, t):
+            if x not in seen: nlist.append(x); seen.add(x)
+        elist.append((s, t))
+    return nlist, elist
+
+def valid(ns, es):
+    ids = set(ns)
+    for s, t in es: ids.update([s, t])
+    adj = {i: [] for i in ids}
+    ind = {i: 0 for i in ids}
+    for s, t in es:
+        adj[s].append(t); ind[t] += 1
+    q = sorted([i for i in ids if ind[i] == 0])
+    order = []
+    while q:
+        u = q.pop(0); order.append(u)
+        for v in adj[u]:
+            ind[v] -= 1
+            if ind[v] == 0: q.append(v)
+        q.sort()
+    if len(order) == len(ids):
+        return {'valid': True, 'order': order}
+    color = {i: 0 for i in ids}
+    par = {}
+    cycle = []
+    def dfs(u):
+        color[u] = 1
+        for v in adj[u]:
+            if color[v] == 1:
+                c, x = [u], u
+                while x != v:
+                    x = par[x]; c.append(x)
+                cycle.extend(list(reversed(c)) + [v])
+                return True
+            if color[v] == 0:
+                par[v] = u
+                if dfs(v): return True
+        color[u] = 2
+        return False
+    for i in ids:
+        if color[i] == 0 and dfs(i):
+            return {'valid': False, 'cycle': cycle}
+    return {'valid': False, 'cycle': []}
+
+def main():
+    fm = json.load(open(sys.argv[1]))
+    rec = json.load(open(sys.argv[2]))
+    ns, es = norm(rec, fm)
+    r = valid(ns, es)
+    json.dump(r, open(sys.argv[3], 'w'))
+    sys.exit(0)
+
+if __name__ == '__main__':
+    main()
+
+```
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"records": {<input records dict for the engine, per its interface convention>}, "field_map": {<map per interface convention>}, "notes": "<one line>"}
+No explanations; output the object only.

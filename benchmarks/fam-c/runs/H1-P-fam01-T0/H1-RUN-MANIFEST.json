@@ -1,0 +1,37 @@
+{
+ "lane": "P",
+ "family": "fam01",
+ "task": "T0",
+ "arm": "disabled",
+ "parse_mode": "json-envelope",
+ "lane_receipt": "runs/H1-P-fam01-T0/call-b1b85d5126c997e2.json",
+ "sandbox": {
+  "sandbox": "rcos-0569a9562a844a09aaca9faec47404d4",
+  "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+  "task_snapshot": {
+   "file|input.csv": "0861a5aeac500fd5ece6988c3af78c8d0f7f1176b465bee76f111aa4cc01c5e7",
+   "file|prompt.md": "17bb041590cf00e814cae03a50fe79eab7cec75797f6532881f3132185f76bf7"
+  },
+  "mounts": [
+   {
+    "host": "/tmp/rcos-runs/famc-99864cf4830b",
+    "container": "/work",
+    "mode": "rw"
+   },
+   {
+    "host": "/tmp/rcos-runs/.stage-rcos-0569a9562a844a09aaca9faec47404d4",
+    "container": "/task",
+    "mode": "ro"
+   }
+  ]
+ },
+ "task_snapshot": {
+  "file|input.csv": "0861a5aeac500fd5ece6988c3af78c8d0f7f1176b465bee76f111aa4cc01c5e7",
+  "file|prompt.md": "17bb041590cf00e814cae03a50fe79eab7cec75797f6532881f3132185f76bf7"
+ },
+ "container_returncode": 0,
+ "checker_returncode": 0,
+ "checker_output": "SHIP T0: canonical records exact\n",
+ "verdict": "ship",
+ "output_sha256": "0138cf88681ad7572ce35dced63c1e177cbf73b026ffe7d22e491ca57ffdc9ac"
+}

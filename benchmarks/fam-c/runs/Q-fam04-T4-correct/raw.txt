@@ -1,0 +1,3 @@
+
+
+{"records": {"graph": {"nodes": ["a", "b", "c"], "edges": [["a", "b"], ["b", "c"], ["c", "a"]]}}}, "field_map": {"nodes": ["nodes", "vertices"], "edges": ["edges", "links", "arcs"], "node_id": ["id", "name", "node_id", "vertex_id"], "edge_source": ["source", "from", "src", "u", "tail"], "edge_target": ["target", "to", "dst", "v", "head"]}}, "notes": "Graph contains cycle a->b->c->a, validation will return valid:false with cycle path"}

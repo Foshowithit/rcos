@@ -1,0 +1,1 @@
+{"vertices": ["x", "y", "z", "w"], "links": [{"from": "x", "to": "y"}, {"from": "x", "to": "z"}, {"from": "y", "to": "w"}, {"from": "z", "to": "w"}]}

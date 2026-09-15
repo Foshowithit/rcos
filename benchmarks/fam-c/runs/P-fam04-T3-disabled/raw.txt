@@ -1,0 +1,53 @@
+<think>The task is to read a `graph.env` file, parse the NODES and EDGES, validate it's a DAG, and output the result in `OUTPUT.json`.
+
+Let me think about what the output contract should be. The task says "Same output contract in `OUTPUT.json`". I need to figure out what format is expected.
+
+Looking at the task definition: "validate DAG, env format" and "Same output contract in `OUTPUT.json`."
+
+The output should likely be a JSON object with the parsed graph structure, validation status, etc.
+
+A reasonable output format would be:
+```json
+{
+  "nodes": ["ingest", "clean", "split", "train", "eval", "report"],
+  "edges": [["ingest", "clean"], ["clean", "split"], ...],
+  "is_dag": true
+}
+```
+
+Or perhaps more structured. Let me think about what's standard.
+
+Given the context (this appears to be a benchmark task), the output contract is likely something like:
+- parsed nodes list
+- parsed edges list  
+- DAG validation result
+
+I'll write a Python script that:
+1. Reads `graph.env`
+2. Parses NODES (comma-separated) and EDGES (comma-separated with `>` separator)
+3. Validates DAG using topological sort / cycle detection
+4. Writes result to `OUTPUT.json`
+
+The exact output format isn't specified explicitly, but "same output contract" suggests there's a standard. Let me go with a reasonable structure.
+
+Looking at typical DAG validation outputs, I'll use:
+```json
+{
+  "nodes": [...],
+  "edges": [{"from": "x", "to": "y"}, ...],
+  "is_dag": true
+}
+```
+
+Or simpler:
+```json
+{
+  "nodes": [...],
+  "edges": [["x","y"], ...],
+  "is_dag": true
+}
+```
+
+I'll go with a clean structured format.</think>
+
+{"solver_py": "import json, os, sys\n\ndef main():\n    src_dir, dst_path = sys.argv[1], sys.argv[2]\n    env_path = os.path.join(src_dir, 'graph.env')\n    with open(env_path, 'r') as f:\n        content = f.read()\n    cfg = {}\n    for line in content.splitlines():\n        line = line.strip()\n        if not line or '=' not in line:\n            continue\n        k, v = line.split('=', 1)\n        cfg[k.strip()] = v.strip()\n    nodes = [n.strip() for n in cfg.get('NODES', '').split(',') if n.strip()]\n    edges_raw = [e.strip() for e in cfg.get('EDGES', '').split(',') if e.strip()]\n    edges = []\n    for e in edges_raw:\n        if '>' in e:\n            a, b = e.split('>', 1)\n            edges.append({'from': a.strip(), 'to': b.strip()})\n    adj = {n: [] for n in nodes}\n    for e in edges:\n        if e['from'] in adj:\n            adj[e['from']].append(e['to'])\n    # Cycle detection via DFS\n    WHITE, GRAY, BLACK = 0, 1, 2\n    color = {n: WHITE for n in nodes}\n    is_dag = True\n    def dfs(u):\n        nonlocal is_dag\n        if not is_dag:\n            return\n        color[u] = GRAY\n        for v in adj.get(u, []):\n            if v not in color:\n                continue\n            if color[v] == GRAY:\n                is_dag = False\n                return\n            if color[v] == WHITE:\n                dfs(v)\n        color[u] = BLACK\n    for n in nodes:\n        if color[n] == WHITE:\n            dfs(n)\n            if not is_dag:\n                break\n    out = {\n        'nodes': nodes,\n        'edges': edges,\n        'is_dag': is_dag,\n        'num_nodes': len(nodes),\n        'num_edges': len(edges),\n    }\n    with open(dst_path, 'w') as f:\n        json.dump(out, f, indent=2)\n\nif __name__ == '__main__':\n    main()\n", "notes": "Parses graph.env NODES/EDGES, validates DAG via DFS cycle detection, writes structured JSON output."}

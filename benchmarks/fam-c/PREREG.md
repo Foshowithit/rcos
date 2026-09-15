@@ -163,6 +163,51 @@ T4 is a specificity measurement, not part of the efficiency estimate.
 
 ---
 
+### Promotion protocol (A12 freeze)
+
+**Acquisition path.** T0 and T1 are model calls through the ONE production
+path (`run_arm_h1.py`), authorized by `order.authorize_event()`, never by the
+downstream cell authorizer. An acquisition prompt carries the same neutral
+envelope and the same shared output contract as every other cell; no
+capability-access block exists yet, so the only legal decision is `fresh`.
+
+**Candidate.** The candidate is the T0 arrival's
+`execution_payload.solver_py` python source, content-addressed by sha256. It
+is derived by `harness/promotion.py` from the committed T0 run and the
+committed T1 run; an operator never supplies candidate bytes, a candidate
+hash, a chain tip, or an event cell.
+
+**T1 rule (frozen).** T1 may build a new local adapter and may invoke/test
+the candidate; T1 may NOT alter the candidate's semantic core or its artifact
+bytes. If T1 declares a `candidate_sha256` it must equal T0's exactly.
+Promotion requires T0 and T1 COMPLETE with distinct task ids and distinct
+task-snapshot hashes.
+
+**Lock.** `CAPABILITY_LOCK.json` is `capability-lock-v2`. It may lock only
+the artifact hashes the validated PROMOTION receipt names, and it is minted
+through `order.emit_capability_lock()` → `lock.promote()`. A pre-A12
+(legacy) lock is LOCK-INADMISSIBLE and never resolvable. An estimand-grade
+lock requires a ratified auditor T4 semantic id (`T4-SEMANTIC-IDS.json`);
+harness-validation locks are explicitly unratified (`T4-UNRATIFIED-*`) and
+may never be consumed by an estimand cell.
+
+**Reuse ledger is evidence, not a claim.** Every wired cell writes a
+`reuse_log` record naming its own arrival decision. The record must agree
+with the decision the runtime executed: `use_capability` requires
+available/selected/loaded/invoked/consumed true and `reuse_rejected` false;
+`fresh` with a capability available requires all four false and
+`reuse_rejected` true with a recorded reason (the REJECT path); `fresh` with
+no capability available requires `capability_available` false and
+`reuse_rejected` false. A ledger that contradicts the executed decision is
+inadmissible evidence and the cell is not COMPLETE.
+
+**Trust boundary (TCB).** The frozen harness modules and the host account
+that runs them are inside the TCB. Evidence is mutation-evident and
+execution-bound under that boundary; the protocol does not claim
+cryptographic protection against a compromised host.
+
+---
+
 # 5. Adapter-boundary rule
 
 T2/T3 may not be trivial repetitions of T0/T1.
@@ -389,6 +434,7 @@ prose). Conformance checking is set membership on IDs, never semantic
 judgment over prose:
 
 ```text
+fam01.rows_are_records
 fam02.pages_disjoint
 fam03.repeats_are_duplicates
 fam04.promised_acyclic
@@ -398,6 +444,31 @@ fam06.common_unit_basis
 
 A new ID may be added only by amending this list before the runs it
 governs; IDs are never edited in place.
+
+Forward amendment AMEND-2026-09-08-fam01 (2026-09-08): added the fam01
+conformance semantic ID as the first entry of the frozen list above; the
+other five IDs are byte-identical and unchanged. The governed T4 registry
+(benchmarks/fam-c/T4-SEMANTIC-IDS.json) resolves fam01 to that ID from the
+runs this amendment governs onward.
+
+Forward amendment AMEND-2026-09-08-t4-conformance (2026-09-08): froze the
+limitation→T4-ID conformance bridge BEFORE execution. A limitation
+supports a T4 only if it names the T4's applicability condition, per the
+governed map benchmarks/fam-c/T4-CONFORMANCE.json evaluated under the
+frozen rule normalize-token-all-present-v1 (lowercase; every non-token
+character becomes a space; a predicate matches a limitation iff every
+predicate token is present as a whole token, order irrelevant, no
+stemming, no synonyms, no substring matching; a family T4 is supported
+iff any contract limitation matches any of its predicates;
+non-discriminating iff its T4 id is not in the supported set). The map
+and its rule are auditor-side and never consumer-visible: no predicate,
+no version/rule string, no T4 id, and no verdict field may enter the
+consumer manifest, adapter notes, engine, or prompts. Promotion derives
+the verdict from the producer's own T0 arrival declaration through the
+single governed implementation harness/conformance.py; the order
+validator re-derives it from the same declaration plus the live governed
+map and refuses on any mismatch. The six T4 semantic IDs frozen above
+are unchanged by this amendment (no ID added, removed, or renamed).
 Producer-visible capability contracts MUST NOT contain these IDs, and
 no ID may enter the consuming model's context, tool descriptions,
 registry descriptions shown to routers, router metadata, or capability
@@ -407,6 +478,686 @@ consumer context. Violation (an ID observed in any consumer-visible
 artifact) invalidates the affected runs. If a locked capability lacks
 the ID its family's T4 relies on, that T4 is non-discriminating
 (report with cause; the specificity gate counts remaining families).
+
+Forward amendment AMEND-2026-09-08-contract-v2 (2026-09-08): the
+producer capability-contract shape is v2. `execution_payload.
+capability_contract` is `{"semantic_core": <nonempty str>,
+"preconditions": [{"requires": <nonempty str>}, ...], "limitations":
+[<str>, ...]}`. All three keys must be PRESENT; `preconditions` and
+`limitations` may each be an empty list (an empty `preconditions` list
+means "no declared applicability requirement" and is therefore
+non-discriminating, never a malformed contract). Each precondition is
+an object with exactly the key `requires`; a bare-string precondition,
+an object with any other key, or a blank `requires` text is refused at
+promotion with a named reason (no silent skips, no backward
+compatibility with the v1 string list). The lock records the
+producer's ACTUAL contract bytes unchanged, and the consumer manifest
+carries the same v2 shape verbatim. Reason for the shape change: the
+polarity fix below — conformance now maps ONLY affirmative requires
+claims, so the contract must carry applicability requirements in a
+structurally positive form that a negated limitation cannot mimic.
+
+Forward amendment AMEND-2026-09-08-requires-polarity (2026-09-08):
+the conformance bridge frozen above is superseded by the AFFIRMATIVE
+requires bridge BEFORE any run it governs. The governed map
+benchmarks/fam-c/T4-CONFORMANCE.json is version t4-conformance-v2
+under the frozen rule normalize-affirmative-requires-v2: ONLY
+`preconditions[*].requires` texts are conformance candidates and
+`limitations` are NEVER consulted (they stay free prose, recorded
+verbatim in the lock). A requires text is ADMISSIBLE unless one of its
+normalized tokens is in the frozen top-level `negation_markers` list;
+an inadmissible (negated) text contributes to NO family. A predicate
+matches a requires text iff every predicate token is present as a
+whole token (order irrelevant, no stemming, no synonyms, no substring
+matching); a family T4 is supported iff any admissible requires text
+matches any of that family's `requires_predicates` (per-family key
+renamed from `limitation_predicates`, same predicate syntax);
+non-discriminating iff its T4 id is not in the supported set. The v1
+map bytes are superseded, not edited in place; the v1-to-v2 transition
+is chained in PROTOCOL-LOCK.json. The six T4 semantic IDs frozen above
+are unchanged by this amendment (no ID added, removed, or renamed).
+
+Forward amendment AMEND-2026-09-09-d4-atomic-grammar (2026-09-09): the
+affirmative-requires bridge frozen above is superseded by the ATOMIC
+requires bridge BEFORE any run it governs. The governed map
+benchmarks/fam-c/T4-CONFORMANCE.json is version t4-conformance-v3
+under the frozen rule atomic-requirement-grammar-v3, with two new
+frozen top-level keys: `disjunction_markers` (`["either", "or"]`) and
+`structural_separators` (`["/", ","]`). A requires text is
+INADMISSIBLE iff it contains any disjunction marker as a whole word
+(TOKEN-level: split on whitespace, strip punctuation, compare — so
+`ordinary` and `for` never trip `or`) or any structural separator as
+a raw character (any literal `,` or `/` anywhere). An INADMISSIBLE
+requires text contributes NO conformance evidence: it never supports
+any T4 id and never acts as negation; the supported set is computed
+from admissible texts only, and with no admissible text the family is
+non-discriminating with a cause naming the grammar refusal
+(`atomic-grammar-inadmissible: ...`). Negation-marker processing,
+normalization of admissible texts, and `T4-SEMANTIC-IDS.json`
+support-set computation are unchanged (`T4-SEMANTIC-IDS.json` is not
+re-minted or edited). The v2 map bytes are superseded, not edited in
+place; the v2-to-v3 transition is chained in PROTOCOL-LOCK.json. The
+six T4 semantic IDs frozen above are unchanged by this amendment (no
+ID added, removed, or renamed). The capability lock schema bumps to
+capability-lock-v3 (the v2 identifier predates `preconditions`
+becoming `list[{"requires": ...}]` and no longer uniquely describes
+the shape); `verify_lock` refuses any other schema version. No
+estimand locks exist yet, so the bump is cheap.
+
+Forward amendment AMEND-2026-09-09-d5-atomic-conjunction (2026-09-09):
+the atomic-requires bridge frozen above is superseded by the STRUCTURAL
+atomic-conjunction bridge BEFORE any run it governs. The governed map
+benchmarks/fam-c/T4-CONFORMANCE.json is version t4-conformance-v4
+under the frozen rule atomic-conjunction-grammar-v4, with one new
+frozen top-level key `atomic_vocabulary`: exactly the sorted 23-token
+list ["acyclic","acyclicity","aggregate","basis","common","dedup",
+"disjoint","duplicates","identical","input","local","order","pages",
+"record","repeats","row","same","sha256","summary","topological",
+"unit","units","v1"] — the sorted union of every family's
+requires_predicates tokens, derived-and-frozen so it can never drift
+from the predicates. ONLY `preconditions[*].requires_all` token lists
+are conformance candidates: each precondition is an object with
+exactly the key `requires_all` carrying >=1 atomic tokens
+(`^[a-z0-9_.-]+$`, no duplicates, every token in the frozen
+vocabulary); anything else (bare string, the retired `requires` key,
+extra key, empty list, non-atomic or out-of-vocabulary token,
+duplicate) is PROMOTION-DENY naming the offender, and an
+admissible-shaped but inadmissible list (negation marker, disjunction
+marker, separator character, out-of-vocabulary token) contributes NO
+evidence with a cause naming the refusal
+(`atomic-grammar-inadmissible: <reason>`). `limitations` stay free
+prose, recorded verbatim, never conformance evidence. Rationale: a
+conformance token can only be a frozen T4 content token, so branching
+words are structurally unrepresentable as conformance evidence — no
+growing marker list; conditional clauses cannot support any T4 id,
+either as precondition entries (refused) or as limitations prose
+(ignored). A family T4 is supported iff some admissible requires_all
+list contains every token of some frozen requires_predicate (set
+membership, order irrelevant). The v3 map bytes are superseded, not
+edited in place; the v3-to-v4 transition is chained in
+PROTOCOL-LOCK.json. The six T4 semantic IDs frozen above are unchanged
+by this amendment (no ID added, removed, or renamed). The capability
+lock schema bumps to capability-lock-v4: `preconditions` records the
+v4 shape verbatim, and the v3 presence field is renamed to
+`declared_limitations_present` (bool, equal to bool of the declared
+limitations list), since conformance already rides exclusively on
+positive preconditions; observed specificity never consults the
+renamed field, and `verify_lock` refuses any other schema version, any
+lock still carrying the retired field, and any lock missing the
+renamed field. No estimand locks exist yet, so the bump is cheap.
+
+Forward amendment AMEND-2026-09-09-d6-vocabulary-role-split
+(2026-09-09): the structural atomic-conjunction bridge frozen above
+keeps its shape but splits the vocabulary role BEFORE any run it
+governs. The governed map benchmarks/fam-c/T4-CONFORMANCE.json is
+version t4-conformance-v5 under the frozen rule
+atomic-conjunction-grammar-v5: the top-level key `atomic_vocabulary`
+is renamed to `recognized_conformance_atoms` with the IDENTICAL
+23-token value set (same set, sorted, no additions, no removals) — an
+auditor-side recognition whitelist for conformance only, never a
+producer requirement; promotion never loads, reads, or consults it.
+Promotion validates STRUCTURAL shape only (each precondition exactly
+`{"requires_all": [<atomic tokens>]}`: exact key, non-empty list,
+atomic `^[a-z0-9_.-]+$` tokens, no duplicates) and preserves arbitrary
+atomic producer tokens verbatim in the promoted contract. A
+`requires_all` entry containing any unknown atom is
+non-conformance-bearing (contributes zero supported T4 ids, verdict
+non_discriminating with a cause naming the unrecognized token) and
+NEVER denies promotion. The v4 map bytes are superseded, not edited in
+place; the v4-to-v5 transition is chained in PROTOCOL-LOCK.json. The
+six T4 semantic IDs frozen above are unchanged by this amendment (no
+ID added, removed, or renamed). The T0 producer prompt states only the
+structural rules and reveals none of the 23 values, the recognition
+key name, or any allowed-token list. No estimand locks exist yet, so
+the transition is cheap.
+
+Forward amendment AMEND-2026-09-09-d7-lineage-repair (2026-09-09):
+two freezes BEFORE any estimand execution, plus a lineage repair with
+no history deleted.
+
+(a) Exact three-key producer contract schema. A T0 arrival's
+`execution_payload.capability_contract` must be a dict with EXACTLY
+the top-level keys {semantic_core, preconditions, limitations}. The
+undocumented `payload["contract"]` alias is gone: an arrival with no
+`capability_contract` is PROMOTION-DENY even when a `contract` object
+is present (no alias, no backward compatibility — no live promotion
+exists). A missing key is PROMOTION-DENY naming the missing key; an
+extra key (e.g. `also_supports`) is PROMOTION-DENY naming the extra
+key literally, never silently dropped. The denial messages name only
+key spellings, never vocabulary values. Every existing structural
+refusal is unchanged (bare-string precondition, retired `requires`
+key, extra precondition key, empty `requires_all`, non-atomic token,
+uppercase token, duplicate token), and an unknown atomic token still
+promotes verbatim (D6 semantics kept). The promoted lock records
+exactly the three keys.
+
+(b) Unique linear protocol lineage. For every governed file, the
+recorded amendments form ONE path from its frozen node (or its
+post-freeze genesis node) to exactly one tip: exactly one edge out
+of the root, at most one incoming and at most one outgoing edge per
+node, no dead-end node other than the single tip, and the on-disk
+bytes equal that tip (mere reachability no longer passes). V2
+enforces this per file in `validate_file_chain`
+(benchmarks/fam-c/preflight.py); deleting any single predecessor
+edge, reverting a `from_sha`, or retargeting a `to_sha` off-chain
+fails V2 naming the file.
+
+(c) Lineage repair. Three recorded `from_sha` edges were corrected
+from git content sha256, and no amendment entry was deleted: PREREG.md
+D5 (`d5277d752c20`) now continues `7330a2f6b21a` (was the freeze
+baseline `b732647f61f3`); PREREG.md D6 (`1fb9089161ce`) now continues
+`d5277d752c20` (was the freeze baseline); HARNESS-READINESS.md a11
+(`a0419cedc9a4`) now continues `3314fa9170ab` (was the freeze
+baseline `8e743e4c63f4`). The `9caf3d4fdd33` HARNESS-READINESS.md
+node appears at no commit: it is kept as an internal chain node (an
+in-commit intermediate of the A12 round-2 close, continued by
+`12dda20242b0`), so the chain stays linear and the tip equals the
+disk bytes. No estimand locks exist yet, so the repair is cheap.
+
+Forward amendment AMEND-2026-09-09-d8-shared-lineage (2026-09-09): one
+shared producer-contract authority plus lineage authority hygiene,
+frozen BEFORE any estimand execution.
+
+(a) ONE pure producer-contract-shape authority. The exact three-key
+contract schema frozen in D7 is unchanged (dict with EXACTLY
+{semantic_core, preconditions, limitations}; missing key refused
+naming the key; extra key refused naming it literally, never dropped;
+nonempty semantic_core; preconditions a possibly-empty list of
+exactly-{"requires_all": [>=1 atomic ^[a-z0-9_.-]+$ tokens, no
+duplicates]} objects; limitations a possibly-empty list of strings;
+unknown atomic tokens still well-formed, D6 semantics kept). What
+changes is that the schema now has ONE implementation:
+harness/contract_shape.py (no I/O, no globals, no vocabulary
+knowledge — it never imports, reads, or consults any recognition
+table) is called by BOTH harness/promotion.py::_producer_contract
+and harness/order.py's PROMOTION-receipt provenance check, so the
+same malformed T0 declaration produces the same finding text through
+both authorities and the D7 defect cannot reopen through the second
+authority. A hand-planted PROMOTION cell whose receipt fields and
+every arrival/artifact hash are internally consistent but whose T0
+declaration is malformed (extra top-level key, missing key, retired
+`requires`, empty `requires_all`, uppercase/non-atomic/duplicate
+token) is INADMISSIBLE naming the defect; a well-formed declaration
+carrying an unknown atom stays ADMISSIBLE.
+
+(b) Lineage authority hygiene. The `9caf3d4fdd33`
+HARNESS-READINESS.md node appeared at no commit: it was an in-commit
+intermediate of the A12 round-2 close (the bytes the A12 close held
+mid-commit before the integration-hardening pass), kept in D7 as an
+internal chain node continued by `12dda20242b0`. It is REMOVED from
+the authoritative chain here: the HARNESS-READINESS.md a12 edge is
+now `382a75fc356e… → 12dda20242b0…` (the states that actually exist
+in git — both nodes resolve to committed file bytes), with this
+historical explanation preserved in the D8 amendment reason and in
+this stanza, NOT in the chain. No other amendment entry is deleted.
+After this, every recorded node is backed by retrievable bytes, and
+V2 additionally rejects: an extra key in `governed` (the governed set
+must be exactly the seven PROTOCOL_GOVERNED files); an amendment
+entry whose `file` is missing, None, or names an ungoverned file; a
+malformed or non-64-lowercase-hex `from_sha`/`to_sha`; a post-freeze
+governed sha that is any descendant rather than the genesis node
+(e.g. moving governed["T4-CONFORMANCE.json"] from its genesis node
+`05a8e094e437…` to the current tip fails); and any recorded node
+with no retrievable bytes in git. The unique-linear-chain topology
+rule from D7 is unchanged. No estimand locks exist yet, so the
+hygiene pass is cheap.
+
+Forward amendment AMEND-2026-09-09-d9-protocol-chronology (2026-09-09):
+experiment-branch protocol chronology plus named lock-container
+failures, frozen BEFORE any estimand execution.
+
+(a) Chronology rule. For every governed file V2 derives an ORDERED
+sequence of distinct committed content states from the EXPERIMENT
+BRANCH (`git log --format=%H -- benchmarks/fam-c/<fn>` from HEAD,
+oldest -> newest, consecutive duplicates collapsed; the plain
+HEAD-ancestry walk is chosen — `--first-parent` yields the same
+sequences for all seven governed files on this tree). The recorded
+node sequence, read root -> tip, must satisfy Rule A (every recorded
+node — governed value, from_sha, to_sha — appears in the branch
+sequence; this REPLACES the old all-refs retrievability membership
+test, which could certify a state committed only on a side branch)
+and Rule B (the recorded sequence is a SUBSEQUENCE of the branch
+sequence in that order). Collapsing several real commits into ONE
+recorded edge stays legal (that is exactly what a subsequence
+permits — the live PREREG and preflight chains are exactly that);
+recording two real states in swapped order fails as a non-monotonic
+protocol lineage, and recording a state committed only on another
+ref fails as not on the experiment-HEAD lineage. Both fail closed
+naming the file. The branch-sequence walk lives in the git-aware
+layer (`protocol_tips` via `_branch_seq_shas`) and is passed IN to
+the still-pure, I/O-free `validate_file_chain` (optional
+`branch_seq` argument; None selects the hermetic topology-only
+mode); when the sequence cannot be derived, V2 fails closed with a
+named finding, never silently skipping Rule A/B. No chain repair
+was needed: at the D9 base (`73d9d57`) the live recorded chains were
+already valid
+subsequences of the experiment-branch content-sha sequence under
+both walks (PREREG.md 16, ORDER.md 5, LANES.md 5,
+HARNESS-READINESS.md 11, preflight.py 16, T4-SEMANTIC-IDS.json 1,
+T4-CONFORMANCE.json 7), so this slice adds two forward edges
+(preflight.py, this document) and deletes no entry.
+
+(b) Named lock-container failures. A non-object `governed`, a
+non-list `amendments`, or a non-object amendment entry each yields
+a NAMED V2 finding (naming the offending container or entry index),
+never a traceback: container types are normalized BEFORE any
+`.get()` is reached, in both `protocol_tips` and
+`validate_lock_global`. No estimand locks exist yet, so the pass is
+cheap.
+
+Forward amendment AMEND-2026-09-09-d10-source-stability (2026-09-09):
+source-stability binding fix for a general-seat defect found while
+producing the D9 evidence run (NOT an auditor item; reported to the
+auditor in the D9 post), frozen BEFORE any estimand execution.
+
+(a) Measured defect and rate. `DockerSandbox.__init__` bound the staged
+copy with three equality tests against one pre-copy snapshot
+(source-before == source-after, staged == source-before). When the
+churn thread is starved between `open(p,"w")` truncation and flush,
+the file reads EMPTY for the whole staging window (measured window
+0.16–0.25 s), so all three checks agree on the empty file and the
+sandbox mounts a torn snapshot (empty file) matching no stable source
+state — while the check named "concurrent source mutation refused"
+passes/fails on thread scheduling. Measured on the same tree with no
+D9 code involved: 1 FAIL in 10 consecutive plain runs at light load, 1
+FAIL in 3 suite runs under load (3 FAIL in 5 instrumented runs). This
+is a guard defect, not a flake to re-run until green.
+
+(b) New three-test binding. The staged copy must now equal the CURRENT
+source (`staged == source_after`, not merely the pre-copy snapshot),
+refusing as `STABILITY-DENY staged copy differs from current source;
+refused`; then a quiescence confirmation re-reads the source after a
+bounded settle (total sleep <= 50 ms, at most 3 attempts) and refuses
+unless it still equals `source_after` (`STABILITY-DENY source not
+quiescent; refused`). The pre-copy drift refusal (`STABILITY-DENY
+source mutated during staging; refused`) is unchanged, every refusal
+cleans up the staged dir, and `smoke_h1_docker.py` now carries a
+deterministic injected-mutation refuse check (mutation guaranteed
+inside the window, passes 100%), a stable-source control, and an honest
+churn property (refused OR mounted tree equals two later source reads).
+
+(c) Residual limit, corrected per the D10 verdict (cross-file ABA
+version — replaces the "frozen torn state" phrasing above, which
+described only the single-file case). Hash and copy walks are
+sequential, not atomic snapshots: a schedule that moves one file
+between that file's read in EVERY walk (x read at S0, y read at
+S1, in source_before, staged copy, source_after, and quiescence
+alike) presents one identical canonical source manifest H that
+never existed atomically, and the guard accepts it. What the
+binding proves is canonical-manifest equality — the mounted tree
+equals the canonical source manifest observed identically across
+the copy window — never atomicity and never "the source never
+changed". Under contract B this is acceptable once independent
+expected bytes are authoritative (D11.4): the expected snapshot,
+not the reads agreeing with themselves, is the authority.
+
+(d) D9 is unaffected: D9 touches no docker staging or isolation code,
+and the loop's clean-battery claim resumes on this fix.
+
+Forward amendment AMEND-2026-09-09-d11-protocol-authority (2026-09-09):
+lock self-authentication, first-parent chronology, the committed A13
+canonical bar, and one honest stability contract (auditor D9-post
+P0/P1/P1/P2), frozen BEFORE any estimand execution and BEFORE any
+A13 code lands.
+
+(a) The lock authenticates itself (P0). `PROTOCOL-LOCK.json` is byte-
+governed out of V1 (META), so V2 now requires, BEFORE any consumer
+parses the lock, `sha256(on-disk PROTOCOL-LOCK.json) ==
+sha256(git show <experiment-HEAD>:benchmarks/fam-c/PROTOCOL-LOCK.json)`
+(a BYTE comparison, never a semantic one — even a cosmetic reformat
+refuses). Otherwise V2 emits `V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json
+differs from committed experiment-HEAD authority`, withholds every
+lock-derived tip, and the runner refuses start. The verdict is
+derived in the git-aware layer (`protocol_tips` /
+`validate_protocol`) and passed in exactly like `branch_seq`, so
+`validate_file_chain` stays pure and I/O-free. Forward policy from
+D11 on (no retroactive ban: the legitimate earlier repairs stand):
+lock amendment entries are append-only (an entry may be added, never
+rewritten or deleted) and the lock must be committed with the
+amendment it records — an uncommitted worktree lock is refused,
+never trusted. Append-only genesis checkpoint, frozen outside the
+lock itself: PROTOCOL_LOCK_APPEND_ONLY_GENESIS
+beceff56cb10a4449e53cb35e2b21fd1b3d94cc6
+21d9f79d9255d53771027b645ad5fb44076c72b4c999b06dec97131fac48183f
+(the D11 authority commit, then sha256 of its PROTOCOL-LOCK.json
+bytes). From that commit on, every older amendment entry is
+immutable: deleting or rewriting one — even re-committed — fails
+V2 as a named lock-history finding; later slices only append. The
+checkpoint comparison is an order-insensitive multiset-subset
+(recorded for the auditor as a deliberate deviation from "exact
+prefix"): validation follows from/to links, never list order, so a
+pure reorder of unchanged entries changes no verdict; any removed
+or rewritten old entry, or any moved governed root, still fails.
+
+(b) First-parent chronology (P1). The branch walk is now explicit
+and mechanical: enumerate HEAD's first-parent commit chain
+(rev-list, no path filter), oldest to newest, read the governed
+file's bytes at every commit, hash them, collapse consecutive
+duplicates — no path-history simplification defines the
+chronology. A state that lived only on a merged side branch is
+never experiment chronology and can never satisfy the subsequence
+test, so linearizing the DAG is refused (a forged `v0 -> vX ->
+vC` names the side-branch node; a genuine first-parent chain
+stays clean). No blanket merge ban: a merge that introduces
+content onto the mainline IS a mainline state and may
+legitimately appear — governance middle ground: merges may
+exist, but a merge that changes governed-file bytes must itself
+produce a first-parent content state covered by the normal
+forward-amendment rules. Non-regression measured
+at the D11 base (`a029b91`): the explicit walk yields
+IDENTICAL sequences to the old walk for all seven governed files
+(PREREG.md 19, ORDER.md 5, LANES.md 5, HARNESS-READINESS.md 12,
+preflight.py 17, T4-SEMANTIC-IDS.json 1, T4-CONFORMANCE.json 7),
+so no chain repair was needed; this slice adds forward edges
+(preflight.py, this document) and deletes no entry.
+
+(c) The A13 canonical-adaptation bar, committed (P1). The D9 post's
+claim is corrected by committing the bar here, before any A13 code
+lands (no A13 implementation code lands in this slice). The frozen
+rule is mechanical: `adapted_input = F(frozen_capability_schema,
+exact_visible_task_snapshot)`, with `F` deterministic frozen code.
+The requirement binds the same task snapshot with the same
+capability under different model-authored mapping/order choices:
+those runs MUST yield identical adapted-input bytes AND
+an identical adapted-input hash. The binding is hash-pinned:
+capability_artifact_sha256, capability_schema_sha256, and
+exact_visible_task_snapshot_sha256 determine adapted_input_sha256,
+and `F` must not consult any hidden input — not the model response
+bytes, not byte offsets, not ordering, not clock, not randomness,
+not enumeration order. Permitted inputs to `F`: frozen
+capability/schema bytes, exact task snapshot bytes,
+execution-locked constants and code — and strongest design, the
+model response is not even an argument to `F`. Recorded
+acceptance attack: response A (offsets 0:10 then 10:20, ordering
+[a,b], mapping M1) versus response B (offsets reversed, ordering
+[b,a], mapping M2), same immutable task and capability artifacts,
+MUST yield identical canonical adapted bytes — any byte
+difference fails the bar. On failure the only permitted
+weaker claim is `capability_causally_necessary_given_model_adapter
+= true`, and the material-contribution claim must never be upgraded
+from it. This bar is a prerequisite for A13, not A13 completion:
+actual reuse still owes its own per-run causal receipt in that
+run's chain and ledger.
+
+(d) One honest stability contract (P2): contract B (byte-integrity).
+Source churn may occur, but no bytes influenced by it can enter the
+consumed snapshot — the staged bytes must equal the already-frozen
+expected snapshot (`task_snapshot`), re-proved by the in-jail
+re-hash before the first run. The constructor does not guarantee
+detection of every concurrent mutation event. The smoke asserts
+refusal (`STABILITY-DENY`) OR exact expected-byte identity against
+an independently computed expected value — never "re-run until
+green", and the D10 quiescence read is a confirmation read, not an
+event-detection guarantee. Sequential hash walks are not atomic
+snapshots: the constructor hashes the canonical source manifest
+before the copy, after the copy, and once more after a bounded
+settle, and mounts only what all three agree on.
+
+Forward amendment AMEND-2026-09-09-d12-frozen-authority (2026-09-09):
+frozen-task TOCTOU closure and visible-set authority (auditor
+D11-post P0), frozen BEFORE any estimand execution. The mutable
+working-tree task directory is NEVER the source of authoritative
+bytes after verification. Instead the runner derives an immutable
+expected visible manifest DIRECTLY from freeze-commit git objects:
+the frozen visibility declaration
+(`families/<family>/<task>/VISIBLE.md` at the freeze commit, parsed
+as the frozen `task fixtures:` format) determines
+`expected_visible_paths`, and the frozen blobs listed by
+`git ls-tree` at the freeze commit determine
+`expected_visible_manifest` (dir entries plus per-file sha256 in
+task-snapshot shape) — by harness code that never routes through
+the materializer's own parse/copy path. `verify_instance_frozen`
+returns this manifest as the single authority object. The
+materializer's `copied` list is CHECKED against the independently
+determined path set (missing OR extra path refuses); immediately
+before the model call the materialized visible bytes must equal
+the frozen manifest; the SAME object (never a second taskdir
+read) binds the sandbox constructor. Refusal is named
+`FROZEN-VISIBLE-DENY`, before any model token is spent. The run
+manifest carries, before evidence genesis,
+`expected_visible_manifest` (canonical bytes),
+`expected_visible_manifest_sha256`,
+`expected_task_snapshot_sha256`, `expected_visible_paths`
+(+ `expected_visible_paths_sha256`), and `instance_freeze_commit`;
+a reader re-derives from the freeze commit
+(`verify_expected_provenance`) and requires sha equality plus
+`manifest.task_snapshot` equality. The protocol lock freezes THIS
+DERIVATION RULE; it never absorbs per-run snapshot values.
+
+Forward amendment AMEND-2026-09-09-d12-adaptation-contract
+(2026-09-09): the A13 determinant is a 4-tuple (auditor D11-post
+P1). The D11(c) triple (capability_artifact_sha256,
+capability_schema_sha256, exact_visible_task_snapshot_sha256) does
+not by itself determine the output while `F` may depend on
+execution-locked constants and code, so the fourth causal anchor
+is frozen here:
+`adaptation_contract_sha256 = H(canonical F implementation
+identity, adapter ABI declaration, canonical serialization
+policy, adaptation policy/version)`.
+The frozen determinant is (`capability_artifact_sha256`,
+`capability_schema_sha256`, `exact_visible_task_snapshot_sha256`,
+`adaptation_contract_sha256`) → `adapted_input_sha256`, and the
+A13 receipt must bind `execution_harness_manifest_sha256` (the
+final execution-lock identity) as the enclosing execution
+authority. Recorded acceptance: same artifact + same schema +
+same task snapshot with F_v1/ABI_v1 → bytes A and F_v2/ABI_v2 →
+bytes B, A != B, MUST NOT count as the same A13 determinant. No F
+implementation lands in this slice — this is the bar.
+
+Forward amendment AMEND-2026-09-09-d12-history-wording (2026-09-09):
+supersede notice (auditor D11-post P1). The D11(a) sentence "The
+checkpoint comparison is an order-insensitive multiset-subset" and
+its companion "a pure reorder of unchanged entries changes no
+verdict" are SUPERSEDED as descriptions of the operative rule
+(they remain above as history and are not edited). From D11 round
+7 onward the operative rule is: every prior amendment list is an
+exact, order-sensitive prefix of its successor, checked across
+every first-parent revision from the D11 genesis checkpoint
+through HEAD (plus the consecutive-pair monotonicity walk for
+post-genesis entries). A reader of only the current PREREG
+determines the rule from THIS subsection.
+
+Forward amendment AMEND-2026-09-10-d12b-evaluator-authority
+(2026-09-10): grading-evaluator provenance, the same
+false-positive class as D12 one directory up (auditor D11-post
+P0). The acquisition grading path read
+`families/<family>/check.py` + `truth.json` from the MUTABLE
+working tree at grading time, after `verify_instance_frozen` had
+returned — a rewritten checker turned a wrong solver report from
+"fix" into "ship" with nothing in the run manifest naming the
+substituted bytes. From this amendment the EXPECTED sha256 of
+both evaluator files is derived from freeze-commit git objects
+(the `verify_instance_frozen` authority object carries
+`expected_checker_sha256` / `expected_truth_sha256`; the
+visible-set authority is unchanged), and three binds hold: (a)
+immediately after verification, before any model token is spent,
+the live evaluator bytes must equal the expectation
+(`EVALUATOR-DRIFT-DENY`, MODEL_CALL_COUNT == 0, nothing
+H-derived persisted); (b) immediately before the checker
+subprocess executes, the same re-hash refuses the same way and
+NEVER records a verdict; (c) the checker EXECUTED is a
+run-private copy materialized from the frozen blobs
+(`frozen-evaluator/`), safe because each family checker's input
+closure is exactly {check.py, `__file__`-sibling truth.json}.
+The run manifest carries, before evidence genesis, the EXECUTED
+`checker_sha256` + `truth_sha256` with the EXPECTED
+freeze-derived pair, `evaluator_freeze_commit`, and
+`evaluator_source`; `verify_expected_provenance`
+re-derives both and a run whose recorded executed sha differs
+from the frozen one is EXCLUDED naming evaluator provenance
+(marker-gated: manifests without the evaluator fields behave as
+before). The protocol lock freezes THIS BINDING RULE; it never
+absorbs per-run evaluator values.
+
+Forward amendment AMEND-2026-09-10-d12c-classify-conjunction
+(2026-09-10): two corrections to the D12/D12b classification rule
+(general-seat findings A + B, both measured on production run
+dirs). (A) Provenance is a PRECONDITION/CONJUNCT, never an
+alternative: `classify_run_dir` evaluates the provenance
+re-derivation FIRST on every wired run, and a passing check never
+skips the identity / usage-receipts / normalized-usage /
+ZERO-WORK / evidence-chain gates — every gate is evaluated and
+the FIRST failure is reported with its established wording (a run
+with no provider identity, no evidence chain, or no model-usage
+receipts is EXCLUDED even when its provenance re-derives
+cleanly). (B) The required provenance set is fixed by THIS frozen
+rule, never by the run's own markers: a run is RULE-BOUND iff it
+carries ANY provenance marker (any D12 visible key or any D12b
+evaluator key — the runner writes all markers atomically before
+evidence genesis, so any surviving marker proves rule-era
+production), and a rule-bound run must present the FULL required
+set (all five visible keys plus all seven evaluator keys) with
+every recorded sha re-deriving cleanly; a missing subset proves
+DELETION and is EXCLUDED by name ("evaluator provenance absent"
+or "expected provenance absent"), never admitted. The ONLY legacy
+route is a manifest with NO markers at all (genuinely pre-rule),
+which raises the named legacy guard and is routed to the legacy
+gates — still enforced, never skipped. Deleting fields therefore
+cannot downgrade the rule: removing a subset is refused by name,
+and removing everything still faces identity/usage/chain.
+D12b's marker-gated reading ("absence of the evaluator fields
+excuses the check") is SUPERSEDED by this rule (it remains above
+as history and is not edited).
+
+Forward amendment AMEND-2026-09-10-d12d-hermetic-prefix
+(2026-09-10): latent coupling fix in the frozen derivation
+(shielded-battery regression on a hermetic fixture, repo-side).
+`verify_instance_frozen(base, ...)` consumes `base` as a fam-c
+dir, but `derive_expected_visible` / `derive_expected_evaluator`
+hardcoded the repo-root-relative prefix `benchmarks/fam-c/` —
+the two halves of the same function agreed only by accident of
+the canonical location, and any fam-c dir elsewhere (the h3
+hermetic miniature) made them disagree. From this amendment the
+families/ prefix is derived from `base` relative to the git top
+level (`_base_prefix`, empty when `base` IS the root, fail-closed
+when `base` escapes the root); with the canonical base the
+prefix is byte-identically `benchmarks/fam-c/` (proven by
+old-vs-new derivation equality over all 30 tasks plus the
+evaluator shas). The h3 miniature is brought to the D12
+contract: its freeze commit carries the frozen visibility
+declaration (`families/fam99/T0/VISIBLE.md`, empty `task
+fixtures:` — the fixture task dir holds only `prompt.md`), read
+from git objects, never disk; `FREEZE-HASHES.sha256` stays at
+exactly its 3 graded entries so `verified_files == 3`.
+
+Forward amendment AMEND-2026-09-10-d13-finite-closure
+(2026-09-10): pre-call prompt-snapshot binding (D12e) plus the
+finite provenance closure over FROZEN TASK -> MODEL REQUEST ->
+PROVIDER RESPONSE -> PARSED ARRIVAL -> EXECUTED SOLVER/LOCKED
+CAPABILITY -> EXACT GRADED OUTPUT -> FROZEN CHECKER+TRUTH ->
+VERDICT -> USAGE/IDENTITY/EVIDENCE CHAIN (auditor D13: three P0
+holes; nothing outside this boundary is in scope — the report
+parser stays harness code under the execution lock, no new
+generic filesystem hardening, no new lock layers). (D12e)
+prepare_arm() hashes the STAGED mutable visible tree and builds
+the prompt from it, so a staged-H/restored-E ABA passed the
+live-dir gate while the model saw H. Before any model token is
+spent, staged_tree must equal the frozen expected manifest AND
+context_task_snapshot_hash must equal the frozen task-snapshot
+sha (FROZEN-VISIBLE-DENY, MODEL_CALL_COUNT == 0). (P0-1)
+Capability artifacts were check-then-use: verified live capdir
+paths steered the prompt and the jail. The lock-verified bytes
+are now snapshotted into a run-private dir (re-hashed against
+the lock at snapshot time) and prompt + execution consume ONLY
+the snapshot (CAPABILITY-SNAPSHOT-DENY on the residual window);
+the snapshot (dir + per-file shas) rides the manifest and the
+chain capability-event. (P0-2) The checker read
+run_dir/OUTPUT.json while evidence hashed /work/OUTPUT.json. The
+committed output is now sealed into the run-private evaluation
+package (frozen check.py + frozen truth.json + SEALED
+OUTPUT.json), hashed pre-checker and re-hashed after; drift
+refuses with EVALUATOR-INPUT-DRIFT-DENY and never records a
+verdict. graded_output_sha256 names the persisted link (manifest
++ chain evaluator link; post-hoc readers re-hash the sealed
+artifact). The T1 candidate-output grading mirrors the seal as
+experimental evidence (validated=false naming
+evaluator-input-drift, never infrastructure failure). (P0-3)
+arrival.json was consumed by T1/promotion with no run-time
+binding. The runner now captures response_text_sha256 (provider
+response text; the usage receipt schema is frozen by its
+verifiers, so this rides manifest + chain, never the receipt) +
+arrival_sha256 (arrival.json file bytes as written) +
+execution_payload_sha256 (canonical payload) + solver_py_sha256
+into the manifest and the chain model-call link, and every later
+T1/promotion read requires the live bytes to equal the
+chain-bound value (ACQUISITION-CANDIDATE-DENY /
+PROMOTION-DENY naming arrival provenance; legacy/unverifiable
+chains deny, never consume). The protocol lock freezes THESE
+BINDING RULES; it never absorbs per-run values.
+
+Forward amendment AMEND-2026-09-10-d13c-seal-sourcing
+(2026-09-10): residual closure on the P0-2 seal (independent
+D13c probe against the live tree: rewriting every OUTPUT.json
+copy destination still produced a recorded SHIP while evidence
+hashed the original bytes). The seal had been sourced from the
+MUTABLE run-dir copy, and graded_output_sha256 ==
+output_sha256 was never required anywhere — a run-dir
+substitution graded substituted bytes AND recorded a ship. From
+this amendment: (a) the seal is sourced from the COMMITTED
+solver bytes (`/work/OUTPUT.json`), verified equal pre-checker,
+re-hashed with the committed file post-checker
+(EVALUATOR-INPUT-DRIFT-DENY, never a verdict); the run refuses
+OR grades the original bytes — never a ship from substituted
+bytes. (b) On the authority path graded_output_sha256 ==
+output_sha256 is required explicitly at seal time, and the
+provenance helper enforces it whenever a manifest records the
+seal (marker-gated on seal presence; seal presence alone never
+marks a run rule-bound, so legacy routing is unchanged) — the
+sealed link has a live consumer in both the runner and the
+reader. (c) The T1 candidate-output mirror grades the
+jail-produced CANDIDATE-OUTPUT.json work file, never the mutable
+committed copy (same sourcing rule; the outdir copy stays as the
+audit artifact).
+
+Forward amendment AMEND-2026-09-10-a13-canonical-adaptation
+(2026-09-10): the A13 determinant, canonical F, and causal-receipt
+data contract land (auditor A13 bar; D12 left the bar with "no F
+implementation lands in this slice" — that sentence is now
+discharged for the determinant machinery). The frozen determinant
+is (capability_artifact_sha256, capability_schema_sha256,
+exact_visible_task_snapshot_sha256, adaptation_contract_sha256)
+-> adapted_input_sha256, with adaptation_contract_sha256 =
+H(canonical F implementation identity, adapter ABI declaration,
+canonical serialization policy, adaptation policy/version).
+Coordinate doctrine, frozen: schema + snapshot + contract are
+COMPUTATIONAL (F consumes exactly the schema table, the exact
+task-snapshot bytes, and the frozen policy — no model bytes in
+any argument position); capability_artifact_sha256 is a BINDING
+coordinate (the locked engine bytes do not enter F; the engine
+binds its candidate separately at mint). determinant_sha256
+names the tuple; adapted_input_sha256 is the content hash over
+the adapted pair computed with the production tree-hash formula
+and schema label (one meaning, pinned equal, never forked).
+F_v1 (harness/adaptation.py) maps the schema-declared record
+file to the canonical {field_map.json, records.json} pair
+(header-aware parse, frozen column projection, USD->cents +
+tag-split transforms, canonical-total-order records, MANIFEST of
+rendered files, canonical serialization); F_v2 is the frozen
+negative-control counterpart (identical mapping, v2
+serialization + manifest form); NOOP_v1 forwards unmapped bytes
+in valid engine shape under the identical ABI. F identity is the
+sha256 of the version function's source text in canonical normal
+form (trailing-newline-insensitive; self-contained bodies +
+stdlib only, structurally asserted). Frozen content boundary in
+this slice: schema registry carries fam01-psv-records-v1 only
+(other surfaces are future frozen entries under the same
+registry and mechanism). Leg semantics, frozen: ON = F_v1 bytes
+consumed by the locked engine, OUTPUT graded; OFF-noop =
+NOOP_v1 bytes consumed by the locked engine identically (same
+adapter ABI shape, same engine interface, same grading);
+pass-through = F_v1 bytes (SAME bytes and determinant as ON,
+stated explicitly) consumed by the checker directly, no engine.
+The per-run causal receipt (schema a13-causal-receipt-v1,
+self-hashed) binds determinant + determinant_sha256, the three
+legs (program/ABI/consumers/adapted shas), task + capability +
+checker identities, and execution_harness_manifest_sha256 as the
+enclosing execution authority. NOT in this slice by explicit
+auditor ruling (pending): per-run EXECUTION binding of the legs
+(engine runs + gradings) — execution_evidence slots are null;
+F-output downstream consumability is experimental, never
+asserted; no run wiring, no model calls, no new chain kinds.
+Recorded acceptance: F_v1/ABI_v1 -> bytes A and F_v2/ABI_v2 ->
+bytes B, A != B, MUST NOT count as the same determinant.
 
 ---
 # 11. Manifest lifecycle

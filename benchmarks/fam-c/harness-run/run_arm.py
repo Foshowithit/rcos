@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+"""Fam-C arm runner: one lane, one task, one arm. Mechanical scheduler.
+Usage: run_arm.py <lane P|Q> <family> <task> <arm correct|disabled> <outdir>
+- correct: capability interface only (manifest + adapter_notes + frozen
+  engine source; NO acquisition history, NO transcripts).
+- disabled: task input only, fresh solve (solver script expected).
+Saves raw response + usage + lane record byte-identical. Executes
+arrivals verbatim inside DockerSandbox. Grades mechanically.
+Stdlib only.
+"""
+import json
+import os
+import sys
+import time
+import urllib.request
+
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.abspath(os.path.join(BASE, os.pardir, os.pardir))
+sys.path.insert(0, os.path.join(ROOT, "harness"))
+from usage import recorded_call
+
+LANES = {
+    "P": {"keyfile": os.environ.get("RCOS_LANE_P_KEYFILE") or
+           os.path.expanduser("~/.agent-vault/keys/router9.key"),
+          "base": "https://api.router9.com/v1",
+          "model": "minimax-m3", "norm": "openai-chat-total-input-v1",
+          "family": "MiniMax"},
+    "Q": {"keyfile": os.environ.get("RCOS_LANE_Q_KEYFILE") or
+               os.path.expanduser("~/.agent-vault/keys/kenari.key"),
+          "base": "https://kenari.id/v1",
+          "model": "agnes-2-0-flash:free", "norm": "openai-chat-total-input-v1",
+          "family": "Kenari-Agnes"},
+}
+
+CORRECT_TMPL = """You are solving the task below using a PROVIDED capability. You have never seen its acquisition, no transcripts, no prior tasks. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (__FILE__):
+```
+__TASKDEF__
+```
+
+TASK DIRECTORY LISTING: __LISTING__
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+__BLOBS__
+```
+
+PROMOTED CAPABILITY INTERFACE (only procedural knowledge you receive):
+manifest: __MANIFEST__
+
+ADAPTER NOTES:
+__NOTES__
+
+ENGINE SOURCE (frozen artifact; you do not modify it, you supply its inputs):
+```python
+__ENGINE__
+```
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"records": {<input records dict for the engine, per its interface convention>}, "field_map": {<map per interface convention>}, "notes": "<one line>"}
+No explanations; output the object only."""
+
+DISABLED_TMPL = """You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (__FILE__):
+```
+__TASKDEF__
+```
+
+TASK DIRECTORY LISTING: __LISTING__
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+__BLOBS__
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only."""
+
+
+def call_lane(lane, prompt, outdir, tag):
+    cfg = LANES[lane]
+    key = open(cfg["keyfile"]).read().strip()
+    body = json.dumps({"model": cfg["model"], "max_tokens": 9000,
+                       "messages": [{"role": "user", "content": prompt}]}).encode()
+    os.makedirs(outdir, exist_ok=True)
+    t0 = time.time()
+    req = urllib.request.Request(
+        cfg["base"] + "/chat/completions", data=body,
+        headers={"Authorization": "Bearer " + key,
+                 "Content-Type": "application/json"})
+    r = urllib.request.urlopen(req, timeout=300)
+    d = json.load(r)
+    wall = time.time() - t0
+    raw = d["choices"][0]["message"]["content"]
+    open(os.path.join(outdir, "raw.txt"), "w").write(raw)
+    open(os.path.join(outdir, "usage.json"), "w").write(json.dumps(
+        {"lane": lane, "model": cfg["model"], "wall_s": round(wall, 1),
+         "usage": d.get("usage", {})}, indent=1))
+    open(os.path.join(outdir, "lane.json"), "w").write(json.dumps(
+        {"provider": cfg["base"], "model_requested": cfg["model"],
+         "model_family": cfg["family"], "normalizer": cfg["norm"]},
+        indent=1))
+    return raw
+
+
+def main(lane, family, task, arm, outdir, capdir=None):
+    tdir = os.path.join(BASE, "families", family, task)
+    taskdef = open(os.path.join(tdir, "prompt.md")).read()
+    listing = ", ".join(sorted(os.listdir(tdir)))
+    blobs = []
+    for _root, _dirs, _files in os.walk(tdir):
+        for fn in sorted(_files):
+            fp = os.path.join(_root, fn)
+            rel = os.path.relpath(fp, tdir)
+            if os.path.getsize(fp) <= 2048 and fn not in ("prompt.md", "VISIBLE.md"):
+                blobs.append(f"--- {rel} ({os.path.getsize(fp)} bytes) ---\n"
+                             + open(fp).read())
+    fileblock = "\n".join(blobs)
+    if arm == "correct":
+        assert capdir, "capability dir required for correct arms"
+        man = open(os.path.join(capdir, "manifest.json")).read()
+        notes = open(os.path.join(capdir, "adapter_notes.md")).read()
+        eng = open(os.path.join(capdir, "engine.py")).read()
+        prompt = CORRECT_TMPL.replace("__FILE__", task).replace(
+            "__TASKDEF__", taskdef).replace("__LISTING__", listing).replace(
+            "__BLOBS__", fileblock).replace(
+            "__MANIFEST__", man).replace("__NOTES__", notes).replace(
+            "__ENGINE__", eng)
+    else:
+        prompt = DISABLED_TMPL.replace("__FILE__", task).replace(
+            "__TASKDEF__", taskdef).replace("__LISTING__", listing).replace(
+            "__BLOBS__", fileblock)
+    os.makedirs(outdir, exist_ok=True)
+    open(os.path.join(outdir, "prompt.txt"), "w").write(prompt)
+    raw = call_lane(lane, prompt, outdir, f"{lane}-{family}-{task}-{arm}")
+    print(f"{lane} {family}/{task}/{arm}: {len(raw)} chars (prompt persisted)")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5],
+         sys.argv[6] if len(sys.argv) > 6 else None)

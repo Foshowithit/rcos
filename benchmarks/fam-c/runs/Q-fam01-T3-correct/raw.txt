@@ -1,0 +1,4 @@
+
+
+{"records": [{"id": "R-1", "name": "Lambda Core", "usd": "55.55", "tags": "red"}, {"id": "R-2", "name": "Mu Shell", "usd": "8.40", "tags": ""}, {"id": "R-3", "name": "Nu Frame", "usd": "199.99", "tags": "bulk|sale"}, {"id": "R-4", "name": "Omicron Axle", "usd": "14.14", "tags": ""}, {"id": "R-5", "name": "Pi Rotor", "usd": "500.00", "tags": "bulk"}, {"id": "R-6", "name": "Rho Seal", "usd": "2.02", "tags": "new|sale"}, {"id": "R-7", "name": "Sigma Belt", "usd": "73.33", "tags": ""}, {"id": "R-8", "name": "Tau Disc", "usd": "19.95", "tags": "red|new"}], "field_map": {"id": "id", "name": "name", "amount": "usd", "tags": "tags", "tag_sep": "|"}, "notes": "Parsed INI-style records with pipe-delimited tags and USD amount conversion"}
+```

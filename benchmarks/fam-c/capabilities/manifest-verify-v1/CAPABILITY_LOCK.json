@@ -1,0 +1,16 @@
+{
+ "capability_id": "manifest-verify-v1",
+ "version": 1,
+ "artifacts": {
+  "engine.py": "9909ff5686071abdc8b3c374405ddd99107e514d238b7b43986b599382d6f5ac"
+ },
+ "manifest_sha256": "53c3b791c85b1c9c174599d84de20c642900c57967aa9f5c88ca8bc408711b7f",
+ "training_receipts": [
+  "runs/P-fam05-T0/call-b4acd9dcf2d41779.json"
+ ],
+ "builder_identity": {
+  "provider": "router9",
+  "model": "minimax-m3"
+ },
+ "locked_at": "2026-09-08T05:59:57Z"
+}

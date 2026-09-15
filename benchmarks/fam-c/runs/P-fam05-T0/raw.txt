@@ -1,0 +1,201 @@
+<think>The user wants me to create a Python script that verifies file sizes and SHA256 hashes against a manifest. Let me write a complete Python3 stdlib script that:
+
+1. Reads a manifest file with format `path:expected_size:expected_sha256`
+2. For each file in the manifest, checks if it exists in the files_dir
+3. If it exists, computes actual size and SHA256, compares to expected
+4. Writes output to out_path with ok, bad, unverified arrays
+
+Let me construct this carefully.
+
+The manifest format is:
+```
+alpha.txt:10:84d89877f0d4041efb6bf91a16f0248f2fd573e6af05c19f96bedb9f882f7882
+beta.txt:20:4e76ad8354461437c04ef9b9b242540b6406d782ff2c3fb28afdab5b423f88fe
+```
+
+Each line has `path:size:sha256`.
+
+The output contract:
+- `ok`: list of paths that match
+- `bad`: list of {"path", "reason"} for files that don't match
+- `unverified`: list of paths that couldn't be checked (e.g., missing, but wait - the description says "entries that cannot be checked against local sha256 files")
+
+Hmm, the distinction between `bad` and `unverified` is interesting. Let me re-read:
+- `ok`: files that match
+- `bad`: files with issues like wrong size or hash
+- `unverified`: entries that cannot be checked against local sha256 files
+
+So "unverified" would be for entries where we can't even get a SHA256 to compare. But in this case, we have actual files to check. If a file doesn't exist, it could be "bad" (missing) or "unverified". The instruction says "entries that cannot be checked against local sha256 files go under unverified" - this might mean if we don't have the actual file to hash, it goes to unverified.
+
+Actually, thinking about this more carefully: "cannot be checked against local sha256 files" - perhaps this means if the expected SHA256 isn't provided or the file isn't accessible to compute SHA256. In practice, missing files might go in either, but the natural interpretation is:
+
+- If we can compute SHA256 and compare: ok or bad
+- If we can't even compute the SHA256 (file missing, permission denied, etc.): unverified
+
+Let me write the script accordingly. Actually, I think for this task with the given files, missing files would likely go in "unverified" or "bad". Let me make a reasonable choice - if file doesn't exist, it's "bad" with reason "missing" or could be "unverified". 
+
+Re-reading: "entries that cannot be checked against local sha256 files go under unverified". I think "local sha256 files" might refer to a different kind of file - perhaps reference SHA256 files stored elsewhere? Or it could mean if we can't compute the hash from local files, it's unverified.
+
+I'll go with: if the file doesn't exist or can't be read, put in "unverified". If it exists but size/hash don't match, put in "bad".
+
+Actually, the more common interpretation: "unverified" is for when verification isn't possible (e.g., file missing, IO error). "bad" is for when verification was performed and found a mismatch. Let me go with that.
+
+Let me write the script:
+
+```python
+import sys
+import os
+import hashlib
+import json
+
+def solve(manifest_path, files_dir, out_path):
+    ok = []
+    bad = []
+    unverified = []
+    
+    with open(manifest_path, 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split(':')
+        if len(parts) != 3:
+            unverified.append(line)
+            continue
+        
+        path, expected_size_str, expected_sha256 = parts
+        full_path = os.path.join(files_dir, path)
+        
+        try:
+            expected_size = int(expected_size_str)
+        except ValueError:
+            unverified.append(path)
+            continue
+        
+        if not os.path.isfile(full_path):
+            unverified.append(path)
+            continue
+        
+        try:
+            actual_size = os.path.getsize(full_path)
+            with open(full_path, 'rb') as fh:
+                actual_sha256 = hashlib.sha256(fh.read()).hexdigest()
+        except (IOError, OSError):
+            unverified.append(path)
+            continue
+        
+        if actual_size != expected_size or actual_sha256 != expected_sha256:
+            bad.append({"path": path, "reason": f"size={actual_size}, expected={expected_size}; sha256={actual_sha256}, expected={expected_sha256}"})
+        else:
+            ok.append(path)
+    
+    result = {"ok": ok, "bad": bad, "unverified": unverified}
+    with open(out_path, 'w') as f:
+        json.dump(result, f)
+
+if __name__ == "__main__":
+    manifest_path = sys.argv[1]
+    files_dir = sys.argv[2]
+    out_path = sys.argv[3]
+    solve(manifest_path, files_dir, out_path)
+```
+
+Wait, the contract says the script reads (manifest_path, files_dir, out_path). So it takes three arguments. Let me finalize this.
+
+Actually, I should think about whether missing files should be `bad` or `unverified`. The task says "entries that cannot be checked against local sha256 files go under unverified". I think this means if the file is missing, it can't be checked, so it's unverified. But it could also be interpreted as `bad` with reason "missing".
+
+Let me go with: missing file = unverified (can't check it), size/hash mismatch = bad.
+
+Actually, re-reading once more: "verify each listed file's actual size and sha256 against the manifest" - the goal is to verify. If a file is missing, we can't verify it. So it makes sense to put it in `unverified`.
+
+But there's also a school of thought that says missing is a verification failure. Let me think about what's most useful...
+
+Given the task description "entries that cannot be checked against local sha256 files go under unverified", I think the intent is:
+- ok: verified successfully
+- bad: verified but doesn't match
+- unverified: couldn't verify (file missing, IO error, etc.)
+
+I'll go with that.
+
+Let me also make sure the script handles edge cases like paths with colons. The format is path:size:sha256, and sha256 is hex (no colons). So splitting on `:` with maxsplit=2 might be safer. Actually, file paths typically don't contain colons, so splitting by `:` should work for this task.
+
+Let me use split(':', 2) to be safe - this splits at most 2 times.
+
+Actually, sha256 is 64 hex chars, no colons. File paths on Unix don't have colons. On Windows they could have colons in drive letters (C:\...). But for this task, simple split should work. Let me use `split(':', 2)` to be safe.
+
+Let me finalize:
+
+```python
+import sys
+import os
+import hashlib
+import json
+
+def solve(manifest_path, files_dir, out_path):
+    ok = []
+    bad = []
+    unverified = []
+    
+    with open(manifest_path, 'r') as f:
+        content = f.read()
+    
+    for line in content.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split(':', 2)
+        if len(parts) != 3:
+            unverified.append(line)
+            continue
+        
+        path, expected_size_str, expected_sha256 = parts
+        full_path = os.path.join(files_dir, path)
+        
+        try:
+            expected_size = int(expected_size_str)
+        except ValueError:
+            unverified.append(path)
+            continue
+        
+        if not os.path.isfile(full_path):
+            unverified.append(path)
+            continue
+        
+        try:
+            actual_size = os.path.getsize(full_path)
+            h = hashlib.sha256()
+            with open(full_path, 'rb') as fh:
+                for chunk in iter(lambda: fh.read(65536), b''):
+                    h.update(chunk)
+            actual_sha256 = h.hexdigest()
+        except (IOError, OSError):
+            unverified.append(path)
+            continue
+        
+        if actual_size != expected_size or actual_sha256 != expected_sha256:
+            reasons = []
+            if actual_size != expected_size:
+                reasons.append(f"size mismatch: got {actual_size}, expected {expected_size}")
+            if actual_sha256 != expected_sha256:
+                reasons.append(f"sha256 mismatch: got {actual_sha256}, expected {expected_sha256}")
+            bad.append({"path": path, "reason": "; ".join(reasons)})
+        else:
+            ok.append(path)
+    
+    result = {"ok": ok, "bad": bad, "unverified": unverified}
+    with open(out_path, 'w') as f:
+        json.dump(result, f)
+
+if __name__ == "__main__":
+    if len(sys.argv) >= 4:
+        manifest_path = sys.argv[1]
+        files_dir = sys.argv[2]
+        out_path = sys.argv[3]
+        solve(manifest_path, files_dir, out_path)
+```
+
+This should work. Let me format the final JSON output.</think>
+
+{"solver_py": "import sys\nimport os\nimport hashlib\nimport json\n\ndef solve(manifest_path, files_dir, out_path):\n    ok = []\n    bad = []\n    unverified = []\n\n    try:\n        with open(manifest_path, 'r') as f:\n            content = f.read()\n    except (IOError, OSError):\n        with open(out_path, 'w') as f:\n            json.dump({\"ok\": [], \"bad\": [], \"unverified\": []}, f)\n        return\n\n    for raw_line in content.splitlines():\n        line = raw_line.strip()\n        if not line:\n            continue\n        parts = line.split(':', 2)\n        if len(parts) != 3:\n            unverified.append(line)\n            continue\n\n        path, expected_size_str, expected_sha256 = parts\n        path = path.strip()\n        expected_sha256 = expected_sha256.strip().lower()\n\n        try:\n            expected_size = int(expected_size_str.strip())\n        except ValueError:\n            unverified.append(path)\n            continue\n\n        full_path = os.path.join(files_dir, path)\n\n        if not os.path.isfile(full_path):\n            unverified.append(path)\n            continue\n\n        try:\n            actual_size = os.path.getsize(full_path)\n            h = hashlib.sha256()\n            with open(full_path, 'rb') as fh:\n                while True:\n                    chunk = fh.read(65536)\n                    if not chunk:\n                        break\n                    h.update(chunk)\n            actual_sha256 = h.hexdigest()\n        except (IOError, OSError):\n            unverified.append(path)\n            continue\n\n        if actual_size != expected_size or actual_sha256 != expected_sha256:\n            reasons = []\n            if actual_size != expected_size:\n                reasons.append(\"size {} != {}\".format(actual_size, expected_size))\n            if actual_sha256 != expected_sha256:\n                reasons.append(\"sha256 {} != {}\".format(actual_sha256, expected_sha256))\n            bad.append({\"path\": path, \"reason\": \"; \".join(reasons)})\n        else:\n            ok.append(path)\n\n    result = {\"ok\": ok, \"bad\": bad, \"unverified\": unverified}\n    with open(out_path, 'w') as f:\n        json.dump(result, f)\n\n\nif __name__ == \"__main__\":\n    manifest_path = sys.argv[1]\n    files_dir = sys.argv[2]\n    out_path = sys.argv[3]\n    solve(manifest_path, files_dir, out_path)\n", "notes": "Reads manifest, computes sha256 and size per entry, categorizes ok/bad/unverified, writes JSON."}

@@ -1,0 +1,13 @@
+{
+ "lane": "Q",
+ "model": "agnes-2-0-flash:free",
+ "wall_s": 3.5,
+ "usage": {
+  "completion_tokens": 353,
+  "prompt_tokens": 770,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  },
+  "total_tokens": 1123
+ }
+}

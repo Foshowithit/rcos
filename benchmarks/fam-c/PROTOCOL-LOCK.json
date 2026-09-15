@@ -1,0 +1,434 @@
+{
+ "lock": "PROTOCOL-LOCK",
+ "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
+ "note": "living protocol docs: frozen bytes OR a listed forward amendment, never unlisted drift (round-2 item 4, option b \u2014 no re-freeze). STAGED.md/FAMILIES.md stay under the V1 instance manifest (unchanged since freeze).",
+ "governed": {
+  "PREREG.md": "b732647f61f35808e0e07cb4221998e75c2851180fd44070e4b25ee5851437c6",
+  "ORDER.md": "ad33bb75eb365baa6044f14bc49ed94d1b4fb697236a3af87deab72a0ac66fe0",
+  "LANES.md": "cac7ca4600769a22b695c00da97f62fbedfe04cee0d9873bc067ce06e5f24be9",
+  "HARNESS-READINESS.md": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
+  "preflight.py": "dd07af5de705ac3ad943f37152f0e3d45439c345f8266dd1a17fd8a494617af0",
+  "T4-SEMANTIC-IDS.json": "f9feaedcef50f2940328692f9d9c5aa3865f0e7dc2f8870ffa4c3529af096d57",
+  "T4-CONFORMANCE.json": "05a8e094e437f320ed7e9521b483dd98f1febf0f31851992125ccb2f95dbda40"
+ },
+ "amendments": [
+  {
+   "file": "LANES.md",
+   "from_sha": "cac7ca4600769a22b695c00da97f62fbedfe04cee0d9873bc067ce06e5f24be9",
+   "to_sha": "31c682e8b0c702aa8a78efbb74018ed1cc0e669aec541138cf0b49d7aa9c5f27",
+   "reason": "A2 identity prereg table (audit round 1); A1 v2 adapter prereg table + item-3 body-hash binding note (audit round 2)",
+   "base": "fca3df0",
+   "slice": "a4/a5/a7-item-1+3+5"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "8e743e4c63f4dd20f565d08185eccfef7e99348cc9b094b658971ab433b870c5",
+   "to_sha": "3314fa9170ab0a8a8ecd372313306e5289508a7e62e79cd13a6354e6b9729081",
+   "reason": "A1 H-USE-005 implementation note; item-3 H-ID-006 note (audit round 2); authority-locks section (item 4); item-6 single-snapshot + envelope symmetry implementation note; H-ORD-011 execution-order enforcement (item 7); H-CAL-012 calibration pair (item 2)",
+   "base": "fca3df0",
+   "slice": "a4/a5/a7-item-1+3+5"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "dd07af5de705ac3ad943f37152f0e3d45439c345f8266dd1a17fd8a494617af0",
+   "to_sha": "974ce924d019200508d7a00895c76e0441a28f31b151255dc526b563fb98f1ec",
+   "reason": "item-4 three-authority re-scope (audit round 2): V1 instance / V2 protocol / V3 execution validators replace whole-tree diff; item-7 ORDER-EXPANSION derivation check + harness import-closure completeness",
+   "base": "fca3df0",
+   "slice": "a7-item-4"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "974ce924d019200508d7a00895c76e0441a28f31b151255dc526b563fb98f1ec",
+   "to_sha": "b11e00259a571a687c0de59f7f96f73745a7e9240fddb01c3af166fe3211d2cc",
+   "reason": "round-3 A11: register AUDIT-ROUND3-REPLY.txt as a meta pointer (integrity by git history + lock record), so the auditor's committed reply is not treated as an unlisted extra file by V1",
+   "base": "a11-round3-close",
+   "slice": "a11.1-6"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "3314fa9170ab0a8a8ecd372313306e5289508a7e62e79cd13a6354e6b9729081",
+   "to_sha": "a0419cedc9a4c2534b7ec6e60303a1869d4ad0e6cf1f99ba3cf5d75bc6e086eb",
+   "reason": "round-3 A11: A11.1 live-branch identity; A11.2 persisted request bytes + adapter/request binding; A11.3 byte-identity symmetry proof (legacy weaker fixture deleted); A11.4 full event-universe expansion; A11.5 derived per-universe namespaces; A11.6 validated cell state",
+   "base": "a11-round3-close",
+   "slice": "a11.1-6"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "b11e00259a571a687c0de59f7f96f73745a7e9240fddb01c3af166fe3211d2cc",
+   "to_sha": "b86a25e40616db4bb85ef11b0b58d8e3199b59fd1405ddfcddc6b39bee0179d9",
+   "reason": "round-3 A11 audit: register AUDIT-ROUND3-A11-REPLY.txt as a meta pointer",
+   "base": "a11b",
+   "slice": "a11b.0-preserve"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "a0419cedc9a4c2534b7ec6e60303a1869d4ad0e6cf1f99ba3cf5d75bc6e086eb",
+   "to_sha": "0bcd6ea024cdcb69632cd0cdac4dff5da0605d35d888f67bc9285efdafa88935",
+   "reason": "A11b P0-1..P0-6 close + P1 accounting wording (primary_work = uncached_input + output_tokens; input tokens are not inherently uncached); consolidated A11b section with per-item evidence",
+   "base": "a11b",
+   "slice": "a11b.1-6"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "0bcd6ea024cdcb69632cd0cdac4dff5da0605d35d888f67bc9285efdafa88935",
+   "to_sha": "382a75fc356ef571b6f27caecafb1c2cb210202f0c556568e6ecf54e67953533",
+   "reason": "A11b integration verification block (448/448, V1/V2/V3 0/0/0) + H12 count",
+   "base": "a11b",
+   "slice": "a11b.integration"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "b732647f61f35808e0e07cb4221998e75c2851180fd44070e4b25ee5851437c6",
+   "to_sha": "cdf77e7c747f3e9745473b28a4fbe84b322a08fdc85e02f54e7359ab1994e07b",
+   "reason": "A12 promotion protocol frozen: acquisition path via authorize_event, T0-derived candidate, T1 read-only rule, capability-lock-v2, reuse ledger is evidence not a claim, TCB statement",
+   "base": "a12",
+   "slice": "a12.prereg"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "382a75fc356ef571b6f27caecafb1c2cb210202f0c556568e6ecf54e67953533",
+   "to_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
+   "reason": "A12d slice D8 (auditor D7-post P1): lineage authority hygiene \u2014 the non-retrievable 9caf3d4fdd33 node (an in-commit intermediate of the A12 round-2 close, appearing at no commit; kept in D7 as an internal chain node continued by 12dda20242b0) is removed from the authoritative chain; the HARNESS-READINESS.md a12 edge is now 382a75fc356e\u2026 \u2192 12dda20242b0\u2026 (the states that actually exist in git). Superseded A12 wordings preserved: A12 round-2 close (A12.0 acquisition executor + A12.1 promotion controller + A12.2 estimand lock + A12.3 decision-driven ledger) + A12 integration hardening (lock provenance re-derivation, derived t4_ratified, presence-not-truthiness, verbatim semantic core, V3 package-root closure, production-shaped fixture)",
+   "base": "3cbf244",
+   "slice": "a12d-slice-d8"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "b86a25e40616db4bb85ef11b0b58d8e3199b59fd1405ddfcddc6b39bee0179d9",
+   "to_sha": "17860f35215d3b255cbb5a5ac12a5396d21a176a5f47ecee5e902b6930b2dac5",
+   "reason": "A12 item-7 closure: V3 must cover the whole harness package root (harness/promotion.py mints locks and was unlisted)",
+   "base": "a12",
+   "slice": "a12"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "cdf77e7c747f3e9745473b28a4fbe84b322a08fdc85e02f54e7359ab1994e07b",
+   "to_sha": "29cde20953a1c92275766499aa9d6ce53ee51173a846e338f3e113f807baad4e",
+   "reason": "A12b.5 forward amendment AMEND-2026-09-08-fam01: added the fam01 conformance semantic ID as the first entry of the frozen list; the other five IDs are byte-identical",
+   "base": "d129243",
+   "slice": "a12b.5"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "17860f35215d3b255cbb5a5ac12a5396d21a176a5f47ecee5e902b6930b2dac5",
+   "to_sha": "2ebf24336c56b5165f95ae0a4b87930779d8505315d52e2f9888192c972a8df5",
+   "reason": "A12b.5: govern T4-SEMANTIC-IDS.json under V2 plus the post-freeze genesis-amendment rule for governed files added after the instance freeze",
+   "base": "d129243",
+   "slice": "a12b.5"
+  },
+  {
+   "file": "T4-SEMANTIC-IDS.json",
+   "from_sha": null,
+   "to_sha": "f9feaedcef50f2940328692f9d9c5aa3865f0e7dc2f8870ffa4c3529af096d57",
+   "added_after_freeze": true,
+   "reason": "A12b.5 genesis: frozen governed six-family T4 semantic-ID registry (PREREG ## Conformance semantic IDs (frozen) + AMEND-2026-09-08-fam01)",
+   "base": "d129243",
+   "slice": "a12b.5"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "2ebf24336c56b5165f95ae0a4b87930779d8505315d52e2f9888192c972a8df5",
+   "to_sha": "0d6bb91f072771f2f0a31e00b4e65dc4b87be4f0695264ac63cc5daad936c351",
+   "reason": "A12c slice C1 (auditor P0 #7): exact T4 registry<->PREREG set equality in V2 preflight (validate_t4_registry: exactly fam01..fam06 keys, value-set equality both directions, verbatim PREREG presence, key/value family-prefix match); a missing/extra/renamed id or mismatch refuses before any model call naming the offending id",
+   "base": "64247a2",
+   "slice": "a12c-slice-c1"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "29cde20953a1c92275766499aa9d6ce53ee51173a846e338f3e113f807baad4e",
+   "to_sha": "be76c0bbadc3142fb1a48f7d32f06c2c44ed5bc6222f59ab982ca926d7f98125",
+   "reason": "A12c slice C2 (auditor P0 #6): forward amendment AMEND-2026-09-08-t4-conformance freezing the limitation->T4-ID conformance bridge (governed T4-CONFORMANCE.json under normalize-token-all-present-v1) before execution; the six T4 ids are unchanged",
+   "base": "6a620d7",
+   "slice": "a12c-slice-c2"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "0d6bb91f072771f2f0a31e00b4e65dc4b87be4f0695264ac63cc5daad936c351",
+   "to_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "reason": "A12c slice C2 (auditor P0 #6): govern T4-CONFORMANCE.json under V2 plus validate_t4_conformance (map must exist and satisfy every refusal condition before any model call)",
+   "base": "6a620d7",
+   "slice": "a12c-slice-c2"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": null,
+   "to_sha": "05a8e094e437f320ed7e9521b483dd98f1febf0f31851992125ccb2f95dbda40",
+   "added_after_freeze": true,
+   "reason": "A12c slice C2 genesis: frozen governed six-family limitation->T4-ID conformance map (PREREG AMEND-2026-09-08-t4-conformance, rule normalize-token-all-present-v1; t4 ids resolved from the same harness/t4_ids.py registry)",
+   "base": "6a620d7",
+   "slice": "a12c-slice-c2"
+  },
+  {
+   "file": "ORDER.md",
+   "from_sha": "ad33bb75eb365baa6044f14bc49ed94d1b4fb697236a3af87deab72a0ac66fe0",
+   "to_sha": "4510076a0550788806cb86683279613cd961a6a0bb336c933fad7fae8833f469",
+   "reason": "A12d slice D1 (auditor A12d.1/A12d.2/A12d.7): forward amendment AMEND-2026-09-08-failed-acquisition freezing the failed-acquisition continuation rule before live execution (T1 COMPLETE with validated=false is NOT-PROMOTED, no lock, downstream NOT-EVALUABLE, no retry); jail isolation and candidate-input lineage are harness-enforced and change no ordering",
+   "base": "790320f",
+   "slice": "a12d-slice-d1"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "be76c0bbadc3142fb1a48f7d32f06c2c44ed5bc6222f59ab982ca926d7f98125",
+   "to_sha": "5374b5c8c8ca65e13fb62374963f5ca623aad0d6905e3f21b28d9d5240739908",
+   "reason": "A12d slice D2 (auditor A12d.3/A12d.4): forward amendments AMEND-2026-09-08-contract-v2 (producer contract shape v2: preconditions as {\"requires\": str} objects, both lists may be empty) and AMEND-2026-09-08-requires-polarity (affirmative-requires conformance bridge supersedes the polarity-blind v1 bridge)",
+   "base": "7639a45",
+   "slice": "a12d-slice-d2"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": "05a8e094e437f320ed7e9521b483dd98f1febf0f31851992125ccb2f95dbda40",
+   "to_sha": "42a07c594ea65eed6b95348d5d9f9425a87eff02d87e2cdf6f2e255abd2b8afc",
+   "reason": "auditor A12d.3 polarity: conformance now maps only affirmative requires claims",
+   "base": "7639a45",
+   "slice": "a12d-slice-d2"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": "42a07c594ea65eed6b95348d5d9f9425a87eff02d87e2cdf6f2e255abd2b8afc",
+   "to_sha": "9b2486daca23cc4c4d437ddc499bd46b3ebccbfa0c379abffd8cb00a22a32ef0",
+   "reason": "A12d slice D4 (auditor D3-post P0): forward amendment AMEND-2026-09-09-d4-atomic-grammar \u2014 governed map to t4-conformance-v3 under atomic-requirement-grammar-v3 (new frozen disjunction_markers [either,or] + structural_separators [/,comma]; disjunctive texts INADMISSIBLE, fail conservative) with the capability-lock-v3 schema bump",
+   "base": "d1d3fa2",
+   "slice": "a12d-slice-d4"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "5374b5c8c8ca65e13fb62374963f5ca623aad0d6905e3f21b28d9d5240739908",
+   "to_sha": "7330a2f6b21ae9c5489b13ff842b54f9537da65107e8111423357fac66f85f49",
+   "reason": "A12d slice D4 (auditor D3-post P0/P1): forward amendment AMEND-2026-09-09-d4-atomic-grammar freezing t4-conformance-v3 under atomic-requirement-grammar-v3 and the capability-lock-v3 schema bump",
+   "base": "d1d3fa2",
+   "slice": "a12d-slice-d4"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": "9b2486daca23cc4c4d437ddc499bd46b3ebccbfa0c379abffd8cb00a22a32ef0",
+   "to_sha": "f2d69276841c271119651e8fc16351bbab41a5421fdcb4cec737887cdce00dd0",
+   "reason": "A12d slice D5 (auditor D4-post P0): forward amendment AMEND-2026-09-09-d5-atomic-conjunction \u2014 governed map to t4-conformance-v4 under atomic-conjunction-grammar-v4 (new frozen atomic_vocabulary 23-token derived list; ONLY preconditions[*].requires_all token lists are conformance candidates; conditional clauses structurally unrepresentable) with the capability-lock-v4 schema bump",
+   "base": "a6cf516",
+   "slice": "a12d-slice-d5"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "7330a2f6b21ae9c5489b13ff842b54f9537da65107e8111423357fac66f85f49",
+   "to_sha": "d5277d752c209765ce222e36af5c7d1fe5e13ba00d06514a8ea548b358b6dbb3",
+   "reason": "A12d slice D5 (auditor D4-post P0/P1): forward amendment AMEND-2026-09-09-d5-atomic-conjunction freezing t4-conformance-v4 under atomic-conjunction-grammar-v4 and the capability-lock-v4 schema bump (declared_limitations_present rename)",
+   "base": "a6cf516",
+   "slice": "a12d-slice-d5"
+  },
+  {
+   "file": "T4-CONFORMANCE.json",
+   "from_sha": "f2d69276841c271119651e8fc16351bbab41a5421fdcb4cec737887cdce00dd0",
+   "to_sha": "a7e044a126b615521254b2b8494603970806213f82bfb7cc59ab604196bc9654",
+   "reason": "A12d slice D6 (auditor D5-post P0): forward amendment AMEND-2026-09-09-d6-vocabulary-role-split \u2014 governed map to t4-conformance-v5 under atomic-conjunction-grammar-v5 (key atomic_vocabulary renamed to recognized_conformance_atoms with the IDENTICAL 23-token value set: auditor-side recognition whitelist for conformance only, never a producer requirement; promotion validates structural shape only and preserves arbitrary atomic producer tokens; unknown atoms make the whole precondition non-conformance-bearing and NEVER deny promotion)",
+   "base": "9530bb1",
+   "slice": "a12d-slice-d6"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "d5277d752c209765ce222e36af5c7d1fe5e13ba00d06514a8ea548b358b6dbb3",
+   "to_sha": "1fb9089161cee06d7e0d14971beaaba30209e8c298e4fe7c8d78550384dc23ae",
+   "reason": "A12d slice D6 (auditor D5-post P0): forward amendment AMEND-2026-09-09-d6-vocabulary-role-split freezing t4-conformance-v5 under atomic-conjunction-grammar-v5 (promotion structural-only, recognized_conformance_atoms auditor-side, unknown atoms non-bearing never denied, T0 prompt reveals no values)",
+   "base": "9530bb1",
+   "slice": "a12d-slice-d6"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "1fb9089161cee06d7e0d14971beaaba30209e8c298e4fe7c8d78550384dc23ae",
+   "to_sha": "d073cf7042a529fff8f273f32dc2aab0efa85b6dd2ef3e40a82b0c7acf392d02",
+   "reason": "A12d slice D7 (auditor D6-post P0/P1): forward amendment AMEND-2026-09-09-d7-lineage-repair freezing the exact three-key producer contract schema (no contract alias, missing/extra key denied naming the key) and the unique-linear-lineage rule; three mis-recorded from_sha edges corrected from git content sha256 with no history entry deleted (PREREG D5 now continues 7330a2f6b21a, PREREG D6 now continues d5277d752c20, HARNESS-READINESS a11 now continues 3314fa9170ab; 9caf3d4fdd33 kept as an in-commit internal chain node)",
+   "base": "3033e38",
+   "slice": "a12d-slice-d7"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "17b38c95f8649ac006e061ab37861b1e9f9d1489b31b98d0bddce822430f049e",
+   "to_sha": "3ba01b4b8e11199f7dcb576b1c6b884d0f6ed077ae5149ac427b6911a886f9ca",
+   "reason": "A12d slice D7 (auditor D6-post P1): forward amendment AMEND-2026-09-09-d7-lineage-repair tightening V2 to the unique-linear-chain rule (validate_file_chain per governed file: exactly one edge out of the frozen/genesis node, indegree/outdegree at most one, no dead end but the single tip, disk bytes equal to that tip; the reachable-set is deleted)",
+   "base": "3033e38",
+   "slice": "a12d-slice-d7"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "d073cf7042a529fff8f273f32dc2aab0efa85b6dd2ef3e40a82b0c7acf392d02",
+   "to_sha": "a59e2a56072cdf7342bff5ffb2f19c2e06a33321a54202bdb07267e4ede9e253",
+   "reason": "A12d slice D8 (auditor D7-post P0/P1): forward amendment AMEND-2026-09-09-d8-shared-lineage freezing the single shared producer-contract-shape authority (harness/contract_shape.py called by both harness/promotion.py and harness/order.py; same malformed declaration yields the same finding text) and the lineage authority hygiene rule (9caf3d4fdd33 removed from the chain, edge now 382a75fc356e\u2026 \u2192 12dda20242b0\u2026; V2 rejects ungoverned keys/files, malformed shas, a movable post-freeze anchor, and nodes with no retrievable bytes)",
+   "base": "3cbf244",
+   "slice": "a12d-slice-d8"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "3ba01b4b8e11199f7dcb576b1c6b884d0f6ed077ae5149ac427b6911a886f9ca",
+   "to_sha": "5162b1de95fd14e3c2e0acf4186aa6857ba5170e4ea47c8ac4649c79bb6a4c2d",
+   "reason": "A12d slice D8 (auditor D7-post P1): forward amendment AMEND-2026-09-09-d8-shared-lineage tightening V2 to the lineage authority hygiene rule (validate_lock_global: exact seven-file governed set, governed amendment files only; validate_file_chain: 64-lowercase-hex node shas, post-freeze governed sha must equal the genesis node never a descendant; protocol_tips: every recorded node backed by retrievable bytes in git; validate_file_chain stays pure and I/O-free)",
+   "base": "3cbf244",
+   "slice": "a12d-slice-d8"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "a59e2a56072cdf7342bff5ffb2f19c2e06a33321a54202bdb07267e4ede9e253",
+   "to_sha": "244c6d55967850f4cd74dc4a0de7d45cb6844d3b2f551e534a3d0061e9c3f162",
+   "reason": "A12i slice D9 (auditor D8-post P0/P2): forward amendment AMEND-2026-09-09-d9-protocol-chronology freezing the experiment-branch chronology rule (recorded root->tip must be a subsequence of the HEAD-ancestry content-sha sequence: Rule A lineage membership replacing the all-refs retrievability test, Rule B chronology; collapsed multi-commit edges stay legal) and the named lock-container failures, with the measured fact that no chain repair was needed (live chains already valid subsequences: PREREG.md 16, ORDER.md 5, LANES.md 5, HARNESS-READINESS.md 11, preflight.py 16, T4-SEMANTIC-IDS.json 1, T4-CONFORMANCE.json 7)",
+   "base": "73d9d57",
+   "slice": "a12i-slice-d9"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "5162b1de95fd14e3c2e0acf4186aa6857ba5170e4ea47c8ac4649c79bb6a4c2d",
+   "to_sha": "500daaa4e0d68e784ce3b552a9394c82484d95b9d88b3c908af5f6c2b81d69a6",
+   "reason": "A12i slice D9 (auditor D8-post P0/P2): forward amendment AMEND-2026-09-09-d9-protocol-chronology tightening V2 to the experiment-branch chronology rule (validate_file_chain takes the git-derived branch_seq: Rule A every recorded node on the HEAD lineage, Rule B recorded order a subsequence; _branch_seq_shas replaces the all-refs map; validate_file_chain stays pure and I/O-free; protocol_tips and validate_lock_global normalize lock containers before any .get() so malformed containers fail closed with a named finding)",
+   "base": "73d9d57",
+   "slice": "a12i-slice-d9"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "244c6d55967850f4cd74dc4a0de7d45cb6844d3b2f551e534a3d0061e9c3f162",
+   "to_sha": "cdbe2b4aa4222d6611d5b337fbc4ea111b64cddb9f834e5ec78ad91eac91b7b5",
+   "reason": "A12j slice D10 (general-seat defect found in the D9 evidence run): forward amendment AMEND-2026-09-09-d10-source-stability recording the measured torn-snapshot defect (truncate starved across the staging window: 1 FAIL in 10 plain runs, up to 3 FAIL in 5 instrumented runs) and the strengthened three-test binding (staged copy must equal the CURRENT source, bounded quiescence confirmation, named STABILITY-DENY refusals with staged-dir cleanup on every refusal), with the documented residual limit (a source frozen in a torn state for the entire window is indistinguishable from a stable source; the guard never proves \"the source never changed\"); D9 unaffected (no docker staging or isolation code involved)",
+   "base": "0b32400",
+   "slice": "a12j-slice-d10"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "12dda20242b04afa1c9c535e979f1d1d44bfff93b661c0de776e0bae53568f59",
+   "to_sha": "66732960bc20cc20b4e0ff1b21ba9a71ba4ebd9b5500df4c087a3c72f47d4c46",
+   "reason": "A12j slice D10 (general-seat defect found in the D9 evidence run): forward amendment AMEND-2026-09-09-d10-source-stability recording the D10 slice record in HARNESS-READINESS.md (source-stability binding fix; doc record only, no protocol rule change)",
+   "base": "0b32400",
+   "slice": "a12j-slice-d10"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "cdbe2b4aa4222d6611d5b337fbc4ea111b64cddb9f834e5ec78ad91eac91b7b5",
+   "to_sha": "98bd8f7a641a1a110c1890e74578f46c6e32f44be3abdd616fb48231a7d82266",
+   "reason": "A12l slice D11 (auditor D9-post P0/P1/P1/P2): forward amendment AMEND-2026-09-09-d11-protocol-authority freezing lock self-authentication (on-disk PROTOCOL-LOCK.json bytes must equal the committed experiment-HEAD bytes before any consumer parses the lock, else V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json differs from committed experiment-HEAD authority with tips withheld; append-only-forward policy from D11 on, no retroactive ban), first-parent chronology (merged side-branch states never enter the sequence; measured identical for all seven governed files), the committed A13 canonical bar (adapted_input = F(frozen_capability_schema, exact_visible_task_snapshot) with identical-bytes-and-hash, weaker claim only), and stability contract B (byte-integrity, no event-detection guarantee)",
+   "base": "a029b91",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "500daaa4e0d68e784ce3b552a9394c82484d95b9d88b3c908af5f6c2b81d69a6",
+   "to_sha": "ef52c5a25960b7785ba7f8f4d87b56a488548cb3e31363c88a59f045370ddbab",
+   "reason": "A12l slice D11 (auditor D9-post P0/P1/P1/P2): forward amendment AMEND-2026-09-09-d11-protocol-authority freezing lock self-authentication (on-disk PROTOCOL-LOCK.json bytes must equal the committed experiment-HEAD bytes before any consumer parses the lock, else V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json differs from committed experiment-HEAD authority with tips withheld; append-only-forward policy from D11 on, no retroactive ban), first-parent chronology (merged side-branch states never enter the sequence; measured identical for all seven governed files), the committed A13 canonical bar (adapted_input = F(frozen_capability_schema, exact_visible_task_snapshot) with identical-bytes-and-hash, weaker claim only), and stability contract B (byte-integrity, no event-detection guarantee)",
+   "base": "a029b91",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "98bd8f7a641a1a110c1890e74578f46c6e32f44be3abdd616fb48231a7d82266",
+   "to_sha": "1efcb8b3554c7ef65ac7171e0fb3a86c1566178b5f5f84b78a94746966a5a63f",
+   "reason": "A12l slice D11 second commit (general-seat gate precision): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 append-only genesis checkpoint (PROTOCOL_LOCK_APPEND_ONLY_GENESIS beceff5 + lock sha, old entries immutable, delete/rewrite fails V2 as a named lock-history finding), A13 precision (hash-pinned artifact+schema+snapshot to adapted_input_sha256, forbidden hidden F inputs, prerequisite-not-completion), canonical-source-manifest wording, and the expected_task_snapshot production binding name",
+   "base": "beceff5",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "ef52c5a25960b7785ba7f8f4d87b56a488548cb3e31363c88a59f045370ddbab",
+   "to_sha": "51797d5c800b933de6473b572d0a9da3c6e22acf9a1cd43a4c617bfd7335ff0b",
+   "reason": "A12l slice D11 second commit (general-seat gate precision): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 append-only genesis checkpoint (PROTOCOL_LOCK_APPEND_ONLY_GENESIS beceff5 + lock sha, old entries immutable, delete/rewrite fails V2 as a named lock-history finding), A13 precision (hash-pinned artifact+schema+snapshot to adapted_input_sha256, forbidden hidden F inputs, prerequisite-not-completion), canonical-source-manifest wording, and the expected_task_snapshot production binding name",
+   "base": "beceff5",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "1efcb8b3554c7ef65ac7171e0fb3a86c1566178b5f5f84b78a94746966a5a63f",
+   "to_sha": "2b20c8408a51c120172f1f0de183a26eb780efb9070802b49b5d1f38f777f420",
+   "reason": "A12l slice D11 third commit (auditor D10 verdict): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 explicit first-parent commit walk (rev-list, no path filter; multiset-subset history documented as deliberate deviation from exact prefix), cross-file ABA residual wording (canonical source manifest), A13 permitted-inputs/model-response-not-an-argument/recorded A-B attack, merge-governance middle ground, and the production expected_task_snapshot runner binding",
+   "base": "dea7cdc",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "51797d5c800b933de6473b572d0a9da3c6e22acf9a1cd43a4c617bfd7335ff0b",
+   "to_sha": "8028f6bad01b8dfe8a6042b3810859829cbd6b3b1209b844e49b4e8b13d4e8fc",
+   "reason": "A12l slice D11 third commit (auditor D10 verdict): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 explicit first-parent commit walk (rev-list, no path filter; multiset-subset history documented as deliberate deviation from exact prefix), cross-file ABA residual wording (canonical source manifest), A13 permitted-inputs/model-response-not-an-argument/recorded A-B attack, merge-governance middle ground, and the production expected_task_snapshot runner binding",
+   "base": "dea7cdc",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "8028f6bad01b8dfe8a6042b3810859829cbd6b3b1209b844e49b4e8b13d4e8fc",
+   "to_sha": "d712eacda17d9f96b67c4f140ef603bbf6324dade9b2a71e7fa0bb2129e91e17",
+   "reason": "A12l slice D11 round-7 (general-seat exact-prefix order): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 order-sensitive exact prefix in validate_lock_history (pure reorder fails naming the displaced position; multiset/governed belts kept), hermetic untracked-path scope mirroring the byte authority",
+   "base": "a05362f",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "d712eacda17d9f96b67c4f140ef603bbf6324dade9b2a71e7fa0bb2129e91e17",
+   "to_sha": "d47f59696cf246783a11cade41fce5797f481bfbe516b8ff631cacedb5e371eb",
+   "reason": "A12l slice D11 round-8 (general-seat ordered form): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 exact-prefix check in the ordered return-early form (multiset/governed belts fire first; pure reorder returns the position-for-position finding)",
+   "base": "56ac7c0",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "d47f59696cf246783a11cade41fce5797f481bfbe516b8ff631cacedb5e371eb",
+   "to_sha": "f0a8cbb3a1132e2f728c38d2b3ca7f3f3c2b200407c81bb8c840c09aa90f8ee5",
+   "reason": "A12l slice D11 round-9 (general-seat untrack hardening): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 canonical-path untracked-lock refusal (an uncommitted governed lock has no verifiable lineage; fixture copies at non-governed paths stay exempt)",
+   "base": "aaf570e",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "f0a8cbb3a1132e2f728c38d2b3ca7f3f3c2b200407c81bb8c840c09aa90f8ee5",
+   "to_sha": "b06fae1a2facf4b2197cd5ec98fb93f895087e3aa2d005a90311fd09cad4f3ff",
+   "reason": "A12l slice D11 round-10 (general-seat post-genesis holes): forward amendment AMEND-2026-09-09-d11-protocol-authority continued \u2014 lineage-wide consecutive-pair monotonicity walk over first-parent genesis..HEAD (post-genesis reorder/rewrite names the violating commit)",
+   "base": "94f9f09",
+   "slice": "a12l-slice-d11"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "2b20c8408a51c120172f1f0de183a26eb780efb9070802b49b5d1f38f777f420",
+   "to_sha": "357897e7397986815cb9933717cf753c9adb21c68ffb4d7ae96cbec30706a2a2",
+   "reason": "A12n slice D12 (auditor D11-post P0/P1/P1): forward amendments AMEND-2026-09-09-d12-frozen-authority (immutable expected-visible-manifest derivation rule from freeze-commit objects; FROZEN-VISIBLE-DENY; manifest provenance fields; rule frozen in lock, never per-run values), AMEND-2026-09-09-d12-adaptation-contract (4-tuple determinant with adaptation_contract_sha256; execution-harness binding in A13 receipt), AMEND-2026-09-09-d12-history-wording (multiset sentence SUPERSEDED; operative rule exact order-sensitive prefix over first-parent genesis..HEAD)",
+   "base": "d3d6b4e",
+   "slice": "a12n-slice-d12"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "357897e7397986815cb9933717cf753c9adb21c68ffb4d7ae96cbec30706a2a2",
+   "to_sha": "5bbbabc58fcc3a90475a0a237f4e71f9775600857f7fb5b0b7c5284c79093e60",
+   "reason": "A12n slice D12b (auditor D11-post P0, same false-positive class one directory up): forward amendment AMEND-2026-09-10-d12b-evaluator-authority (freeze-derived expected checker/truth sha256 in the verify authority object; pre-model EVALUATOR-DRIFT-DENY with MODEL_CALL_COUNT == 0; point-of-use re-hash that never records a verdict; run-private frozen-materialized evaluator execution; executed + expected evaluator provenance in the run manifest; EXCLUDE naming evaluator provenance on drift, marker-gated for legacy manifests)",
+   "base": "4248312",
+   "slice": "a12n-slice-d12b"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "5bbbabc58fcc3a90475a0a237f4e71f9775600857f7fb5b0b7c5284c79093e60",
+   "to_sha": "091fb78d15281178af16f5e21a45afa0042ca4089f30e6d2c2f8bf7493646644",
+   "reason": "A12n slice D12c (general-seat findings A + B): forward amendment AMEND-2026-09-10-d12c-classify-conjunction (provenance as precondition/conjunct in classify_run_dir \u2014 every gate evaluated, first failure reported with established wording; rule-bound required-field set fixed by the frozen rule \u2014 any surviving marker requires the full visible + evaluator set, missing subset refused by name, no-markers-at-all keeps the named legacy guard routed to the enforced legacy gates; D12b marker-gated reading SUPERSEDED)",
+   "base": "7ed09ae",
+   "slice": "a12n-slice-d12c"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "091fb78d15281178af16f5e21a45afa0042ca4089f30e6d2c2f8bf7493646644",
+   "to_sha": "91c0a5ea4c97cd8ab0161d145bc5b8960900019f3f08e00d88246c220108a17c",
+   "reason": "A12n slice D12d (shielded-battery hermetic-fixture regression, repo-side): forward amendment AMEND-2026-09-10-d12d-hermetic-prefix (families/ prefix derived from the fam-c dir relative to the git top level in derive_expected_visible + derive_expected_evaluator \u2014 byte-identical at the canonical base; h3 miniature carries the frozen visibility declaration in its freeze commit with FREEZE-HASHES at 3 entries)",
+   "base": "bd04f6e",
+   "slice": "a12n-slice-d12d"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "91c0a5ea4c97cd8ab0161d145bc5b8960900019f3f08e00d88246c220108a17c",
+   "to_sha": "cfd403dd18086a57c096859093c9ec670c6234699415b0a9ba57e71f20751b32",
+   "reason": "A12n slice D13 finite provenance closure (auditor D13: D12e pre-call prompt-snapshot binding + P0-1 capability snapshot + P0-2 sealed graded output + P0-3 arrival provenance binding): forward amendment AMEND-2026-09-10-d13-finite-closure (staged_tree + context hash vs frozen authority pre-model; lock-verified capability snapshot consumed by prompt + execution; committed output sealed into the run-private evaluation package with pre/post checker hash; response/arrival/payload/solver shas captured at run time with T1/promotion re-read require; T1 candidate-output seal as experimental evidence)",
+   "base": "cb83f95",
+   "slice": "a12n-slice-d13"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "cfd403dd18086a57c096859093c9ec670c6234699415b0a9ba57e71f20751b32",
+   "to_sha": "c40e7ccba6f4e96575080bee033eeb14d6a081093c6264c65ff5fc8ef10b3309",
+   "reason": "A12n slice D13c residual seal-sourcing closure (independent D13c probe: copy-destination rewrite still shipped): forward amendment AMEND-2026-09-10-d13c-seal-sourcing (seal sourced from the committed solver bytes with pre-checker equality require and post-checker re-hash of both files; graded_output_sha256 == output_sha256 required at seal time and enforced marker-gated by the provenance helper; T1 candidate-output mirror grades the jail-produced work file, never the mutable committed copy)",
+   "base": "4550d7e",
+   "slice": "a12n-slice-d13c"
+  },
+  {
+   "file": "PREREG.md",
+   "from_sha": "c40e7ccba6f4e96575080bee033eeb14d6a081093c6264c65ff5fc8ef10b3309",
+   "to_sha": "708ad2acd9b408c139d5068aebd7cda19e7f8aaab15476b852c3e2e352091192",
+   "reason": "A13 canonical adaptation (auditor A13 bar): forward amendment AMEND-2026-09-10-a13-canonical-adaptation (frozen 4-tuple determinant + determinant_sha; F_v1 canonical mapping with source-text identity + F_v2 negative-control counterpart + NOOP_v1 under the identical ABI; binding-vs-computational coordinate doctrine; ON/OFF-noop/pass-through leg semantics; a13-causal-receipt-v1 data contract binding determinant + legs + task/capability/checker/harness identities; executed-legs binding explicitly pending the auditor ruling)",
+   "base": "cd16407",
+   "slice": "a13-slice-a13"
+  }
+ ]
+}

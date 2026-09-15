@@ -1,0 +1,33 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T2):
+```
+# fam02-T2 — paginated acquisition, enveloped pages
+
+Pages here are ENVELOPES: `{"data": [...], "paging": {"next": ...}}`
+with item keys `product`/`count` (not `items`/`k`/`v`/`next`).
+Follow `paging.next` until null, retry transient faults via `fetch.py`,
+log in `retry.log`, merge `{k: v}` into `OUTPUT.json`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, faults.json, pages, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- faults.json (17 bytes) ---
+{"failures": {}}
+
+--- pages/r1.json (113 bytes) ---
+{"data": [{"product": "a", "count": 100}, {"product": "b", "count": 200}], "paging": {"next": "r2", "total": 2}}
+
+--- pages/r2.json (81 bytes) ---
+{"data": [{"product": "c", "count": 300}], "paging": {"next": null, "total": 2}}
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

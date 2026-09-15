@@ -1,0 +1,45 @@
+{
+ "batch": "t2",
+ "events": [
+  {
+   "kind": "open",
+   "target": "A"
+  },
+  {
+   "kind": "login",
+   "target": "B"
+  },
+  {
+   "kind": "open",
+   "target": "A"
+  },
+  {
+   "kind": "render",
+   "target": "C"
+  },
+  {
+   "kind": "login",
+   "target": "B"
+  },
+  {
+   "kind": "flush",
+   "target": "D"
+  },
+  {
+   "kind": "open",
+   "target": "A"
+  },
+  {
+   "kind": "login",
+   "target": "B"
+  },
+  {
+   "kind": "render",
+   "target": "C"
+  },
+  {
+   "kind": "flush",
+   "target": "D"
+  }
+ ]
+}

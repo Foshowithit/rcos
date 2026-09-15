@@ -1,0 +1,58 @@
+<think>Let me analyze this task:
+
+1. I need to read `graph.txt` which contains edges in `a -> b` format with `#` comments
+2. I need to parse it into a graph structure that the engine can process
+3. The engine expects a JSON record dict (containing nodes/edges) and a field_map
+4. The output should match the contract
+
+Looking at the graph.txt:
+- It has 9 edges
+- Nodes referenced: fetch, compile, unit-test, lint, package, deploy-staging, smoke, deploy-prod
+- No explicit nodes list, only edges
+
+Since the format is edge-list (not the standard graph record dict), I need to construct a record that the engine can consume. The adapter notes say the engine normalizes field names via a field_map. The engine looks for 'edges' or 'links' or 'arcs' as candidate keys. If I just provide an edges list with source/target fields, the default field_map should work.
+
+Let me create:
+- A records dict with an "edges" key containing parsed edges
+- A field_map that handles the "edges" key (default should work) and "source"/"target" for edge fields
+
+The parsed edges would be:
+- fetch -> compile
+- compile -> unit-test
+- compile -> lint
+- unit-test -> package
+- lint -> package
+- package -> deploy-staging
+- deploy-staging -> smoke
+- smoke -> deploy-prod
+
+The engine will auto-promote nodes referenced only by edges. So I don't need a "nodes" key.
+
+Let me construct:
+
+```json
+{
+  "records": {
+    "edges": [
+      {"source": "fetch", "target": "compile"},
+      {"source": "compile", "target": "unit-test"},
+      {"source": "compile", "target": "lint"},
+      {"source": "unit-test", "target": "package"},
+      {"source": "lint", "target": "package"},
+      {"source": "package", "target": "deploy-staging"},
+      {"source": "deploy-staging", "target": "smoke"},
+      {"source": "smoke", "target": "deploy-prod"}
+    ]
+  },
+  "field_map": {
+    "edges": ["edges"],
+    "edge_source": ["source"],
+    "edge_target": ["target"]
+  },
+  "notes": "Parsed edge-list format; nodes auto-promoted."
+}
+```
+
+This should work with the engine.</think>
+
+{"records": {"edges": [{"source": "fetch", "target": "compile"}, {"source": "compile", "target": "unit-test"}, {"source": "compile", "target": "lint"}, {"source": "unit-test", "target": "package"}, {"source": "lint", "target": "package"}, {"source": "package", "target": "deploy-staging"}, {"source": "deploy-staging", "target": "smoke"}, {"source": "smoke", "target": "deploy-prod"}]}, "field_map": {"edges": ["edges"], "edge_source": ["source"], "edge_target": ["target"]}, "notes": "Parsed a->b edge-list; nodes auto-promoted by engine."}

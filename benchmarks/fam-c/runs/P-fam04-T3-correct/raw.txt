@@ -1,0 +1,334 @@
+<think>Let me analyze this task carefully.
+
+The task is to validate a DAG from a `graph.env` file that contains:
+```
+NODES=ingest,clean,split,train,eval,report
+EDGES=ingest>clean,clean>split,split>train,split>eval,train>eval,eval>report
+```
+
+I need to use the engine `dag-validate-v1` which:
+1. Takes a field_map JSON file
+2. Takes a records JSON file (the graph dict)
+3. Outputs a validation result JSON file
+
+The format of `graph.env` is key=value pairs where:
+- `NODES` is comma-separated node names
+- `EDGES` is comma-separated edges in format `source>target`
+
+I need to:
+1. Parse `graph.env` into a graph dict
+2. Create a field_map
+3. Run the engine
+
+Looking at the engine source, the `norm` function looks for:
+- `nodes` keys from `fm.get('nodes', ['nodes', 'vertices'])` - so I can use `NODES` directly as a key, but defaults are `nodes` or `vertices`. Actually wait, the function does `next((g[k] for k in nk if k in g), [])`, so the field_map needs to specify what keys to look for.
+
+Looking more carefully at the engine:
+- `nk = fm.get('nodes', ['nodes', 'vertices'])` - if field_map doesn't specify nodes, it defaults to looking for `nodes` or `vertices`
+- But the data has `NODES` (uppercase). So I need to specify `NODES` in the field_map
+
+Actually, wait. The engine's `norm` function:
+```python
+nk = fm.get('nodes', ['nodes', 'vertices'])
+nodes = next((g[k] for k in nk if k in g), [])
+```
+
+If I provide a field_map with `"nodes": ["NODES"]`, it will look for `NODES` key. Otherwise, it defaults to `nodes` and `vertices`.
+
+For my records dict, I'll use `NODES` and `EDGES` as keys to match `graph.env`.
+
+The graph is:
+- Nodes: ingest, clean, split, train, eval, report
+- Edges: ingest>clean, clean>split, split>train, split>eval, train>eval, eval>report
+
+This is clearly acyclic. Let me verify with Kahn's:
+- Initial in-degrees:
+  - ingest: 0
+  - clean: 1 (from ingest)
+  - split: 1 (from clean)
+  - train: 1 (from split)
+  - eval: 2 (from split, train)
+  - report: 1 (from eval)
+- Start with ingest (sorted)
+- Process ingest: clean in-deg becomes 0
+- Next: clean, split becomes 0
+- Process clean: split in-deg becomes 0
+- Next: split (only one with 0)
+- Process split: train becomes 0, eval becomes 1
+- Next: train
+- Process train: eval becomes 0
+- Next: eval
+- Process eval: report becomes 0
+- Next: report
+- Process report: done
+
+Topological order: ingest, clean, split, train, eval, report
+
+So the output should be `{"valid": true, "order": ["ingest", "clean", "split", "train", "eval", "report"]}`
+
+Wait, but the engine uses `q.sort()` after each pop, which means the queue is sorted. With single elements or already in order, it doesn't matter.
+
+Actually let me re-trace:
+- Start: `q = sorted([ingest])` = `[ingest]`
+- Pop ingest, add to order. Process edges: clean in-deg becomes 0, q = `[clean]`, sorted
+- Pop clean, add to order. Process edges: split in-deg becomes 0, q = `[split]`, sorted
+- Pop split, add to order. Process edges: train becomes 0, eval becomes 1, q = `[train]`, sorted
+- Pop train, add to order. Process edges: eval becomes 0, q = `[eval]`, sorted
+- Pop eval, add to order. Process edges: report becomes 0, q = `[report]`, sorted
+- Pop report, add to order. q = `[]`
+- All 6 nodes in order
+
+Output: `{"valid": true, "order": ["ingest", "clean", "split", "train", "eval", "report"]}`
+
+Now I need to construct the input JSON for the engine.
+
+The records dict should have:
+- `NODES`: ["ingest", "clean", "split", "train", "eval", "report"]
+- `EDGES`: each edge should be parseable... The edges are strings like "ingest>clean" but the engine needs to extract source and target. Looking at the engine:
+
+```python
+sk = fm.get('edge_source', []) + ['source', 'from', 'src', 'u', 'tail']
+tk = fm.get('edge_target', []) + ['target', 'to', 'dst', 'v', 'head']
+```
+
+And `gv` extracts a value from a dict by trying keys. So if an edge is just a string like "ingest>clean", `gv` would return None (since strings don't have those keys via `in`).
+
+Wait, actually `gv` checks `if k in o:`. For a string `o = "ingest>clean"`, this would check if substring `"source"` is in `"ingest>clean"`, which is False. So it returns None.
+
+So I need to provide edges as dicts with source/target keys, or specify custom field_map keys.
+
+Actually, looking again at `gv`:
+```python
+def gv(o, ks, df):
+    for k in ks:
+        if k in o: return o[k]
+    for k in df:
+        if k in o: return o[k]
+    return None
+```
+
+For string `o = "ingest>clean"`:
+- `if "source" in "ingest>clean"`: checks substring - False
+- `if "from" in "ingest>clean"`: False
+- ...
+- `if "id" in "ingest>clean"`: False
+- Returns None
+
+So I need to either:
+1. Convert edges to dicts like `{"source": "ingest", "target": "clean"}`
+2. Use a custom field_map
+
+Hmm, but the task says I should parse `graph.env` and the edges are strings like "ingest>clean". The engine needs dicts.
+
+Let me think about this. The most natural approach is to parse the edges into dicts.
+
+Actually, I could provide a custom field_map that... no wait, the `gv` function only looks at dictionary keys. There's no way to make it work with raw strings.
+
+So I need to convert the edges to dicts. Let me structure the records dict like:
+```json
+{
+  "NODES": ["ingest", "clean", "split", "train", "eval", "report"],
+  "EDGES": [
+    {"source": "ingest", "target": "clean"},
+    {"source": "clean", "target": "split"},
+    ...
+  ]
+}
+```
+
+Or with the default field_map, just use `"nodes"` and `"edges"` keys with proper dict structures.
+
+Let me construct the response:
+
+```json
+{
+  "records": {
+    "NODES": ["ingest", "clean", "split", "train", "eval", "report"],
+    "EDGES": [
+      {"source": "ingest", "target": "clean"},
+      {"source": "clean", "target": "split"},
+      {"source": "split", "target": "train"},
+      {"source": "split", "target": "eval"},
+      {"source": "train", "target": "eval"},
+      {"source": "eval", "target": "report"}
+    ]
+  },
+  "field_map": {
+    "nodes": ["NODES"],
+    "edges": ["EDGES"],
+    "edge_source": ["source"],
+    "edge_target": ["target"]
+  },
+  "notes": "Parsed graph.env NODES/EDGES into canonical form; DAG validates as acyclic."
+}
+```
+
+Actually, the default field_map already covers `source` and `target` for edges. I just need to specify `NODES` and `EDGES` since they're uppercase.
+
+Let me check the engine defaults again:
+- `nk = fm.get('nodes', ['nodes', 'vertices'])` - defaults to `nodes`, `vertices`
+- `ek = fm.get('edges', ['edges', 'links', 'arcs'])` - defaults to `edges`, `links`, `arcs`
+- `nk2 = fm.get('node_id', []) + ['id', 'name', 'node_id', 'vertex_id']`
+- `sk = fm.get('edge_source', []) + ['source', 'from', 'src', 'u', 'tail']`
+- `tk = fm.get('edge_target', []) + ['target', 'to', 'dst', 'v', 'head']`
+
+For nodes that are strings like "ingest", `gv(n, nk2, ['id', 'name'])`:
+- `if "id" in "ingest"`: False
+- `if "name" in "ingest"`: False
+- `if "node_id" in "ingest"`: False
+- `if "vertex_id" in "ingest"`: False
+- Returns `f"__n{len(nlist)}"`
+
+So for string nodes, they get auto-named as `__n0`, `__n1`, etc.
+
+But for edges, source/target need to come from edge dicts. If edges are strings like "ingest>clean", `gv` returns None for both, so the edge is skipped.
+
+So the approach is:
+- Use `NODES` key with list of strings, OR use list of dicts with `id` keys
+- Use `EDGES` key with list of dicts having `source` and `target`
+
+Since the nodes are simple strings, they can be plain strings (will get auto-named to `__n0`, etc., which won't match the edge endpoints).
+
+So I MUST use node dicts with `id` field, OR set the node_id field_map to look at the string itself somehow (but `gv` uses `in` which does substring check, not equality).
+
+Wait, `gv` uses `if k in o:`. For string `o`, this checks substring. So `"id" in "ingest"` is False, but `"i" in "ingest"` is True. That's not what we want.
+
+Better to use node dicts:
+```json
+"NODES": [
+  {"id": "ingest"},
+  {"id": "clean"},
+  ...
+]
+```
+
+Or, I can use the nodes as strings but provide custom field_map with a key that won't be found in strings... wait that's the same problem.
+
+Hmm. Let me think again. If I want strings to work as node IDs, I need a way for `gv` to extract the string itself. But `gv` only checks `if k in o` and returns `o[k]`. For strings, `o[k]` would be `o[k]` where k is treated as... actually wait, strings support indexing! `"ingest"[0]` = "i".
+
+But the engine code is `if k in o: return o[k]`. The `in` operator for strings checks substring. So this is buggy or intended for dicts only.
+
+Actually wait, looking more carefully at the function:
+```python
+def gv(o, ks, df):
+    for k in ks:
+        if k in o: return o[k]
+    for k in df:
+        if k in o: return o[k]
+    return None
+```
+
+For dicts, `k in o` checks key membership, and `o[k]` gets the value.
+For strings, `k in o` checks substring membership, and `o[k]` would be string indexing.
+
+This is definitely designed for dicts. For string nodes, the default fallback `f"__n{len(nlist)}"` would be used, which would break matching with edges.
+
+So I should use node dicts with explicit `id` field. Let me finalize:
+
+```json
+{
+  "records": {
+    "NODES": [
+      {"id": "ingest"},
+      {"id": "clean"},
+      {"id": "split"},
+      {"id": "train"},
+      {"id": "eval"},
+      {"id": "report"}
+    ],
+    "EDGES": [
+      {"source": "ingest", "target": "clean"},
+      {"source": "clean", "target": "split"},
+      {"source": "split", "target": "train"},
+      {"source": "split", "target": "eval"},
+      {"source": "train", "target": "eval"},
+      {"source": "eval", "target": "report"}
+    ]
+  },
+  "field_map": {
+    "nodes": ["NODES"],
+    "edges": ["EDGES"]
+  },
+  "notes": "Parsed graph.env; nodes promoted to dicts with id; DAG is acyclic."
+}
+```
+
+Actually, looking again, the field_map can be minimal since the defaults already include "source" and "target" for edge source/target. I just need to override `nodes` and `edges` since the keys are uppercase.
+
+Actually wait, I could just use lowercase keys in my records dict (matching defaults) to avoid needing a custom field_map:
+
+```json
+{
+  "records": {
+    "nodes": [
+      {"id": "ingest"},
+      {"id": "clean"},
+      ...
+    ],
+    "edges": [
+      {"source": "ingest", "target": "clean"},
+      ...
+    ]
+  },
+  "field_map": {},
+  "notes": "..."
+}
+```
+
+Hmm, but then the field_map is empty. Either way works. I'll use the uppercase keys to match the source format more faithfully.
+
+Let me finalize:
+
+```json
+{
+  "records": {
+    "NODES": [
+      {"id": "ingest"},
+      {"id": "clean"},
+      {"id": "split"},
+      {"id": "train"},
+      {"id": "eval"},
+      {"id": "report"}
+    ],
+    "EDGES": [
+      {"source": "ingest", "target": "clean"},
+      {"source": "clean", "target": "split"},
+      {"source": "split", "target": "train"},
+      {"source": "split", "target": "eval"},
+      {"source": "train", "target": "eval"},
+      {"source": "eval", "target": "report"}
+    ]
+  },
+  "field_map": {
+    "nodes": ["NODES"],
+    "edges": ["EDGES"]
+  },
+  "notes": "Parsed graph.env NODES=6, EDGES=6; canonical form yields acyclic DAG with full topological order."
+}
+```
+
+This should work. The engine will:
+1. Parse records with NODES and EDGES keys
+2. Extract node IDs from `id` field
+3. Extract source/target from edge dicts
+4. Run Kahn's algorithm
+5. Return `{"valid": true, "order": ["ingest", "clean", "split", "train", "eval", "report"]}`
+
+Wait, let me re-verify the topological order. With sorted queue:
+- ids = {ingest, clean, split, train, eval, report}
+- adj: ingest->[clean], clean->[split], split->[train, eval], train->[eval], eval->[report]
+- ind: ingest=0, clean=1, split=1, train=1, eval=2, report=1
+- q = [ingest] (sorted)
+- Pop ingest, order=[ingest]. clean: ind=0, q=[clean]
+- Pop clean, order=[ingest,clean]. split: ind=0, q=[split]
+- Pop split, order=[ingest,clean,split]. train: ind=0, q=[train]
+- Pop train, order=[ingest,clean,split,train]. eval: ind=0, q=[eval]
+- Pop eval, order=[ingest,clean,split,train,eval]. report: ind=0, q=[report]
+- Pop report, order=[ingest,clean,split,train,eval,report]. q=[]
+- Done, valid.
+
+Output: `{"valid": true, "order": ["ingest", "clean", "split", "train", "eval", "report"]}`
+
+Looks good. Let me write the final response.</think>
+
+{"records": {"NODES": [{"id": "ingest"}, {"id": "clean"}, {"id": "split"}, {"id": "train"}, {"id": "eval"}, {"id": "report"}], "EDGES": [{"source": "ingest", "target": "clean"}, {"source": "clean", "target": "split"}, {"source": "split", "target": "train"}, {"source": "split", "target": "eval"}, {"source": "train", "target": "eval"}, {"source": "eval", "target": "report"}]}, "field_map": {"nodes": ["NODES"], "edges": ["EDGES"]}, "notes": "Parsed graph.env (6 nodes, 6 edges) into canonical {id,source,target} form; graph is acyclic."}

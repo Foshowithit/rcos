@@ -1,0 +1,7 @@
+<think>The task is straightforward: read events.csv from src_dir, count data rows (skip header), compute unique (action,target) pairs, and emit total/unique/removed counts to OUTPUT.json.
+
+Total = 5, Unique = 3 (open,A), (login,B), (render,C), Removed = 2.
+
+Simple Python stdlib script.</think>
+
+{"solver_py": "import csv, json, os, sys\n\ndef solve(src_dir, dst_path):\n    csv_path = os.path.join(src_dir, 'events.csv')\n    total = 0\n    seen = set()\n    with open(csv_path, 'r', newline='') as f:\n        reader = csv.DictReader(f)\n        for row in reader:\n            total += 1\n            seen.add((row['action'], row['target']))\n    unique = len(seen)\n    removed = total - unique\n    with open(dst_path, 'w') as f:\n        json.dump({'total': total, 'unique': unique, 'removed': removed}, f)\n\nif __name__ == '__main__':\n    solve(sys.argv[1], sys.argv[2])\n", "notes": "Reads events.csv, counts rows and unique (action,target) pairs, writes OUTPUT.json with total/unique/removed."}

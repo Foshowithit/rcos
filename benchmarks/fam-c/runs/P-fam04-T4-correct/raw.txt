@@ -1,0 +1,471 @@
+<think>The task is to validate a graph file. The graph.json contains:
+- nodes: ["a", "b", "c"]
+- edges: [["a", "b"], ["b", "c"], ["c", "a"]]
+
+This is a cycle: a -> b -> c -> a.
+
+I need to supply inputs for the engine. The engine takes:
+- sys.argv[1]: field_map (JSON file)
+- sys.argv[2]: records (graph dict)
+- sys.argv[3]: output path
+
+I need to provide field_map and records. The records path holds the raw graph dict.
+
+The field_map needs to be a JSON object with keys: nodes, edges, node_id, edge_source, edge_target.
+
+Let me construct the field_map:
+- nodes: ["nodes"]
+- edges: ["edges"]
+- node_id: [] (since nodes are just strings, not dicts)
+- edge_source: [] (edges are lists, not dicts with source/target)
+- edge_target: []
+
+Wait, looking at the norm function more carefully:
+- nodes are resolved from top-level keys
+- for each node, it tries to find an id using nk2 (which includes 'id', 'name', etc.) - if a node is a string, gv() will check if k in o, but 'id' is not in a string... actually, `if k in o` would check substring membership for strings, which is wrong. Let me re-read.
+
+Actually, `gv(n, nk2, ['id', 'name'])` - n is a string like "a". `if k in o` where o is "a" and k is "id" - "id" in "a" is False. So it falls through to the second loop `for k in df: if k in o: return o[k]` - df is ['id', 'name']. "id" in "a" is False, "name" in "a" is False. Returns None. Then it falls back to `f"__n{len(nlist)}"`.
+
+Hmm, but wait - for strings, nodes are just "a", "b", "c". The fallback generates "__n0", "__n1", "__n2". That would lose the actual node names.
+
+Actually, looking at the example graph in the task: {"nodes": ["a", "b", "c"], "edges": [["a", "b"], ["b", "c"], ["c", "a"]]}
+
+If nodes are strings, the norm function would generate "__n0", "__n1", "__n2" as node ids. But edges are also lists like ["a", "b"]. For edges, gv(e, sk, ['source']) - e is ["a", "b"]. "source" in ["a", "b"] is False (checks if "source" is an element). Then falls to df ['source'] - "source" in ["a", "b"] is False. Returns None. So edges are skipped!
+
+That's a problem. Let me reconsider.
+
+Actually, I think the engine might not work well with this particular graph format (edges as lists of strings). But the task says to use the provided capability. Let me re-read the engine code more carefully.
+
+Wait, `gv` is defined as:
+```python
+def gv(o, ks, df):
+    for k in ks:
+        if k in o: return o[k]
+    for k in df:
+        if k in o: return o[k]
+    return None
+```
+
+For a list `["a", "b"]`, `if k in o` checks if k is an element of the list. So "source" in ["a", "b"] is False. So edges as lists of strings won't work with the engine.
+
+Hmm, but the task explicitly says to use this engine. Maybe I need to provide a field_map that handles this case? But the engine doesn't seem to support edges as lists of two strings.
+
+Actually, wait. Let me look at the nodes case again. For node "a" (a string):
+- nk2 includes 'id', 'name', etc.
+- "id" in "a" - for strings, this checks substring. "id" is not in "a". False.
+- Falls to df ['id', 'name'] - same, False.
+- Returns None, fallback to "__n0".
+
+So node strings become "__n0", etc. This loses the identity.
+
+For edges ["a", "b"]:
+- sk defaults: ['source', 'from', 'src', 'u', 'tail']
+- "source" in ["a", "b"] - checks element membership. False.
+- Returns None. Edge is skipped.
+
+So with the default engine, this graph would become nodes = ["__n0", "__n1", "__n2"] and no edges. It would be valid with order ["__n0", "__n1", "__n2"].
+
+But the actual graph HAS a cycle. So the engine's output would be wrong for this input format.
+
+However, I need to provide the input per the interface. The interface says: "Records path holds the raw graph dict."
+
+I think I should provide the records as is, and provide a field_map. But the field_map doesn't help if the engine fundamentally can't parse edges-as-lists.
+
+Wait, maybe I should look at this differently. The field_map has keys for node_id, edge_source, edge_target. Maybe I can somehow make it work? No, the issue is structural - the engine assumes nodes and edges are dicts.
+
+Let me re-read the task. "You are solving the task below using a PROVIDED capability." The capability is the engine. But the engine doesn't support this format well.
+
+Actually, wait. Let me check: `gv(n, nk2, ['id', 'name'])` where n is "a". 
+```python
+for k in ks:
+    if k in o: return o[k]
+```
+ks would be nk2 = [] + ['id', 'name', 'node_id', 'vertex_id']
+"id" in "a" -> False (substring check)
+"name" in "a" -> False
+"node_id" in "a" -> False
+"vertex_id" in "a" -> False
+Then df = ['id', 'name']
+"id" in "a" -> False
+"name" in "a" -> False
+Returns None.
+Then: `nid = gv(n, nk2, ['id', 'name']) or f"__n{len(nlist)}"`
+Since gv returns None, nid = "__n0".
+
+So yes, strings as nodes get renamed to __n0, __n1, etc.
+
+For edges, since they're lists, gv returns None and they're skipped.
+
+Result: valid DAG with order ["__n0", "__n1", "__n2"].
+
+But the correct answer should detect the cycle a->b->c->a.
+
+Given the constraint that I must use this engine, and the output format requires me to specify records and field_map... 
+
+Actually, let me reconsider. Maybe I can provide the graph in a format the engine understands? But the task says to read graph.json and write OUTPUT.json. The graph.json is fixed.
+
+Hmm, or maybe I should provide a records path that points to a modified version? But the task says "Records path holds the raw graph dict."
+
+Let me think about this. The engine expects dict nodes and dict edges. But the input has string nodes and list edges. 
+
+Wait - I could convert the graph before passing it to the engine! But the task says the records path holds the raw graph dict.
+
+Actually, looking at the response format: "records": {<input records dict for the engine, per its interface convention>}
+
+Maybe "records" is the dict that gets passed to the engine. So I can pre-process the graph into the format the engine expects!
+
+But then I'd need to actually run the engine to produce OUTPUT.json. The task asks me to output a JSON object with records, field_map, notes. This is the input to some system that runs the engine.
+
+Actually, looking more carefully at the task structure: I'm supposed to provide the inputs (records dict and field_map) that will be written to files and then the engine will be run. The final OUTPUT.json will be produced by the engine.
+
+But I need to think: what should the final OUTPUT.json contain? The task says:
+- `{"valid": true, "order": [...]}` for a DAG
+- `{"valid": false, "cycle": [...]}` for a cycle
+
+The graph has a cycle: a->b->c->a. So OUTPUT.json should have valid:false with the cycle.
+
+But the engine as written doesn't handle this graph format correctly. It would produce valid:true with renamed nodes.
+
+Hmm, unless... let me check if there's a way to make the field_map help.
+
+Wait, maybe I'm wrong about the string handling. Let me double-check Python:
+```python
+"id" in "a"  # False - checks substring
+```
+Yes, False.
+
+```python
+"a" in ["a", "b"]  # True - checks element membership
+```
+Yes.
+
+So for edges ["a", "b"], the engine checks if "source" is an element. It's not. Returns None. Edge skipped.
+
+The engine fundamentally cannot handle this format.
+
+Unless... the task expects me to recognize this and provide a pre-processed graph? Or maybe the field_map can somehow indicate that edges are positional?
+
+Looking at the field_map interface:
+- nodes: list of candidate top-level keys
+- edges: list
+- node_id: list of candidate node identifier fields
+- edge_source: list
+- edge_target: list
+
+There's no way to specify "edges are 2-element lists where [0] is source and [1] is target".
+
+Given this constraint, and that the actual graph in graph.json has a cycle, I think the correct approach is:
+1. The graph.json has a cycle (a->b->c->a)
+2. The engine can't handle the format, so it would report valid (wrongly)
+3. But the correct answer is valid:false with cycle
+
+Wait, but I'm not running the engine - I'm providing inputs to be run. So I need to think about what the engine will output with my inputs.
+
+If I provide the raw graph as records, the engine will output valid:true with ["__n0", "__n1", "__n2"], which is wrong.
+
+If I provide a pre-processed graph where nodes are dicts and edges are dicts with source/target, the engine will correctly detect the cycle.
+
+Actually, wait. Let me re-read: "records": {<input records dict for the engine, per its interface convention>}
+
+This is what I provide as the "records" field in my response. This will be written to a file and the engine will read it. So I can pre-process!
+
+But pre-processing would mean converting:
+- ["a", "b", "c"] to [{"id": "a"}, {"id": "b"}, {"id": "c"}]
+- [["a", "b"], ["b", "c"], ["c", "a"]] to [{"source": "a", "target": "b"}, ...]
+
+But then the nodes list would have dicts with "id" field. The engine's norm function would extract "id" correctly.
+
+Let me verify with pre-processed data:
+nodes = [{"id": "a"}, {"id": "b"}, {"id": "c"}]
+edges = [{"source": "a", "target": "b"}, {"source": "b", "target": "c"}, {"source": "c", "target": "a"}]
+
+In norm:
+- nodes resolved: nlist = []
+- For {"id": "a"}: gv(n, nk2, ['id', 'name']) - nk2 is fm.get('node_id', []) + ['id', 'name', ...]. If I provide node_id in field_map, it includes those. But "id" is in the default list. gv checks "id" in {"id": "a"} -> True, returns "a". 
+- Wait, gv checks `if k in o`. For dict o = {"id": "a"}, "id" in o checks if "id" is a key. True. Returns o["id"] = "a".
+
+So nlist becomes ["a", "b", "c"].
+
+For edges [{"source": "a", "target": "b"}, ...]:
+- gv(e, sk, ['source']) where sk includes 'source'. "source" in {"source": "a", ...} -> True. Returns "a".
+- Similarly target is "b".
+- elist gets [("a", "b"), ("b", "c"), ("c", "a")].
+
+Then valid() runs Kahn's algorithm. All nodes have in-degree 1. No node has in-degree 0. order is empty. len(order)=0 != len(ids)=3.
+
+Then DFS for cycle:
+- adj = {"a": ["b"], "b": ["c"], "c": ["a"]}
+- color = {"a": 0, "b": 0, "c": 0}
+- Start with "a": dfs("a"), color["a"]=1. v="b": color["b"]=0, par["b"]="a", dfs("b"). color["b"]=1. v="c": color["c"]=0, par["c"]="b", dfs("c"). color["c"]=1. v="a": color["a"]==1 (gray). Found cycle!
+- c = ["c"], u="c". v="a". Loop: x="c", par["c"]="b", x!="a", c.append("b"). x="b", par["b"]="a", x!="a", c.append("a"). x="a"==v, stop.
+- c = ["c", "b", "a"]. reversed: ["a", "b", "c"]. cycle = ["a", "b", "c"] + ["a"] = ["a", "b", "c", "a"].
+
+So valid:false, cycle:["a", "b", "c", "a"]. 
+
+But wait, the order of nodes in the set might affect this. The DFS iterates `for i in ids`. What order are ids in? `ids = set(ns)` where ns = ["a", "b", "c"]. In Python 3.7+, dict preserves insertion order, but set doesn't guarantee order. Actually, `adj = {i: [] for i in ids}` - this iterates over the set. In CPython, small sets/strings have consistent ordering but it's not guaranteed.
+
+Actually, looking at the code: `ids = set(ns)` then `adj = {i: [] for i in ids}`. Then `for i in ids: if color[i] == 0 and dfs(i)`. The set iteration order could be "a", "b", "c" or "c", "b", "a", etc.
+
+But the cycle detection starts from the first unvisited node and follows the cycle. With edges a->b, b->c, c->a, starting from any node will find the full cycle.
+
+If start with "a": finds cycle "a"->"b"->"c"->"a". cycle = ["a", "b", "c", "a"].
+If start with "b": finds "b"->"c"->"a"->"b". cycle = ["b", "c", "a", "b"].
+If start with "c": finds "c"->"a"->"b"->"c". cycle = ["c", "a", "b", "c"].
+
+Hmm, but the manifest claims "T0:deterministic output regardless of input edge order via sorted Kahn queue". That's about valid case. For cycle, it depends on set iteration order.
+
+But actually, looking at the code more carefully: `for i in ids:` iterates over the set. The result depends on hash ordering. In Python 3, set iteration order depends on hash values and insertion order. For strings "a", "b", "c", their hashes are consistent within a run.
+
+Actually, I realize I should just provide the pre-processed graph and field_map. The field_map should help the engine parse it.
+
+Let me construct the field_map:
+```json
+{
+  "nodes": ["nodes"],
+  "edges": ["edges"],
+  "node_id": ["id"],
+  "edge_source": ["source"],
+  "edge_target": ["target"]
+}
+```
+
+And records (the pre-processed graph):
+```json
+{
+  "nodes": [{"id": "a"}, {"id": "b"}, {"id": "c"}],
+  "edges": [{"source": "a", "target": "b"}, {"source": "b", "target": "c"}, {"source": "c", "target": "a"}]
+}
+```
+
+With this, the engine will correctly detect the cycle.
+
+Wait, but is this allowed? The task says to read graph.json. But I'm providing the records dict in my response. The "records" field is what gets written to the records file for the engine.
+
+Actually, looking at the response format example: "records": {<input records dict for the engine, per its interface convention>}
+
+This is the content that will be passed to the engine. I need to make it work with the engine. Since the engine can't handle the original format (string nodes, list edges), I need to convert it.
+
+Alternatively, maybe I should provide the raw graph and accept that the engine will output wrong results? No, that doesn't make sense.
+
+Or maybe... let me check if the engine handles string nodes correctly after all. Let me trace through with the raw graph one more time:
+
+```python
+g = {"nodes": ["a", "b", "c"], "edges": [["a", "b"], ["b", "c"], ["c", "a"]]}
+fm = {}  # or some default
+
+norm(g, fm):
+  nk = fm.get('nodes', ['nodes', 'vertices']) = ['nodes', 'vertices']
+  ek = fm.get('edges', ['edges', 'links', 'arcs']) = ['edges', 'links', 'arcs']
+  nodes = next((g[k] for k in nk if k in g), []) = g['nodes'] = ["a", "b", "c"]
+  edges = next((g[k] for k in ek if k in g), []) = g['edges'] = [["a", "b"], ["b", "c"], ["c", "a"]]
+  nk2 = [] + ['id', 'name', 'node_id', 'vertex_id'] = ['id', 'name', 'node_id', 'vertex_id']
+  sk = [] + ['source', 'from', 'src', 'u', 'tail'] = ['source', 'from', 'src', 'u', 'tail']
+  tk = [] + ['target', 'to', 'dst', 'v', 'head'] = ['target', 'to', 'dst', 'v', 'head']
+  
+  nlist = [], seen = set()
+  for n in ["a", "b", "c"]:
+    # n is a string
+    # gv(n, nk2, ['id', 'name']):
+    #   for k in ['id', 'name', 'node_id', 'vertex_id']:
+    #     if k in n:  # substring check for string
+    #       "id" in "a" -> False
+    #       "name" in "a" -> False
+    #       "node_id" in "a" -> False
+    #       "vertex_id" in "a" -> False
+    #   for k in ['id', 'name']:
+    #     "id" in "a" -> False
+    #     "name" in "a" -> False
+    #   return None
+    nid = None or f"__n{len(nlist)}"
+    nlist.append(nid); seen.add(nid)
+  # nlist = ["__n0", "__n1", "__n2"]
+  
+  elist = []
+  for e in [["a", "b"], ["b", "c"], ["c", "a"]]:
+    # gv(e, sk, ['source']): e is a list
+    #   for k in ['source', 'from', 'src', 'u', 'tail']:
+    #     if k in e:  # element check for list
+    #       "source" in ["a", "b"] -> False
+    #       ...
+    #   for k in ['source']:
+    #     "source" in ["a", "b"] -> False
+    #   return None
+    s = None
+    # gv(e, tk, ['target']): same, returns None
+    t = None
+    if s is None or t is None: continue  # SKIP EDGE
+  # elist = []
+```
+
+So with raw graph: ns=["__n0","__n1","__n2"], es=[]. Kahn: all have in-degree 0. q=["__n0","__n1","__n2"] sorted. Pop each, order gets all three. valid=True, order=["__n0","__n1","__n2"]. WRONG.
+
+So I must pre-process. I'll convert to the dict format.
+
+Actually, wait. Let me reconsider the task. The task says to validate graph.json. The correct answer is that it's invalid (has cycle). But using the engine as-is on the raw data gives wrong answer. 
+
+But looking at the promoted capability interface: "Validates acyclicity of graph-structured JSON records under variable schemas (nodes/edges, vertices/links, arcs, etc.) by normalizing field names via a field_map before Kahn topological sort with DFS cycle extraction."
+
+The capability is supposed to handle variable schemas. But it clearly can't handle edges-as-lists-of-strings. This seems like a limitation.
+
+Given the constraints, I think the intended solution is to provide the graph in a format the engine understands, OR provide a field_map that somehow helps. Since the field_map can't fix the structural issue, I need to convert the records.
+
+Actually, let me look one more time. Is there any way for the engine to extract source/target from a list? No, the code clearly checks `if k in o` which for a list checks element membership.
+
+Unless... what if I provide a custom field_map with weird keys? No, the issue is that the engine looks for specific keys (source, from, etc.) as elements of the edge list.
+
+Conclusion: I must pre-process the graph into the format {"nodes": [{"id": ...}, ...], "edges": [{"source": ..., "target": ...}, ...]}.
+
+Actually, wait. I want to double-check one thing. What if nodes are strings and the engine DOES handle them somehow? Let me check if `f"__n{len(nlist)}"` is actually used. Yes, when gv returns None, the fallback is used. So string nodes become __n0, __n1, __n2.
+
+But wait - what if the task expects me to realize that string nodes should be treated as their string value? The engine doesn't do that. But maybe I should provide a field_map that adds "id" as a candidate... no, that's already in the default list. The issue is "id" in "a" is False for substring check.
+
+Actually, I wonder if the engine was designed assuming nodes are always dicts. In that case, the raw graph.json with string nodes is incompatible.
+
+Given that, I'll provide the converted records.
+
+Let me construct the final response:
+
+records:
+{
+  "nodes": [{"id": "a"}, {"id": "b"}, {"id": "c"}],
+  "edges": [{"source": "a", "target": "b"}, {"source": "b", "target": "c"}, {"source": "c", "target": "a"}]
+}
+
+field_map:
+{
+  "nodes": ["nodes"],
+  "edges": ["edges"],
+  "node_id": ["id"],
+  "edge_source": ["source"],
+  "edge_target": ["target"]
+}
+
+The engine will detect the cycle: a->b->c->a.
+
+Actually, let me think about the cycle output format once more. The DFS in the engine:
+```python
+def dfs(u):
+    color[u] = 1
+    for v in adj[u]:
+        if color[v] == 1:
+            c, x = [u], u
+            while x != v:
+                x = par[x]; c.append(x)
+            cycle.extend(list(reversed(c)) + [v])
+            return True
+        if color[v] == 0:
+            par[v] = u
+            if dfs(v): return True
+    color[u] = 2
+    return False
+```
+
+When v is gray (color 1), we found a back edge. We trace back from u using par until we reach v. c starts with [u]. Then we go back: x = par[x] repeatedly, appending to c. When x == v, stop. Then cycle = reversed(c) + [v].
+
+Let's trace with adj = {"a": ["b"], "b": ["c"], "c": ["a"]}. Suppose we start with "a" (assuming set iteration gives "a" first... actually let's just see what happens).
+
+dfs("a"): color["a"]=1. v="b": color["b"]=0. par["b"]="a". dfs("b").
+dfs("b"): color["b"]=1. v="c": color["c"]=0. par["c"]="b". dfs("c").
+dfs("c"): color["c"]=1. v="a": color["a"]==1. Found!
+  c = ["c"], x = "c". 
+  while x != v ("a"):
+    x = par["c"] = "b". c = ["c", "b"]. 
+    x != "a", x = par["b"] = "a". c = ["c", "b", "a"].
+    x == "a" == v. Stop.
+  cycle.extend(list(reversed(["c","b","a"])) + ["a"]) = ["a", "b", "c", "a"].
+
+So cycle = ["a", "b", "c", "a"]. 
+
+But this assumes we start at "a". If we start at "c":
+dfs("c"): color["c"]=1. v="a": color["a"]=0. par["a"]="c". dfs("a").
+dfs("a"): color["a"]=1. v="b": color["b"]=0. par["b"]="a". dfs("b").
+dfs("b"): color["b"]=1. v="c": color["c"]==1. Found!
+  c = ["b"], x="b". 
+  x != "c": x = par["b"] = "a". c=["b","a"].
+  x != "c": x = par["a"] = "c". c=["b","a","c"].
+  x == "c". Stop.
+  cycle = reversed(["b","a","c"]) + ["c"] = ["c","a","b"] + ["c"] = ["c","a","b","c"].
+
+So the cycle depends on which node DFS starts from. The iteration `for i in ids` uses set order. In Python 3, `set(["a","b","c"])` iteration order is not guaranteed but in practice for small sets of strings it's consistent within a run (actually, it depends on PYTHONHASHSEED).
+
+Hmm, but the task says the cycle should trace back to its start. Any of ["a","b","c","a"], ["b","c","a","b"], or ["c","a","b","c"] would be valid.
+
+Actually, let me check if there's a way to make it deterministic. Looking at the valid() function... `ids = set(ns)` and then `for i in ids`. In CPython, set iteration order for strings depends on the hash. But for this small example, it might be consistent. Actually, with PYTHONHASHSEED randomization (default in Python 3.3+), string hashes vary between runs. So the DFS start could vary.
+
+But that's a problem with the engine, not my input. I'll just provide the records and field_map and let the engine produce whatever cycle it finds.
+
+Actually, wait. I want to check: is there any way to make the cycle deterministic? The code does `sorted([i for i in ids if ind[i] == 0])` for the Kahn queue, but for DFS it just iterates `for i in ids`. So DFS start is non-deterministic for cycles.
+
+But regardless, the output will be valid:false with some cycle. That's the correct answer.
+
+Let me finalize:
+
+```json
+{
+  "records": {
+    "nodes": [{"id": "a"}, {"id": "b"}, {"id": "c"}],
+    "edges": [{"source": "a", "target": "b"}, {"source": "b", "target": "c"}, {"source": "c", "target": "a"}]
+  },
+  "field_map": {
+    "nodes": ["nodes"],
+    "edges": ["edges"],
+    "node_id": ["id"],
+    "edge_source": ["source"],
+    "edge_target": ["target"]
+  },
+  "notes": "Graph has cycle a->b->c->a; preprocessed into dict format for engine compatibility."
+}
+```
+
+Wait, I need to double-check: will the engine actually produce the cycle correctly? Let me verify the norm function with my pre-processed data one more time.
+
+norm with g = {"nodes": [{"id":"a"},...], "edges": [{"source":"a",...},...]}:
+- nodes = [{"id":"a"},{"id":"b"},{"id":"c"}]
+- edges = [{"source":"a","target":"b"},{"source":"b","target":"c"},{"source":"c","target":"a"}]
+- nlist = []
+- For {"id":"a"}: gv(n, nk2, ['id','name']). nk2 = ['id','name','node_id','vertex_id']. "id" in {"id":"a"} -> True. Returns "a". nid="a".
+- nlist = ["a","b","c"]. seen = {"a","b","c"}.
+- For {"source":"a","target":"b"}: gv(e, sk, ['source']). sk = ['source','from','src','u','tail']. "source" in {"source":"a",...} -> True. Returns "a". s="a". t="b". Both not in seen check (they are in seen). elist gets ("a","b"). 
+- etc.
+
+ns=["a","b","c"], es=[("a","b"),("b","c"),("c","a")].
+
+valid():
+- ids = {"a","b","c"}
+- adj = {"a":["b"], "b":["c"], "c":["a"]}
+- ind = {"a":1, "b":1, "c":1} (a from c, b from a, c from b)
+- q = sorted([]) = []
+- order = []
+- while q: skip
+- len(order)=0 != 3. Not valid.
+- DFS: finds cycle. Output: valid:False, cycle:[...].
+
+Perfect.
+
+Actually, I want to verify what cycle is extracted. The DFS iterates `for i in ids`. ids is a set. In Python, `for i in {"a","b","c"}` could give any order. But let's say it gives "a", "b", "c" (alphabetical-ish, or hash order).
+
+Actually, I just realized: for the specific string hashes in CPython, "a", "b", "c" all have different hashes. The set iteration order is based on hash. With hash randomization, this varies. But in this specific code, the cycle will be one of the three rotations.
+
+For the purposes of this task, any valid cycle representation is correct. I'll go with my pre-processed approach.
+
+One final check: the field_map. Do I need to include all the default keys? No, the field_map is additive. The defaults are in the code. My field_map just specifies which keys to use. For nodes/edges top-level, ["nodes"] and ["edges"] match the data. For node_id, ["id"] matches {"id":"a"}. For source/target, ["source"] and ["target"] match.
+
+Actually, I should double-check: does adding to field_map REPLACE or EXTEND the defaults? Looking at norm:
+```python
+nk = fm.get('nodes', ['nodes', 'vertices'])
+ek = fm.get('edges', ['edges', 'links', 'arcs'])
+```
+So if fm has 'nodes', it uses that; otherwise default. I'm providing my own lists.
+
+```python
+nk2 = fm.get('node_id', []) + ['id', 'name', 'node_id', 'vertex_id']
+sk = fm.get('edge_source', []) + ['source', 'from', 'src', 'u', 'tail']
+tk = fm.get('edge_target', []) + ['target', 'to', 'dst', 'v', 'head']
+```
+So node_id, edge_source, edge_target are EXTENDED with defaults. I provide ["id"], which extends to ["id","id","name","node_id","vertex_id"] - duplicates but harmless. It will find "id" in the node dict.
+
+Good. My field_map is fine.
+
+Final answer:</think>
+
+{"records": {"nodes": [{"id": "a"}, {"id": "b"}, {"id": "c"}], "edges": [{"source": "a", "target": "b"}, {"source": "b", "target": "c"}, {"source": "c", "target": "a"}]}, "field_map": {"nodes": ["nodes"], "edges": ["edges"], "node_id": ["id"], "edge_source": ["source"], "edge_target": ["target"]}, "notes": "Raw graph.json uses string nodes and list edges which the engine cannot parse (gv() on strings uses substring 'in' check, on lists uses element membership); preprocessed into {id}/{source,target} dict form so Kahn+DFS detects the a->b->c->a cycle."}

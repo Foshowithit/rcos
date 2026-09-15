@@ -1,0 +1,3 @@
+
+
+{"records": {"events": [{"kind": "open", "target": "A"}, {"kind": "login", "target": "B"}, {"kind": "open", "target": "A"}, {"kind": "render", "target": "C"}, {"kind": "login", "target": "B"}, {"kind": "flush", "target": "D"}, {"kind": "open", "target": "A"}, {"kind": "login", "target": "B"}, {"kind": "render", "target": "C"}, {"kind": "flush", "target": "D"}]}, "field_map": {"identity": ["kind", "target"]}, "notes": "Deduplicate events by (kind, target) identity tuple"}

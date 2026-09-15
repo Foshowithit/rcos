@@ -1,0 +1,31 @@
+You are solving the task below from scratch. No registry, no capabilities, no prior solutions exist. Output ONLY one JSON object, no other text.
+
+TASK DEFINITION (T3):
+```
+# fam02-T3 — paginated acquisition, minimal series
+
+Same protocol over `pages/s1.json…`. Follow `next`, retry via
+`fetch.py`, log in `retry.log`, merge into `OUTPUT.json`.
+
+```
+
+TASK DIRECTORY LISTING: VISIBLE.md, faults.json, pages, prompt.md
+
+TASK FILE CONTENTS (exact bytes of small fixtures):
+```
+--- faults.json (17 bytes) ---
+{"failures": {}}
+
+--- pages/s1.json (49 bytes) ---
+{"items": [{"k": "a", "v": 1000}], "next": "s2"}
+
+--- pages/s2.json (49 bytes) ---
+{"items": [{"k": "b", "v": 2000}], "next": null}
+
+```
+
+GOAL: achieve exactly what the task definition above specifies, emitting exactly the output contract it defines.
+
+RESPONSE FORMAT: think for at most a few sentences, then output ONLY one JSON object and stop. No explanations, no fences, no trailing text:
+{"solver_py": "<complete python3 stdlib script reading (src_dir, dst_path) — src_dir contains the task files as listed above — and writing the output contract described in the task definition>", "notes": "<one line>"}
+No explanations; output the object only.

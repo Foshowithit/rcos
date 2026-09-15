@@ -1,0 +1,48 @@
+<think>The task is to read graph.txt with edge definitions (`a -> b` format, `#` comments) and produce an OUTPUT.json following some output contract. The task definition says "Same output contract in `OUTPUT.json`" but doesn't explicitly state the contract.
+
+Let me think about this - it's about validating a DAG. The contract likely needs to output something like:
+- Whether the graph is a valid DAG
+- Maybe topological sort order
+- Edges list
+
+Since the task is "validate DAG, edge-list format", I think the output should be a JSON with edges (as edge-list format) and validation status (is_dag boolean).
+
+Looking at similar tasks (fam04-T1 likely outputs nodes, edges, etc.), the typical contract for these problems is:
+- `nodes`: list of unique node names
+- `edges`: list of [from, to] pairs
+- `is_dag`: boolean
+
+Let me write the solver to:
+1. Parse graph.txt - skip lines starting with `#`, parse `a -> b`
+2. Build edge list and node set
+3. Validate it's a DAG (using Kahn's algorithm or DFS cycle detection)
+4. Output to OUTPUT.json
+
+I'll assume the output contract is something like:
+```json
+{
+  "edges": [["fetch", "compile"], ...],
+  "nodes": ["fetch", "compile", ...],
+  "is_dag": true
+}
+```
+
+Actually, let me be more careful. The task says "Same output contract in `OUTPUT.json`" - this is ambiguous. Looking at typical T1 contract for similar problems, it might just be:
+```json
+{"is_dag": true}
+```
+
+Or it could include the edges. Given the description mentions "edge-list format", I think the output should include the edges.
+
+Let me make my best guess: the contract is likely:
+```json
+{
+  "edges": [["a", "b"], ...],
+  "nodes": [...],
+  "is_dag": true/false
+}
+```
+
+I'll write a solver that produces this.</think>
+
+{"solver_py": "import os, json\n\ndef main():\n    src_dir, dst_path = os.environ.get('SRC_DIR', '.'), os.environ.get('DST_PATH', 'OUTPUT.json')\n    # Allow positional args fallback via sys.argv\n    import sys\n    if len(sys.argv) >= 3:\n        src_dir, dst_path = sys.argv[1], sys.argv[2]\n    graph_path = os.path.join(src_dir, 'graph.txt')\n    edges = []\n    nodes = []\n    node_set = set()\n    with open(graph_path, 'r') as f:\n        for line in f:\n            s = line.strip()\n            if not s or s.startswith('#'):\n                continue\n            # format: a -> b\n            parts = s.split('->')\n            if len(parts) != 2:\n                continue\n            a, b = parts[0].strip(), parts[1].strip()\n            edges.append([a, b])\n            if a not in node_set:\n                node_set.add(a); nodes.append(a)\n            if b not in node_set:\n                node_set.add(b); nodes.append(b)\n    # DAG validation via Kahn's algorithm\n    indeg = {n: 0 for n in nodes}\n    adj = {n: [] for n in nodes}\n    for a, b in edges:\n        adj[a].append(b)\n        indeg[b] = indeg.get(b, 0) + 1\n    from collections import deque\n    q = deque([n for n in nodes if indeg[n] == 0])\n    visited = 0\n    while q:\n        n = q.popleft()\n        visited += 1\n        for m in adj[n]:\n            indeg[m] -= 1\n            if indeg[m] == 0:\n                q.append(m)\n    is_dag = (visited == len(nodes))\n    out = {\"edges\": edges, \"nodes\": nodes, \"is_dag\": is_dag}\n    with open(dst_path, 'w') as f:\n        json.dump(out, f, indent=2)\n\nif __name__ == '__main__':\n    main()\n", "notes": "Parses graph.txt edge-list, validates DAG with Kahn's, writes edges/nodes/is_dag JSON."}

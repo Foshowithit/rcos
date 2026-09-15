@@ -1,0 +1,1 @@
+{"task": "fam01/T2", "lane": "Q", "arm": "disabled", "verdict": "fix", "detail": "solver hardcodes V:/mnt/task path, ignores src_dir contract"}
