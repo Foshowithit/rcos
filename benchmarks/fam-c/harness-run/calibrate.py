@@ -47,7 +47,7 @@ CAL_DIR = os.path.join(FAMC, "runs", "_calibration")
 # The calibration request is deliberately trivial and deterministic: identity,
 # parameter transport and usage capture are under test, not model quality.
 PROMPT = "Reply with exactly the token: CALIBRATION-ACK"
-GEN_PARAMS = {"temperature": 0, "max_tokens": 16, "top_p": 1}
+GEN_PARAMS = {"temperature": 0, "max_tokens": 256, "top_p": 1}
 SEMANTICS = "CALIBRATION / NEVER-ESTIMAND"
 
 
