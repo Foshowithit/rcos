@@ -20,10 +20,13 @@
 - CI runs a secret-grep on every PR. If it flags your diff, the PR is blocked
   until history is clean (rebase/squash the secret out — deleting it in a later
   commit is not enough).
+- **Report vulnerabilities privately.** See [SECURITY.md](SECURITY.md). A public
+  issue that describes a live sandbox escape or a leaked credential *is* the
+  incident — report it privately rather than opening an issue.
 - Before pushing, run the same check locally:
 
 ```bash
-git grep -n -i -E 'sk-[A-Za-z0-9]{8,}|gho_[A-Za-z0-9]+|ghp_[A-Za-z0-9]+|api[_-]?key\s*[:=]\s*["'\'']?[A-Za-z0-9_\-]{8,}|bearer [A-Za-z0-9_\-\.]{8,}|BEGIN (RSA )?PRIVATE KEY' -- . ':!.git' || echo "CLEAN"
+git grep -n -i -E '(^|[^A-Za-z0-9])sk-[A-Za-z0-9]{8,}|(^|[^A-Za-z0-9])gh[op]_[A-Za-z0-9]+|api[_-]?key[[:space:]]*[:=][[:space:]]*["A-Za-z0-9/+_=-]{8,}|bearer [A-Za-z0-9_.-]{8,}|BEGIN (RSA )?PRIVATE KEY' -- . ':!.git' || echo "CLEAN"
 ```
 
 ## Commit hygiene
@@ -38,6 +41,29 @@ git grep -n -i -E 'sk-[A-Za-z0-9]{8,}|gho_[A-Za-z0-9]+|ghp_[A-Za-z0-9]+|api[_-]?
   `prompt.md`, `check.sh` (exit 0 = pass), and `EVAL.json` (gate thresholds).
 - Register the task in `benchmarks/fam-r/tasks.json` and run
   `python3 benchmarks/schema_check.py` plus the task's own checker before opening the PR.
+
+## Running the smoke tests
+
+The harness smoke suite is `harness/tests/` — 37 standalone scripts, one per
+boundary, each runnable on its own and exiting non-zero on failure:
+
+```bash
+for f in harness/tests/smoke_*.py; do
+  python3 "$f" > "/tmp/$(basename "$f" .py).log" 2>&1
+  echo "$(basename "$f" .py) rc=$?"
+done
+```
+
+Run it from a checkout that contains **both** `harness/` and `benchmarks/`. The
+scripts import harness modules and build benchmark fixtures, so a partial
+checkout fails on missing prerequisites rather than on defects — that reads
+like a broken test but is not one. Nine of them exercise the Docker sandbox
+(`harness/dockersandbox.py`), so they need a working `docker`.
+
+The suite takes roughly 12 minutes end to end, dominated by
+`smoke_h25_readiness` and `smoke_h27_d5` at a few minutes each; give the
+per-test timeout headroom. Quote the sweep summary — `TOTAL=n ZERO=n` — in a PR
+that touches `harness/`, rather than asserting that a file exists.
 
 ## Capability proposals
 

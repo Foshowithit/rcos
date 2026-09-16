@@ -9,7 +9,8 @@ import time
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-KEY = open("/home/chow/.agent-vault/keys/router9.key").read().strip()
+KEY = open(os.environ.get("RCOS_LANE_P_KEYFILE") or
+           os.path.expanduser("~/.agent-vault/keys/router9.key")).read().strip()
 
 PROMPT = """You are authoring a reusable file-normalization capability. You see ONLY two training tasks and the acceptance contract. There are held-out tasks you will never see — design for the CLASS, not these instances.
 
