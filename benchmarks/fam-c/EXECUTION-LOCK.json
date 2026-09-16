@@ -3,9 +3,9 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "1c962cd0f78d77a4501cdadc21a68deab04b826de2c876f30fcb97dc0c164415",
+ "harness_manifest_sha256": "bf03a2f50859d6bc11a10458d91cdc3037df1f855fefde95103620c1993b0fd7",
  "harness_files": {
-  "harness/usage.py": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
+  "harness/usage.py": "ed2fdade82dd4724ace1735420ba542b3280efffeeef010fc9206716008bcc03",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
   "harness/chain.py": "cd5ba7b92c889e239d2513276a53483fd6007d3f147809cab583d039850a3df5",
   "harness/lock.py": "0213e6a5b128d9f0e4f8d239bc65c4bca667e9ae5400ee1283e99e5b13a16cd1",
@@ -1284,6 +1284,19 @@
    },
    "reason": "Round-4 audit P2/P0-R4-3 reconciliation: runner and dev-escape paths now derive from file location instead of the hardcoded /home/chow/chow-work/rcos checkout (run_arm_h1.py BASE/HARNESS/LANES keyfiles, p_call.py, smoke_h7_order.py, smoke_h23_d1.py); re-mint over the corrected bytes. Operator-authorized R4-RECONCILE slice.",
    "slice": "R4-RECONCILE-P0-R4-3b",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "1c962cd0f78d77a4501cdadc21a68deab04b826de2c876f30fcb97dc0c164415",
+   "to_manifest": "bf03a2f50859d6bc11a10458d91cdc3037df1f855fefde95103620c1993b0fd7",
+   "files": {
+    "harness/usage.py": {
+     "from_sha": "b142eb357336aa69b4ebcf3aed8c5f7ca245319e70dfb9bb186030628dc5083b",
+     "to_sha": "ed2fdade82dd4724ace1735420ba542b3280efffeeef010fc9206716008bcc03"
+    }
+   },
+   "reason": "Round-4 reconcile follow-up: usage.py recorded_call now raises the named USAGE-CALL-FAIL INCONCLUSIVE path when a quota/error payload carries choices[].message.content = null (kenari free lane crashed with TypeError before this); re-mint records the corrected bytes. Operator-authorized.",
+   "slice": "R4-RECONCILE-QPATH",
    "status_after": "open-round2"
   }
  ],
