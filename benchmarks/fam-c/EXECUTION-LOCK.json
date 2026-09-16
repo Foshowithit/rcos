@@ -3,7 +3,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
- "harness_manifest_sha256": "bf03a2f50859d6bc11a10458d91cdc3037df1f855fefde95103620c1993b0fd7",
+ "harness_manifest_sha256": "86b96673888a7b5869e30e8f7143e680878d478946b36b1be77796310c2e2de7",
  "harness_files": {
   "harness/usage.py": "ed2fdade82dd4724ace1735420ba542b3280efffeeef010fc9206716008bcc03",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
@@ -14,11 +14,11 @@
   "harness/seal_canonical.py": "25a9da15107780105300acebf3451e38194f9b8afe409bcab4248a42a578a4c7",
   "harness/dockersandbox.py": "9b3fe5795e61e6184290cbd9d3e22f842b6a1ef34ada1db2761afc69e8f3fca5",
   "harness/admissibility.py": "a37b34545a5e4250c53cf1bc9f6f67ded6bc7e880a958f1a627c1a3b0f49b713",
-  "benchmarks/fam-c/harness-run/run_arm_h1.py": "ddf9b459265fd8e1f43afc31e4fae9bc85639385d0afe3b2885d94a469a472c5",
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "3cfc6a9520e87a742e8d6e99609252f2e529ef8188528f5a41eded3b741d66b9",
   "harness/order.py": "f08e3edc87993688d11cc742cf0bf58436820247a09c2ed1d35071de367fa268",
   "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
   "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
-  "harness/mint_execution_lock.py": "36b7a4e8834e56bfd0040f629a4aef2a4eb81ec3625977f7e9d2c79b7221f472",
+  "harness/mint_execution_lock.py": "4cb5d0976c7970e263c552fc276eedb9d1760d6f219edd57e2c36d901b6db849",
   "harness/promotion.py": "a6ded5e324fd8c9519ae8f67dd87c233c397f8b4dda52afb6e04103de92c30d6",
   "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
   "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4",
@@ -1297,6 +1297,23 @@
    },
    "reason": "Round-4 reconcile follow-up: usage.py recorded_call now raises the named USAGE-CALL-FAIL INCONCLUSIVE path when a quota/error payload carries choices[].message.content = null (kenari free lane crashed with TypeError before this); re-mint records the corrected bytes. Operator-authorized.",
    "slice": "R4-RECONCILE-QPATH",
+   "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "bf03a2f50859d6bc11a10458d91cdc3037df1f855fefde95103620c1993b0fd7",
+   "to_manifest": "86b96673888a7b5869e30e8f7143e680878d478946b36b1be77796310c2e2de7",
+   "files": {
+    "benchmarks/fam-c/harness-run/run_arm_h1.py": {
+     "from_sha": "ddf9b459265fd8e1f43afc31e4fae9bc85639385d0afe3b2885d94a469a472c5",
+     "to_sha": "3cfc6a9520e87a742e8d6e99609252f2e529ef8188528f5a41eded3b741d66b9"
+    },
+    "harness/mint_execution_lock.py": {
+     "from_sha": "36b7a4e8834e56bfd0040f629a4aef2a4eb81ec3625977f7e9d2c79b7221f472",
+     "to_sha": "4cb5d0976c7970e263c552fc276eedb9d1760d6f219edd57e2c36d901b6db849"
+    }
+   },
+   "reason": "A16 FINAL-lock semantics (audit round-3 item 4; A11b P0-5): run_arm_h1.py gains final_lock_gate \u2014 a wired estimand-surface cell refuses start unless BOTH locks are FINAL (LOCK-NOT-FINAL) and the run harness commit equals/descends from finalization_commit (LOCK-DESCENT-REFUSED); mint_execution_lock.py gains the terminal --finalize transition and refuses any mint once FINAL (EXECUTION-LOCK-FINAL-REFUSED); harness-validation suites stub the gate beside the existing lock-gate stub (H36 owns the live gate). Mechanism only: status stays open-round2.",
+   "slice": "A16-FINAL-SEMANTICS",
    "status_after": "open-round2"
   }
  ],

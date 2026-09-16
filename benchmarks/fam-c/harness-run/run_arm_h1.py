@@ -1562,6 +1562,94 @@ def exec_commit():
     return p.stdout.strip()
 
 
+def _final_gate_lock(path, name):
+    """Read one lock authority for the FINAL gate; returns (dict, findings).
+    A missing/unparsable lock yields (None, [finding]) — fail closed."""
+    p = os.path.join(path, name)
+    try:
+        with open(p, "rb") as f:
+            return json.load(f), []
+    except OSError as e:
+        return None, [f"LOCK-NOT-FINAL: {name} unreadable ({e}); the "
+                      "wired estimand surface requires both locks FINAL"]
+    except ValueError as e:
+        return None, [f"LOCK-NOT-FINAL: {name} unparsable ({e}); the "
+                      "wired estimand surface requires both locks FINAL"]
+
+
+def final_lock_gate(base=None, exec_sha=None):
+    """A16 FINAL-lock gate (audit round-3 item 4; A11b P0-5).
+
+    Returns a list of named findings; EMPTY means the run may start.
+    For a WIRED estimand-surface cell (the only caller shape that must
+    pass this gate) BOTH lock authorities must be FINAL:
+
+      * EXECUTION-LOCK and PROTOCOL-LOCK each carry status "FINAL" with a
+        UTC finalized_at and a 40-hex finalization_commit — a lock in any
+        other state yields the named LOCK-NOT-FINAL refusal (fail closed:
+        a malformed/unreadable FINAL lock is never silently trusted);
+
+      * descent (item 4): once FINAL, the run's execution harness commit
+        must EQUAL or DESCEND from the recorded finalization commit
+        (git merge-base --is-ancestor); otherwise LOCK-DESCENT-REFUSED —
+        a post-FINAL estimand cell cannot execute from harness bytes
+        outside the finalized lineage.
+
+    The dev escape (--dev-unwired-outdir, wire=False, manifest
+    dev_mode=true) never reaches this gate, and harness-validation
+    (H1-*) runs stay lawful under an open lock: the estimand/harness-
+    validation distinction is enforced downstream by admissibility
+    (estimand-grade), which is exactly why the gate guards only the
+    wired estimand surface here.
+    """
+    base = base or BASE
+    exec_sha = exec_sha or exec_commit()
+    findings = []
+    locks = {}
+    for name in ("EXECUTION-LOCK.json", "PROTOCOL-LOCK.json"):
+        lock, fnd = _final_gate_lock(base, name)
+        locks[name] = lock
+        if lock is not None and lock.get("status") == "FINAL":
+            fa = lock.get("finalized_at")
+            fc = lock.get("finalization_commit")
+            if not (isinstance(fa, str)
+                    and re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$",
+                                 fa)):
+                fnd.append(f"LOCK-NOT-FINAL: {name} FINAL record lacks a "
+                           f"UTC finalized_at ({fa!r}); fail closed")
+            if not (isinstance(fc, str)
+                    and re.match(r"^[0-9a-f]{40}([0-9a-f]{24})?$", fc)):
+                fnd.append(f"LOCK-NOT-FINAL: {name} FINAL record lacks a "
+                           f"40-hex finalization_commit ({fc!r}); fail "
+                           "closed")
+        elif lock is not None:
+            fnd.append(f"LOCK-NOT-FINAL: {name} status is "
+                       f"{lock.get('status')!r} (terminal FINAL required "
+                       "for a wired estimand-surface cell; audit round-3 "
+                       "item 4)")
+        findings.extend(fnd)
+    # Descent: the EXECUTION authority owns the harness lineage, so the
+    # run's harness commit is judged against ITS finalization commit.
+    el = locks.get("EXECUTION-LOCK.json")
+    if isinstance(el, dict):
+        fc = el.get("finalization_commit")
+        if isinstance(fc, str) and \
+                len(fc) in (40, 64) and all(c in "0123456789abcdef"
+                                            for c in fc):
+            if exec_sha != fc:
+                p = subprocess.run(
+                    ["git", "-C", ROOT, "merge-base", "--is-ancestor",
+                     fc, exec_sha], capture_output=True, text=True)
+                if p.returncode != 0:
+                    findings.append(
+                        "LOCK-DESCENT-REFUSED: execution_harness_commit "
+                        f"{exec_sha[:12]} does not equal or descend from "
+                        f"finalization_commit {fc[:12]} (a post-FINAL "
+                        "estimand cell must run on the finalized "
+                        "harness lineage; audit round-3 item 4)")
+    return findings
+
+
 def freeze_anchors():
     """INSTANCE-freeze anchor (audit P0 #4 dual anchors): the frozen commit
     is FREEZE.json's freeze_commit — never an execution HEAD masquerading as
@@ -3571,6 +3659,20 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                 f"{derived_out}; got {outdir}")
         capdir = derived_cap
         outdir = derived_out
+        # A16 FINAL-lock gate (audit round-3 item 4; A11b P0-5): a WIRED
+        # estimand-surface cell starts ONLY when BOTH lock authorities are
+        # FINAL — and, once FINAL, only from an execution harness commit
+        # equal to or descended from the recorded finalization commit
+        # (LOCK-DESCENT-REFUSED). Refuse-START, before any estimand
+        # namespace is created and before any model token is spent. The
+        # --dev-unwired-outdir escape (wire=False, manifest dev_mode=true)
+        # and harness-validation (H1-*) runs never reach this gate: they
+        # stay lawful under an open lock, and admissibility excludes them
+        # from estimand-grade data downstream.
+        _final = final_lock_gate(BASE)
+        if _final:
+            raise RuntimeError("FINAL-LOCK-GATE refuse start: "
+                               + " | ".join(_final)[:800])
     # Refuse-START: the executed instance subtree must be byte-identical to
     # the frozen package BEFORE any model token is spent. Item-5: the
     # manifest is resolved from the freeze commit via git (the working-tree

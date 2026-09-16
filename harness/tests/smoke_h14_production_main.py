@@ -80,6 +80,9 @@ check("real three-authority preflight is green in this checkout",
 # under test are argument/authorization refusals, so the lock gate is stubbed
 # ONLY for them (H5/H7 own the live lock gate; A0 proves it is green here).
 RA.preflight_validate_all = lambda *_a, **_k: []
+# A16: the FINAL-lock start gate is the same lock-gate family (H36 owns
+# the live gate; these sections test argument/authorization refusals).
+RA.final_lock_gate = lambda *_a, **_k: []
 _exp = order.load_expansion(BASE_REAL)
 _cellA, _ = order.authorize_event(_exp, "PQ", "fam05", "T0", "A", {})
 _capA, _outA = order.derive_paths(BASE_REAL, _cellA)
@@ -253,6 +256,10 @@ def load_worktree_runner():
     WRA.ROOT = WT
     WRA.HARNESS = os.path.join(WT, "harness")
     WRA.preflight_validate_all = lambda *_a, **_k: []
+    # A16: same lock-gate family as the stub above (H36 owns the live
+    # FINAL gate); this surface exercises the full production path, not
+    # the epoch policy.
+    WRA.final_lock_gate = lambda *_a, **_k: []
     return WRA
 
 
