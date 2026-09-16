@@ -78,6 +78,7 @@ META = {"FREEZE.json", "FREEZE-HASHES.sha256", "PROTOCOL-LOCK.json",
         "AUDIT-ROUND1.md", "AUDIT-ROUND1-REPLY.txt",
         "AUDIT-ROUND2.md", "AUDIT-ROUND2-REPLY.txt",
         "AUDIT-ROUND3-REPLY.txt", "AUDIT-ROUND3-A11-REPLY.txt",
+        "AUDIT-ROUND4.md",
         "ORDER-EXPANSION.json"}
 OPERATIONAL_DIRS = {"runs", "capabilities", "harness-run"}
 
