@@ -1,11 +1,11 @@
 {
   "artifact": "named-synthetic-famc-family-attack",
-  "ref": "7f9c9804fc960f5bc43a9056ed33a30577d97eea",
-  "branch": "HEAD",
+  "ref": "53d15c75aba7146af6e72759f6c878439edd5c23",
+  "branch": "r4-reconcile",
   "dirty_files": 0,
-  "started": "2026-09-16T22:14:23Z",
-  "finished": "2026-09-16T22:17:51Z",
+  "started": "2026-09-16T23:45:11Z",
+  "finished": "2026-09-16T23:48:31Z",
   "pass": 5,
   "fail": 0,
-  "suites": [{"suite":"smoke_h12_cellstate","verdict":"PASS","rc":0,"summary":"H12 cell-state smoke: 48/48 closed","started":"2026-09-16T22:14:23Z","finished":"2026-09-16T22:14:24Z"},{"suite":"smoke_h13_promotion","verdict":"PASS","rc":0,"summary":"H13 promotion smoke: 50/50 closed","started":"2026-09-16T22:14:24Z","finished":"2026-09-16T22:14:25Z"},{"suite":"smoke_h16_lifecycle","verdict":"PASS","rc":0,"summary":"H16 lifecycle smoke: 27/27 closed","started":"2026-09-16T22:14:25Z","finished":"2026-09-16T22:14:25Z"},{"suite":"smoke_h25_readiness","verdict":"PASS","rc":0,"summary":"H25 readiness smoke: 19/19 closed","started":"2026-09-16T22:14:25Z","finished":"2026-09-16T22:17:46Z"},{"suite":"smoke_h34_d13","verdict":"PASS","rc":0,"summary":"H34 D13 smoke: 29/29 closed","started":"2026-09-16T22:17:46Z","finished":"2026-09-16T22:17:51Z"}]
+  "suites": [{"suite":"smoke_h12_cellstate","verdict":"PASS","rc":0,"summary":"H12 cell-state smoke: 48/48 closed","started":"2026-09-16T23:45:11Z","finished":"2026-09-16T23:45:12Z"},{"suite":"smoke_h13_promotion","verdict":"PASS","rc":0,"summary":"H13 promotion smoke: 50/50 closed","started":"2026-09-16T23:45:12Z","finished":"2026-09-16T23:45:13Z"},{"suite":"smoke_h16_lifecycle","verdict":"PASS","rc":0,"summary":"H16 lifecycle smoke: 27/27 closed","started":"2026-09-16T23:45:13Z","finished":"2026-09-16T23:45:13Z"},{"suite":"smoke_h25_readiness","verdict":"PASS","rc":0,"summary":"H25 readiness smoke: 19/19 closed","started":"2026-09-16T23:45:13Z","finished":"2026-09-16T23:48:26Z"},{"suite":"smoke_h34_d13","verdict":"PASS","rc":0,"summary":"H34 D13 smoke: 29/29 closed","started":"2026-09-16T23:48:26Z","finished":"2026-09-16T23:48:31Z"}]
 }
