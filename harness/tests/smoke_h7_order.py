@@ -517,8 +517,8 @@ finally:
     RA.order_completed_cells = _orig_done
 
 # --- the execution lock must be current for the executed bytes ---
-r = subprocess.run([sys.executable, os.path.join(ROOT, "harness",
-                    "mint_execution_lock.py"), "--check"],
+r = subprocess.run([sys.executable, os.path.join(os.path.dirname(ROOT),
+                    "harness", "mint_execution_lock.py"), "--check"],
                    capture_output=True, text=True)
 check("EXECUTION-LOCK is current (mint --check exit 0)",
       r.returncode == 0 and "current" in r.stdout,
