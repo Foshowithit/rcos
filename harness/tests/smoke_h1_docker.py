@@ -9,7 +9,6 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-REPO = os.path.dirname(ROOT)
 sys.path.insert(0, ROOT)
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
@@ -45,9 +44,9 @@ PY = ["python3", "-c"]
 # --- constructor authority: hostile mounts must RAISE ---
 w0, v0 = mkesb("policy")
 denied = 0
-for hp in [REPO, os.path.expanduser("~"),
+for hp in ["/home/chow/chow-work/rcos", "/home/chow",
            "/var/run/docker.sock", "/", "/tmp/evil",
-           os.path.join(os.path.expanduser("~"), ".agent-vault", "id_rsa")]:
+           "/home/chow/.agent-vault/id_rsa"]:
     try:
         ds._check_source(hp, "task")
         results.append(("hostile mount refused: " + hp, False))
@@ -117,13 +116,12 @@ check("only lo interface", "eth0" not in (p.stdout or ""),
       (p.stdout or "").strip()[:60])
 
 # --- filesystem matrix ---
-truth = os.path.join(REPO, "benchmarks", "fam-c", "families", "fam01",
-                     "truth.json")
+truth = "/home/chow/chow-work/rcos/benchmarks/fam-c/families/fam01/truth.json"
 p = sb.run(PY + [f"open({truth!r}).read()"])
 check("truth path absent in jail", p.returncode != 0)
 p = sb.run(["cat", truth])
 check("cat truth from jail fails", p.returncode != 0)
-p = sb.run(PY + ["import os;print(os.path.exists(%r))" % os.path.expanduser("~")])
+p = sb.run(PY + ["import os;print(os.path.exists('/home/chow'))"])
 check("host home not mounted", "False" in (p.stdout or ""))
 
 # --- env constructed, secret-free ---
@@ -163,7 +161,7 @@ t2, _ = build_context("t", "do X please", ["read"], {"cap": "K"})
 check("injected asymmetry fails", diff_contexts(t2, c) != [])
 
 # --- seal over VISIBLE root, bound read-only ---
-fam = os.path.join(REPO, "benchmarks", "fam-c", "families", "fam01")
+fam = "/home/chow/chow-work/rcos/benchmarks/fam-c/families/fam01"
 task = os.path.join(fam, "T0")
 vis = os.path.join(VBASE, "seal-T0")
 copied, refused = build_visible_root(task, vis)

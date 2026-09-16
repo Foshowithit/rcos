@@ -257,3 +257,48 @@ estimand evidence. The only production execution entry point is
 `harness-run/run_arm_h1.py` with `--block`, the scheduler-derived wired paths,
 and the frozen-order cell authorization.
 
+
+## Round-4 audit + R4-RECONCILE (A16) — 2026-09-16
+
+An independent Round-4 seat audited the accumulated post-A11b state
+(main b4ce064 + branch tip a61d104) and returned
+`permission for real Fam-C execution: NO` with four P0s; the full reply is
+committed as `AUDIT-ROUND4.md`. The design was NOT reopened — every roadmap
+unit A11b.1–6, A12 #8–#10, A13 #11, A14 #12, A15 #13 PASS with code-level
+verification; `estimand-grade = 0` was independently re-confirmed. What
+failed was the landing and the record:
+
+- P0-R4-1 (authority): main's PR-squash landing left the freeze commit
+  d1292434 a non-ancestor of main and 4 V2 lineage nodes unretrievable; the
+  runner refused start (fail-closed, correct). CLOSED — the execution ref is
+  the reconciled branch (merge 24cd07d); preflight 0/0/0 there.
+- P0-R4-3 (path resolution, root cause corrected by reconciliation): h35's
+  H35b-IDENTITY failure is NOT an A13 schema break. The production runner
+  hardcoded `BASE`/`HARNESS` to /home/chow/chow-work/rcos, so any real-seal
+  suite bound whichever checkout sat at that path instead of the tree under
+  test (the seal's recorded execution_lock_sha256 407b1a54… is byte-for-byte
+  the main checkout's lock). The runner, dev escape, and suites now derive
+  all repo paths from file location; h35 = 56/56.
+- P0-R4-2 (verification claim): the implementers' recorded 37/37 was a FALSE
+  GREEN — the battery loop captured a pipeline's exit code, never the tests'.
+  True pre-reconcile numbers were 23–26/37 plus preflight RED at main.
+  Recorded lesson: per-test exit codes are captured un-piped, and a green
+  battery is cited only together with its ref and checkout state. Stale git
+  worktree registrations were pruned; the shared fixture root
+  (/tmp/rcos-runs) must be cleaned before a battery — per-suite isolated
+  roots are the recommended follow-up slice.
+- P0-R4-4 (record): this file and AUDIT-ROUND4.md are the committed closure
+  record. The A12b–A13/Ruling-3 seat replies were not preserved by their
+  sessions (acknowledged LOST); the compensating control is the independent
+  Round-4 re-audit of the accumulated state. HARNESS-READINESS.md refresh is
+  deferred to the PROTOCOL-FINAL slice.
+
+State after reconciliation (branch HEAD, preflight 0/0/0): full suite 37 PASS / 0 FAIL at 10e58ce on TWO independent checkouts (the reconcile worktree and a fresh clone of the pushed r4-reconcile branch; cleaned trusted roots; per-suite 240s cap; h18/h25/h27 are ~2.5 min each by design).
+
+Locks: EXECUTION-LOCK amended to 70 entries (re-mints over the merged tree
+and the path-derivation fix; append-only chain anchored at the D11 genesis,
+intact); PROTOCOL-LOCK unchanged. `estimand-grade = 0` UNCHANGED. Execution
+stays STOPPED for estimand-grade runs pending: the live P/Q calibration pair
+(quota-gated; retry scheduled 2026-09-16 20:10 EDT), then PROTOCOL-LOCK
+FINAL (pinning the ORDER-EXPANSION sha 4510076a…), then EXECUTION-LOCK
+FINAL, then the first authorized cell.

@@ -20,8 +20,7 @@ import types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-REPO = os.path.dirname(ROOT)
-FAMC = os.path.join(REPO, "benchmarks", "fam-c")
+FAMC = os.path.join(os.path.dirname(ROOT), "benchmarks", "fam-c")
 RUNNER = os.path.join(FAMC, "harness-run", "run_arm_h1.py")
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(FAMC, "harness-run"))
@@ -518,9 +517,8 @@ finally:
     RA.order_completed_cells = _orig_done
 
 # --- the execution lock must be current for the executed bytes ---
-r = subprocess.run([sys.executable, os.path.join(REPO, "harness",
-                                                 "mint_execution_lock.py"),
-                    "--check"],
+r = subprocess.run([sys.executable, os.path.join(os.path.dirname(ROOT),
+                    "harness", "mint_execution_lock.py"), "--check"],
                    capture_output=True, text=True)
 check("EXECUTION-LOCK is current (mint --check exit 0)",
       r.returncode == 0 and "current" in r.stdout,

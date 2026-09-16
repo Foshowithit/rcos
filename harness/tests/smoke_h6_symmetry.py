@@ -12,9 +12,8 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-REPO = os.path.dirname(ROOT)
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(REPO, "benchmarks", "fam-c", "harness-run"))
+sys.path.insert(0, "/home/chow/chow-work/rcos/benchmarks/fam-c/harness-run")
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 import run_arm_h1 as RA
@@ -22,7 +21,7 @@ from dockersandbox import DockerSandbox, _hash_tree
 from seal import build_visible_root, seal_probe
 
 BASE = "/tmp/h6-smoke"
-FAM = os.path.join(REPO, "benchmarks", "fam-c", "families", "fam05")
+FAM = "/home/chow/chow-work/rcos/benchmarks/fam-c/families/fam05"
 TASK = os.path.join(FAM, "T0")
 results = []
 
@@ -177,9 +176,8 @@ check("post-staging mutation breaks the byte binding",
 
 # --- the runner's own offline prompt selfcheck (real fam05/T0) ---
 r = subprocess.run(
-    [sys.executable, os.path.join(REPO, "benchmarks", "fam-c",
-                                  "harness-run", "run_arm_h1.py"),
-     "--selfcheck-prompt"], capture_output=True, text=True)
+    [sys.executable, "/home/chow/chow-work/rcos/benchmarks/fam-c/harness-run/"
+     "run_arm_h1.py", "--selfcheck-prompt"], capture_output=True, text=True)
 check("runner --selfcheck-prompt green on real fam05/T0",
       r.returncode == 0 and "PROMPT-SELFCHECK ok" in r.stdout,
       (r.stdout + r.stderr)[-200:])

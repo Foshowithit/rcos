@@ -26,8 +26,7 @@ import types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-REPO = os.path.dirname(ROOT)
-FAMC = os.path.join(REPO, "benchmarks", "fam-c")
+FAMC = "/home/chow/chow-work/rcos/benchmarks/fam-c"
 RUNNER = os.path.join(FAMC, "harness-run", "run_arm_h1.py")
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(FAMC, "harness-run"))

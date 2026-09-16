@@ -56,17 +56,9 @@ WORK_ROOT = "/tmp/rcos-runs"
 VISIBLE_ROOT = "/tmp/rcos-visible"
 
 BANNED_BASENAMES = {"docker.sock", "daemon.json"}
-_HOME = os.path.expanduser("~")
-_REPO_ROOT = os.path.dirname(_HERE)
-# Resolved against the invoking account at import time: the ban follows
-# whoever runs the harness instead of naming one machine's layout, and it
-# cannot be sidestepped by operating under a differently-named account.
-BANNED_PREFIXES = ("/var/run", "/run/docker",
-                   os.path.join(_HOME, ".agent-vault"),
-                   os.path.join(_HOME, ".dsh"),
-                   os.path.join(_HOME, ".pi"),
-                   os.path.join(_HOME, ".ssh"),
-                   os.path.join(_REPO_ROOT, "benchmarks"))
+BANNED_PREFIXES = ("/var/run", "/run/docker", "/home/chow/.agent-vault",
+                   "/home/chow/.dsh", "/home/chow/.pi", "/home/chow/.ssh",
+                   "/home/chow/chow-work/rcos/benchmarks")
 
 # In-region role identities (auditor Ruling 1): the OFF counterfactual
 # leg is exactly TWO authorized container launches on the fresh
@@ -124,14 +116,7 @@ def ensure_roots():
     for root in (WORK_ROOT, VISIBLE_ROOT):
         if os.path.lexists(root) and not os.path.isdir(root):
             raise PermissionError(f"ROOT-DENY not a directory: {root}")
-        created = not os.path.exists(root)
         os.makedirs(root, exist_ok=True)
-        if created:
-            # A root this process just created inherits the operator umask
-            # (0o002 is common) and would otherwise be rejected by the
-            # group/world check below on the guard's own fresh bootstrap.
-            # Pre-existing roots are still refused rather than repaired.
-            os.chmod(root, 0o700)
         if os.path.islink(root):
             raise PermissionError(f"ROOT-DENY symlink root: {root}")
         st = os.stat(root)

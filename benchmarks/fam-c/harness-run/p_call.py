@@ -6,13 +6,12 @@ import json
 import os
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "harness"))
+from usage import recorded_call
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-REPO = os.path.dirname(ROOT)
-sys.path.insert(0, os.path.join(REPO, "harness"))
-from usage import recorded_call
-KEY = open(os.environ.get("RCOS_LANE_P_KEYFILE") or
-           os.path.expanduser("~/.agent-vault/keys/router9.key")).read().strip()
+KEY = open(os.path.expanduser("~/.agent-vault/keys/router9.key")).read().strip()
 EP = "https://api.router9.com/v1"
 MODEL = "minimax-m3"
 NORM = "openai-chat-total-input-v1"

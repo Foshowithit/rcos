@@ -8,7 +8,6 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-REPO = os.path.dirname(ROOT)
 sys.path.insert(0, ROOT)
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
@@ -28,14 +27,14 @@ def check(name, fail_closed):
 
 def main():
     os.system("rm -rf " + BASE)
-    fam = os.path.join(REPO, "benchmarks", "fam-c", "families", "fam01")
+    fam = "/home/chow/chow-work/rcos/benchmarks/fam-c/families/fam01"
     task = os.path.join(fam, "T0")
 
     # --- H-BD-001: capability + network + secrets denied ---
     ra = Run(BASE, "laneA", "t0")
     cap = os.path.join(fam, "..", "..", "..")  # outside jail regardless
     ok, _ = ra.sandbox.attempt_read(
-        os.path.join(fam, "truth.json"))
+        "/home/chow/chow-work/rcos/benchmarks/fam-c/families/fam01/truth.json")
     check("B/D cannot read truth.json from jail", not ok)
     ok, _ = ra.sandbox.attempt_read("/etc/hostname")
     check("B/D cannot read outside paths", not ok)

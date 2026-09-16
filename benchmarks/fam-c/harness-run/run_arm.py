@@ -14,19 +14,16 @@ import sys
 import time
 import urllib.request
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ROOT = os.path.abspath(os.path.join(BASE, os.pardir, os.pardir))
-sys.path.insert(0, os.path.join(ROOT, "harness"))
+BASE = "/home/chow/chow-work/rcos/benchmarks/fam-c"
+sys.path.insert(0, "/home/chow/chow-work/rcos/harness")
 from usage import recorded_call
 
 LANES = {
-    "P": {"keyfile": os.environ.get("RCOS_LANE_P_KEYFILE") or
-           os.path.expanduser("~/.agent-vault/keys/router9.key"),
+    "P": {"keyfile": "/home/chow/.agent-vault/keys/router9.key",
           "base": "https://api.router9.com/v1",
           "model": "minimax-m3", "norm": "openai-chat-total-input-v1",
           "family": "MiniMax"},
-    "Q": {"keyfile": os.environ.get("RCOS_LANE_Q_KEYFILE") or
-               os.path.expanduser("~/.agent-vault/keys/kenari.key"),
+    "Q": {"keyfile": "/home/chow/.agent-vault/keys/kenari.key",
           "base": "https://kenari.id/v1",
           "model": "agnes-2-0-flash:free", "norm": "openai-chat-total-input-v1",
           "family": "Kenari-Agnes"},

@@ -556,7 +556,7 @@ check("B6-2 checker-failed stack: T1 COMPLETE (task_verdict ship) + "
 # Full RA.main() on a disposable git worktree (real preflight against
 # real git history; all writes land under the worktree's state/, never
 # the live tree; no model call and no docker before the refusal).
-REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _wt = tempfile.mkdtemp(prefix="h23-wt-")
 os.rmdir(_wt)  # git worktree add requires a nonexistent path
 _wt_famc = os.path.join(_wt, "benchmarks", "fam-c")

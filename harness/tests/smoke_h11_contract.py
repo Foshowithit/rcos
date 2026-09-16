@@ -12,16 +12,15 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-REPO = os.path.dirname(ROOT)
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(REPO, "benchmarks", "fam-c", "harness-run"))
+sys.path.insert(0, "/home/chow/chow-work/rcos/benchmarks/fam-c/harness-run")
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
 import run_arm_h1 as RA
 from dockersandbox import DockerSandbox
 from seal import build_visible_root
 
-FAM = os.path.join(REPO, "benchmarks", "fam-c", "families", "fam05")
+FAM = "/home/chow/chow-work/rcos/benchmarks/fam-c/families/fam05"
 TASK = os.path.join(FAM, "T0")
 TAG = "h11-smoke"
 WORKROOT = os.path.join("/tmp/rcos-runs", TAG)

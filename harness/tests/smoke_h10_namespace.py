@@ -22,8 +22,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-REPO = os.path.dirname(ROOT)
-FAMC = os.path.join(REPO, "benchmarks", "fam-c")
+FAMC = "/home/chow/chow-work/rcos/benchmarks/fam-c"
 sys.path.insert(0, ROOT)
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 

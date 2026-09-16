@@ -121,8 +121,11 @@ import tempfile
 import time
 import urllib.request
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ROOT = os.path.abspath(os.path.join(BASE, os.pardir, os.pardir))
+# Derived from this file location (Round-4 audit P2/P0-R4-3): the runner
+# must execute against the tree it lives in, never a hardcoded checkout.
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE = os.path.dirname(_THIS_DIR)
+ROOT = os.path.dirname(os.path.dirname(BASE))
 HARNESS = os.path.join(ROOT, "harness")
 sys.path.insert(0, HARNESS)
 from dockersandbox import (DockerSandbox, ensure_roots, _hash_tree,
@@ -289,13 +292,11 @@ LANES = {
     # normalizer: A1 provider-bound v2 adapter id (usage.py PROVIDER_NORMALIZERS)
     # preregistered for THIS lane's gateway + model family. New calls MUST
     # declare the v2 id; historical receipts stay on the superseded v1 id.
-    "P": {"keyfile": os.environ.get("RCOS_LANE_P_KEYFILE") or
-           os.path.expanduser("~/.agent-vault/keys/router9.key"),
+    "P": {"keyfile": os.path.expanduser("~/.agent-vault/keys/router9.key"),
           "base": "https://api.router9.com/v1", "model": "minimax-m3",
           "family": "MiniMax", "normalizer": "router9-openai-chat-v2",
           "echo_acceptable": ["minimax-m3"]},
-    "Q": {"keyfile": os.environ.get("RCOS_LANE_Q_KEYFILE") or
-                     os.path.expanduser("~/.agent-vault/keys/kenari.key"),
+    "Q": {"keyfile": os.path.expanduser("~/.agent-vault/keys/kenari.key"),
           "base": "https://kenari.id/v1", "model": "agnes-2-0-flash:free",
           "family": "Kenari-Agnes", "normalizer": "kenari-openai-chat-v2",
           "echo_acceptable": ["agnes-2-0-flash:free", "agnes-2-0-flash"]},

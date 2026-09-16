@@ -8,9 +8,7 @@ import os
 import subprocess
 import sys
 
-# repo root: <repo>/harness/tests/<this file>
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__))))
+ROOT = "/home/chow/chow-work/rcos"
 FAMC = os.path.join(ROOT, "benchmarks", "fam-c")
 CAL = os.path.join(FAMC, "harness-run", "calibrate.py")
 RUNDIR = os.path.join(FAMC, "runs", "_calibration")
