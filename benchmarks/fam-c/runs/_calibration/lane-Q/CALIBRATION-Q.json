@@ -1,0 +1,25 @@
+{
+ "lane": "Q",
+ "semantics": "CALIBRATION / NEVER-ESTIMAND",
+ "mode": "live",
+ "receipt": "call-234f4b3a8f429dbd.json",
+ "normalized": "call-234f4b3a8f429dbd.normalized.json",
+ "primary_work": 342,
+ "input_tokens_uncached": 295,
+ "cached_tokens": 0,
+ "output_tokens": 47,
+ "normalized_sha256": "3ecb4ae4a7111c38019be2ac5404701e63af1bfe1c9c242a5ed6655dc74bca61",
+ "model_echoed": "agnes-2-0-flash:free",
+ "provider_id": "e2dcc4f71af465dc",
+ "identity": "identity.json",
+ "identity_family": "Kenari-Agnes",
+ "request_body_sha256": "eee69273d8b43bbce24204c0c7c42a53433e851be608b35a536f6b47fedf83fa",
+ "params": {
+  "temperature": 0,
+  "max_tokens": 256,
+  "top_p": 1
+ },
+ "non_estimand": true,
+ "not_a_cell": true,
+ "note": "CALIBRATION / NEVER-ESTIMAND: not a cell of ORDER.md, no estimand claim, excluded from every ledger"
+}
