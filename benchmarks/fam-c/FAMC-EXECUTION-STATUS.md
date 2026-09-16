@@ -295,6 +295,13 @@ failed was the landing and the record:
 
 State after reconciliation (branch HEAD, preflight 0/0/0): full suite 37 PASS / 0 FAIL at 10e58ce on TWO independent checkouts (the reconcile worktree and a fresh clone of the pushed r4-reconcile branch; cleaned trusted roots; per-suite 240s cap; h18/h25/h27 are ~2.5 min each by design).
 
+Ref posture (Round-4 note): the EXECUTION REF is the reconciled experiment
+branch (rcos-harness-readiness / r4-reconcile), where preflight is 0/0/0.
+Main carries the presentation face; its preflight intentionally reports the
+V2 experiment-branch lineage findings (the preflight error text itself
+prescribes: protocol history must be committed on the experiment branch, not
+another ref) while V1/V3 are green there after the merge.
+
 Locks: EXECUTION-LOCK amended to 70 entries (re-mints over the merged tree
 and the path-derivation fix; append-only chain anchored at the D11 genesis,
 intact); PROTOCOL-LOCK unchanged. `estimand-grade = 0` UNCHANGED. Execution

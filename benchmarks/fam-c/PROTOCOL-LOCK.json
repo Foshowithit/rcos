@@ -429,6 +429,14 @@
    "reason": "A13 canonical adaptation (auditor A13 bar): forward amendment AMEND-2026-09-10-a13-canonical-adaptation (frozen 4-tuple determinant + determinant_sha; F_v1 canonical mapping with source-text identity + F_v2 negative-control counterpart + NOOP_v1 under the identical ABI; binding-vs-computational coordinate doctrine; ON/OFF-noop/pass-through leg semantics; a13-causal-receipt-v1 data contract binding determinant + legs + task/capability/checker/harness identities; executed-legs binding explicitly pending the auditor ruling)",
    "base": "cd16407",
    "slice": "a13-slice-a13"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "b06fae1a2facf4b2197cd5ec98fb93f895087e3aa2d005a90311fd09cad4f3ff",
+   "to_sha": "1ae34aeba54c1b920ce023d3c7cc390636551cde182625551e6978e154303362",
+   "reason": "Round-4 audit P0-R4-4: AUDIT-ROUND4.md (the committed independent Round-4 reply) joins the META pointer set, same integrity class as every prior round reply; this listed forward amendment records the preflight.py bytes that carry the META addition, explicitly listing the drift window from the D11-era tip (b06fae1a) across the landing. Operator-authorized R4-RECONCILE slice.",
+   "base": "d94dcf4",
+   "slice": "R4-RECONCILE-P0-R4-4"
   }
  ]
 }
