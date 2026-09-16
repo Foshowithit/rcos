@@ -437,6 +437,18 @@
    "reason": "Round-4 audit P0-R4-4: AUDIT-ROUND4.md (the committed independent Round-4 reply) joins the META pointer set, same integrity class as every prior round reply; this listed forward amendment records the preflight.py bytes that carry the META addition, explicitly listing the drift window from the D11-era tip (b06fae1a) across the landing. Operator-authorized R4-RECONCILE slice.",
    "base": "d94dcf4",
    "slice": "R4-RECONCILE-P0-R4-4"
+  },
+  {
+   "file": "preflight.py",
+   "from_sha": "1ae34aeba54c1b920ce023d3c7cc390636551cde182625551e6978e154303362",
+   "to_sha": "000d59a9e747c5e530d5c01a3a836936154182a3b37346e1cb0911266df6994a",
+   "reason": "A16 FINAL-lock semantics (audit round-3 item 4; A11b P0-5): preflight.py enforces the terminal lock state \u2014 status vocabulary living-lock/FINAL (open-round2 on the execution authority), finalized_at + finalization_commit shape on FINAL, amendments past FINAL refused (execution: terminal-amendment position; protocol: finalized_amendment_count), the ORDER-EXPANSION.json protocol-artifact pin verified against live bytes from the moment it is recorded (experimental ordering is methodology), and a FINAL lock finalization_commit proved an ancestor of HEAD. The pin is recorded NOW (protocol_artifacts, ORDER-EXPANSION.json 449be793\u2026) and status stays living-lock \u2014 mechanism only; finalization awaits the live P/Q calibration pair + auditor sign-off. Operator-authorized A16 slice.",
+   "base": "d75e379",
+   "slice": "A16-FINAL-SEMANTICS"
   }
- ]
+ ],
+ "status": "living-lock",
+ "protocol_artifacts": {
+  "ORDER-EXPANSION.json": "449be793cf764204b8326a56914dd19c90f16371600db9d97faf60ccbe43f47a"
+ }
 }
