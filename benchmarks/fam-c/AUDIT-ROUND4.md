@@ -101,8 +101,13 @@ smoke_h23_d1.py:559; battery-order dependence of h18/h25/h27.
 - P0-R4-1 CLOSED: execution ref = rcos-harness-readiness reconciled with main
   (merge 24cd07d); preflight 0/0/0 at the merged ref (V1 ancestry restored,
   V2 nodes retrievable). EXECUTION-LOCK re-minted over the merged tree as
-  listed amendments 69–71 (append-only chain anchored at the D11 genesis,
-  preserved).
+  listed amendments 69/70 (R4-RECONCILE-P0-R4-3 and R4-RECONCILE-P0-R4-3b;
+  append-only chain anchored at the D11 genesis, preserved), plus one
+  PROTOCOL-LOCK forward amendment — the 53rd entry (preflight.py, slice
+  R4-RECONCILE-P0-R4-4, base d94dcf4). [Wording corrected at A16, f223675:
+  the earlier "amendments 69–71" miscounted the later QPATH re-mint (#71)
+  into this slice, and no literal "AMEND-2026-09-16-r4-reconcile" id exists
+  in the repo — the actual slice id is R4-RECONCILE-P0-R4-4.]
 - P0-R4-3 CLOSED, root cause corrected: the failure is NOT an A13 schema
   break — run_arm_h1.py hardcoded BASE/HARNESS to
   /home/chow/chow-work/rcos, so any real-seal suite bound whichever checkout
@@ -127,7 +132,10 @@ smoke_h23_d1.py:559; battery-order dependence of h18/h25/h27.
 ## Remaining path to the first authorized cell
 
 P/Q live calibration pair (quota-gated; retry scheduled) → PROTOCOL-LOCK
-FINAL pinning ORDER-EXPANSION.json sha 4510076a… → EXECUTION-LOCK FINAL →
+FINAL pinning ORDER-EXPANSION.json sha256 449be793… (the file's exact
+bytes; A16 f223675 recorded the pin in the lock — the "4510076a…"
+previously written here is the order_sha256 of ORDER.md inside the
+expansion, not the file sha) → EXECUTION-LOCK FINAL →
 first real authorized cell. The design is unchanged by this round: what
 remained was landing reconciliation, one path-resolution defect, test
 hygiene, and record completeness.

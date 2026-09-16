@@ -315,12 +315,15 @@ check("D7.2 HARNESS-READINESS a11 edge corrected 8e743e4c63f4 -> "
       _e_a11 is not None
       and (_e_a11.get("from_sha") or "").startswith("3314fa9170ab"),
       str(_e_a11))
+# Re-certified at A16 (f223675): 53 at 0cf5b9d — the R4-RECONCILE-P0-R4-4
+# preflight.py forward amendment (base d94dcf4) — plus one
+# A16-FINAL-SEMANTICS forward amendment.
 check("D7.2 no amendment entry deleted except the D8 hygiene pair, "
       "the D9 chronology pair, the D10 stability pair, and the D11 "
       "authority pairs "
       "(30 at D7 - 2 removed a12 edges + 1 D8 edge + 2 D8 forward "
-      "+ 2 D9 forward + 2 D10 forward + 10 D11 forward + 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward + 1 D13 forward + 1 D13c forward + 1 A13 forward = 52)",
-      len(LIVE_LOCK["amendments"]) == 52, str(len(LIVE_LOCK["amendments"])))
+      "+ 2 D9 forward + 2 D10 forward + 10 D11 forward + 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward + 1 D13 forward + 1 D13c forward + 1 A13 forward + 1 R4-RECONCILE-P0-R4-4 forward + 1 A16-FINAL-SEMANTICS forward = 54)",
+      len(LIVE_LOCK["amendments"]) == 54, str(len(LIVE_LOCK["amendments"])))
 check("D7.2 repair recorded as its own forward amendment "
       "AMEND-2026-09-09-d7-lineage-repair (PREREG + preflight edges)",
       sum(1 for a in LIVE_LOCK["amendments"]
@@ -398,11 +401,17 @@ check("D7.2-6 every governed file: disk sha256 == the validator's "
 
 # --- D7.2: V2 enforces linearity, reachable-set is gone --------------------
 _src = open(os.path.join(FAMC, "preflight.py")).read()
+# Marker re-certified at A16 (f223675): the probe now anchors on the
+# EXACT validate_protocol definition ("def validate_protocol(fam_c_dir")
+# — the A16 slice added validate_protocol_final/validate_protocol_
+# artifact_pin, whose names share the old looser prefix and would
+# otherwise shift the split point. The asserted rule is unchanged and
+# the marker is now stricter.
 check("D7.2 V2 linear-chain rule enforced in validate_file_chain "
       "(used by validate_protocol)",
       "def validate_file_chain" in _src
       and "validate_file_chain" in _src.split(
-          "def validate_protocol")[1]
+          "def validate_protocol(fam_c_dir")[1]
       and "acceptable" not in _src,
       "rule location: benchmarks/fam-c/preflight.py::validate_file_chain")
 
