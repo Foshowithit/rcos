@@ -1,0 +1,124 @@
+{
+ "lock": "EXECUTION-LOCK",
+ "epoch": 2,
+ "status": "open-round2",
+ "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
+ "note": "EPOCH-2 lineage (fresh locks + new finalization). Minted by harness/epoch_transition.py from the epoch-1 closure record; its own append-only amendment lineage (NOT an amendment to the epoch-1 lineage). The epoch-1 EXECUTION-LOCK.json stays frozen as the historical record of the closed epoch. Re-mint on every harness change via harness/mint_execution_lock.py --slice ... --reason ...; finalize only by owner authorization.",
+ "harness_manifest_sha256": "481b6d4392be82c64c0d40d16ae720b2979c0d075b256dfc4812c4e988f799b8",
+ "harness_files": {
+  "benchmarks/fam-c/harness-run/run_arm_h1.py": "81696a6f3d85b8a41190c841f1e8a2cbfb2f3d98242760da358aa9b30a88421d",
+  "harness/a13_observer.py": "2f77b0c2db57b713c9836d0d1e3ae5473cf61d126c9c43dfeb70212208de65bc",
+  "harness/adaptation.py": "d16378260df341cad23ae2784eebcb3057ecf07aa5f5a4fb0e57c10cff7dece1",
+  "harness/admissibility.py": "a37b34545a5e4250c53cf1bc9f6f67ded6bc7e880a958f1a627c1a3b0f49b713",
+  "harness/chain.py": "cd5ba7b92c889e239d2513276a53483fd6007d3f147809cab583d039850a3df5",
+  "harness/conformance.py": "ccca8ad2013b7c2ddb8627a8ab7b65470020af8ef814a0c4623ffaccb34fe193",
+  "harness/containment.py": "1f1a933ee5f117d7116e610c2b445c5b1c3270e0ec4b90f8b855068d75e72e37",
+  "harness/contract_shape.py": "41db6ed289decd7b0e076ad65753eed6e275fe217b3b24aaaf112410f98bb4f2",
+  "harness/dockersandbox.py": "9b3fe5795e61e6184290cbd9d3e22f842b6a1ef34ada1db2761afc69e8f3fca5",
+  "harness/epoch.py": "9ee20c8abcdef8d090d1144b39fb7ea82fc81e8d43477a7392b2f01527aefc06",
+  "harness/frozen_visible.py": "9033d26c176d0dc3c681fecbdc8de111e057730032f2ad4dd671e2c4433e4dd9",
+  "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
+  "harness/lock.py": "0213e6a5b128d9f0e4f8d239bc65c4bca667e9ae5400ee1283e99e5b13a16cd1",
+  "harness/order.py": "74f39f916fc9a1db7360aa44aab30c0d1517c8d633d41ca4d349e45bc054df5e",
+  "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
+  "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
+  "harness/seal_canonical.py": "25a9da15107780105300acebf3451e38194f9b8afe409bcab4248a42a578a4c7",
+  "harness/t4_ids.py": "ae8486880166e984798510f431db1c0b4010ca16e253a3648c7270fe934fb46c",
+  "harness/usage.py": "8ae340364bc499daf1c6d2a6bf59af7f135a6bebbc9afdeb2f703f192c19ff1e",
+  "harness/epoch_transition.py": "cc41c90dc0066d706b6457114ad71fab504e111d98fc4df08f71fc642ab5d8c5",
+  "harness/invalid.py": "9df285768aaf43a17bde2ae14fc988cf24dc7071108918d7ee764a680263b571",
+  "harness/isolation.py": "ac4957dce0e93bd4b8662f5b3afd1088b3f91258e1649d595e24ae775a245eb4",
+  "harness/mint_execution_lock.py": "e91c6b2aa035d7a1c0436557e11aa3165ea27d3309ceab0327d0236657dba0ee",
+  "harness/promotion.py": "e50ffba5ab74a02b0d1b2a8fe9304cd023e8fcf2dc1c6b33303750a6e9ee9e5f",
+  "harness/sandbox.py": "24a21451c699a034817e8f4639d0bd54ae4e342efa22d18a162fbdd183c64bf1",
+  "harness/specificity.py": "1480744348fa5c60cdb971ca7ab21714eaf2eed6704cdc591936149f25d9bc67",
+  "harness/symmetry.py": "c05dfc11e5558183dda731596802fc550de5d2db25ab4741deea1bfce90c11e4"
+ },
+ "frozen_constants": {
+  "a13_jail_config": {
+   "cap_drop": [
+    "ALL"
+   ],
+   "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+   "memory": "1g",
+   "network": "none",
+   "pids_limit": 64,
+   "read_only": true,
+   "tmpfs": [
+    "/tmp:rw,noexec,nosuid,size=64m"
+   ],
+   "user": "WHO (invoking harness uid:gid)"
+  },
+  "a13_off_combined_docker_budget": 2,
+  "a13_process_plan": {
+   "off-noop": 1,
+   "on": 0,
+   "pass-through": 0
+  },
+  "a13_role_identity": {
+   "engine_exec": {
+    "argv_exact": [
+     "python3",
+     "/work/engine.py",
+     "/task/field_map.json",
+     "/task/records.json",
+     "/work/OUTPUT.json"
+    ],
+    "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+    "interpreter_path": "python3",
+    "interpreter_sha256": "0e6475dfda68a9b2d93501449fc47593ca169010e8f4881577b97463fd0c1263",
+    "mounts": [
+     {
+      "container": "/work",
+      "mode": "rw"
+     },
+     {
+      "container": "/task",
+      "mode": "ro"
+     }
+    ],
+    "network": "none",
+    "script_path": "/work/engine.py"
+   },
+   "snapshot_verify": {
+    "argv_head": [
+     "python3",
+     "-c"
+    ],
+    "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+    "interpreter_path": "python3",
+    "interpreter_sha256": "0e6475dfda68a9b2d93501449fc47593ca169010e8f4881577b97463fd0c1263",
+    "mounts": [
+     {
+      "container": "/work",
+      "mode": "rw"
+     },
+     {
+      "container": "/task",
+      "mode": "ro"
+     }
+    ],
+    "network": "none",
+    "payload_sha256": "b5f52b1eaefd54d3623be34d9d0a2c541b856490a54c95a92a8a7073561ae76f"
+   }
+  },
+  "a13_snapshot_verify_plan": {
+   "off-noop": 1,
+   "on": 0,
+   "pass-through": 0
+  },
+  "expected_provider_calls_per_cell": 1
+ },
+ "amendments": [],
+ "transition": {
+  "record": "EPOCH-2-TRANSITION.json",
+  "record_sha256": "047aef2fcfef76803cb0999edcd17027aa2997b91a7face8ad9a83012136bb6b",
+  "from_epoch": 1,
+  "epoch1_closure_record": "EPOCH-1-CLOSURE.md",
+  "epoch1_execution_lock_sha256": "f6616ea2a495ae3f5a5d2f5d5b35b503eddc9aaca21a43358d756c1bd49b0f24",
+  "epoch1_protocol_lock_sha256": "96eac57be905b2f030f02615e4774d2a9ac2adab8c7e1aa26fe3e39efe695a54",
+  "epoch1_finalization_commit": "1e146279077b8b442e8c0542887349156aa4571f",
+  "reason": "third-party ruling EPOCH-2 PROTOCOL (EPOCH-1-CLOSURE.md): fresh locks + new lineage; owner finalizes later"
+ },
+ "created_at": "2026-09-17T05:36:58Z"
+}
