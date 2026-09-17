@@ -1,0 +1,33 @@
+{
+  "capability": "creative-study-loop",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-8 loop run: QUEUE.md advanced per protocol (unit S opened from the backlog top, 4 concrete rows added with URLs, all 4 completed and struck), PLAYBOOK.md gained a receipt-cited class-S section plus cross-class fold-ins, RCOS eval submitted for both capabilities. Corpus end state: 48 receipts (43 reference films + 5 own), all deterministic gates verified; next unit C or A.",
+  "gates": [
+    {
+      "id": "queue-advance",
+      "pass": true,
+      "evidence": "Unit S (sound design deep-dive) opened as the top remaining backlog class; QUEUE.md Round 8 section added with 4 concrete sources on official studio channels (A Quiet Place, Dunkirk, WALL-E via Disney UK after two searches rejected re-uploads, Baby Driver), all four fetched+measured sequentially (R7 recipe) and flipped to status done with per-slug headline numbers; backlog row S struck with the class result; round-log entry added. No source was blocked or age-gated this round."
+    },
+    {
+      "id": "receipt-citations",
+      "pass": true,
+      "evidence": "Every class-S PLAYBOOK number traces to studies/<slug>.json: envelope table (duration 116-169s, median shot 1.04-1.34s, cps 0.24-0.55, LRA 8.6-13.9, LUFS -16.5..-22.2, n80 3-5) cites snd-quiet-place.json, snd-dunkirk.json, snd-walle.json, snd-baby-driver.json; the zero-overlap LRA claim cites the class-T controls (trailer-shining1980.json LRA 8.0 max, snd-baby-driver.json 8.6 min). Counts updated corpus-wide: 43 reference films / 48 receipts in the palette-discipline finding."
+    },
+    {
+      "id": "cross-class-fold-in",
+      "pass": true,
+      "evidence": "Class-S results folded into the cross-class layer: finding 6 (narration LRA <= 6 vs music/montage wide) extended with the same-form control - sound-design-led trailers 8.6-13.9 LU vs sound-agnostic 5.2-8.0 LU, zero overlap, so dynamics width tracks sound-design intent inside one form; open questions updated (S done at n=4, LRA boundary flagged for widening before becoming a hard gate; next unit C or A); class-T's held-open rule annotated in the class-S section with its measured exceptions rather than silently edited."
+    },
+    {
+      "id": "ours-vs-reference",
+      "pass": true,
+      "evidence": "No own film was re-measured this round (protocol requires the ours-vs-reference row update only on re-measurement), so the section stands unchanged; the class-S rules give the next fapcoin/bearing/Too Hot sound passes concrete targets: LRA >= 8.6 LU for sound-led cuts, -16..-18 LUFS with TP ~ -1..-2 on the modern line, and premise->edit mirroring (sparse + dark for sensory-deprivation concepts)."
+    },
+    {
+      "id": "media-hygiene",
+      "pass": true,
+      "evidence": "Third-party media never entered either repo (clips/frames on the Dell at tmp/creative-study, sheets in gitignored .media/; verify_receipts media-containment gate green on 48 receipts). No keys, no paid lanes - free muse vision lane for sheet reads; Dell did fetch/decode. Round ran within budget."
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "capability": "video-forensics-receipt",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-8 corpus: 4 sound-design-famous theatrical trailers measured (snd-quiet-place 115.7s, snd-dunkirk 146.2s, snd-walle 140.7s, snd-baby-driver 169.3s; all official studio channels, class T reused as the sound-agnostic control); rig/verify_receipts.py on the full corpus: 'checked 48 receipts — ALL DETERMINISTIC GATES PASS'. 4/4 label-integrity reads PASS at judge time. Two tooling defects found this round in rig/summarize.py (missing Ty prefixes so R7 receipts summarized as class '?'; CLI filter uppercased mixed-case class names so 'summarize.py Ty' returned empty) — both fixed and verified in-round; neither produced a bad receipt (PLAYBOOK numbers were computed from studies/*.json directly, and verify_receipts gates are class-agnostic and had been passing). Same disposition as study-round3/6/7: defect detected, corrected, openly documented, corpus end state clean and verified.",
+  "gates": [
+    {
+      "id": "deterministic-gates",
+      "pass": true,
+      "evidence": "Round-8 receipt set: snd-quiet-place (115.71s, 27 cuts, cps 0.242, med 1.335s, max 40.374s, motion 0.0875, still 0.165, luma 0.093, sat 0.402, dark 0.603, n80 3, LUFS -18.0, LRA 13.9, TP -0.7), snd-dunkirk (146.19s, 80 cuts, 0.5541, 1.251s, 7.716s, 0.1553, 0.159, 0.243, 0.237, 0.205, 5, -16.5, 9.6, -1.0), snd-walle (140.67s, 77 cuts, 0.5545, 1.161s, 14.735s, 0.1891, 0.093, 0.374, 0.362, 0.142, 5, -22.2, 11.6, -7.3; source 854px/24.975fps era caveat), snd-baby-driver (169.30s, 91 cuts, 0.5434, 1.042s, 10.510s, 0.1338, 0.095, 0.184, 0.378, 0.183, 5, -18.0, 8.6, -1.6). rig/verify_receipts.py on the full corpus: 'checked 48 receipts — ALL DETERMINISTIC GATES PASS'."
+    },
+    {
+      "id": "sheet-reads",
+      "pass": true,
+      "evidence": "sheet-reads (llm gate): 4/4 sources read at judge time via the free opencode muse vision lane (muse-spark-1.3-contributor-free). A Quiet Place: silent-survival imagery (barefoot walking, abandoned town, bathtub beat), tagline cards 'IF THEY HEAR YOU' / 'NEVER MAKE A SOUND', release card 'ON APRIL 6', Paramount mark, newspaper-collage exposition shot. Dunkirk: beach/mole/flotilla/Spitfire canvas, 'DIRECTOR OF INTERSTELLAR AND THE DARK KNIGHT TRILOGY' credit card, end card 'IN THEATERS AND IMAX ... JULY 21'. WALL-E: wordless character story (trash-Earth -> EVE -> Axiom), 'Disney PIXAR WALL-E' + 'COMING TO CINEMAS' cards. Baby Driver: earbud-wearing getaway driver, diner/crew, chases, 'BABY DRIVER OFFICIAL TRAILER' opening card, 'Written and Directed by EDGAR WRIGHT' / 'IN THEATERS JUNE 28' close."
+    },
+    {
+      "id": "label-integrity",
+      "pass": true,
+      "evidence": "Slug-to-content pairing confirmed for all 4 R8 fetches: sheet content matches the named sources, and all four came from official studio channels (Paramount Pictures WR7cc5t7tv8, Warner Bros. T7O7BtBnsG4, Disney UK alIq_wG9FNk, Sony Pictures Entertainment zTvJJnoWIPk) with receipts carrying the matching source titles/channels. No mislabeled receipt this round."
+    },
+    {
+      "id": "tooling-defect-found-and-fixed",
+      "pass": true,
+      "evidence": "Two defects surfaced in rig/summarize.py and fixed + verified in-round: (1) CLASSES had no 'Ty' prefixes, so all four R7 title-sequence receipts summarized as class '?' (cosmetic reporting defect: PLAYBOOK class-Ty numbers were computed from studies/*.json via jq, and verify_receipts gates are class-agnostic, so no published figure was wrong); added 'Ty' prefixes. (2) the CLI filter compared r['class'] == sys.argv[1].upper(), so mixed-case class names never matched ('python3 rig/summarize.py Ty' printed 'no receipts yet' despite 4 matching receipts); filter now case-insensitive on both sides. Verified: summarize.py Ty renders the 4 R7 receipts, class_of('snd-quiet-place') -> 'S', and the new S prefix resolves."
+    },
+    {
+      "id": "limitation-documented",
+      "pass": true,
+      "evidence": "Limits documented, not normalized: scene-threshold detections are not certified editorial cuts (Baby Driver's 0.13s first cut sits at the detector floor - flagged, and the class-T held-open prior now carries documented sound-led exceptions 0.71s/0.13s); sheets are sampled-frame inspections - no full video was watched; WALL-E's 854px/24.975fps upload and its soft 2008-era master (-22.2 LUFS / TP -7.3) are recorded as era/format caveats, not targets; the LRA 8.0/8.6 boundary rests on n=4 vs n=4 and is flagged in PLAYBOOK as wanting a wider corpus before it becomes a hard gate. No keys, no paid lanes (free muse vision lane for reads)."
+    }
+  ]
+}
