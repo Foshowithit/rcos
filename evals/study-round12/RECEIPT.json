@@ -1,0 +1,33 @@
+{
+  "capability": "video-forensics-receipt",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-12 widening corpus: both sides pushed to n=8 (class S +2: snd-dune 207.1s Warner Bros. official, snd-nocountry 164.6s Miramax official; class T +2: trailer-topgun 132.1s Paramount official, trailer-johnwick4 149.8s Lionsgate official); rig/verify_receipts.py on the full corpus: 'checked 64 receipts — ALL DETERMINISTIC GATES PASS'. 4/4 label-integrity reads PASS at judge time (free muse lane). The round's substance is a second-order measured-rule correction on record: the R11 tendency itself decays at n=8 — controls Top Gun 12.7 and John Wick 4 12.1 land inside the old sound-led band (deeper than 6 of the 8 sound-led films), medians shrink to ~1.5 LU apart (9.15 vs 7.65), overlap now 7.2-12.7. What survives: the extreme-wide tail only — the two widest trailer-form masters measured (A Quiet Place 13.9, No Country 14.0) are both sound-led (2 of 2, n=2); sound-led spans 7.2-14.0. Loudness-level (-17.7 vs -15.4 LUFS, controls louder) and cut-rate (0.548 vs 0.557 cps) separations stay dead/inverted. Rule S1 revised to 'weak tendency, not a gate'; superseded versions (R8 zero-overlap, R11 tendency framing) preserved in the eval receipts and round logs, nothing deleted — same disposition as study-round3/6/7/8/9/10/11: no bad receipts remain.",
+  "gates": [
+    {
+      "id": "deterministic-gates",
+      "pass": true,
+      "evidence": "Round-12 receipts: snd-dune (207.13s, med shot 1.793s, cps 0.338, first cut 5.09s, motion 0.1134, luma 0.178, sat 0.259, n80 4, LUFS -16.1, LRA 8.7, TP -0.6), snd-nocountry (164.62s, med 1.209s, cps 0.553, first cut 4.42s, motion 0.1841, luma 0.206, sat 0.552, n80 5, LUFS -27.6, LRA 14.0, TP +0.1), trailer-topgun (132.11s, med 1.793s, cps 0.3936, first cut 4.17s, motion 0.1292, luma 0.236, sat 0.271, n80 4, LUFS -15.4, LRA 12.7, TP -0.4), trailer-johnwick4 (149.80s, med 1.502s, cps 0.2871, first cut 5.84s, motion 0.1093, luma 0.143, sat 0.412, n80 4, LUFS -14.1, LRA 12.1, TP +0.5). Class S n=8: LRA 7.2-14.0 med 9.15, LUFS -13.6...-27.6 med -17.7; class T n=8: LRA 5.2-12.7 med 7.65, LUFS -14.1...-19.7 med -15.4. rig/verify_receipts.py: 'checked 64 receipts — ALL DETERMINISTIC GATES PASS'."
+    },
+    {
+      "id": "sheet-reads",
+      "pass": true,
+      "evidence": "sheet-reads (llm gate): 4/4 sources read at judge time via the free opencode muse vision lane. Dune: Warner Bros. main trailer — dark-abstract open -> sunlit figure -> wide empty dune pans (landscape-first held open), stillsuited figures, burning harvester, ornithopters, DUNE logo end-card at t=197.65s (95.5%) — confirmed. No Country for Old Men: Miramax — first-frame black MIRAMAX logo, Texas desert/Texaco establishing, 'FROM THE NOVEL BY CORMAC MCCARTHY' credit at t=92.38s, 'LEAVES A TRAIL' interstitial, Miramax channel end-card — confirmed. Top Gun: Maverick: Paramount — winged TOP GUN MAVERICK logo at frame 0, sustained bright-desert daytime open, 'IN 2020'/'TOM CRUISE' black cards, closes on high-altitude aerials — confirmed. John Wick: Chapter 4: Lionsgate — LIONSGATE fire logo at frame 0, long static dialogue block (no big action until ~40%), Paris/Osaka locations, final sheet tile black (no end-card captured) — confirmed."
+    },
+    {
+      "id": "label-integrity",
+      "pass": true,
+      "evidence": "Slug-to-content pairing confirmed for all 4 R12 fetches; all four are official channel uploads (Warner Bros., Miramax, Paramount Pictures, Lionsgate Movies) with video IDs 8g18jFHCLXk, A0oNrgumrlE, qSqVVswa420, qEVUtrk8_B4. Receipt source metadata matches each sheet's content; no mislabeled or corrupt receipt this round."
+    },
+    {
+      "id": "tooling-defect-found-and-fixed",
+      "pass": true,
+      "evidence": "No rig defect this round. Round friction (logged, not rig defects): (1) a zsh word-split bug in the round's fetch loop ('set -- $pair' does not split in zsh) mangled the first fetch pass — fixed with explicit parameter expansion and retried clean; (2) per-channel YouTube blocks from the Dell lane (Illumination main+teaser, Universal Pictures US, Pixar all 'video not available') forced the John Wick 4 substitution on the control side — substitution documented in QUEUE.md, no fake receipts created (stray .ytdlp.log files on the Dell are cosmetic, verify checks studies/*.json only). Measured-rule corrections are the round's substance, handled as documentation on record: R11's ~2.3-LU tendency framing weakened at n=8 (~1.5 LU, controls Top Gun 12.7 / JW4 12.1 inside the old band); PLAYBOOK rule S1 now reads 'weak tendency, not a gate'; both superseded claims remain archived per the R6/R11 not-hidden precedent."
+    },
+    {
+      "id": "limitation-documented",
+      "pass": true,
+      "evidence": "Limits documented, not normalized: n=8 per side flagged as complete for the LRA question — further refinement wants a different question, not a wider n (only the extreme-wide tail >= 13.9 LU stayed sound-led-specific at n=2); no full videos watched (sheets are sampled-frame inspection); WALL-E (2008) and No Country (2007) era caveats retained and extended — No Country is the quietest master measured (-27.6 LUFS) and its width is read with the era caveat; the bright-CGI luma-ceiling probe (Mario) died with the per-channel block and is logged as an open want. 'Loudness range is a weak tendency, decaying with n' stated as the class-S headline with survivors quantified. No keys, no paid lanes (free muse vision lane for reads)."
+    }
+  ]
+}

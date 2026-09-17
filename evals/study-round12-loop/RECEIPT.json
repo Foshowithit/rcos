@@ -1,0 +1,33 @@
+{
+  "capability": "creative-study-loop",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-12 loop gates: QUEUE advanced (Round 12 section written as 4 rows, all driven to DONE with key numbers and a verdict line); 64 receipts with all deterministic gates passing; PLAYBOOK folded the n=8 numbers into the class-S and class-T envelope tables with studies/<slug>.json citations, rewrote the class-S headline to the weak-tendency reading, revised rule S1 to 'weak tendency, not a gate', and updated rules 3/5, cross-class findings 2/6, and the open-questions state. The loop's honesty commitment was exercised in the harder direction this round: the round refuted the loop's own R11 correction (the tendency itself decays at n=8 — controls Top Gun 12.7 / John Wick 4 12.1 land inside the old sound-led band, medians ~1.5 LU), and it was folded in as a correction-on-record with superseded versions archived (eval receipts + round logs, nothing deleted) — the R8 -> R11 -> R12 arc is preserved end-to-end. Media hygiene: all 4 fetches official channels; third-party media stays on the Dell; no keys, no paid lanes. Verdict ship with the revision documented, not hidden.",
+  "gates": [
+    {
+      "id": "queue-advance",
+      "pass": true,
+      "evidence": "QUEUE.md Round 12 section written pre-round ('Widening 2: S+T toward n=8') with 4 rows (snd-dune, snd-nocountry, trailer-topgun, trailer-johnwick4 — 2 per side), all now driven to DONE with key numbers in the status column (LRA 8.7 / 14.0 / 12.7 / 12.1, cps 0.338 / 0.287, TP +0.5, luma 0.143, -27.6 LUFS, first cuts 5.09/4.42/4.17/5.84s), a substitutions note (Mario/Puss in Boots 2/Lightyear per-channel-blocked -> JW4 from Lionsgate), a verdict line (tendency decays at n=8, 64 receipts), friction notes, and an R12 entry at the top of the round log. Unit S3+T3 complete."
+    },
+    {
+      "id": "receipt-citations",
+      "pass": true,
+      "evidence": "PLAYBOOK class-S headline cites studies/trailer-topgun.json and studies/snd-nocountry.json by name alongside studies/trailer-johnwick4.json; class S and T envelope tables fold all eight-per-side receipts (studies/snd-dune.json, studies/snd-nocountry.json, studies/trailer-topgun.json, studies/trailer-johnwick4.json now added to the prior six-per-side sets); structure reads added for Dune and No Country with the muse-lane observations (landscape-first open / MIRAMAX logo + McCarthy credit card). Every number in the envelope tables traces to a receipt."
+    },
+    {
+      "id": "cross-class-fold-in",
+      "pass": true,
+      "evidence": "Class S folded to n=8 (LRA 7.2-14.0 med 9.15, LUFS -13.6...-27.6 med -17.7, TP -7.3...+0.3 med -0.8, first cut 0.13-18.0 med 5.3, median shot 0.79-1.79 med 1.18, cps 0.24-0.56 med 0.548, luma 0.093-0.374 med 0.208, palette n80 3-5 'corpus now 64 receipts'); class T folded to n=8 (duration 88-225 med 151, median shot 0.71-1.79 med 1.23, cps 0.29-0.80 med 0.557, first cut 1.9-10.3 med 4.6 with '13 of 16 open >= 2.5s', motion 0.109-0.204 med 0.162, luma 0.14-0.31 med 0.23 with JW4 0.143 darkest-T note, LUFS -14.1...-19.7 med -15.4 with LRA 5.2-12.7 control-band note, n80 4-5); rules T2/T5 and S1/S3/S5 rewritten; cross-class finding 6 rewritten to the n=8 decaying-tendency reading; finding 2 updated to 'all 59 reference films ... (64 receipts)'; open-questions bullet updated (S/T complete at n=8; only the extreme-wide tail stayed sound-led-specific)."
+    },
+    {
+      "id": "ours-vs-reference",
+      "pass": true,
+      "evidence": "Actionable guidance recomputed from n=8: rule S1 aim revised to '~9-14 LU when sound leads, expect nothing from the gate' (sound-led spans 7.2-14.0); rule S3 modern master line now bracketed by era caveats on both ends (WALL-E -22.2/2008, No Country -27.6/2007) with the hot end carried by Sicario -13.6/+0.3 and the JW4 control -14.1/+0.5 (hottest trailer-class true peak in the corpus); rule S5 held-open norm restored (13 of 16 >= 2.5s, all four R12 opens 4.17-5.84s) with the three deliberate fast exceptions named."
+    },
+    {
+      "id": "media-hygiene",
+      "pass": true,
+      "evidence": "All 4 R12 sources are official channels (Warner Bros., Miramax, Paramount Pictures, Lionsgate Movies); clips and frames live on the Dell under ~/tmp/creative-study only — nothing third-party enters either repo; no keys, no paid lanes (free muse vision lane for the 4/4 label-integrity reads); round completed under the ~30 min budget. Blocked substitutions (Illumination/Universal-US/Pixar per-channel blocks) documented in QUEUE.md rather than worked around with unofficial uploads."
+    }
+  ]
+}
