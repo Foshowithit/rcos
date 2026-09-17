@@ -39,6 +39,11 @@
           "task_id": "fapcoin-title-card-native",
           "verdict": "ship",
           "run_id": "fapcoin-webgl/charforge/title_card.png (2240x1120 native; 'FAPCOIN' + 'WE ALL HOLD IT IN THE END' both spelled correctly, muse-verified; vault key meta-muse.key; 10s)"
+        },
+        {
+          "task_id": "bearing-product-shot",
+          "verdict": "ship",
+          "run_id": "evidence/muse-image-lane/eval-2/bearing_product.png (1600x1600 real PNG after sips WebP->PNG; muse gate SHIP x2 consensus; consumer = hunyuan3d-mlx-local eval-2 reference + bearing-film asset; 17s gen)"
         }
       ],
       "reuse_count": 0,
@@ -88,10 +93,25 @@
           "task_id": "scene8-char-spotcaptures",
           "verdict": "ship",
           "run_id": "91246b5 gate/hero-final.png + probe frames: http-serve + zero console errors + rendered proof"
+        },
+        {
+          "task_id": "rcos-dashboard-verify",
+          "verdict": "fix",
+          "run_id": "evidence/browser-verify-artifacts/eval-3/ (dashboard.html verify: run1 caught real 404 via console/HTTP-status capture; run2 clean after favicon allowance + URL-level 404 logging; file:// attack SCHEME_REFUSED exit2; proof-dashboard.png 198KB)"
+        },
+        {
+          "task_id": "chalk-scene-font-assert",
+          "verdict": "ship",
+          "run_id": "evidence/browser-verify-artifacts/eval-4/ (scene.html + FONT_CHECK Caveat 400/700 + paint-call __cineFrame(0); BLANK_SCREEN check added after run1 caught all-white shot with deterministic all-green; CANVAS_SD 29.3; muse SHIP; 2 runs)"
+        },
+        {
+          "task_id": "chalk-scene-font-assert-r2",
+          "verdict": "ship",
+          "run_id": "evidence/browser-verify-artifacts/eval-4/proof-scene-r2.png (paint __cineFrame(120) mid-draw: CANVAS_SD 30.0, FONT_CHECK Caveat 400/700 green, muse SHIP; supersedes premature ship row on chalk-scene-font-assert whose llm gate KILLED at t=0)"
         }
       ],
       "reuse_count": 0,
-      "last_eval": "2026-09-16",
+      "last_eval": "2026-09-17",
       "lineage": "zcode memory browser-verify-web-artifacts; DraftForge + dsh-operator-ui proofs"
     },
     {
@@ -413,6 +433,11 @@
           "task_id": "study-round15",
           "verdict": "ship",
           "run_id": "study-round15"
+        },
+        {
+          "task_id": "study-round16",
+          "verdict": "ship",
+          "run_id": "study-round16"
         }
       ],
       "reuse_count": 2,
@@ -504,6 +529,11 @@
           "task_id": "study-round15",
           "verdict": "ship",
           "run_id": "study-round15-loop"
+        },
+        {
+          "task_id": "study-round16",
+          "verdict": "ship",
+          "run_id": "study-round16-loop"
         }
       ],
       "reuse_count": 2,
@@ -540,11 +570,102 @@
           "task_id": "talking-portrait-insert-3s",
           "verdict": "ship",
           "run_id": "fapcoin-webgl/build/shot-face-3s.mp4 (3.0s 1080 h264+aac, motion 3.2-6.3, muse SHIP 'usable speaking-portrait insert'); commit 683ea74"
+        },
+        {
+          "task_id": "slate-study-portrait-run1",
+          "verdict": "fix",
+          "run_id": "node capture.mjs && ffmpeg h264 1080p24 2s + windowed motion gate"
+        },
+        {
+          "task_id": "slate-study-portrait-run2",
+          "verdict": "fix",
+          "run_id": "recess fix: portrait z -2.5 -> -2.542 behind frame front -2.535"
+        },
+        {
+          "task_id": "slate-study-portrait-run3",
+          "verdict": "ship",
+          "run_id": "portrait -2.531 / matte -2.5335 / AO halo plane; WINDOW-12 motion min 5.10 PASS; muse SHIP x2 consensus"
         }
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-17",
       "lineage": "shot_face.html + build/shot-face-3s.mp4 (2026-09-17): LivePortrait frames as a live framed portrait on a study wall; PNG-sequence capture (no video decode in the CDP path); z-gap trap (coplanar planes z-fight); muse SHIP; consumer: fapcoin films"
+    },
+    {
+      "id": "preview-server-verify",
+      "name": "Preview Server Verify",
+      "kind": "script",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "dashboard-serve-run1",
+          "verdict": "fix",
+          "run_id": "serve_verify.py . dashboard.html"
+        },
+        {
+          "task_id": "stale-dir-attack-run2",
+          "verdict": "fix",
+          "run_id": "attack: serve stale dir copy vs fresh expectation"
+        },
+        {
+          "task_id": "dashboard-and-scene-serve-run3",
+          "verdict": "ship",
+          "run_id": "eval-1 dashboard.html + eval-2 scene_v2.html, both --expect-sha256 pinned; attack receipt exit 3 STALE_OR_WRONG_BYTES"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "local-preview-port-split-brain (09-17: two servers split one port by address family, stale snapshot answered IPv4) + render --out silent-fail 09-17"
+    },
+    {
+      "id": "audio-offline-verify",
+      "name": "Audio Offline Verify",
+      "kind": "script",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "chalk-vo-and-silent-mux",
+          "verdict": "ship",
+          "run_id": "av_check.py: eval-1 chalk-eval2.mp4 must-sound PASS (h264+aac 3.0s RMS -35.1 dBFS); eval-2 shot-face-v2-r3.mp4 report-only PASS (RMS -inf by-design); attack mute file vs must-sound = exit 3"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "sacred-heart yue2 scene-lock 09-17 + beats-lab Audius masters + face-in-scene anullsrc mux"
+    },
+    {
+      "id": "x-media-package",
+      "name": "X Media Package",
+      "kind": "workflow",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "chalk-and-dispatch-packages",
+          "verdict": "ship",
+          "run_id": "xcheck.py eval-1 chalk-eval2 (1.78 aspect, 3s) + eval-2 rcos-dispatch-eval-2-out (1280x720, 4s), both PASS w/ caption+alt; attack caption 321 chars = exit 3; muse poster gate SHIP"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "hog-crankers X demo 09-14 + fapcoin v4 stage-1 masters + model-compare video pipeline"
+    },
+    {
+      "id": "receipt-figure-render",
+      "name": "Receipt Figure Render",
+      "kind": "workflow",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "OW Lab exhibit pass 09-17 (figures generated from artifacts) + figure-legibility-traps"
     }
   ]
 }
