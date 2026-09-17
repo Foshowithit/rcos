@@ -831,3 +831,32 @@ epoch-2 Q-lane operator-error evidence stays UNTRACKED because the frozen
 stop record and the FR-11 disposition say "byte-for-byte, untracked,
 read-only evidence ... do not commit". No epoch-3 state exists under
 `state/epoch3/`, no cell has run, and no model call of any kind was made.
+
+### Certification refresh (post-cleanup ref `452e063`)
+
+The implementation slice closed with an audit-hygiene cleanup (one unused
+read-only helper removed from `harness/order.py`, no behavior change),
+recorded as the epoch-3 EXECUTION lock's first own-lineage amendment
+(`harness/order.py`, manifest `5a644aa1…`, status `open-round2`) through
+`harness/mint_execution_lock.py`. The full certification battery was re-run
+at that ref (clean `/tmp/rcos-runs` + `/tmp/rcos-visible`, `umask 077`,
+per-suite DIRECT exit codes — never a pipeline):
+
+- smoke battery `43/43 suites PASS`, `1319/1319` individual checks closed
+  (`harness/tests/smoke_h38_epoch3.py` `21/21`, including the twelve frozen
+  §7 adversarial probes);
+- `python3 benchmarks/fam-c/preflight.py` `V1-instance 0 / V2-protocol 0 /
+  V3-execution 0`;
+- `python3 harness/epoch_transition.py --check`: epoch 3, green;
+- `benchmarks/fam-c/runs/_synthetic-attack/run_attack.sh` `5 PASS / 0 FAIL`
+  at that ref (manifest refreshed in the same commit);
+- both epoch-3 locks remain OPEN (`open-round2` with one amendment /
+  `living-lock` with zero); the FINAL gate still refuses a wired estimand
+  cell, naming both locks.
+
+This note and the refreshed attack manifest are docs/evidence-only: no
+governed, locked or state byte changes. The certified refs are therefore
+`452e063` (definitive battery) and the docs tip that carries this line (for
+which the targeted constant re-certification — preflight, the epoch-3
+lineage check, `smoke_h38_epoch3.py` and the four live-lineage suites — was
+re-run green).
