@@ -1,6 +1,6 @@
 {
  "lock": "EXECUTION-LOCK",
- "status": "open-round2",
+ "status": "FINAL",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "PLACEHOLDER until round-2 #14 final lock (after items 1-13 + full-stack synthetic attack). Re-minted on every harness change via explicit amendment commit; the runner refuses to start when bytes diverge.",
  "harness_manifest_sha256": "c73d5775146a2948a353844173a1847b73c6b874a43f9b95050ceda8bab4151a",
@@ -1345,6 +1345,14 @@
    "reason": "usage.py anthropic/openai transports send an honest User-Agent (rcos-famc-harness/1.0): the go gateway edge (Cloudflare) 403-blocks the default Python-urllib UA, which would strand every live call. Re-mint records the corrected bytes. Operator-authorized.",
    "slice": "R4-RECONCILE-LANE-P-UA",
    "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "c73d5775146a2948a353844173a1847b73c6b874a43f9b95050ceda8bab4151a",
+   "to_manifest": "c73d5775146a2948a353844173a1847b73c6b874a43f9b95050ceda8bab4151a",
+   "files": {},
+   "reason": "Round-6 stop phrase ISSUED (third-party seat, pre-committed criteria); calibration pair green; locks finalized per Round-3 item 4 + A11b P0-5. Finalization commit recorded.",
+   "slice": "FINAL",
+   "status_after": "FINAL"
   }
  ],
  "minted": {
@@ -1425,5 +1433,7 @@
    "pass-through": 0
   },
   "expected_provider_calls_per_cell": 1
- }
+ },
+ "finalized_at": "2026-09-17T03:56:59Z",
+ "finalization_commit": "1e146279077b8b442e8c0542887349156aa4571f"
 }

@@ -453,10 +453,21 @@
    "reason": "AMEND-2026-09-16-lane-p (operator-authorized): lane P re-registered from router9/minimax-m3 (monthly credit pool exhausted 2026-09-16) to OpenCode Go union-alpha (Anthropic-style /messages, x-opencode-session header, unlimited-window lane) BEFORE any estimand run existed \u2014 estimand-grade remained 0 throughout, so no estimand data is affected. New provider-bound v2 adapter opencode-go-union-alpha-v2 preregistered in usage.py with raw schema anthropic-messages; Q unchanged. Superseded router9 binding retained for historical receipt normalization only.",
    "base": "b5e826b",
    "slice": "R4-RECONCILE-LANE-P"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "66732960bc20cc20b4e0ff1b21ba9a71ba4ebd9b5500df4c087a3c72f47d4c46",
+   "to_sha": "34ce046ae9b16d2f3632e429b767e092df02bb8f158198387652f91e57e7c60c",
+   "reason": "PROTOCOL-FINAL slice: readiness doc refreshed to the finalization state (harness complete through A16; reconciliation + lane-P amendment + calibration pair recorded). This amendment is inside the FINAL amendment count by construction.",
+   "base": "1e14627",
+   "slice": "PROTOCOL-FINAL"
   }
  ],
- "status": "living-lock",
+ "status": "FINAL",
  "protocol_artifacts": {
   "ORDER-EXPANSION.json": "449be793cf764204b8326a56914dd19c90f16371600db9d97faf60ccbe43f47a"
- }
+ },
+ "finalized_at": "2026-09-17T03:56:59Z",
+ "finalization_commit": "1e146279077b8b442e8c0542887349156aa4571f",
+ "finalized_amendment_count": 56
 }

@@ -574,3 +574,17 @@ mounted-not-torn).
 - [ ] H2 implemented + smoke green
 - [ ] H3 specified (this document) — implementation open
 - [ ] H3 implemented + full smoke green
+
+
+## R4-RECONCILE / A16 / lane-P finalization record — 2026-09-17T03:56:59Z
+
+- Harness complete through A16 (FINAL-lock semantics enforced in both
+  authorities; smoke_h36_final 33/33; battery 38/38 with direct per-suite
+  exit codes; preflight V1/V2/V3 0/0/0).
+- Execution lineage reconciled (merge 24cd07d); lane P re-registered to
+  OpenCode Go union-alpha under AMEND-2026-09-16-lane-p (pre-estimand;
+  router9 credits exhausted); live P/Q calibration pair PASS (one
+  invocation, 0 defects; live P receipt call-f20df62453c1c5a8).
+- This doc's refresh is amendment-recorded immediately before the FINAL
+  status flip; finalization follows the Round-6 stop phrase (third-party
+  seat, pre-committed criteria).
