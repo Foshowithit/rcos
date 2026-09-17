@@ -34,9 +34,15 @@
       "version": "1.0.0",
       "status": "candidate",
       "admitted_after": [],
-      "evals": [],
+      "evals": [
+        {
+          "task_id": "fapcoin-title-card-native",
+          "verdict": "ship",
+          "run_id": "fapcoin-webgl/charforge/title_card.png (2240x1120 native; 'FAPCOIN' + 'WE ALL HOLD IT IN THE END' both spelled correctly, muse-verified; vault key meta-muse.key; 10s)"
+        }
+      ],
       "reuse_count": 0,
-      "last_eval": null,
+      "last_eval": "2026-09-17",
       "lineage": "zcode memory muse-image-lane-20260913; shipped HOG gen2 art wave"
     },
     {
