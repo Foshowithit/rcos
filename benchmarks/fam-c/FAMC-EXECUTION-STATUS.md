@@ -399,3 +399,36 @@ smoke_h36_final.py); `python3 benchmarks/fam-c/preflight.py` 0/0/0;
 `benchmarks/fam-c/runs/_synthetic-attack/run_attack.sh` 5/5. HARNESS-READINESS.md
 remains untouched (deferred to the PROTOCOL-FINAL slice, unchanged
 disposition).
+
+
+## FIRST AUTHORIZED CELL EXECUTED — 2026-09-17 (post-FINAL)
+
+At the finalized lineage (finalization_commit 1e14627; certified ref 2a1309d;
+battery 38/38 at that ref with direct exit codes; post-FINAL mint/amend/reopen
+refused with EXECUTION-LOCK-FINAL-REFUSED; live gate proof A0b), the first
+authorized cell of the frozen order ran:
+
+- Cell  = PQ/fam05/T0/acquisition (universe A), lane P
+  (OpenCode Go union-alpha), ONE real provider call. Arrival decision: fresh.
+  Container rc 0. Frozen mechanical checker verdict: **fix** (the produced
+  artifact does not yet satisfy the frozen checker contract — a legitimate
+  experimental outcome, not an error). Full evidence set written:
+  H1-RUN-MANIFEST.json (cell_kind acquisition-solve), EVIDENCE-CHAIN.jsonl
+  (4 links), call receipt + normalized usage + persisted request bytes,
+  identity.json (provider-echoed union-alpha), arrival.json, OUTPUT.json,
+  reuse ledger record. Evidence path: state/PQ/A/fam05/runs/9907c5cb038c02e0/.
+- Attempt history: the first invocation hit HTTP 503 (upstream flake) and
+  failed cleanly in transport (USAGE-CALL-FAIL; no manifest, no state beyond
+  the staged prompt); the retry completed the cell. The 503 is an
+  infrastructure failure under the A14 taxonomy — not an estimand outcome.
+
+OPEN FINDINGS (for the next audit round; recorded, not hidden):
+1. admissibility.py walks only benchmarks/fam-c/runs (line 390) — the new
+   estimand cell lives under state/ (the derived wired surface per A11.5),
+   so its tally still reads estimand-grade = 0 by walk ROOT, not by absence.
+   Ruling needed: should the tally cover state/ (or should estimand evidence
+   be mirrored into runs/)?
+2. state/ is gitignored (repo .gitignore line 1 intent: local state never
+   committed) — estimand evidence is currently Dell-local. Ruling needed on
+   the durability/publication path for estimand evidence (selective
+   git add -f, or a documented mirror step).
