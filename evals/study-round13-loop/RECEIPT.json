@@ -1,0 +1,14 @@
+{
+  "capability": "creative-study-loop",
+  "date": "2026-09-17",
+  "task": "study-round13",
+  "verdict": "ship",
+  "verdict_basis": "Round 13 advanced the loop per protocol: QUEUE round-13 unit added with 2 concrete pending rows + 1 carried backup (hozier-kinetic) before fetching; 2 sources fetched+measured on the Dell rig sequentially; sheets read; deterministic gates verified; PLAYBOOK class-Ty section re-derived at n=6 with per-claim receipt citations; QUEUE statuses + verdict + round log written; both RCOS receipts filed. No own film was re-measured this round (ours-vs-reference rows unchanged and still cited).",
+  "gates": [
+    {"gate": "queue-advance", "evidence": "QUEUE.md: new 'Round 13 - Widening 3: Ty toward n=6, DONE - three grammars, not two' section; both rows driven to done with receipt citations and key numbers (se7en-titles 0.431 titles-only cps; zombieland-titles 0.128 titles-only cps middle case); hozier-kinetic backup carried and re-flagged as hybrid replicate candidate; Ty backlog row updated to 'done in R7, widened R13 (n=6, three grammars)'; verdict paragraph documents the refuted gap claim + friction."},
+    {"gate": "receipt-citations", "evidence": "Every new PLAYBOOK number cites studies/se7en-titles.json or studies/zombieland-titles.json (or the R7 receipts it supersedes context for); the headline cites enter-the-void-titles.json + se7en-titles.json for the flurry-rate family and zombieland-titles.json for the hybrid; no target written without a receipt citation."},
+    {"gate": "cross-class-fold-in", "evidence": "Corpus-wide finding 2 updated 59->61 reference films / 64->66 receipts; class-Ty table rows recomputed at n=6 from all six receipts programmatically (ranges/medians re-derived, not eyeballed): duration 53.5-289.2 med 168, cps 0.010-0.423, median shot 1.397-102.319, motion 0.0229-0.1082 med 0.079, stillness 0.108-0.399 med 0.215, luma 0.047-0.209 med 0.087, sat 0.006-0.462, dark_frac 0.125-0.962, LUFS -22.1..-18.2 med -20.9, TP -4.8..-3.7, n80 2-5."},
+    {"gate": "ours-vs-reference", "evidence": "Our-film rows untouched this round (no own re-measure) and their citations remain valid; the Ty rules that gate fapcoin's card work (canvas rule, type kit) were revised to grammar-scoped forms so our dark-card targets remain inside the canvas-grammar band (luma <= 0.20, n80 2-4) - the hybrid exemption does not loosen our targets."},
+    {"gate": "media-hygiene", "evidence": "Third-party media stayed on the Dell (~/tmp/creative-study); only receipts + rig gitignored-free sheets pulled to .media/ (gitignored); no keys, no paid lanes (free muse vision lane for sheet reads); public sites untouched; workspace commit scoped to creative-study; round completed inside the ~30 minute budget."}
+  ]
+}

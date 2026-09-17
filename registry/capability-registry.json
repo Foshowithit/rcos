@@ -321,6 +321,11 @@
           "task_id": "study-round12",
           "verdict": "ship",
           "run_id": "study-round12"
+        },
+        {
+          "task_id": "study-round13",
+          "verdict": "ship",
+          "run_id": "study-round13"
         }
       ],
       "reuse_count": 2,
@@ -397,6 +402,11 @@
           "task_id": "study-round12",
           "verdict": "ship",
           "run_id": "study-round12-loop"
+        },
+        {
+          "task_id": "study-round13",
+          "verdict": "ship",
+          "run_id": "study-round13-loop"
         }
       ],
       "reuse_count": 2,
