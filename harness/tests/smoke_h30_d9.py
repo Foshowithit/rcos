@@ -46,6 +46,11 @@ import preflight as PF  # noqa: E402
 
 RESULTS = []
 FREEZE = json.load(open(os.path.join(FAMC, "FREEZE.json")))["freeze_commit"]
+
+# EPOCH-3 re-certification (2026-09-17): the ACTIVE governed set is the
+# seven plus EPOCH-3-PROTOCOL-SPEC.md, and preflight.py gained ONE more
+# content state (the FR-13 preflight governance amendment commit).
+_GOVSET = PF.protocol_governed(FAMC)
 TOP = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=FAMC,
                      capture_output=True, text=True).stdout.strip()
 
@@ -113,7 +118,7 @@ def _live_branch_seq(fn):
     return seq
 
 
-_SEQ = {fn: _live_branch_seq(fn) for fn in PF.PROTOCOL_GOVERNED}
+_SEQ = {fn: _live_branch_seq(fn) for fn in _GOVSET}
 # Re-certified at EPOCH-2 (r4-reconcile EPOCH-2 slice): preflight.py at 26
 # plus the terminal-outcome/epoch-2 acceptance commit -> 27.
 check("D9.1-LIVE branch-sequence lengths match the certified facts "
@@ -126,20 +131,37 @@ check("D9.1-LIVE branch-sequence lengths match the certified facts "
       "D13 commit to 27 plus one D13c commit to 28 plus one A13 commit to 29, "
       "LANES.md by one AMEND-2026-09-16-lane-p commit to 6, "
       "HARNESS-READINESS.md at its D10 12 plus one PROTOCOL-FINAL forward to 13)",
-      {fn: len(_SEQ[fn]) for fn in PF.PROTOCOL_GOVERNED} == {
+      {fn: len(_SEQ[fn]) for fn in _GOVSET} == {
           "PREREG.md": 29, "ORDER.md": 5, "LANES.md": 6,
-          "HARNESS-READINESS.md": 13, "preflight.py": 27,
+          "HARNESS-READINESS.md": 13, "preflight.py": 28,
+          "EPOCH-3-PROTOCOL-SPEC.md": 4,
           "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str({fn: len(s) for fn, s in _SEQ.items()}))
+
+
+def _active_genesis_base():
+    """The ACTIVE epoch's transition-record genesis base (epoch-2 or
+    epoch-3): the recorded transition-time governed bytes."""
+    import epoch as _E
+    rec = (_E.transition_record3(FAMC) if _E.is_epoch3(FAMC)
+           else _E.transition_record(FAMC))
+    return _E.genesis_base_map(rec or {})
 
 
 def _live_recorded(fn):
     raw = _git_bytes(f"{FREEZE}:benchmarks/fam-c/{fn}")
     if raw is None:
-        gen = [a for a in LIVE_LOCK["amendments"]
-               if a.get("file") == fn and a.get("from_sha") is None]
-        assert len(gen) == 1, fn
-        root = gen[0]["to_sha"]
+        # EPOCH-3: a governed file added AFTER the instance freeze (the
+        # frozen epoch-3 spec) chains from the ACTIVE transition's genesis
+        # base — the recorded transition-time bytes, never a guess.
+        _base = _active_genesis_base().get(fn)
+        if _base is not None:
+            root = _base
+        else:
+            gen = [a for a in LIVE_LOCK["amendments"]
+                   if a.get("file") == fn and a.get("from_sha") is None]
+            assert len(gen) == 1, fn
+            root = gen[0]["to_sha"]
     else:
         root = hashlib.sha256(raw).hexdigest()
     by_from = {}
@@ -154,7 +176,7 @@ def _live_recorded(fn):
 
 
 _SUBSEQ_BAD = []
-for _fn in PF.PROTOCOL_GOVERNED:
+for _fn in _GOVSET:
     _rec = _live_recorded(_fn)
     _pos, _ok = -1, True
     for _n in _rec:
@@ -174,7 +196,7 @@ check("D9.1-LIVE the live chains collapse multi-commit edges "
           for fn in ("PREREG.md", "preflight.py",
                      "HARNESS-READINESS.md")),
       str({fn: (len(_live_recorded(fn)), len(_SEQ[fn]))
-           for fn in PF.PROTOCOL_GOVERNED}))
+           for fn in _GOVSET}))
 _ALL = PF.validate_all(FAMC)
 check("D9.1-LIVE the live lock stays green (V1/V2/V3 = 0/0/0)",
       _ALL == [], str(_ALL[:2])[:240])
@@ -188,11 +210,11 @@ check("D9.1-LIVE preflight counts are 0/0/0",
 _TIPS, _TIP_FIND = PF.active_protocol_tips(FAMC, FREEZE)
 check("D9.1-LIVE validator tips computed for every governed file",
       _TIP_FIND == []
-      and sorted(_TIPS) == sorted(PF.PROTOCOL_GOVERNED),
+      and sorted(_TIPS) == sorted(_GOVSET),
       f"tips={sorted(_TIPS)} finds={str(_TIP_FIND[:1])[:160]}")
 _DISK = {fn: _sha_file(os.path.join(FAMC, fn))
-         for fn in PF.PROTOCOL_GOVERNED}
-_TIP_BAD = [fn for fn in PF.PROTOCOL_GOVERNED if _TIPS.get(fn) != _DISK[fn]]
+         for fn in _GOVSET}
+_TIP_BAD = [fn for fn in _GOVSET if _TIPS.get(fn) != _DISK[fn]]
 check("D9.1-LIVE every governed file: disk sha256 == the validator's "
       "unique tip",
       _TIP_BAD == [], str(_TIP_BAD))
@@ -242,6 +264,9 @@ def _git(cwd, *args):
 
 
 def _live_bytes():
+    # The hermetic forge repo is epoch-1-shaped (no transition record, its
+    # lock lives at PROTOCOL-LOCK.json), so its governed map is the FROZEN
+    # seven — the epoch-3 spec addition applies to the ACTIVE lineage only.
     return {fn: open(os.path.join(FAMC, fn), "rb").read()
             for fn in PF.PROTOCOL_GOVERNED}
 
