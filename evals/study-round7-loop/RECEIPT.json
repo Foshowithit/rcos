@@ -1,0 +1,33 @@
+{
+  "capability": "creative-study-loop",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Protocol ran end-to-end inside budget: unit picked (Ty kinetic typography, the frontier item named by R6's close), 4 sources fetched+measured on the Dell, 4/4 label-integrity reads at judge time, all deterministic gates verified before recording, PLAYBOOK class-Ty section + citations + cross-class updates + QUEUE round section and round-log written, next unit named (S sound design). The one defect found (silent receipt pull drop under parallel fetch) was caught by the existing gate, fixed in the rig, and documented rather than hidden.",
+  "gates": [
+    {
+      "id": "queue-advance",
+      "pass": true,
+      "evidence": "Unit Ty opened per protocol and completed; Ty backlog row struck ('done in R7; class n=4 - two-archetype split documented'); Round 7 section added to QUEUE.md with the 4-row delivery table + tooling notes + restated limits; next unit named: S (sound design); the Hozier kinetic backup slug held for a future widening."
+    },
+    {
+      "id": "receipt-citations",
+      "pass": true,
+      "evidence": "Class-Ty table and rules cite studies/<slug>.json; spot-checks against receipts: psycho-titles 184.55s / 1 cut / cps 0.0108 / med 92.28s / motion 0.0394 / still 0.399 / luma 0.087 / sat 0.007 / dark 0.641 / n80 3 / LUFS -19.5 / TP -4.7; seconds-titles 204.64s / 1 / 0.0098 / 102.32s / 0.1082 / 0.108 / 0.188 / 0.006 / 0.166 / 4 / -21.5 / -4.7; stranger-things-title 53.48s / 0 / 53.48s / 0.0229 / 0.327 / 0.047 / 0.462 / 0.962 / 3 / -21.2 / -3.7; enter-the-void-titles 142.11s / 26 / 0.190 / 1.50s / 0.0754 / 0.128 / 0.064 / 0.234 / 0.676 / 2 / -18.2 / -4.8. Class envelopes recomputed from the four receipts (duration 53-205; luma 0.047-0.188; dark_frac 0.166-0.962; sat 0.006-0.462; LUFS -21.5..-18.2; TP -4.8..-3.7; n80 2-4). Corpus counters updated: 44 receipts, 39 reference films."
+    },
+    {
+      "id": "cross-class-fold-in",
+      "pass": true,
+      "evidence": "Cross-class finding 2 (palette discipline) updated 'all 31 reference films / 36 receipts' -> 'all 39 reference films measured to date (44 receipts incl. our five)'; finding 3 (loudness does not generalize) extended with the one narrow band found so far: class Ty's music-only -18.2..-21.5 LUFS; open-questions bullet updated (Ty opened in R7; next unit S; Dom Perignon pair still re-queued age-gated) and extended with the rig v0.2 sheet-builder blind spot. New class-Ty rules 1-5 are all receipt-backed numbers (canvas luma <= 0.20 & dark_frac >= 0.16; pick one archetype; stillness >= 0.11; n80 2-4; mix -18..-22 LUFS / TP ~ -4)."
+    },
+    {
+      "id": "ours-vs-reference",
+      "pass": true,
+      "evidence": "Register check against the class using existing receipts: ours-fapcoin-v3 (0.02 shots/s, 26.0s median, motion 0.042, stillness 0.393, luma 0.087, TP -10.6) reads as the one-take archetype lane (cuts <= 1, motion 0.02-0.11) with luma 0.087 inside the Ty canvas band (<= 0.20) - the PLAYBOOK rules 1-3 give its card build numbers instead of adjectives; no new our-film claims beyond what the receipts support."
+    },
+    {
+      "id": "media-hygiene",
+      "pass": true,
+      "evidence": "Third-party media never entered either repo: clips/frames/sheets/montages stayed on the Dell (~/tmp/creative-study); only metrics receipts (studies/<slug>.json) and text (PLAYBOOK/QUEUE) entered the workspace repo. No keys, no paid lanes (sheet reads on the free muse vision lane). Round ran inside the ~30-min budget (single unit, 4 sources)."
+    }
+  ]
+}

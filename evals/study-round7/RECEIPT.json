@@ -1,0 +1,33 @@
+{
+  "capability": "video-forensics-receipt",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-7 corpus: 4 kinetic-typography / title-sequence sources measured (psycho-titles 184.6s, seconds-titles 204.6s, stranger-things-title 53.5s, enter-the-void-titles 142.1s); rig/verify_receipts.py on the full corpus: 'checked 44 receipts — ALL DETERMINISTIC GATES PASS'. 4/4 label-integrity reads PASS at judge time. One tooling defect found this round (a local metrics-receipt pull silently dropped during a parallel-shell fetch; the deterministic gate caught it, the rig was hardened in-round to fail loudly) — same disposition as study-round3/study-round6: defect detected by the existing gate, corrected and openly documented, no bad receipts remain, corpus end state clean and verified.",
+  "gates": [
+    {
+      "id": "deterministic-gates",
+      "pass": true,
+      "evidence": "Round-7 receipt set: psycho-titles (184.55s, 1 cut, cps 0.0108, med 92.28s, motion 0.0394, still 0.399, luma 0.087, sat 0.007, dark 0.641, n80 3, LUFS -19.5, TP -4.7), seconds-titles (204.64s, 1 cut, 0.0098, 102.32s, 0.1082, 0.108, 0.188, 0.006, 0.166, 4, -21.5, -4.7), stranger-things-title (53.48s, 0 cuts, med 53.48s, 0.0229, 0.327, 0.047, 0.462, 0.962, 3, -21.2, -3.7), enter-the-void-titles (142.11s, 26 cuts, 0.190, 1.50s, 0.0754, 0.128, 0.064, 0.234, 0.676, 2, -18.2, -4.8). rig/verify_receipts.py on the full corpus: 'checked 44 receipts — ALL DETERMINISTIC GATES PASS'."
+    },
+    {
+      "id": "sheet-reads",
+      "pass": true,
+      "evidence": "sheet-reads (llm gate): 4/4 sources read at judge time via the free opencode muse vision lane (muse-spark-1.3-contributor-free). Psycho: fragmented gray-bar Bass type cards (PSYCHO / cast / 'TITLES DESIGNED BY SAUL BASS' / directed-by) then a cut at ~92s to the grayscale Phoenix skyline + blinds (the film's opening take). Seconds: b/w distorted face/eye/lip macro close-ups with credit overlays, ending on the nighttime plaza opening shot. Stranger Things: one continuous red-neon letterform build (~40s, strokes -> partial letterforms -> centered STRANGER / THINGS), 0 cuts, ~96% true black. Enter the Void: 26 timestamped credit tiles ('gaspar noe' -> 'PRESENT') in orange/pink neon JP+EN type on black, 1.50s median card. The three 0-1-cut sources read via dense ffmpeg montages (fps=1/8, tile=5x5) because the stock sheet builder undersamples those (logged below)."
+    },
+    {
+      "id": "label-integrity",
+      "pass": true,
+      "evidence": "Slug-to-content pairing confirmed for all 4 R7 fetches: sheet/montage content matches the named sources (Psycho Bass bars + film opening; Seconds face-macro Bass cards; ST red-neon letterform build + lockup; Enter the Void timestamped neon credit tiles). ST additionally machine-verified via its receipt's source metadata (title 'Stranger Things | Title Sequence [HD] | Netflix', channel 'Stranger Things', upload 20160806, 1280x720 23.976fps). No mislabeled receipt this round. Caveat documented in the PLAYBOOK: the two Bass uploads include the film's opening shot after the cards, so each upload's single detected cut is the cards->film boundary, not an editorial cut inside the title sequence."
+    },
+    {
+      "id": "tooling-defect-found-and-fixed",
+      "pass": true,
+      "evidence": "One defect surfaced and fixed in-round: the four fetches ran in two parallel shells and one local metrics-receipt pull silently dropped (concurrent rsync race; the rig's 'pulled:' echo printed unconditionally). rig/verify_receipts.py caught the missing studies/stranger-things-title.json (the gate working), the receipt was re-pulled successfully, and rig/run_on_dell.sh pull_slug was hardened to fail loudly ('PULL_FAIL: ...' + exit 1) instead of echoing success. Sequential fetches remain the recipe; a second rig limitation found: the stock sheet builder samples ~one frame per detected shot, so 0-1-cut sources get 1-2 tiles often landing on black (dense-montage workaround logged as a rig v0.2 item)."
+    },
+    {
+      "id": "limitation-documented",
+      "pass": true,
+      "evidence": "Limits documented, not normalized: scene-threshold detections are not certified editorial cuts (the Bass uploads' single cut is the cards->film boundary; ST's 0 cuts is a letterform build the detector does not fire on); sheets and dense montages are sampled-frame inspections - no full video was watched; n=4 class with a documented two-archetype split and no measured middle (candidate for a future middle-case search rather than padding). No keys, no paid lanes (free muse vision lane for reads)."
+    }
+  ]
+}
