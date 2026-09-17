@@ -2,7 +2,7 @@
  "endpoint": "https://kenari.id/v1",
  "model_requested": "agnes-2-0-flash:free",
  "tag": "calibration-Q",
- "timestamp": "2026-09-17T00:23:52Z",
+ "timestamp": "2026-09-17T01:26:58Z",
  "params": {
   "temperature": 0,
   "max_tokens": 256,
@@ -13,9 +13,9 @@
   "max_tokens": 256,
   "top_p": 1
  },
- "model_echoed_model": "agnes-2-0-flash",
- "model_echoed_created": 1789604632,
- "provider_response_id": "calib-q-offline",
+ "model_echoed_model": "agnes-2-0-flash:free",
+ "model_echoed_created": 1789608418,
+ "provider_response_id": "91a2c12655003526",
  "request_body_sha256": "eee69273d8b43bbce24204c0c7c42a53433e851be608b35a536f6b47fedf83fa",
  "messages_sha256": "2625dd153a82bef26cc6a692a044ffad1368c965e49cfb2051fea14c95a801aa",
  "messages_count": 1

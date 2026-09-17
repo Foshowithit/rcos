@@ -156,12 +156,14 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
             path, headers = "/messages", {
                 "x-api-key": api_key,
                 "anthropic-version": "2023-06-01",
+                "User-Agent": "rcos-famc-harness/1.0",
                 "Content-Type": "application/json"}
             if session_header:
                 headers["x-opencode-session"] = session_header
         else:
             path, headers = "/chat/completions", {
                 "Authorization": "Bearer " + api_key,
+                "User-Agent": "rcos-famc-harness/1.0",
                 "Content-Type": "application/json"}
         req = urllib.request.Request(
             endpoint.rstrip("/") + path, data=persisted, headers=headers)
