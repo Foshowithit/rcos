@@ -5,10 +5,11 @@ Requested: 2026-09-17, by the operator session, per the ruling at
 ADD A PRE-FROZEN MODEL-OUTPUT-INVALID TERMINAL AND RESTART CLEAN").
 
 Artifacts under request (CORRECTED bytes from the docs-only correction
-commit on `r4-reconcile`, child of `8b5e270`; sha256):
+commit on `r4-reconcile`, child of `0efa1149b07de41aeff498a7f3bd4481fb192672`;
+sha256):
 
 - `benchmarks/fam-c/EPOCH-3-PROTOCOL-SPEC.md`
-  sha256 `1ce2bbc8b8981b4c1a51c6858a6f5c3950b5a9476fb2a3f8d99351308d3166d7`
+  sha256 `afb0d153e07935f772aa729b230ab5a535838a82a94e674300a213d6abcae7d8`
 - `benchmarks/fam-c/EPOCH-2-STOP-RECORD.md`
   sha256 `4e0e84ec6c4f13baebd319b40e11ce1beb6258110146fb1d6066afed74e70f4c`
 
@@ -62,14 +63,39 @@ disposition table is the record of what was asked and how it was ruled.
 | FR-10 | ACCEPT-AS-AMENDED | Evidence row corrected (ship:false; hidden_tests_passed and checker verdict/rc null; run_manifest_hash null; evidence_hash = terminal_record_sha256, retained explicitly; model_calls 1; retries 0; terminal_class MODEL-OUTPUT-INVALID as estimand evidence); capability_available derived from the frozen cell/validated lock while selection/load/invocation/consumption/material contribution stay false; T2/T3 terminal is a non-SHIP correctness failure, a treatment T4 terminal is never a specificity rejection (spec §4.1) |
 | FR-11 | ACCEPT-AS-AMENDED | Epoch 2 remains STOPPED / INCOMPLETE (not "closed"); no new epoch-2 state write; stop record reworded to the frozen index-63/index-64 sentence; "epoch-closure annex" renamed "epoch-stop annex" (`EPOCH-2-STOP-RECORD.md`) |
 | FR-12 | ACCEPT-AS-AMENDED, IMPLEMENTATION AUTHORIZATION DEFERRED until the corrected bytes are frozen | Twelve required adversarial probes plus full battery, V1/V2/V3 `0/0/0`, transition/lock certification, and post-FINAL refusal proofs; no epoch-3 model call before both epoch-3 locks are FINAL (spec §7) |
-| FR-13 | ACCEPT-AS-AMENDED | New root files / epoch-3 lock names join V1 META so they are not mistaken for frozen task-instance bytes; the V2/protocol-governed set extends to the existing seven files + `EPOCH-3-PROTOCOL-SPEC.md` (META must not exempt the spec from the epoch-3 protocol lock); `FREEZE-REQUEST.md` stays historical META; the preflight amendment is a post-freeze implementation item (spec §7 step 2) |
+| FR-13 | ACCEPT-AS-AMENDED | New root files / epoch-3 lock names join V1 META so they are not mistaken for frozen task-instance bytes; the V2/protocol-governed set extends to the existing seven files + `EPOCH-3-PROTOCOL-SPEC.md` (META must not exempt the spec from the epoch-3 protocol lock); `FREEZE-REQUEST.md` stays historical META; the preflight amendment is a post-freeze implementation item (frozen in the spec, §7 **Preflight governance** — the normative home of this rule) |
 
-Freeze status after this correction: NOT FROZEN; implementation remains
+## SECOND ADJUDICATION — 2026-09-17 (third-party seat)
+
+Verdict on `0efa1149b07de41aeff498a7f3bd4481fb192672`:
+**REFUSE — EPOCH-3 SPEC NOT FROZEN YET. ONE DOCS-ONLY CRITERION-FIDELITY
+DEFECT REMAINS.** Authority (verbatim record):
+`/home/chow/rcos-campaign/FREEZE-RULING-2-2026-09-17.md`. The seat confirmed
+the commit is the correct one-commit child of `8b5e270`, confined to the four
+declared documentation files, that both flagged judgment calls
+(`experimental_task_outcome: "FAIL"`; removal of `diagnostic_repeat` /
+`ATTEMPT-BUDGET-DENY`) are ACCEPTED, that FR-1 … FR-12 now match the ruling
+and the epoch-2 stop correction is exact, and that it is NOT reopening FR-1 …
+FR-12 and will add NO further criteria. The single defect: the FR-13 V1/V2
+authority rule lived only in this request (declared historical META), not in
+the normative `EPOCH-3-PROTOCOL-SPEC.md`.
+
+Correction applied (docs-only child of `0efa114`): the FR-13 authority rule is
+now frozen IN THE NORMATIVE SPEC under §7 as the **Preflight governance**
+subsection (V1 META set; V2 PROTOCOL_GOVERNED = existing seven files +
+`EPOCH-3-PROTOCOL-SPEC.md`; "Being V1 META MUST NOT exempt
+EPOCH-3-PROTOCOL-SPEC.md from V2. FREEZE-REQUEST.md remains historical META,
+not protocol authority."). This request was updated only to record the new
+spec hash/status; it remains historical META and is not the authority for the
+rule.
+
+Freeze status after that correction: NOT FROZEN; implementation remains
 unauthorized. The expected next ruling on these corrected bytes is
 `EPOCH-3-SPEC-FROZEN — IMPLEMENTATION AUTHORIZED`; if issued, the spec bytes
 become the frozen protocol text (recorded in the epoch-3 protocol lock's
-governed map per FR-13) and `EPOCH-3-TRANSITION.json` cites the frozen spec
-sha and its freeze commit (FR-7).
+governed map per the spec's §7 Preflight governance rule) and
+`EPOCH-3-TRANSITION.json` cites the frozen spec sha and its freeze commit
+(FR-7).
 
 ---
 
@@ -437,7 +463,7 @@ implementation is certified rather than asserted.
 
 ## FR-13 — Certification wiring for the new root-level protocol docs
 
-**Disposition (2026-09-17): ACCEPT-AS-AMENDED** (V1 META additions; V2/governed set = seven files + `EPOCH-3-PROTOCOL-SPEC.md`; `FREEZE-REQUEST.md` stays historical META; preflight amendment is a post-freeze implementation item). Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §7 step 2.
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED** (V1 META additions; V2/governed set = seven files + `EPOCH-3-PROTOCOL-SPEC.md`; `FREEZE-REQUEST.md` stays historical META; preflight amendment is a post-freeze implementation item). Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §7, subsection **Preflight governance** (frozen rule; this request is not its authority).
 
 **Decision needed.** The three new documents and the future
 `EPOCH-3-TRANSITION.json` sit at the Fam-C root, where preflight's V1

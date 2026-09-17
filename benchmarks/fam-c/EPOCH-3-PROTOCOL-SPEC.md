@@ -544,7 +544,8 @@ form as epoch 2, and it RESTARTS the frozen 240-event order from event 0:
    strict validator (including the raw-response replay of §1), both-branch
    algebra extension and the §3.1 governance evidence union, attempt ledger
    with `ATTEMPT-BUDGET-DENY`, per-attempt response preservation, epoch-3
-   lineage mechanics, and the preflight governance extension of FR-13.
+   lineage mechanics, and the preflight governance rule frozen in the
+   *Preflight governance* subsection below.
 3. REQUIRED adversarial probes (certification standard, in addition to
    whatever else the implementation adds):
    1. T0 `MODEL-OUTPUT-INVALID` continuation (no candidate; T1
@@ -572,6 +573,37 @@ form as epoch 2, and it RESTARTS the frozen 240-event order from event 0:
 5. Fresh epoch-3 locks are finalized (both FINAL) and the runner's FINAL
    gate passes. Only then does the epoch-3 walk begin at event 0 — NO
    epoch-3 provider call may happen before both epoch-3 locks are FINAL.
+
+### Preflight governance (FR-13 — frozen, normative; the rule of §7 step 2)
+
+The epoch-3 preflight governance sets are exactly these, and no others:
+
+```text
+V1 META:
+  EPOCH-2-STOP-RECORD.md
+  EPOCH-3-PROTOCOL-SPEC.md
+  FREEZE-REQUEST.md
+  EPOCH-3-TRANSITION.json
+  EXECUTION-LOCK-EPOCH3.json
+  PROTOCOL-LOCK-EPOCH3.json
+
+V2 PROTOCOL_GOVERNED:
+  existing seven governed files
+  + EPOCH-3-PROTOCOL-SPEC.md
+```
+
+Being V1 META MUST NOT exempt EPOCH-3-PROTOCOL-SPEC.md from V2.
+FREEZE-REQUEST.md remains historical META, not protocol authority.
+
+The "existing seven governed files" are, verbatim from the current preflight:
+`PREREG.md`, `ORDER.md`, `LANES.md`, `HARNESS-READINESS.md`, `preflight.py`,
+`T4-SEMANTIC-IDS.json`, `T4-CONFORMANCE.json`. `EPOCH-2-STOP-RECORD.md` stays
+anchored by the epoch-3 transition citation; `EPOCH-3-TRANSITION.json` and
+the two epoch-3 lock files are validated by their dedicated epoch/lock
+authorities. The preflight `META` / governed-set amendment that implements
+this rule is the post-freeze implementation item of §7 step 2 — it is never a
+precondition for freezing these bytes, and it must not exempt
+`EPOCH-3-PROTOCOL-SPEC.md` from the epoch-3 protocol lock (V2).
 
 ## 8. Freeze items and their adjudication status
 
