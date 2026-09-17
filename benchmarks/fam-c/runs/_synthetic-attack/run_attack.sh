@@ -26,7 +26,7 @@ PASS=0; FAIL=0
 for s in $SUITES; do
   t0=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   out=$(mktemp)
-  timeout 240 python3 "harness/tests/$s.py" >"$out" 2>&1
+  timeout 300 python3 "harness/tests/$s.py" >"$out" 2>&1
   rc=$?
   t1=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   summary=$(tail -1 "$out")

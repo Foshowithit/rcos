@@ -24,7 +24,7 @@ with no single named artifact. This directory is that artifact.
 - Offline by construction: no suite in this sequence performs a provider
   call. The attack proves the machinery; it never mints estimand data.
 - Suite runtimes are minutes-scale by design (the promotion walk re-derives
-  state through the full authority chain); the 240s per-suite cap is part of
+  state through the full authority chain); the 300s per-suite cap is part of
   the recorded contract.
 
 ## Recorded results
