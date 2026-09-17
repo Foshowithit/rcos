@@ -141,18 +141,6 @@ def state_root(fam_c_dir):
     return os.path.join(fam_c_dir, "state")
 
 
-def lock_path(fam_c_dir, name):
-    """Path of one lock file: the epoch-2 lock under epoch 2, else the
-    historical path."""
-    if name in (EXECUTION_LOCK_FILE, PROTOCOL_LOCK_FILE):
-        return os.path.join(fam_c_dir, name)
-    if is_epoch2(fam_c_dir):
-        return os.path.join(fam_c_dir, {
-            EPOCH1_EXECUTION_LOCK_FILE: EXECUTION_LOCK_FILE,
-            EPOCH1_PROTOCOL_LOCK_FILE: PROTOCOL_LOCK_FILE}.get(name, name))
-    return os.path.join(fam_c_dir, name)
-
-
 def active_lock_names(fam_c_dir):
     """(execution, protocol) lock file names of the ACTIVE epoch."""
     if is_epoch2(fam_c_dir):

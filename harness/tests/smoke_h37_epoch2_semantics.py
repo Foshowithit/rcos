@@ -473,9 +473,25 @@ WT = tempfile.mkdtemp(prefix="h37-wt-")
 os.rmdir(WT)
 WBASE = os.path.join(WT, "benchmarks", "fam-c")
 WRA = None
+# The rehearsal must START from a pre-transition tree: if the live HEAD
+# already carries the epoch-2 transition (this slice applies it), anchor
+# the disposable worktree at the commit that ADDED the record — the last
+# untransitioned state — so --check/--transition are exercised for real.
+_wt_anchor = "HEAD"
 try:
-    subprocess.run(["git", "-C", REPO, "worktree", "add", WT, "HEAD"],
-                   capture_output=True, text=True, check=True)
+    _add = subprocess.run(
+        ["git", "-C", REPO, "log", "--format=%H", "--diff-filter=A", "--",
+         "benchmarks/fam-c/" + EPOCH.TRANSITION_FILE],
+        capture_output=True, text=True, check=True).stdout.split()
+    if _add:
+        _wt_anchor = subprocess.run(
+            ["git", "-C", REPO, "rev-parse", _add[-1] + "^"],
+            capture_output=True, text=True, check=True).stdout.strip()
+except (subprocess.CalledProcessError, OSError):
+    _wt_anchor = "HEAD"
+try:
+    subprocess.run(["git", "-C", REPO, "worktree", "add", "--detach", WT,
+                    _wt_anchor], capture_output=True, text=True, check=True)
     if HARNESS not in sys.path:
         sys.path.insert(0, HARNESS)
     import importlib

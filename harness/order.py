@@ -636,7 +636,7 @@ def cell_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
     deadlocks the whole frozen order — while authorizing none of the
     behaviors a COMPLETE cell would.
     """
-    st = _local_state(fam_c_dir, cell, freeze_commit)
+    st = _local_state(fam_c_dir, cell, freeze_commit, _exp)
     if st["status"] != "COMPLETE":
         return st
     try:
@@ -649,7 +649,7 @@ def cell_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
             break
         if c["cell_id"] == cell["cell_id"]:
             continue
-        earlier = _local_state(fam_c_dir, c, freeze_commit)
+        earlier = _local_state(fam_c_dir, c, freeze_commit, exp)
         if not progress_valid(c, earlier["status"]):
             blockers.append(f"{c['cell_id']} "
                             f"({c['block']}/{c['family']}/{c['event']}/"
@@ -662,7 +662,7 @@ def cell_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
     return st
 
 
-def _local_state(fam_c_dir, cell, freeze_commit=None):
+def _local_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
     """Kind-dispatched validation of ONE cell, WITHOUT the order guard.
     Governance validators (promotion/lock) use this for their T0/T1 source
     cells so order recursion terminates.
@@ -686,7 +686,8 @@ def _local_state(fam_c_dir, cell, freeze_commit=None):
     if kind in MODEL_CALL_KINDS and event in DOWNSTREAM_EVENTS and \
             cell.get("universe") in CAPABILITY_UNIVERSES:
         _failed, _cause = acquisition_failed(
-            fam_c_dir, cell["block"], cell["family"], cell["universe"])
+            fam_c_dir, cell["block"], cell["family"], cell["universe"],
+            _exp=_exp)
         if _failed:
             return {"cell_id": cell["cell_id"], "status": "NOT-EVALUABLE",
                     "reasons": [
@@ -710,7 +711,7 @@ def _local_state(fam_c_dir, cell, freeze_commit=None):
     if denial:
         return _result(cell, [denial], True)
     if kind in MODEL_RUN_KINDS:
-        return _model_run_state(fam_c_dir, cell, freeze_commit)
+        return _model_run_state(fam_c_dir, cell, freeze_commit, _exp)
     if kind == "harness-event":
         if event == "PROMOTION":
             return _promotion_state(fam_c_dir, cell, freeze_commit)
@@ -842,7 +843,7 @@ def _reuse_ledger_reasons(run_dir, m, fam_c_dir=None, cell=None):
     return out
 
 
-def _model_run_state(fam_c_dir, cell, freeze_commit=None):
+def _model_run_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
     """A11.4: completion of ONE real model-run cell (acquisition-solve or
     model-call) under the production manifest field names. A run is
     COMPLETE only when its directory exists at the DERIVED path, its
@@ -872,7 +873,8 @@ def _model_run_state(fam_c_dir, cell, freeze_commit=None):
     # pre-A11.4 loop compared "kind"/"universe" (names the real runner
     # never writes) and tolerated a missing universe — both gone.
     try:
-        order_sha = load_expansion(fam_c_dir)["order_sha256"]
+        order_sha = (_exp if _exp is not None else
+                     load_expansion(fam_c_dir))["order_sha256"]
     except (ValueError, KeyError, OSError) as e:
         reasons.append(f"order expansion unreadable: {e}")
         order_sha = None
@@ -1938,7 +1940,7 @@ def _failed_acquisition_cause(fam_c_dir, block, family, universe):
     return "candidate-validation-failed"
 
 
-def acquisition_failed(fam_c_dir, block, family, universe):
+def acquisition_failed(fam_c_dir, block, family, universe, _exp=None):
     """A12d D1-B3/B4: the failed-acquisition predicate, derived from
     COMMITTED evidence (never from the outcome file alone).
 
@@ -1952,23 +1954,26 @@ def acquisition_failed(fam_c_dir, block, family, universe):
     predicate but never substitutes for it."""
     try:
         return _acquisition_failed_inner(fam_c_dir, block, family,
-                                         universe)
+                                         universe, _exp)
     except Exception:                               # noqa: BLE001
         return False, "candidate-validation-failed"
 
 
-def _acquisition_failed_inner(fam_c_dir, block, family, universe):
+def _acquisition_failed_inner(fam_c_dir, block, family, universe, _exp=None):
+    """The predicate below is a conjunction, so the CHEAP committed-artifact
+    reads run FIRST and the full T0/T1 COMPLETE validations (chain
+    re-verification + admissibility classification) LAST: a healthy
+    universe short-circuits on its T1 chain carrying no failed
+    candidate-validation event, while a genuinely failed one still demands
+    both acquisitions validated COMPLETE before the predicate can hold.
+    Identical semantics, bounded cost on the prefix-walk hot path."""
     try:
-        exp = load_expansion(fam_c_dir)
+        exp = _exp if _exp is not None else load_expansion(fam_c_dir)
     except (ValueError, OSError):
         return False, "candidate-validation-failed"
     t0 = expected_event(exp, block, family, "T0", universe)
     t1 = expected_event(exp, block, family, "T1", universe)
     if t0 is None or t1 is None:
-        return False, "candidate-validation-failed"
-    if _local_state(fam_c_dir, t0, None)["status"] != "COMPLETE":
-        return False, "candidate-validation-failed"
-    if _local_state(fam_c_dir, t1, None)["status"] != "COMPLETE":
         return False, "candidate-validation-failed"
     try:
         cp = os.path.join(run_dir(fam_c_dir, t1), "EVIDENCE-CHAIN.jsonl")
@@ -1993,6 +1998,10 @@ def _acquisition_failed_inner(fam_c_dir, block, family, universe):
     except (OSError, ValueError):
         return False, "candidate-validation-failed"
     if pay.get("candidate_sha256") != frozen:
+        return False, "candidate-validation-failed"
+    if _local_state(fam_c_dir, t0, None, exp)["status"] != "COMPLETE":
+        return False, "candidate-validation-failed"
+    if _local_state(fam_c_dir, t1, None, exp)["status"] != "COMPLETE":
         return False, "candidate-validation-failed"
     vf = pay.get("validation_failure")
     cause = vf if isinstance(vf, str) and vf.strip() \
@@ -2497,7 +2506,7 @@ def completed_cells(fam_c_dir, freeze_commit=None, expansion=None):
     exp = expansion if expansion is not None else load_expansion(fam_c_dir)
     done = {}
     for c in exp["cells"]:
-        st = _local_state(fam_c_dir, c, freeze_commit)
+        st = _local_state(fam_c_dir, c, freeze_commit, exp)
         if not progress_valid(c, st["status"]):
             break
         done[c["cell_id"]] = os.path.basename(run_dir(fam_c_dir, c))
