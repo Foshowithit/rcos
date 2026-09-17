@@ -8,6 +8,12 @@ const { spawnSync } = require('node:child_process');
 
 const BIN = path.join(__dirname, '..', 'bin', 'rcos');
 const SEED = path.join(__dirname, '..', 'registry', 'capability-registry.json');
+// counts derived from the live registry — fixed numbers broke this suite when
+// the registry grew (found red 2026-09-17, fixed the same day)
+const REG = JSON.parse(fs.readFileSync(SEED, 'utf8'));
+const N_CAPS = REG.capabilities.length;
+const N_PROMOTED = REG.capabilities.filter((c) => c.status === 'promoted').length;
+const N_CANDIDATES = REG.capabilities.filter((c) => c.status === 'candidate').length;
 
 function makeHome() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'rcos-cli-'));
@@ -29,7 +35,7 @@ test('query lists seed candidates; --json parses', () => {
   assert.match(out.stdout, /filmstrip-verify/);
   const js = run(home, 'query', '--json');
   assert.equal(js.status, 0);
-  assert.equal(JSON.parse(js.stdout).length, 8);
+  assert.equal(JSON.parse(js.stdout).length, N_CAPS);
 });
 
 test('propose -> eval-submit x2 -> promote works end to end', () => {
@@ -47,8 +53,8 @@ test('propose -> eval-submit x2 -> promote works end to end', () => {
   assert.equal(run(home, 'eval-submit', '--id', 'cli-demo', '--task', 't-2', '--verdict', 'ship', '--run', 'r-2', '--date', '2026-09-14').status, 0);
   assert.equal(run(home, 'promote', '--id', 'cli-demo').status, 0);
   const q = run(home, 'query', '--status', 'promoted', '--json');
-  // seed already holds 1 promoted (operator-ui-contract-test); cli-demo makes 2
-  assert.equal(JSON.parse(q.stdout).length, 2);
+  // the seed's promoted set plus cli-demo
+  assert.equal(JSON.parse(q.stdout).length, N_PROMOTED + 1);
 });
 
 test('usage and domain errors use exit codes 1 and 2', () => {
@@ -71,8 +77,8 @@ test('audit exits 0 on the seed; render writes a deterministic dashboard', () =>
   assert.match(r1.stdout, /dashboard\.html/);
   const html1 = fs.readFileSync(path.join(home, 'dashboard.html'), 'utf8');
   assert.match(html1, /filmstrip-verify/);
-  assert.match(html1, /7 candidates/);
-  assert.match(html1, /1 promoted/);
+  assert.match(html1, new RegExp(N_CANDIDATES + ' candidates'));
+  assert.match(html1, new RegExp(N_PROMOTED + ' promoted'));
   const r2 = run(home, 'render');
   assert.equal(r2.status, 0);
   assert.equal(fs.readFileSync(path.join(home, 'dashboard.html'), 'utf8'), html1);

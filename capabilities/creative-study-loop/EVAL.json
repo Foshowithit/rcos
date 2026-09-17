@@ -1,0 +1,12 @@
+{
+  "capability": "creative-study-loop",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "queue-advance", "kind": "deterministic", "check": "each round moves at least one QUEUE.md row from pending to receipt-backed and records the round's sources" },
+    { "id": "receipt-citations", "kind": "deterministic", "check": "every envelope row added to PLAYBOOK.md cites at least one studies/<slug>.json present in the repo, and the cited value matches the receipt within rounding" },
+    { "id": "ours-vs-reference", "kind": "deterministic", "check": "each class section carries an ours-film row measured by the SAME rig (no cross-rig comparison)" },
+    { "id": "media-hygiene", "kind": "deterministic", "check": "no third-party media in any repo after the round (creative-study git status shows only JSON/MD changes)" },
+    { "id": "verdict-logged", "kind": "deterministic", "check": "the round itself is logged as an eval (this capability) plus an eval on video-forensics-receipt, each with a receipt under evals/<run-id>/" },
+    { "id": "targets-actionable", "kind": "llm", "check": "each new target is phrased as a check with a direction and a number (min/max/range), not an adjective; and every 'gap' claim names the metric and both values" }
+  ]
+}

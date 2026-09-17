@@ -1,0 +1,12 @@
+{
+  "capability": "video-forensics-receipt",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "receipt-completeness", "kind": "deterministic", "check": "metrics.json carries probe/cuts/loudness/color/motion/motion_series/rig.metric_defs and source metadata (fetched clips: title+channel+url; uploads: channel=local-upload)" },
+    { "id": "shot-arithmetic", "kind": "deterministic", "check": "sum(shot.lens_s) = probe.duration_s within 2% and lens count = cuts.n + 1 (0 and duration as boundaries)" },
+    { "id": "cuts-monotonic", "kind": "deterministic", "check": "cut timestamps strictly increasing, all >= 0.10s (scene-filter warm-up excluded), all < duration" },
+    { "id": "media-containment", "kind": "deterministic", "check": "no clip or frame media committed in either repo: creative-study/.gitignore covers .media/*.jpg|png + *.mp4, and git status --porcelain on the workspace shows no media additions" },
+    { "id": "loudness-consistency", "kind": "deterministic", "check": "probe.has_audio=true => integrated_lufs is a number; has_audio=false => all three loudness fields null" },
+    { "id": "sheet-reads", "kind": "llm", "check": "contact sheet cells are distinct, coherent shots of the named source (not blank/garbage/mismatched); sampled by reading the sheet at judge time" }
+  ]
+}

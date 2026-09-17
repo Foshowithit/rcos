@@ -1,0 +1,10 @@
+{
+  "capability": "local-talking-heads",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "dell-gpu-only", "kind": "deterministic", "check": "the render ran on the Dell GPU in an isolated venv (A3000, peak VRAM recorded); no Mac render lane, no paid video lane" },
+    { "id": "motion-evidence", "kind": "deterministic", "check": "measured in the output clip: mouth-region mean |frame delta| >= 5x background-region mean |frame delta| (hero test: mouth 31-47 vs bg 0.4-5.3)" },
+    { "id": "settings-recorded", "kind": "deterministic", "check": "receipt records the input still, driver video, resolution, frame count, wall time, and peak VRAM (hero test: 1280x1280, 259f, 31s, 2148 MiB)" },
+    { "id": "identity-hold", "kind": "llm", "check": "sighted read: the subject's identity holds across the clip (no face collapse/warping at mouth and jaw)" }
+  ]
+}

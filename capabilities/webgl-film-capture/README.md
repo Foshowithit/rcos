@@ -1,4 +1,4 @@
-# Deterministic WebGL film capture pipeline
+# Deterministic WebGL film capture pipeline (CDP rgba→vflip→cards→mux)
 
 CDP rig (`cap.cjs`): Node → Chrome (Metal ANGLE) → per-frame raw RGBA over a
 local HTTP sink (never the CDP WS — multi-MB evaluate returns kill it) →
