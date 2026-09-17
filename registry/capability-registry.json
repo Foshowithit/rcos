@@ -213,6 +213,24 @@
       "reuse_count": 0,
       "last_eval": "2026-09-16",
       "lineage": "Dell Archon workflow character-forge-v1; ritual_guy + seated_film + seated_film_down EVAL ships; numpy-bool gate fix"
+    },
+    {
+      "id": "local-talking-heads",
+      "name": "Local talking heads (LivePortrait on the Dell, video-driven)",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "hero-portrait-6s-liveportrait",
+          "verdict": "ship",
+          "run_id": "Dell ~/tmp/headtest/hero_portrait_talking_6s.mp4 (1280x1280 h264+aac 6.0s, 259f); motion measured mouth 31-47 vs bg 0.4-5.3 mean|d|; muse SHIP; copy at fapcoin-webgl/charforge/head/"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "KlingTeam/LivePortrait fork, Dell A3000 6GB, venv-isolated; hero_portrait 6s test 2026-09-17 (31s render, peak 2148MiB VRAM, mouth motion 6-40x bg, muse SHIP); SETUP-NOTES at Dell ~/tmp/headtest"
     }
   ]
 }
