@@ -42,3 +42,5 @@
 {"schema":"rcos-trace/1","ts":"2026-09-17T22:05:40.212Z","capability":"creative-study-loop","task_id":"study-round13","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":true,"date":null}
 {"schema":"rcos-trace/1","ts":"2026-09-17T22:05:40.212Z","capability":"hunyuan3d-mlx-local","task_id":"hero-front-textured-e2e","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":true,"date":null}
 {"schema":"rcos-trace/1","ts":"2026-09-17T22:05:40.212Z","capability":"face-in-scene-shot","task_id":"talking-portrait-insert-3s","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":true,"date":null}
+{"schema":"rcos-trace/1","ts":"2026-09-17T22:07:06.637Z","capability":"video-forensics-receipt","task_id":"study-round14","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
+{"schema":"rcos-trace/1","ts":"2026-09-17T22:07:06.671Z","capability":"creative-study-loop","task_id":"study-round14","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
