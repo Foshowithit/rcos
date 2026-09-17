@@ -534,6 +534,53 @@ check("T2 COMPLETE again after the symlinked namespace is restored",
       st(T2)["status"] == "COMPLETE", str(st(T2)))
 
 # ---------------------------------------------------------------------------
+# F. EPOCH-2 progress algebra (EPOCH-1-CLOSURE.md ruling) — the ledger
+# advances on EVENT-SPECIFIC validated terminals, never on INADMISSIBLE /
+# INCOMPLETE, and this suite's COMPLETE-only world is unchanged by it.
+# (The end-to-end failed-acquisition walk — T0/T1, NOT-PROMOTED,
+# NOT-LOCKED, NOT-EVALUABLE — is smoke_h37_epoch2_semantics.)
+# ---------------------------------------------------------------------------
+_algebra = [(PROM, "COMPLETE", True), (PROM, "NOT-PROMOTED", True),
+            (PROM, "NOT-LOCKED", False), (PROM, "NOT-EVALUABLE", False),
+            (LOCK, "COMPLETE", True), (LOCK, "NOT-LOCKED", True),
+            (LOCK, "NOT-PROMOTED", False), (LOCK, "NOT-EVALUABLE", False),
+            (cell("T2"), "COMPLETE", True),
+            (cell("T2"), "NOT-EVALUABLE", True),
+            (cell("T2"), "NOT-PROMOTED", False),
+            (cell("T3", "B"), "NOT-EVALUABLE", False),
+            (T0, "NOT-PROMOTED", False), (T0, "NOT-LOCKED", False),
+            (T0, "NOT-EVALUABLE", False),
+            (PROM, "INCOMPLETE", False), (PROM, "INADMISSIBLE", False),
+            (LOCK, "INCOMPLETE", False), (LOCK, "INADMISSIBLE", False),
+            (cell("T2"), "INCOMPLETE", False),
+            (cell("T2"), "INADMISSIBLE", False)]
+_bad_pairs = [(c["event"], c["universe"], s, ORD.progress_valid(c, s), want)
+              for c, s, want in _algebra
+              if ORD.progress_valid(c, s) is not want]
+check("epoch-2 event-specific progress algebra: terminals progress only on "
+      "their own event; INCOMPLETE/INADMISSIBLE never progress",
+      not _bad_pairs, str(_bad_pairs[:3]))
+
+# the ledger is a strict prefix: an inadmissible cell drops itself AND every
+# later completion from the walk (no leaping over a broken prefix).
+_done_before = ORD.completed_cells(state_root, expansion=EXPANSION)
+_cp1 = os.path.join(run_dir_of(T1), "EVIDENCE-CHAIN.jsonl")
+_good_cp1 = open(_cp1).read()
+open(_cp1, "w").write(_good_cp1.replace('"ship"', '"forged"', 1))
+_done_broken = ORD.completed_cells(state_root, expansion=EXPANSION)
+check("ledger prefix rule: an INADMISSIBLE cell drops itself and every later "
+      "completion from the walk",
+      T1["cell_id"] not in _done_broken
+      and PROM["cell_id"] not in _done_broken
+      and LOCK["cell_id"] not in _done_broken
+      and T0["cell_id"] in _done_broken
+      and len(_done_broken) == 1, str(sorted(_done_broken)))
+open(_cp1, "w").write(_good_cp1)
+check("ledger walks again after the chain is restored",
+      ORD.completed_cells(state_root, expansion=EXPANSION) == _done_before,
+      str(sorted(ORD.completed_cells(state_root, expansion=EXPANSION))))
+
+# ---------------------------------------------------------------------------
 total = len(results)
 passed = sum(1 for _, ok in results if ok)
 print(f"\nH12 cell-state smoke: {passed}/{total} closed")
