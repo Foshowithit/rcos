@@ -432,3 +432,42 @@ OPEN FINDINGS (for the next audit round; recorded, not hidden):
    committed) — estimand evidence is currently Dell-local. Ruling needed on
    the durability/publication path for estimand evidence (selective
    git add -f, or a documented mirror step).
+
+
+## EPOCH-1 FINDING (F1/F2): denied promotion cannot advance the order; the FINAL seal blocks the repair — 2026-09-17
+
+The first real failed acquisition surfaced a design gap between two frozen
+components:
+
+- emit_promotion_outcome (A12d D1-B3) records the terminal NOT-PROMOTED
+  outcome and states the intent VERBATIM: promotion completes as RECORDED
+  NOT-PROMOTED, not an exception, **not a deadlock**.
+- The authority cell_state() validates the record: status NOT-PROMOTED
+  (acquisition-failed reason), i.e. the state is legal and validated.
+- BUT completed_cells() (A11.6, the order-progress rule) accepts ONLY
+  status == COMPLETE. A NOT-PROMOTED terminal state never advances the
+  prefix walk, so every later cell is withheld. Empirically: after the
+  denial was recorded, every probe refuses with
+  earliest missing = 55cee707 (PQ/fam05/PROMOTION/A) — the frozen order
+  deadlocks at its first legal failure outcome.
+- The sibling cell has no path at all: CAPABILITY_LOCK 011ec0ec state is
+  INCOMPLETE (capability dir absent) — no NOT-LOCKED terminal outcome was
+  reached or written; advance() stopped at the promotion denial.
+- The tests cover the outcome WRITING (h23) but never assert order progress
+  after a denial — the exact untested seam.
+
+Consequence and the seal: the repair is a harness-bytes change
+(completed_cells accepting NOT-PROMOTED as progress-valid; a defined
+NOT-LOCKED terminal for lock cells of failed universes; h-tests for the
+seam). In epoch 1 that change trips preflight V3 (harness bytes changed
+vs the FINAL lock manifest) and post-FINAL re-minting is REFUSED by design
+(EXECUTION-LOCK-FINAL-REFUSED). The FINAL-lock semantics deliberately
+contain no mid-epoch repair path. The decision is therefore a governance
+ruling, not an operator action: (a) epoch-2 protocol (close epoch 1 with
+this defect recorded; epoch-1 evidence stands as recorded; amend the
+harness; re-finalize; restart the order), or (b) an explicitly created,
+auditor-supervised defect-abatement mechanism (reopens the keep-going path
+the design intentionally removed). Nothing estimand-grade is lost: no
+capability was ever promoted in this epoch and no downstream/reuse cell
+ran; the recorded epoch-1 evidence is acquisition-path evidence (T0/T1
+verdicts + one validated denial).
