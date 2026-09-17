@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const R = require('../lib/registry');
+const T = require('../lib/traces');
 const { isValidDate } = require('../lib/validate');
 const { renderDashboard } = require('../lib/render');
 
@@ -14,6 +15,9 @@ const USAGE = [
   '  query [--status S] [--kind K] [--json]',
   '  propose --id <id> --name <name> --kind <kind> [--version x.y.z] [--lineage <text>]',
   '  eval-submit --id <id> --task <task> --verdict ship|fix|blocked --run <run> [--date YYYY-MM-DD]',
+  '              [--context <text>] [--source reuse|synthesize] [--seconds <n>]',
+  '  traces [--capability <id>] [--json]',
+  '  backfill-traces',
   '  promote --id <id>',
   '  retire --id <id> --reason <text>',
   '  reuse --id <id>',
@@ -78,8 +82,46 @@ function main() {
         if (args.date && !isValidDate(args.date)) { console.error('bad --date, want YYYY-MM-DD'); process.exit(1); }
         const reg = R.loadRegistry(home);
         R.submitEval(reg, args.id, { task_id: args.task, verdict: args.verdict, run_id: args.run, date: args.date });
+        // trace first: if the append fails the registry is not mutated, so the
+        // two can never silently diverge (a trace line per eval is invariant)
+        T.appendTrace(home, {
+          capability: args.id, task_id: args.task, verdict: args.verdict,
+          context: args.context === true ? undefined : args.context,
+          source: args.source === true ? undefined : args.source,
+          seconds: args.seconds === true || args.seconds === undefined ? undefined : Number(args.seconds),
+          date: args.date || undefined
+        });
         R.saveRegistry(home, reg);
-        console.log('recorded ' + args.verdict + ' for \'' + args.id + '\' on ' + args.task);
+        console.log('recorded ' + args.verdict + ' for \'' + args.id + '\' on ' + args.task + ' (+trace)');
+        break;
+      }
+      case 'traces': {
+        let rows = T.loadTraces(home);
+        if (args.capability) rows = rows.filter((t) => t.capability === args.capability);
+        if (args.json) { console.log(JSON.stringify(rows, null, 2)); break; }
+        console.log('traces: ' + rows.length + (args.capability ? ' for \'' + args.capability + '\'' : ' total') +
+          ' (' + rows.filter((t) => t.context !== null).length + ' with context, ' +
+          rows.filter((t) => !t.backfilled).length + ' live)');
+        for (const t of rows.slice(-10)) {
+          console.log([t.date || t.ts.slice(0, 10), t.capability, t.task_id, t.verdict,
+            t.source || '-', t.context ? String(t.context).slice(0, 60) : '-'].join('\t'));
+        }
+        break;
+      }
+      case 'backfill-traces': {
+        const reg = R.loadRegistry(home);
+        const traces = T.loadTraces(home);
+        const gaps = T.traceGaps(reg, traces);
+        if (gaps.length === 0) { console.log('no trace gaps — every eval already has a trace line'); break; }
+        for (const c of reg.capabilities) {
+          for (const e of c.evals) {
+            T.appendTrace(home, {
+              capability: c.id, task_id: e.task_id, verdict: e.verdict,
+              backfilled: true
+            });
+          }
+        }
+        console.log('backfilled ' + gaps.length + ' trace line(s), flagged backfilled:true');
         break;
       }
       case 'promote': {
@@ -114,6 +156,7 @@ function main() {
       case 'audit': {
         const reg = R.loadRegistry(home);
         const res = R.auditRegistry(reg);
+        for (const g of T.traceGaps(reg, T.loadTraces(home))) res.warnings.push('trace gap: ' + g);
         if (args.json) console.log(JSON.stringify(res, null, 2));
         else {
           for (const e of res.errors) console.log('ERROR ' + e);
