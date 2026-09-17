@@ -127,11 +127,10 @@ open(os.path.join(out_dir, "MANIFEST"), "w").write("h37")
 def hermetic_root(tag):
     """A throwaway Fam-C instance carrying the real governed files."""
     root = tempfile.mkdtemp(prefix="h37-" + tag + "-")
-    for name in ("ORDER.md", "ORDER-EXPANSION.json", "PROTOCOL-LOCK.json",
-                 "EXECUTION-LOCK.json", "FREEZE.json",
-                 "FREEZE-HASHES.sha256", "T4-SEMANTIC-IDS.json",
-                 "T4-CONFORMANCE.json", "PREREG.md",
-                 EPOCH.EPOCH1_CLOSURE_FILE):
+    for name in list(PF.PROTOCOL_GOVERNED) + [
+            "ORDER-EXPANSION.json", "PROTOCOL-LOCK.json",
+            "EXECUTION-LOCK.json", "FREEZE.json", "FREEZE-HASHES.sha256",
+            EPOCH.EPOCH1_CLOSURE_FILE]:
         shutil.copy2(os.path.join(FAMC, name), os.path.join(root, name))
     fam = os.path.join(root, "families")
     os.makedirs(fam)
@@ -636,10 +635,10 @@ finally:
 # D. algebra table + no-conversion guard
 # ===========================================================================
 _models = (cell_for(A_ROOT, "T3"), cell_for(A_ROOT, "T4"))
-_pairs = [("COMPLETE", True)]
+_pairs = []
 for c in _models + (PROMC, LOCKC, T2C, T2B):
-    _pairs.append(("INCOMPLETE", False))
-    _pairs.append(("INADMISSIBLE", False))
+    _pairs.append((c, "INCOMPLETE"))
+    _pairs.append((c, "INADMISSIBLE"))
 _pairs += [(c, "COMPLETE") for c in (PROMC, LOCKC, T2C, T2B)]
 _pairs += [(PROMC, "NOT-PROMOTED"), (PROMC, "NOT-LOCKED"),
            (PROMC, "NOT-EVALUABLE"), (LOCKC, "NOT-LOCKED"),

@@ -1084,6 +1084,16 @@ def lock_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     event, cell, reasons = next_event(fam_c_dir, block, family, universe,
                                       freeze_commit)
     if reasons:
+        # EPOCH-2: an already-terminal universe (all four acquisition
+        # events at validated terminals) has no lock event left; the lock
+        # entry point refuses in its own vocabulary rather than leaking
+        # the promotion-flavored derivation text.
+        if event is None:
+            raise PermissionError(
+                f"LOCK-DENY {block}/{family}/{universe} has no "
+                f"CAPABILITY_LOCK event left: {reasons[0]} (terminal "
+                f"states are write-once; no lock is ever minted for a "
+                f"failed acquisition)")
         raise PermissionError(reasons[0])
     if event != "CAPABILITY_LOCK":
         raise PermissionError(

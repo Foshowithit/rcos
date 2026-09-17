@@ -307,12 +307,13 @@ def validate_epoch2_lock_binding(fam_c_dir, lock_name, prefix):
     if not isinstance(am, list):
         out.append(f"{prefix}: epoch-2 lock {lock_name} amendments is not "
                    f"a list (the new lineage is an append-only list)")
-    elif any(isinstance(a, dict) and a.get("status_after") == "FINAL"
-             for a in am):
-        out.append(f"{prefix}: epoch-2 lock {lock_name} already carries a "
-                   f"terminal FINAL amendment at the transition (the fresh "
-                   f"lineage starts OPEN; finalization is the owner's "
-                   f"later act)")
+    # The terminal-state rules of the FRESH lineage (status vocabulary,
+    # exactly one FINAL amendment as the LAST entry, FINAL fields, no
+    # amendment past FINAL) are validate_execution_final /
+    # validate_protocol_final's: the transition mints the locks OPEN with
+    # amendments [], and the owner's later finalization IS the legitimate
+    # terminal amendment — this binding audit only requires the append-only
+    # container to exist.
     if lock.get("freeze_commit") is None:
         out.append(f"{prefix}: epoch-2 lock {lock_name} records no "
                    f"freeze_commit (the instance freeze is shared across "
