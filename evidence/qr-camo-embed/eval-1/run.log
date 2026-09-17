@@ -1,0 +1,9 @@
+QR version 4, 41x41 modules
+placed at (825,20), smoothness score 54.1
+decode png:      'https://optimizedworkflow.dev'
+decode jpeg78:   'https://optimizedworkflow.dev'
+decode half+jpg: 'https://optimizedworkflow.dev'
+ALL SCANS PASS
+real 0.45
+user 0.39
+sys 0.05

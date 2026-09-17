@@ -1,0 +1,3 @@
+warmup=__cineFrame(0) fonts.load(400)=true fonts.load(700)=true fonts.ready=true
+FONT_CHECK=true
+CAPTURED=180

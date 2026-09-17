@@ -1,0 +1,9 @@
+QR version 3, 37x37 modules
+placed at (905,20), smoothness score 32.2
+decode png:      'https://archon.diy'
+decode jpeg78:   'https://archon.diy'
+decode half+jpg: 'https://archon.diy'
+ALL SCANS PASS
+real 0.66
+user 0.37
+sys 0.09

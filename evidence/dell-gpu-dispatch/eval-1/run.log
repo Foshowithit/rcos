@@ -1,0 +1,5 @@
+task: NVENC transcode testsrc2 640x360 3s, -preset p4 -b:v 2M (dispatched via ssh chow; zero render processes on Mac)
+gpu-encode: h264_nvenc confirmed (encoder Lavc60.31.102 h264_nvenc + stream mapping), EXIT=0
+dell-only: encode executed on Dell over ssh; Mac only generated the reference input
+output probe: h264,640,360,3.0,90 frames
+perceptual-match: 9 frames compared, mean aHash hamming 0.002, max 0.016 -> PASS

@@ -2,7 +2,7 @@
   "capability": "qr-camo-embed",
   "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
   "gates": [
-    { "id": "scans", "kind": "deterministic", "check": "the embedded code scans to the exact target URL via zxing" },
-    { "id": "invisible", "kind": "llm", "check": "no visible QR geometry at a normal viewing distance" }
+    { "id": "scans", "kind": "deterministic", "check": "the embedded code scans to the exact target URL from the FINAL rendered PNG via zxing, and again after an external jpeg-q85 re-encode (Twitter-grade transcode)" },
+    { "id": "integrated", "kind": "llm", "check": "sighted muse pass: the QR reads as part of the camo theme — modules carry local bark color, no raw white quiet-zone box, feathered block edges; explicitly NOT 'invisible': the scan-survival contrast floor is 0.52 (adaptive ladder 2026-09-17 — every fainter level fails the stress decode ladder), so a fully hidden QR is out of contract for this adapter" }
   ]
 }

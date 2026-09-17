@@ -1,0 +1,5 @@
+task: NVENC transcode smptebars 1280x720 4s, -preset p7 -rc vbr -cq 26 (dispatched via ssh chow; zero render processes on Mac)
+gpu-encode: 2 h264_nvenc log hits, EXIT=0
+dell-only: encode executed on Dell over ssh
+output probe: h264,1280,720,4.0,120 frames
+perceptual-match: 8 frames compared, mean aHash hamming 0.000, max 0.000 -> PASS

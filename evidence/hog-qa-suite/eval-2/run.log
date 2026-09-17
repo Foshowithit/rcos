@@ -1,0 +1,45 @@
+REPORT_DIR=/Users/adam26/.zcode/workspace/default/game-fleet/qa/reports/2026-09-17T22-17-25
+[
+ {
+  "id": "phone-portrait-gate",
+  "pass": true,
+  "fails": [],
+  "warns": [],
+  "fps": 61
+ },
+ {
+  "id": "phone-landscape-ride",
+  "pass": true,
+  "fails": [],
+  "warns": [],
+  "fps": 61,
+  "speed": 202
+ },
+ {
+  "id": "desktop-ride-crank",
+  "pass": true,
+  "fails": [],
+  "warns": [],
+  "fps": 61,
+  "speed": 91
+ },
+ {
+  "id": "desktop-pause-mute",
+  "pass": true,
+  "fails": [],
+  "warns": [],
+  "fps": 61
+ },
+ {
+  "id": "tablet-landscape-ride",
+  "pass": true,
+  "fails": [],
+  "warns": [],
+  "fps": 61,
+  "speed": 107
+ }
+]
+SUITE_PASS=true
+real 44.88
+user 14.83
+sys 3.51
