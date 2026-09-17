@@ -26,7 +26,26 @@ DERIVED here from the authorized cell — state/<block>/<universe>/<family>/
 
 Cell state (A11.6): order progress consumes validated cell_state(), not raw
 manifest presence: a manifest alone can no longer advance the frozen order.
-Stdlib only.
+
+Progress algebra (EPOCH-2, ruling recorded in benchmarks/fam-c/
+EPOCH-1-CLOSURE.md — "TERMINAL-OUTCOME PROGRESS SEMANTICS"): the prefix
+walk advances on EVENT-SPECIFIC validated terminal states. Model cells
+(T0..T4) progress on COMPLETE only; a PROMOTION cell progresses on
+validated COMPLETE or validated NOT-PROMOTED; a CAPABILITY_LOCK cell on
+validated COMPLETE or validated NOT-LOCKED; a downstream (T2/T3/T4) cell
+of a capability universe whose acquisition validly failed progresses only
+as validated NOT-EVALUABLE. INCOMPLETE and INADMISSIBLE are never
+progress-valid. The non-COMPLETE terminals are produced by the strict
+validators only, are never converted to COMPLETE anywhere, and authorize
+nothing: no promotion, no lock creation, no capability consumption, no
+retry — they exist so a lawful failed-acquisition terminal advances the
+frozen prefix instead of deadlocking it (the epoch-1 defect). See
+progress_valid().
+
+Epoch-2 lineage: state namespaces are derived under the ACTIVE epoch's
+state root (harness/epoch.py: state/epoch2/** once the explicit epoch-2
+transition record exists), so epoch-1 evidence is never scanned or
+written by epoch-2 machinery. Stdlib only.
 """
 import hashlib
 import json
@@ -35,6 +54,11 @@ import re
 import stat
 import sys
 import time
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+import epoch as _epoch  # noqa: E402  (epoch-2 lineage: state root + locks)
 
 BLOCKS = ("PQ", "QP")
 ARM_LETTERS = ("A", "B", "C", "D")
@@ -302,8 +326,10 @@ def authorize_event(expansion, block, family, event, universe, done_ids,
         return None, out
     # A12d D1-B3/B5 (needs fam_c_dir): a recorded NOT-PROMOTED outcome is
     # terminal. Re-entering PROMOTION refuses as already-recorded (no
-    # repromotion, no deadlock); entering CAPABILITY_LOCK refuses because
-    # no lock may ever exist for a NOT-PROMOTED universe.
+    # repromotion, no deadlock); entering CAPABILITY_LOCK refuses the LOCK
+    # path because no lock may ever exist for a NOT-PROMOTED universe (the
+    # lock event completes as its recorded NOT-LOCKED terminal instead —
+    # see emit_capability_lock_outcome(), never through this entry point).
     if fam_c_dir is not None and event in ("PROMOTION", "CAPABILITY_LOCK"):
         _oc = promotion_outcome(fam_c_dir, block, family, universe)
         if isinstance(_oc, dict) and _oc.get("outcome") == "NOT-PROMOTED":
@@ -317,7 +343,8 @@ def authorize_event(expansion, block, family, event, universe, done_ids,
                 out.append(
                     f"LOCK-DENY: universe {block}/{family}/{universe} is "
                     f"NOT-PROMOTED ({_oc.get('reason')}); no "
-                    f"CAPABILITY_LOCK may exist for it")
+                    f"CAPABILITY_LOCK may exist for it (the event "
+                    f"completes only as its recorded NOT-LOCKED terminal)")
             return cell, out
     if cell["cell_id"] in done_ids:
         out.append(f"ORDER-DENY: duplicate cell {cell['cell_id']}")
@@ -348,8 +375,12 @@ def capability_id(block, universe, family):
 
 def state_dir(fam_c_dir, block, universe, family):
     """state/<block>/<universe>/<family> — the universe's whole persistent
-    surface (registry, runs, logs). No lane may read another's."""
-    return os.path.join(fam_c_dir, "state", block, universe, family)
+    surface (registry, runs, logs). No lane may read another's.
+
+    Epoch 2 prefixes the whole surface with state/epoch2/ (harness/
+    epoch.py): epoch-1 state is historical evidence, never scanned or
+    written once the transition record exists."""
+    return os.path.join(_epoch.state_root(fam_c_dir), block, universe, family)
 
 
 def capability_dir(fam_c_dir, block, universe, family):
@@ -403,7 +434,7 @@ def verify_namespace_ancestry(fam_c_dir, block, universe, family, tail=()):
     NAMESPACE-WRITABLE-DENY). Fail closed: never assert, never let
     realpath() normalize a symlinked parent into acceptance.
     """
-    p = os.path.join(fam_c_dir, "state")
+    p = _epoch.state_root(fam_c_dir)
     parts = [p]
     for comp in (block, universe, family) + tuple(tail):
         p = os.path.join(p, comp)
@@ -445,7 +476,7 @@ def ensure_namespace(fam_c_dir, block, universe, family, tail=()):
                                        tail=tail)
     if denial:
         raise PermissionError(denial)
-    p = os.path.join(fam_c_dir, "state")
+    p = _epoch.state_root(fam_c_dir)
     if not os.path.lexists(p):
         os.mkdir(p, 0o755)          # fam_c_dir itself must already exist
     elif not stat.S_ISDIR(os.lstat(p).st_mode):
@@ -512,15 +543,46 @@ def _read_json(fp):
 MODEL_RUN_KINDS = ("acquisition-solve", "model-call")
 
 
+def progress_valid(cell, status):
+    """The event-specific progress algebra (EPOCH-2 ruling, EPOCH-1-CLOSURE.md
+    "TERMINAL-OUTCOME PROGRESS SEMANTICS"): the VALIDATED terminal states
+    that advance the frozen prefix walk, per cell kind/event.
+
+      model cells (T0..T4 acquisition-solve/model-call) COMPLETE only;
+      PROMOTION                                      COMPLETE | NOT-PROMOTED;
+      CAPABILITY_LOCK                                COMPLETE | NOT-LOCKED;
+      downstream T2/T3/T4 of a capability universe
+        (A/C) whose acquisition validly failed       NOT-EVALUABLE.
+
+    INCOMPLETE and INADMISSIBLE are never progress-valid. Every
+    non-COMPLETE status here is produced by the STRICT validators (never
+    assumed from file presence), is never converted to COMPLETE, and
+    authorizes nothing: no promotion, no lock creation, no capability
+    consumption, no retry. It only lets the lawful terminal boundary of a
+    failed acquisition advance the prefix (the epoch-1 deadlock repair)."""
+    if status == "COMPLETE":
+        return True
+    event = cell.get("event")
+    if event == "PROMOTION":
+        return status == "NOT-PROMOTED"
+    if event == "CAPABILITY_LOCK":
+        return status == "NOT-LOCKED"
+    if event in DOWNSTREAM_EVENTS and \
+            cell.get("universe") in CAPABILITY_UNIVERSES:
+        return status == "NOT-EVALUABLE"
+    return False
+
+
 def cell_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
     """Validate ONE cell's completion. Returns
-    {"status": "COMPLETE"|"INCOMPLETE"|"INADMISSIBLE", "reasons": [...]}.
+    {"status": "COMPLETE"|"INCOMPLETE"|"INADMISSIBLE"|terminal, "reasons": [...]}.
 
     A12.1 (audit round-2 #11): completion is ALSO order-admissible — a cell
     whose artifacts validate is still NOT COMPLETE if any earlier cell in the
-    frozen expansion is not COMPLETE, so a preplanted future promotion/lock
-    (or another family's governance artifact minted out of turn) can never
-    satisfy state. `_local_state()` holds the kind dispatch below.
+    frozen expansion is not progress-valid, so a preplanted future
+    promotion/lock (or another family's governance artifact minted out of
+    turn) can never satisfy state. `_local_state()` holds the kind dispatch
+    below.
 
       acquisition-solve / model-call -> _model_run_state(): a REAL model
           run — derived run dir, H1-RUN-MANIFEST.json with EXACT equality
@@ -543,30 +605,21 @@ def cell_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
     Any failure => not complete. INADMISSIBLE is used when the artifacts
     exist but fail validation (a distinction the retry machine needs).
 
-    A12d D1-B3/B5: two further TERMINAL statuses ride this entry point
-    (never _local_state, so the completed-cells prefix walk is
-    unaffected): a PROMOTION cell with a recorded, re-validated
-    failed-acquisition outcome is NOT-PROMOTED; any downstream
-    (T2/T3/T4) cell of a NOT-PROMOTED universe is NOT-EVALUABLE with the
-    reason naming the failed acquisition.
+    Terminal states (A12d D1-B3 + the EPOCH-2 ruling; all ride the strict
+    validators, none is ever COMPLETE):
+      * a PROMOTION cell with a recorded, re-validated failed-acquisition
+        outcome is NOT-PROMOTED;
+      * the CAPABILITY_LOCK event of that same universe is NOT-LOCKED (the
+        recorded terminal refusal: no lock may exist for a failed
+        acquisition);
+      * any downstream (T2/T3/T4) cell of that universe is NOT-EVALUABLE
+        with the reason naming the failed acquisition.
+
+    The order guard accepts earlier cells that are progress-valid
+    (progress_valid()), so one lawfully failed universe no longer
+    deadlocks the whole frozen order — while authorizing none of the
+    behaviors a COMPLETE cell would.
     """
-    if cell.get("kind") in MODEL_CALL_KINDS and cell.get("event") in \
-            DOWNSTREAM_EVENTS and cell.get("universe") in \
-            CAPABILITY_UNIVERSES:
-        _failed, _cause = acquisition_failed(
-            fam_c_dir, cell["block"], cell["family"], cell["universe"])
-        if _failed:
-            return {"cell_id": cell["cell_id"], "status": "NOT-EVALUABLE",
-                    "reasons": [
-                        f"ACQUISITION-FAILED-DENY: universe "
-                        f"{cell['block']}/{cell['family']}/"
-                        f"{cell['universe']} T1 cell is COMPLETE but its "
-                        f"candidate validation failed ({_cause}); "
-                        f"downstream {cell['event']}/"
-                        f"{cell['universe']} is NOT-EVALUABLE with "
-                        f"reason acquisition-failed (no retry: the "
-                        f"failed validation is an experimental outcome, "
-                        f"not an infrastructure-invalid run)"]}
     st = _local_state(fam_c_dir, cell, freeze_commit)
     if st["status"] != "COMPLETE":
         return st
@@ -581,7 +634,7 @@ def cell_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
         if c["cell_id"] == cell["cell_id"]:
             continue
         earlier = _local_state(fam_c_dir, c, freeze_commit)
-        if earlier["status"] != "COMPLETE":
+        if not progress_valid(c, earlier["status"]):
             blockers.append(f"{c['cell_id']} "
                             f"({c['block']}/{c['family']}/{c['event']}/"
                             f"{c['universe']})={earlier['status']}")
@@ -596,9 +649,40 @@ def cell_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
 def _local_state(fam_c_dir, cell, freeze_commit=None):
     """Kind-dispatched validation of ONE cell, WITHOUT the order guard.
     Governance validators (promotion/lock) use this for their T0/T1 source
-    cells so order recursion terminates."""
+    cells so order recursion terminates.
+
+    EPOCH-2: this is ALSO where a downstream (T2/T3/T4) cell of a
+    capability universe whose acquisition validly failed resolves to its
+    validated terminal NOT-EVALUABLE state (the same status/reason
+    cell_state() has always produced for those cells — it must be visible
+    to the prefix walk, which consumes _local_state()) and where the
+    CAPABILITY_LOCK event of a NOT-PROMOTED universe resolves
+    outcome-first to NOT-LOCKED, exactly like _promotion_state()'s
+    outcome-first dispatch."""
     kind = cell.get("kind")
     event = cell.get("event")
+    # EPOCH-2 terminal: a downstream cell of a failed-acquisition universe
+    # is NOT-EVALUABLE (validated against the committed chains). Checked
+    # before the kind dispatch and before any per-cell artifact read, so
+    # the terminal derives from the SAME predicate everywhere (any
+    # undecidable evidence makes acquisition_failed() False and the normal
+    # fail-closed path below applies).
+    if kind in MODEL_CALL_KINDS and event in DOWNSTREAM_EVENTS and \
+            cell.get("universe") in CAPABILITY_UNIVERSES:
+        _failed, _cause = acquisition_failed(
+            fam_c_dir, cell["block"], cell["family"], cell["universe"])
+        if _failed:
+            return {"cell_id": cell["cell_id"], "status": "NOT-EVALUABLE",
+                    "reasons": [
+                        f"ACQUISITION-FAILED-DENY: universe "
+                        f"{cell['block']}/{cell['family']}/"
+                        f"{cell['universe']} T1 cell is COMPLETE but its "
+                        f"candidate validation failed ({_cause}); "
+                        f"downstream {cell['event']}/"
+                        f"{cell['universe']} is NOT-EVALUABLE with "
+                        f"reason acquisition-failed (no retry: the "
+                        f"failed validation is an experimental outcome, "
+                        f"not an infrastructure-invalid run)"]}
     # A11.6 defense in depth (TOCTOU): the runner derives paths through
     # derive_paths(), but a namespace parent could be replaced by a symlink
     # AFTER derivation. Every reader of cell state re-verifies the same
@@ -615,6 +699,14 @@ def _local_state(fam_c_dir, cell, freeze_commit=None):
         if event == "PROMOTION":
             return _promotion_state(fam_c_dir, cell, freeze_commit)
         if event == "CAPABILITY_LOCK":
+            # EPOCH-2 outcome-first dispatch (mirrors _promotion_state): a
+            # recorded CAPABILITY-LOCK-OUTCOME.json is judged ONLY on that
+            # terminal record, re-validated against the committed chains —
+            # never on the lock-minting path.
+            _oc = lock_outcome(fam_c_dir, cell["block"], cell["family"],
+                               cell["universe"])
+            if _oc is not None:
+                return _not_locked_state(fam_c_dir, cell, _oc, freeze_commit)
             return _lock_state(fam_c_dir, cell, freeze_commit)
         return _result(cell, [f"unsupported harness-event {event!r}"], False)
     return _result(cell, [f"unsupported cell kind {kind!r}"], False)
@@ -1586,6 +1678,136 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
     return _result(cell, reasons, True)
 
 
+def _not_locked_state(fam_c_dir, cell, outcome, freeze_commit=None):
+    """EPOCH-2 (EPOCH-1-CLOSURE.md ruling) + A12d D1-B3: validate ONE
+    recorded terminal NOT-LOCKED outcome of a CAPABILITY_LOCK event whose
+    universe's acquisition validly failed.
+
+    NOT-LOCKED only when — with no fabricated model-run record, no real
+    lock, and no conflicting governance artifact in the lock cell's run
+    dir — the outcome fields are EXACT on the authorized cell, the
+    outcome binds the RECORDED PROMOTION-OUTCOME.json BYTES
+    (`promotion_outcome_sha256` + `promotion_cell_id`), its cited
+    acquisition chain tips equal the REAL validated T0/T1 chain tips, the
+    PROMOTION cell of the SAME (block, family, universe) re-validates as
+    NOT-PROMOTED (which itself re-derives the failed T1
+    candidate-validation event, the frozen candidate and the chain tips
+    from committed evidence), and NO CAPABILITY_LOCK exists for the
+    universe. Any defect => INADMISSIBLE (artifact present but invalid).
+    Never COMPLETE: a NOT-LOCKED terminal authorizes no promotion, no
+    lock, no capability consumption and no retry."""
+    reasons = []
+    d = run_dir(fam_c_dir, cell)
+    if os.path.islink(d) or not os.path.isdir(d):
+        return {"cell_id": cell["cell_id"], "status": "INCOMPLETE",
+                "reasons": [f"lock event run dir absent at the derived path "
+                            f"{d}"]}
+    if os.path.exists(os.path.join(d, "H1-RUN-MANIFEST.json")):
+        reasons.append("CAPABILITY_LOCK terminal outcome must not fabricate "
+                       "a model-run manifest (no identity/usage/chain is "
+                       "demanded of a lock event, and none may be forged)")
+    for stray in (PROMOTION_RECEIPT_FILE, PROMOTION_OUTCOME_FILE):
+        if os.path.exists(os.path.join(d, stray)):
+            reasons.append(f"lock event run dir carries a conflicting "
+                           f"{stray} (the promotion's governance records "
+                           f"belong to the PROMOTION cell; a NOT-LOCKED "
+                           f"terminal is judged only on its own outcome)")
+    for key, want in (("event", "CAPABILITY_LOCK"),
+                      ("cell_id", cell["cell_id"]),
+                      ("block", cell["block"]),
+                      ("family", cell["family"]),
+                      ("universe", cell["universe"]),
+                      ("capability_id", cell["capability_id"]),
+                      ("outcome", LOCK_OUTCOME_STATUS),
+                      ("reason", LOCK_OUTCOME_REASON),
+                      ("created_from", "frozen-evidence")):
+        if outcome.get(key) != want:
+            reasons.append(f"not-locked outcome {key} "
+                           f"{outcome.get(key)!r} != {want!r}")
+    prom = _cell_for_event(fam_c_dir, cell, "PROMOTION")
+    tips = {}
+    if prom is None:
+        reasons.append(f"no PROMOTION cell in the order for "
+                       f"{cell['block']}/{cell['family']}/"
+                       f"{cell['universe']}")
+    else:
+        pst = _local_state(fam_c_dir, prom, freeze_commit)
+        if pst["status"] != "NOT-PROMOTED":
+            reasons.append(f"not-locked rule: PROMOTION cell "
+                           f"{prom['cell_id']} is not validated "
+                           f"NOT-PROMOTED ({pst['status']}: "
+                           f"{pst['reasons'][:1]})")
+        else:
+            for ev in ("T0", "T1"):
+                acq = _cell_for_event(fam_c_dir, cell, ev)
+                if acq is None:
+                    reasons.append(f"not-locked rule: no {ev} cell in the "
+                                   f"order for {cell['block']}/"
+                                   f"{cell['family']}/{cell['universe']}")
+                    continue
+                try:
+                    tips[ev] = _chain_tip(os.path.join(
+                        run_dir(fam_c_dir, acq), "EVIDENCE-CHAIN.jsonl"))
+                except (ValueError, OSError, json.JSONDecodeError) as e:
+                    reasons.append(f"not-locked rule: {ev} chain tip "
+                                   f"unreadable: {e}")
+            got = outcome.get("acquisition_chain_tips")
+            if not isinstance(got, dict):
+                reasons.append("not-locked outcome carries no "
+                               "acquisition_chain_tips binding the "
+                               "validated T0/T1 chains")
+            else:
+                for ev in ("T0", "T1"):
+                    if ev in tips and got.get(ev) != tips[ev]:
+                        reasons.append(
+                            f"not-locked outcome {ev.lower()}_tip "
+                            f"{str(got.get(ev))[:12]} != the validated "
+                            f"{ev} chain tip {tips[ev][:12]}")
+        # the outcome must bind the RECORDED promotion outcome BYTES
+        _oc = promotion_outcome(fam_c_dir, cell["block"], cell["family"],
+                                cell["universe"])
+        if not isinstance(_oc, dict):
+            reasons.append("not-locked rule: no recorded NOT-PROMOTED "
+                           "promotion outcome to bind (the terminal must "
+                           "cite the promotion outcome bytes)")
+        else:
+            op = os.path.join(run_dir(fam_c_dir, prom),
+                              PROMOTION_OUTCOME_FILE)
+            try:
+                got_sha = _sha256_file(op)
+            except OSError as e:
+                got_sha = None
+                reasons.append(f"not-locked rule: recorded promotion "
+                               f"outcome unreadable: {e}")
+            if outcome.get("promotion_cell_id") != prom["cell_id"]:
+                reasons.append("not-locked outcome promotion_cell_id "
+                               f"{outcome.get('promotion_cell_id')!r} != "
+                               f"the PROMOTION cell {prom['cell_id']!r}")
+            if got_sha is not None and \
+                    outcome.get("promotion_outcome_sha256") != got_sha:
+                reasons.append(
+                    "not-locked outcome promotion_outcome_sha256 "
+                    f"{str(outcome.get('promotion_outcome_sha256'))[:12]} "
+                    f"!= the recorded PROMOTION-OUTCOME.json sha256 "
+                    f"{got_sha[:12]}")
+    capdir = capability_dir(fam_c_dir, cell["block"], cell["universe"],
+                            cell["family"])
+    if os.path.exists(os.path.join(capdir, "CAPABILITY_LOCK.json")):
+        reasons.append("not-locked rule: a CAPABILITY_LOCK exists for a "
+                       "NOT-PROMOTED universe (a real lock and a "
+                       "NOT-LOCKED terminal are mutually exclusive)")
+    if reasons:
+        return _result(cell, reasons, True)
+    return {"cell_id": cell["cell_id"], "status": "NOT-LOCKED",
+            "reasons": [f"NOT-LOCKED: universe {cell['block']}/"
+                        f"{cell['family']}/{cell['universe']} acquisition "
+                        f"validly failed (NOT-PROMOTED promotion); the "
+                        f"CAPABILITY_LOCK event completes as a recorded "
+                        f"terminal refusal (no lock, no capability "
+                        f"consumption, no retry; every downstream cell of "
+                        f"that universe is NOT-EVALUABLE)"]}
+
+
 # ---------------------------------------------------------------------------
 # A12d D1 — failed-acquisition terminal outcomes (auditor A12d.2) and
 # candidate-input lineage re-derivation (auditor A12d.7).
@@ -1593,6 +1815,13 @@ def _lock_state(fam_c_dir, cell, freeze_commit=None):
 
 PROMOTION_OUTCOME_FILE = "PROMOTION-OUTCOME.json"
 PROMOTION_RECEIPT_FILE = "PROMOTION-RECEIPT.json"
+# EPOCH-2 (EPOCH-1-CLOSURE.md ruling): the CAPABILITY_LOCK event of a
+# NOT-PROMOTED universe completes as the recorded terminal NOT-LOCKED
+# outcome — never a lock. The record lives in the lock cell's derived run
+# dir and is bound to the promotion outcome bytes + the real chain tips.
+CAPABILITY_LOCK_OUTCOME_FILE = "CAPABILITY-LOCK-OUTCOME.json"
+LOCK_OUTCOME_STATUS = "NOT-LOCKED"
+LOCK_OUTCOME_REASON = "no-promotion-no-lock"
 
 
 def promotion_outcome(fam_c_dir, block, family, universe):
@@ -1617,6 +1846,46 @@ def promotion_outcome(fam_c_dir, block, family, universe):
         if denial:
             return None
         op = os.path.join(run_dir(fam_c_dir, prom), PROMOTION_OUTCOME_FILE)
+        if os.path.islink(op) or not os.path.isfile(op):
+            return None
+        obj = _read_json(op)
+    except (OSError, ValueError):
+        return None
+    return obj if isinstance(obj, dict) else None
+
+
+def not_promoted_recorded(fam_c_dir, block, family, universe):
+    """True iff the universe's RECORDED promotion outcome is the terminal
+    NOT-PROMOTED record. EPOCH-2: the DERIVED NOT-PROMOTED terminal (the
+    committed chains' failed validation) is progress-valid before the
+    record exists, but the governance act that WRITES the record is still
+    owed — promotion.next_event() keeps deriving PROMOTION for such a
+    universe until this predicate is true."""
+    oc = promotion_outcome(fam_c_dir, block, family, universe)
+    return isinstance(oc, dict) and oc.get("outcome") == "NOT-PROMOTED"
+
+
+def lock_outcome(fam_c_dir, block, family, universe):
+    """Read the recorded CAPABILITY_LOCK terminal outcome for one universe,
+    or None. Mirrors promotion_outcome(): absent, unreadable or unparsable
+    yields None — the strict validators, not this reader, judge malformed
+    outcomes, and callers treat None as "no recorded outcome" while the
+    cell-state validators fail closed on defects."""
+    try:
+        exp = load_expansion(fam_c_dir)
+    except (ValueError, OSError):
+        return None
+    lc = expected_event(exp, block, family, "CAPABILITY_LOCK", universe)
+    if lc is None:
+        return None
+    try:
+        denial = verify_namespace_ancestry(fam_c_dir, block, universe,
+                                           family,
+                                           tail=("runs", lc["cell_id"]))
+        if denial:
+            return None
+        op = os.path.join(run_dir(fam_c_dir, lc),
+                          CAPABILITY_LOCK_OUTCOME_FILE)
         if os.path.islink(op) or not os.path.isfile(op):
             return None
         obj = _read_json(op)
@@ -1897,6 +2166,14 @@ def emit_promotion_outcome(fam_c_dir, cell, t0_tip, t1_tip,
     try:
         exp = load_expansion(fam_c_dir)
         done = completed_cells(fam_c_dir, None, exp)
+        # EPOCH-2: the DERIVED NOT-PROMOTED terminal is progress-valid
+        # before the record exists, but recording it IS the act owed here —
+        # the cell's own derived presence is therefore not a duplicate for
+        # THIS writer. A cell that validates COMPLETE is untouched: the
+        # duplicate refusal below still fires (a validated promotion cannot
+        # become NOT-PROMOTED).
+        if _local_state(fam_c_dir, cell, None)["status"] == "NOT-PROMOTED":
+            done.pop(cell["cell_id"], None)
         auth_cell, reasons = authorize_event(
             exp, cell["block"], cell["family"], "PROMOTION",
             cell["universe"], done)
@@ -1926,6 +2203,132 @@ def emit_promotion_outcome(fam_c_dir, cell, t0_tip, t1_tip,
                "t0_tip": t0_tip, "t1_tip": t1_tip,
                "candidate_sha256": candidate_sha256,
                "created_from": "frozen-evidence"}
+    with open(op, "w") as f:
+        json.dump(outcome, f, indent=1)
+    return op
+
+
+def emit_capability_lock_outcome(fam_c_dir, cell, freeze_commit=None):
+    """Record the TERMINAL NOT-LOCKED outcome of the CAPABILITY_LOCK event
+    (EPOCH-1-CLOSURE.md epoch-2 ruling: PROMOTION NOT-PROMOTED => the lock
+    event completes as NOT-LOCKED, never a lock, never a deadlock).
+
+    The record binds the RECORDED NOT-PROMOTED promotion outcome BYTES
+    (`promotion_outcome_sha256`) and cell (`promotion_cell_id`) plus the
+    REAL validated T0/T1 chain tips (`acquisition_chain_tips`), and is
+    written ONCE in the lock cell's DERIVED run dir. Fail closed on: a real
+    CAPABILITY_LOCK, a conflicting promotion receipt, a PROMOTION cell
+    that is not validated NOT-PROMOTED, stray governance artifacts in the
+    lock run dir, an out-of-order prefix, and re-invocation (idempotent
+    refusal — no relock, no retry). Returns the outcome path."""
+    if cell.get("event") != "CAPABILITY_LOCK":
+        raise ValueError(f"LOCK-DENY cell event {cell.get('event')!r} is "
+                         f"not CAPABILITY_LOCK")
+    want = capability_id(cell["block"], cell["universe"], cell["family"])
+    if cell["capability_id"] != want:
+        raise ValueError(f"LOCK-DENY cell capability_id "
+                         f"{cell['capability_id']!r} != derived {want!r}")
+    try:
+        exp = load_expansion(fam_c_dir)
+    except (ValueError, OSError) as e:
+        raise PermissionError(f"LOCK-DENY order unreadable: {e}")
+    exp_cell = expected_event(exp, cell["block"], cell["family"],
+                              "CAPABILITY_LOCK", cell["universe"])
+    if exp_cell is None or exp_cell["cell_id"] != cell["cell_id"]:
+        raise PermissionError("LOCK-DENY cell is not the enumerated "
+                              "CAPABILITY_LOCK event of "
+                              f"{cell['block']}/{cell['family']}/"
+                              f"{cell['universe']}")
+    capdir = capability_dir(fam_c_dir, cell["block"], cell["universe"],
+                            cell["family"])
+    if os.path.exists(os.path.join(capdir, "CAPABILITY_LOCK.json")):
+        raise PermissionError(
+            f"LOCK-DENY a CAPABILITY_LOCK exists for "
+            f"{cell['block']}/{cell['family']}/{cell['universe']}: a real "
+            f"lock and a NOT-LOCKED terminal are mutually exclusive")
+    prom = expected_event(exp, cell["block"], cell["family"], "PROMOTION",
+                          cell["universe"])
+    if prom is None:
+        raise PermissionError("LOCK-DENY no PROMOTION cell in the order for "
+                              f"{cell['block']}/{cell['family']}/"
+                              f"{cell['universe']}")
+    rp = os.path.join(run_dir(fam_c_dir, prom), PROMOTION_RECEIPT_FILE)
+    if os.path.exists(rp):
+        raise PermissionError(
+            f"LOCK-DENY a promotion receipt exists for "
+            f"{cell['block']}/{cell['family']}/{cell['universe']} (a "
+            f"validated promotion can never be NOT-LOCKED; conflicting "
+            f"receipt)")
+    # the promotion must BE the validated terminal NOT-PROMOTED state —
+    # re-derived here, never taken from the caller's claim.
+    done = completed_cells(fam_c_dir, freeze_commit, exp)
+    missing = [c for c in exp["cells"]
+               if c["index"] < cell["index"] and c["cell_id"] not in done]
+    if missing:
+        m = missing[0]
+        raise PermissionError(
+            f"LOCK-DENY out of order — the CAPABILITY_LOCK event "
+            f"{cell['cell_id']} cannot complete before {len(missing)} "
+            f"earlier cell(s); earliest missing is {m['cell_id']} "
+            f"({m['block']}/{m['family']}/{m['event']}/{m['universe']})")
+    pst = _local_state(fam_c_dir, prom, freeze_commit)
+    if pst["status"] != "NOT-PROMOTED":
+        raise PermissionError(
+            f"LOCK-DENY the PROMOTION cell {prom['cell_id']} of "
+            f"{cell['block']}/{cell['family']}/{cell['universe']} is "
+            f"{pst['status']}, not validated NOT-PROMOTED "
+            f"({pst['reasons'][:1]}); a NOT-LOCKED terminal requires a "
+            f"validated failed acquisition")
+    op = os.path.join(run_dir(fam_c_dir, prom), PROMOTION_OUTCOME_FILE)
+    try:
+        _oc, _oc_sha = _read_json(op), _sha256_file(op)
+    except (OSError, ValueError) as e:
+        raise PermissionError(f"LOCK-DENY recorded promotion outcome "
+                              f"unreadable at {op}: {e}")
+    tips = {}
+    for ev in ("T0", "T1"):
+        acq = expected_event(exp, cell["block"], cell["family"], ev,
+                             cell["universe"])
+        if acq is None:
+            raise PermissionError(f"LOCK-DENY no {ev} cell in the order for "
+                                  f"{cell['block']}/{cell['family']}/"
+                                  f"{cell['universe']}")
+        try:
+            tips[ev] = _chain_tip(os.path.join(run_dir(fam_c_dir, acq),
+                                               "EVIDENCE-CHAIN.jsonl"))
+        except (ValueError, OSError, json.JSONDecodeError) as e:
+            raise PermissionError(f"LOCK-DENY {ev} chain tip unreadable: "
+                                  f"{e}")
+    for ev in ("T0", "T1"):
+        if _oc.get(ev.lower() + "_tip") != tips[ev]:
+            raise PermissionError(
+                f"LOCK-DENY promotion outcome {ev.lower()}_tip "
+                f"{str(_oc.get(ev.lower() + '_tip'))[:12]} != the validated "
+                f"{ev} chain tip {tips[ev][:12]} (the outcome being bound "
+                f"no longer matches the committed chains)")
+    d = ensure_namespace(fam_c_dir, cell["block"], cell["universe"],
+                         cell["family"], tail=("runs", cell["cell_id"]))
+    for stray in ("H1-RUN-MANIFEST.json", PROMOTION_RECEIPT_FILE,
+                  PROMOTION_OUTCOME_FILE):
+        if os.path.exists(os.path.join(d, stray)):
+            raise PermissionError(
+                f"LOCK-DENY lock event run dir already carries {stray}; "
+                f"refusing to write a NOT-LOCKED outcome beside a "
+                f"conflicting governance artifact")
+    op = os.path.join(d, CAPABILITY_LOCK_OUTCOME_FILE)
+    if os.path.exists(op):
+        raise PermissionError("LOCK-DENY outcome already recorded (no "
+                              "relock of a not-promoted universe)")
+    outcome = {"event": "CAPABILITY_LOCK", "cell_id": cell["cell_id"],
+               "block": cell["block"], "family": cell["family"],
+               "universe": cell["universe"],
+               "capability_id": cell["capability_id"],
+               "outcome": LOCK_OUTCOME_STATUS,
+               "reason": LOCK_OUTCOME_REASON,
+               "created_from": "frozen-evidence",
+               "promotion_cell_id": prom["cell_id"],
+               "promotion_outcome_sha256": _oc_sha,
+               "acquisition_chain_tips": dict(tips)}
     with open(op, "w") as f:
         json.dump(outcome, f, indent=1)
     return op
@@ -2061,26 +2464,27 @@ def emit_capability_lock(fam_c_dir, cell, artifact_paths=(),
 
 
 def completed_cells(fam_c_dir, freeze_commit=None, expansion=None):
-    """A11.6: cell ids of cells whose VALIDATED state is COMPLETE.
+    """A11.6 + EPOCH-2 algebra: cell ids of cells whose VALIDATED state is
+    progress-valid (progress_valid(): COMPLETE, or the event-specific
+    validated terminal of a failed acquisition — PROMOTION/NOT-PROMOTED,
+    CAPABILITY_LOCK/NOT-LOCKED, downstream/NOT-EVALUABLE).
 
-    Consumes cell_state(), never manifest presence: a malformed, tampered,
-    dangling, dev or inadmissible run does not advance the frozen order.
-    Scans the universe state trees only (the derived namespace), so a stray
-    manifest elsewhere in Fam-C cannot mark a cell done.
+    Consumes the strict validators, never manifest presence: a malformed,
+    tampered, dangling, dev or inadmissible run does not advance the frozen
+    order. The walk is a strict PREFIX — the first cell that is not
+    progress-valid ends the ledger (later completions never advance a
+    broken prefix), so the scan stops there. Scans the universe state
+    trees of the ACTIVE epoch only (the derived namespace), so a stray
+    manifest elsewhere — including any epoch-1 evidence — cannot mark a
+    cell done.
     """
     exp = expansion if expansion is not None else load_expansion(fam_c_dir)
     done = {}
-    prefix_ok = True
     for c in exp["cells"]:
-        # A12.1: completion is order-admissible, so ONE local validation per
-        # cell plus a prefix walk gives the same answer as calling the
-        # order-aware cell_state() per cell — without the quadratic blow-up
-        # of re-validating every earlier cell on every call.
         st = _local_state(fam_c_dir, c, freeze_commit)
-        if prefix_ok and st["status"] == "COMPLETE":
-            done[c["cell_id"]] = os.path.basename(run_dir(fam_c_dir, c))
-        else:
-            prefix_ok = False
+        if not progress_valid(c, st["status"]):
+            break
+        done[c["cell_id"]] = os.path.basename(run_dir(fam_c_dir, c))
     return done
 
 

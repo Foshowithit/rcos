@@ -290,19 +290,36 @@ ACQ_SEQUENCE = ("T0", "T1", "PROMOTION", "CAPABILITY_LOCK")
 def next_event(fam_c_dir, block, family, universe, freeze_commit=None,
                expansion=None):
     """Return (event, cell, reasons). The event is DERIVED: the first
-    acquisition event of this universe that is not yet validated COMPLETE.
-    The operator cannot ask for a later event."""
+    acquisition event of this universe that is not yet COMPLETE — with the
+    EPOCH-2 terminal refinement (EPOCH-1-CLOSURE.md): a PROMOTION whose
+    NOT-PROMOTED terminal is DERIVED from the committed chains counts as
+    progress-valid for the frozen order, but the governance act that
+    RECORDS the terminal (PROMOTION-OUTCOME.json) is still owed, so
+    PROMOTION stays the derived next event until the record exists. The
+    operator cannot ask for a later event."""
     exp = expansion if expansion is not None else order.load_expansion(fam_c_dir)
     done = order.completed_cells(fam_c_dir, freeze_commit, exp)
     for ev in ACQ_SEQUENCE:
         cell = order.expected_event(exp, block, family, ev, universe)
         if cell is None:
             continue
-        if cell["cell_id"] not in done:
-            return ev, cell, []
+        if cell["cell_id"] in done:
+            if ev == "PROMOTION" and \
+                    order._local_state(fam_c_dir, cell,
+                                       freeze_commit)["status"] == \
+                    "NOT-PROMOTED" and \
+                    not order.not_promoted_recorded(fam_c_dir, block, family,
+                                                    universe):
+                # derived terminal, record still owed: run PROMOTION once
+                return ev, cell, []
+            continue
+        return ev, cell, []
     return None, None, [f"PROMOTION-DENY all acquisition events for "
-                        f"{block}/{family}/{universe} are already COMPLETE "
-                        f"(no repromotion; locks are write-once)"]
+                        f"{block}/{family}/{universe} are already at a "
+                        f"validated terminal state (COMPLETE, or the "
+                        f"recorded NOT-PROMOTED/NOT-LOCKED outcome); no "
+                        f"repromotion (locks are write-once and never "
+                        f"minted for a failed acquisition)"]
 
 
 def _authorized_cell(fam_c_dir, cell, freeze_commit=None):
@@ -888,9 +905,6 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
             f"PROMOTION-DENY {block}/{family}/{universe} next authorized "
             f"event is {event}, not PROMOTION (the controller derives the "
             f"event; operators never choose one)")
-    reasons = _authorized_cell(fam_c_dir, cell, freeze_commit)
-    if reasons:
-        raise PermissionError(reasons[0])
     if evidence_grade not in GRADES:
         raise ValueError(f"PROMOTION-DENY evidence_grade {evidence_grade!r} "
                          f"not in {list(GRADES)}")
@@ -912,6 +926,12 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     # else (no event, several events, an unreadable chain, an event that
     # does not bind the frozen candidate) falls through to the normal
     # path, which denies as before.
+    #
+    # EPOCH-2: this branch runs BEFORE _authorized_cell — the derived
+    # NOT-PROMOTED terminal is already progress-valid for the frozen order
+    # (so the done-set duplicate check would preempt the recording act),
+    # and emit_promotion_outcome re-authorizes the recording itself
+    # (prefix intact; the cell's own derived terminal is not a duplicate).
     _failed, _cause = order.acquisition_failed(fam_c_dir, block, family,
                                                universe)
     if _failed:
@@ -950,6 +970,11 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
             f"CAPABILITY_LOCK may exist for it, and every downstream "
             f"cell of that universe is NOT-EVALUABLE (no retry: the "
             f"failed validation is an experimental outcome)")
+    # normal path: the promotion must be the derived next authorized event
+    # (prefix intact, not already terminal) before any evidence is derived.
+    reasons = _authorized_cell(fam_c_dir, cell, freeze_commit)
+    if reasons:
+        raise PermissionError(reasons[0])
     t0_ev = run_evidence(fam_c_dir, t0, freeze_commit)
     t1_ev = run_evidence(fam_c_dir, t1, freeze_commit)
     producer_identity = _producer_identity(t0_ev, t1_ev)
@@ -1116,21 +1141,97 @@ def lock_universe(fam_c_dir, block, family, universe, freeze_commit=None,
             "capability_dir": capdir}
 
 
+def _complete_not_locked(fam_c_dir, block, family, universe,
+                         freeze_commit=None, denial=None):
+    """EPOCH-2 (EPOCH-1-CLOSURE.md ruling, TERMINAL-OUTCOME PROGRESS
+    SEMANTICS): complete the CAPABILITY_LOCK event of a NOT-PROMOTED
+    universe as its recorded terminal NOT-LOCKED outcome — never a lock,
+    never a deadlock, never a retry.
+
+    The outcome record is written once by order.emit_capability_lock_outcome
+    (which re-derives the NOT-PROMOTED state, the promotion outcome bytes
+    and the real T0/T1 chain tips itself); this helper exists so BOTH
+    controller routes (the promotion call that records the denial, and a
+    later lock-event call on the already-recorded universe) reach the same
+    idempotent refusal. `denial` is the promotion-side refusal text the
+    combined message leads with (the operator sees the whole terminal
+    story: PROMOTION-DENY ... | LOCK-DENY ...). Always raises
+    PermissionError."""
+    exp = order.load_expansion(fam_c_dir)
+    cell = order.expected_event(exp, block, family, "CAPABILITY_LOCK",
+                                universe)
+    if cell is None:
+        raise PermissionError(
+            f"LOCK-DENY no CAPABILITY_LOCK cell in the order for "
+            f"{block}/{family}/{universe}")
+    _oc = order.promotion_outcome(fam_c_dir, block, family, universe)
+    if not (isinstance(_oc, dict) and _oc.get("outcome") == "NOT-PROMOTED"):
+        raise PermissionError(
+            f"LOCK-DENY the PROMOTION of {block}/{family}/{universe} is "
+            f"not a recorded NOT-PROMOTED terminal; the CAPABILITY_LOCK "
+            f"event cannot complete as NOT-LOCKED")
+    try:
+        op = order.emit_capability_lock_outcome(fam_c_dir, cell,
+                                                freeze_commit)
+    except PermissionError as e:
+        raise PermissionError(
+            str(e) + f" | LOCK-DENY the CAPABILITY_LOCK event of "
+            f"{block}/{family}/{universe} stays at its recorded terminal "
+            f"state (no relock, no retry)")
+    _lead = (str(denial) + " | ") if denial else ""
+    raise PermissionError(
+        _lead + f"LOCK-DENY universe {block}/{family}/{universe} is "
+        f"NOT-PROMOTED: the CAPABILITY_LOCK event completed as NOT-LOCKED "
+        f"(terminal outcome recorded at {op}); no CAPABILITY_LOCK may "
+        f"exist for it, every downstream cell of that universe is "
+        f"NOT-EVALUABLE, and there is no retry (the failed validation is "
+        f"an experimental outcome, not an infrastructure-invalid run)")
+
+
 def advance(fam_c_dir, block, family, universe, freeze_commit=None,
             evidence_grade="estimand", version="1.0.0",
             builder_identity=None):
     """Derive the next authorized acquisition event for this universe and
     execute it if it is a governance event. T0/T1 are refused here: they are
-    model calls and belong to the acquisition executor (A12.0-d)."""
+    model calls and belong to the acquisition executor (A12.0-d).
+
+    EPOCH-2: a universe whose acquisition validly failed reaches BOTH
+    governance terminals — the PROMOTION call records NOT-PROMOTED and then
+    (same call) the CAPABILITY_LOCK event completes as the recorded
+    NOT-LOCKED outcome. Re-invocation refuses idempotently (both terminals
+    are write-once); no lock, no capability consumption and no retry are
+    ever authorized."""
     event, cell, reasons = next_event(fam_c_dir, block, family, universe,
                                       freeze_commit)
     if reasons:
         raise PermissionError(reasons[0])
     if event == "PROMOTION":
-        return promote_universe(fam_c_dir, block, family, universe,
-                                freeze_commit, evidence_grade, version,
-                                builder_identity)
+        try:
+            return promote_universe(fam_c_dir, block, family, universe,
+                                    freeze_commit, evidence_grade, version,
+                                    builder_identity)
+        except PermissionError as e:
+            # The failed-acquisition path records PROMOTION-OUTCOME.json and
+            # then denies. Complete the sibling CAPABILITY_LOCK event as its
+            # terminal NOT-LOCKED record before refusing (fail closed: the
+            # helper re-validates and raises LOCK-DENY for any other
+            # refusal cause — a malformed outcome can never mint one). The
+            # combined refusal leads with the promotion denial text.
+            _oc = order.promotion_outcome(fam_c_dir, block, family, universe)
+            if not (isinstance(_oc, dict)
+                    and _oc.get("outcome") == "NOT-PROMOTED"):
+                raise
+            _complete_not_locked(fam_c_dir, block, family, universe,
+                                 freeze_commit, denial=e)  # always raises
+            raise  # unreachable: keep the original denial if it ever returns
     if event == "CAPABILITY_LOCK":
+        # A universe whose promotion is already RECORDED NOT-PROMOTED: the
+        # lock event completes as NOT-LOCKED (never through lock_universe,
+        # which mints locks only from a validated promotion).
+        _oc = order.promotion_outcome(fam_c_dir, block, family, universe)
+        if isinstance(_oc, dict) and _oc.get("outcome") == "NOT-PROMOTED":
+            _complete_not_locked(fam_c_dir, block, family, universe,
+                                 freeze_commit)  # always raises
         return lock_universe(fam_c_dir, block, family, universe,
                              freeze_commit, evidence_grade, builder_identity)
     raise PermissionError(
