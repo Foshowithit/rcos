@@ -1,0 +1,33 @@
+{
+  "capability": "video-forensics-receipt",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-11 widening corpus: both sides of the R8 LRA gate pushed to n=6 (class S +2: snd-gravity 142.1s WB official, snd-sicario 147.2s Lionsgate official; class T +2: trailer-barbie 161.3s WB official, trailer-fastx 225.0s Universal Pictures UK official); rig/verify_receipts.py on the full corpus: 'checked 60 receipts — ALL DETERMINISTIC GATES PASS'. 4/4 label-integrity reads PASS at judge time (muse lane). The round's substance is a measured-rule correction on record: R8's zero-overlap LRA claim does not survive widening (sound-led 7.2-13.9 med 9.1 now overlaps sound-agnostic 5.2-9.1 med 6.75 in zone 7.2-9.1; crossing samples Gravity 7.9, Sicario 7.2, Fast X 9.1), and the class-T held-open floor is also refuted (Fast X first cut 1.92s). Both superseded claims are preserved in the R8 eval receipt and the R11 round log, nothing deleted; the hard 'LRA >= 8.6' gate is superseded by the tendency rule (PLAYBOOK rule S1, ~2.3 LU median separation survives; widest corpus masters all sound-led 13.9/11.6/9.6). Correction documented, not hidden — same disposition as study-round3/6/7/8/9/10: no bad receipts remain.",
+  "gates": [
+    {
+      "id": "deterministic-gates",
+      "pass": true,
+      "evidence": "Round-11 receipts: snd-gravity (142.11s, med shot 0.792s, cps 0.3448, first cut 11.35s, motion 0.192, luma 0.218, sat 0.246, n80 4, LUFS -17.4, LRA 7.9, TP -0.9), snd-sicario (147.22s, med 0.960s, cps 0.5638, first cut 18.04s, motion 0.145, luma 0.210, sat 0.333, n80 5, LUFS -13.6, LRA 7.2, TP +0.3), trailer-barbie (161.31s, med 1.168s, cps 0.5579, first cut 5.05s, motion 0.171, luma 0.305, sat 0.365, n80 5, LUFS -15.3, LRA 5.7, TP -0.4), trailer-fastx (224.98s, med 1.000s, cps 0.5556, first cut 1.92s, motion 0.157, luma 0.217, sat 0.282, n80 5, LUFS -15.8, LRA 9.1, TP -0.5). Class S n=6: LRA 7.2-13.9 med 9.1; class T n=6: LRA 5.2-9.1 med 6.75. rig/verify_receipts.py: 'checked 60 receipts — ALL DETERMINISTIC GATES PASS'."
+    },
+    {
+      "id": "sheet-reads",
+      "pass": true,
+      "evidence": "sheet-reads (llm gate): 4/4 sources read at judge time via the free opencode muse vision lane. Gravity: debris / lone female astronaut / Earth-canvas tension imagery carried by Warner Bros. title cards — confirmed. Sicario: FBI raid, desert border convoy, 'POLICIA FEDERAL' card, closes on the SICARIO end title — confirmed. Barbie: pink Barbieland / Ryan Gosling / JULY 21 release card — confirmed. Fast X: NOS-branded open road, Rome, BBQ table read, 'THE END OF THE ROAD BEGINS' tagline, Universal Pictures UK branding — confirmed."
+    },
+    {
+      "id": "label-integrity",
+      "pass": true,
+      "evidence": "Slug-to-content pairing confirmed for all 4 R11 fetches; all four are official channel uploads (Warner Bros. x2, Lionsgate Movies, Universal Pictures UK) with video IDs OiTiKOy59o4, 7XLQ1bkSLDo, pBk4NYhWNMM, VVbIrBSlBvo. Receipt source metadata matches each sheet's content; no mislabeled or corrupt receipt this round (no same-slug re-fetches were needed — the R9 replace-not-merge rule held)."
+    },
+    {
+      "id": "tooling-defect-found-and-fixed",
+      "pass": true,
+      "evidence": "No rig defect this round. Measured-rule corrections are the round's substance, handled as documentation corrections on record: (1) R8's zero-overlap LRA claim refuted at n=6 — three of four new samples cross the old boundary (Gravity 7.9 and Sicario 7.2 are sound-led at control width; Fast X 9.1 is sound-agnostic at old sound width); (2) class-T held-open floor refuted (Fast X first cut 1.92s; Sicario 18.0s = new corpus held-open max). PLAYBOOK rule S1 now states the tendency with the supersession note; both superseded claims remain archived in the R8 eval receipt and this round's log, per the R6 not-hidden precedent."
+    },
+    {
+      "id": "limitation-documented",
+      "pass": true,
+      "evidence": "Limits documented, not normalized: n=6 per side still flagged for further widening (n→8); no full videos watched (sheets are sampled-frame inspection); the WALL-E format-era caveat retained from R8; 'loudness range is a strong tendency, not a separator' stated as the class-S headline with the surviving separation quantified (~2.3 LU median; widest corpus masters all sound-led). No keys, no paid lanes (free muse vision lane for reads)."
+    }
+  ]
+}

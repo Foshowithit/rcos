@@ -1,0 +1,33 @@
+{
+  "capability": "creative-study-loop",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-11 loop gates: QUEUE advanced (Round 11 section written as 4 rows, all driven to DONE with key numbers and a verdict line); 60 receipts with all deterministic gates passing; PLAYBOOK folded the n=6 numbers into the class-S and class-T envelope tables with studies/<slug>.json citations, updated ours-vs-reference columns on re-measurement, and rewrote the class-S headline to the tendency reading. The loop's honesty commitment was exercised in the hardest direction this round: the round's central outcome was the refutation of the loop's own R8 claim (zero-overlap LRA) under widening, and it was folded in as a correction-on-record with superseded versions archived (R8 eval receipt + R11 round log, nothing deleted) — same disposition as the R3/R6 precedent. Media hygiene: all 4 fetches official channels; third-party media stays on the Dell; no keys, no paid lanes. Verdict ship with the revision documented, not hidden.",
+  "gates": [
+    {
+      "id": "queue-advance",
+      "pass": true,
+      "evidence": "QUEUE.md Round 11 section written pre-round ('Widening: S+T LRA boundary stress test') with 4 rows (snd-gravity, snd-sicario, trailer-barbie, trailer-fastx — 2 per side), all now driven to DONE with key numbers in the status column (LRA 7.9 / 7.2 / 9.1, luma 0.305, -13.6 LUFS / +0.3 TP, first cuts 18.04s / 1.92s), a verdict line (zero-overlap refuted -> tendency, 60 receipts), and an R11 entry at the top of the round log. Unit S2+T2 complete."
+    },
+    {
+      "id": "receipt-citations",
+      "pass": true,
+      "evidence": "PLAYBOOK class-S and class-T tables cite studies/snd-quiet-place.json, studies/snd-dunkirk.json, studies/snd-walle.json, studies/snd-baby-driver.json, studies/snd-gravity.json, studies/snd-sicario.json, studies/trailer-furyroad.json, studies/trailer-shining1980.json, studies/trailer-hungergames.json, studies/trailer-mrirrelevant.json, studies/trailer-barbie.json, studies/trailer-fastx.json; the class-S headline names the three crossing samples with their study citations. Every number in the envelope tables traces to a receipt."
+    },
+    {
+      "id": "cross-class-fold-in",
+      "pass": true,
+      "evidence": "Class S folded to n=6 (LRA 7.2-13.9 med 9.1, LUFS -13.6...-22.2 med -17.7, TP -7.3...+0.3 med -1.0, first cut 0.13-18.0 med 8.4, cps 0.24-0.56 med 0.55, palette n80 3-5 'corpus now 60 receipts'); class T folded to n=6 (duration 88-225 med 156, first cut 1.9-10.3 med 3.9, cps 0.37-0.80 med 0.56, luma 0.21-0.31, LUFS -14.1...-19.7 med -15.6, LRA 5.2-9.1 med 6.75, n80 4-5); cross-class finding 6 rewritten to the n=6 tendency reading; finding 2 updated to 'all 55 reference films ... (60 receipts)'; the R11 structure reads (Gravity, Sicario) added to class S; class-T reading updated with the Fast X breaks and Barbie brightness."
+    },
+    {
+      "id": "ours-vs-reference",
+      "pass": true,
+      "evidence": "Re-measurement columns updated in both envelope tables (class S ours-fapcoin row now carries the n=6 ranges: aimed wide 9-14 LU when sound leads, no floor; class-T first-cut row: held opens hold verus Fast X 1.92s). The playbook's actionable gap columns were recomputed from the fresh n=6 numbers this round."
+    },
+    {
+      "id": "media-hygiene",
+      "pass": true,
+      "evidence": "All 4 R11 sources are official channels (Warner Bros. x2, Lionsgate Movies, Universal Pictures UK); clips and frames live on the Dell under ~/tmp/creative-study only — nothing third-party enters either repo; no keys, no paid lanes (free muse vision lane for the 4/4 label-integrity reads); round completed under the ~30 min budget."
+    }
+  ]
+}
