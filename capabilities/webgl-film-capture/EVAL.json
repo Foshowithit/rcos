@@ -1,0 +1,11 @@
+{
+  "capability": "webgl-film-capture",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "deterministic-frames", "kind": "deterministic", "check": "same scene+seed renders byte-identical rgba frames across separate Chrome launches (md5s proven)" },
+    { "id": "timing-contract", "kind": "deterministic", "check": "final mp4 duration == NFRAMES/FPS exactly and frame count matches (52.083s / 1250f on SHORT8)" },
+    { "id": "card-windows", "kind": "deterministic", "check": "every card window has visible plate text (max luminance > 60) AND correct orientation — the PIL burn writes top-down frames into a bottom-up (readPixels) pipeline, so the burn MUST pre-flip or text ships mirrored" },
+    { "id": "audio-continuity", "kind": "deterministic", "check": "volumedetect matches the locked mix for the film (SHORT8: mean -29.0 / max -10.6 dB)" },
+    { "id": "no-dead-frames", "kind": "llm", "check": "motion diffs across the act are nonzero (no slideshow holds)" }
+  ]
+}

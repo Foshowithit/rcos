@@ -6,11 +6,25 @@
       "name": "Filmstrip video verification protocol",
       "kind": "runbook",
       "version": "1.0.0",
-      "status": "candidate",
-      "admitted_after": [],
-      "evals": [],
+      "status": "promoted",
+      "admitted_after": [
+        "short8-char-v3-verify",
+        "short8-char-v3-firstbuild-verify"
+      ],
+      "evals": [
+        {
+          "task_id": "short8-char-v3-verify",
+          "verdict": "ship",
+          "run_id": "91246b5; 7-frame strip + volumedetect -29.0/-10.6 + motion 3.6/4.0 + cards matrix archived"
+        },
+        {
+          "task_id": "short8-char-v3-firstbuild-verify",
+          "verdict": "ship",
+          "run_id": "first v3 build 1.82GB: 7-frame strip + loudness + per-frame motion notes before rebuild"
+        }
+      ],
       "reuse_count": 0,
-      "last_eval": null,
+      "last_eval": "2026-09-16",
       "lineage": "zcode memory video-watch-protocol.md; proven on ep1-chalk + HOG demo video"
     },
     {
@@ -44,9 +58,20 @@
       "version": "1.0.0",
       "status": "candidate",
       "admitted_after": [],
-      "evals": [],
+      "evals": [
+        {
+          "task_id": "charprobe-captures",
+          "verdict": "ship",
+          "run_id": "fapcoin-webgl probe_seated3 + probe_charscene: cap.cjs exit-3-on-console-error enforced, rendered proofs archived in-repo"
+        },
+        {
+          "task_id": "scene8-char-spotcaptures",
+          "verdict": "ship",
+          "run_id": "91246b5 gate/hero-final.png + probe frames: http-serve + zero console errors + rendered proof"
+        }
+      ],
       "reuse_count": 0,
-      "last_eval": null,
+      "last_eval": "2026-09-16",
       "lineage": "zcode memory browser-verify-web-artifacts; DraftForge + dsh-operator-ui proofs"
     },
     {
@@ -110,6 +135,84 @@
       "reuse_count": 1,
       "last_eval": "2026-09-15",
       "lineage": "dsh-operator-ui/scripts/check.js; required before every push since v0.1.1"
+    },
+    {
+      "id": "webgl-film-capture",
+      "name": "Deterministic WebGL film capture pipeline (CDP rgba→vflip→cards→mux)",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "v7-determinism",
+        "short8-char-v3-build"
+      ],
+      "evals": [
+        {
+          "task_id": "v7-determinism",
+          "verdict": "ship",
+          "run_id": "commit df071ee; byte-identical renders across Chrome launches (probe.cjs/cap.cjs determinism proof)"
+        },
+        {
+          "task_id": "short8-char-v3-build",
+          "verdict": "ship",
+          "run_id": "commit 91246b5; build/short8-char-2160.mp4: 6/6 cards max 154-229, 52.083s/1250f, -29.0dB, motion diffs 3.6-4.0"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-16",
+      "lineage": "fapcoin-webgl v7 (df071ee determinism proven) + SHORT8 v2 (aff2dc3) + char v3 (91246b5); cap.cjs CDP rig + pipeline8 + burn_cards_v3"
+    },
+    {
+      "id": "shadow-play-staging",
+      "name": "Backlit shadow-play staging + light geography",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "short8-v2-realism-pass",
+        "short8-char-v3-shadow"
+      ],
+      "evals": [
+        {
+          "task_id": "short8-v2-realism-pass",
+          "verdict": "ship",
+          "run_id": "commit aff2dc3; muse SHIP + 2am-viewer pass after 8 probe rounds (root cause: DoubleSide plane can't be backlit)"
+        },
+        {
+          "task_id": "short8-char-v3-shadow",
+          "verdict": "ship",
+          "run_id": "commit 91246b5; fap-director PASS + measured crown contrast 0->36-50 levels (sFrame shadow-eater fix + crown fill)"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-16",
+      "lineage": "charprobe + scene8 v2 realism (aff2dc3) + scene8_char v3 (91246b5): emissive paper + ShadowMaterial catcher + light-geography trap list"
+    },
+    {
+      "id": "character-forge",
+      "name": "Character forge: muse sheet → TripoSR → standup GLB",
+      "kind": "workflow",
+      "version": "1.1.0",
+      "status": "promoted",
+      "admitted_after": [
+        "dell-seated-film-run",
+        "dell-seated-down-run"
+      ],
+      "evals": [
+        {
+          "task_id": "dell-seated-film-run",
+          "verdict": "ship",
+          "run_id": "run6.log + /home/chow/chow-work/charforge/assets/seated_film.EVAL.json decision=ship (extents 1.289/1.8/0.8, 80642 faces)"
+        },
+        {
+          "task_id": "dell-seated-down-run",
+          "verdict": "ship",
+          "run_id": "run7.log + seated_film_down.EVAL.json decision=ship (workflow green end-to-end after numpy-bool gate fix)"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-16",
+      "lineage": "Dell Archon workflow character-forge-v1; ritual_guy + seated_film + seated_film_down EVAL ships; numpy-bool gate fix"
     }
   ]
 }

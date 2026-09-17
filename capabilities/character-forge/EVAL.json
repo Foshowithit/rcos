@@ -1,0 +1,10 @@
+{
+  "capability": "character-forge",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "disk-gate", "kind": "deterministic", "check": "intake fails closed below 8G free on the execution host (proven at 4.8G) — never half-mint a mesh onto a full disk" },
+    { "id": "glb-plausible", "kind": "deterministic", "check": "GLB parses; height 1.8m +/-0.02; width ratio 0.25-0.85; depth ratio 0.08-0.60; 5k-300k faces (decision=ship written to .EVAL.json)" },
+    { "id": "receipt", "kind": "deterministic", "check": "RECEIPT.json written — the receipt node does not skip (a skipped receipt = a failed run, proven by the depends_on skip rule)" },
+    { "id": "shadow-reads", "kind": "llm", "check": "the minted character's shadow on the backlit catcher reads as a human silhouette in the probe views" }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "capability": "shadow-play-staging",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "catcher-technique", "kind": "deterministic", "check": "emissive paper + ShadowMaterial catcher plane (a backlight can never light a DoubleSide plane's camera-facing face — three.js flips normals to the viewer; that was the v1 slop root cause)" },
+    { "id": "light-geography", "kind": "deterministic", "check": "no solid frame/housing mesh casts a shadow onto the lit band (the sFrame box was silently eating the band's top edge — the biggest single contrast win, 41→62); the paper's visible brightness is front-lit + emissive, NOT the backlight (changes to the backlight only move the shadow mask)" },
+    { "id": "figure-reads", "kind": "llm", "check": "the figure reads as its subject (e.g. a human silhouette with head/shoulders/body/stool), not as an abstract mass, in the close framings" },
+    { "id": "runtime-overrides", "kind": "deterministic", "check": "every tuning constant edited is not overwritten by a per-frame assignment (perform() had been overwriting the constructor's emissiveIntensity — a whole iteration was lost to this)" }
+  ]
+}
