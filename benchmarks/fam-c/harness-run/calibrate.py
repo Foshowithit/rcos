@@ -104,7 +104,9 @@ def _capture(lane, transport):
             spec["base"], f"{lane}-key", api_key, spec["model"],
             [{"role": "user", "content": PROMPT}], out,
             extra_body=GEN_PARAMS, tag=f"calibration-{lane}",
-            normalizer_id=spec["normalizer"], return_response=True)
+            normalizer_id=spec["normalizer"], return_response=True,
+            api_style=spec.get("api_style", "openai"),
+            session_header=spec.get("session"))
         if provider_obj is None:
             raise ValueError("CALIBRATION-IDENTITY: the live transport "
                              "returned no provider response object")
@@ -112,10 +114,9 @@ def _capture(lane, transport):
     # offline: synthesize a provider response with the SAME shape the lanes
     # return, so the compose path is exercised exactly.
     if lane == "P":
-        usage_raw = {"prompt_tokens": 24, "completion_tokens": 4,
-                     "total_tokens": 28,
-                     "prompt_tokens_details": {"cached_tokens": 0}}
-        echoed = "minimax-m3"
+        usage_raw = {"input_tokens": 24, "output_tokens": 4,
+                     "cache_read_input_tokens": 0}
+        echoed = "union-alpha"
     else:
         usage_raw = {"prompt_tokens": 20, "completion_tokens": 3,
                      "total_tokens": 23,
@@ -239,7 +240,10 @@ def run_offline():
     raw = json.load(open(rp))
     tampered = dict(raw)
     tampered["usage_raw"] = dict(raw["usage_raw"])
-    tampered["usage_raw"]["prompt_tokens"] += 1
+    # schema-aware tamper: bump whichever input field the lane raw schema
+    # carries (openai prompt_tokens vs anthropic input_tokens)
+    _tin = "input_tokens" if "input_tokens" in tampered["usage_raw"]         else "prompt_tokens"
+    tampered["usage_raw"][_tin] += 1
     tp = os.path.join(out, "tampered-raw.json")
     json.dump(tampered, open(tp, "w"))
     try:

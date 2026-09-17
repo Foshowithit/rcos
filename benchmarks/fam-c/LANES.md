@@ -1,7 +1,15 @@
 # Fam-C lane assignments (frozen; re-verify reachability before first run)
 
-- **P (producer)**: router9 `minimax-m3` (MiniMax family; reasoning content
-  verified live 2026-09-07).
+- **P (producer)**: AMENDED 2026-09-16 (AMEND-2026-09-16-lane-p,
+  operator-authorized): OpenCode Go `union-alpha` (Union family;
+  Anthropic-style `/messages` + `x-opencode-session` header; live echo
+  verified 2026-09-16). Superseded binding: router9 `minimax-m3`
+  (MiniMax family; reasoning content verified live 2026-09-07) — router9's
+  monthly credit pool exhausted 2026-09-16 with estimand-grade = 0, so no
+  estimand data ever existed on the superseded binding. Historical
+  receipts stay on their own provider-bound normalizer ids
+  (router9-openai-chat-v2 / opencode-go-union-alpha-v2); never
+  cross-normalized.
 - **Q (consumer)**: kenari `agnes-2-0-flash:free` (distinct vendor/endpoint;
   completion verified live 2026-09-07). Model identity is established
   PROVIDER-SIDE, never by self-report: record the provider endpoint,
@@ -23,7 +31,8 @@ response id, created, params actually sent) before any execution, and
 refuses the run when the echo is missing or violates the frozen entry
 below. Echoed ids are the gateway-facing requested ids (router9/kenari
 answer OpenAI-compatible chat; kenari's free tier may strip the `:free`
-plan suffix). A first observed live echo OUTSIDE these patterns is a
+plan suffix; the opencode go P lane answers Anthropic-style `/messages`
+and always supplies a model echo). A first observed live echo OUTSIDE these patterns is a
 prereg-amendment commit (tighten loop) — never a silent substitution.
 
 Item-3 hardening (audit round 2): the provider response/request id is
@@ -36,7 +45,7 @@ or any request param on either side after the call fails both.
 
 | lane | endpoint (base) | requested_id | family | acceptable_echoed_ids |
 |------|-----------------|--------------|--------|------------------------|
-| P    | https://api.router9.com/v1 | minimax-m3 | MiniMax | minimax-m3 |
+| P    | https://opencode.ai/zen/go/v1 | union-alpha | Union | union-alpha |
 | Q    | https://kenari.id/v1 | agnes-2-0-flash:free | Kenari-Agnes | agnes-2-0-flash:free, agnes-2-0-flash |
 
 ## Usage adapter prereg (per lane; frozen — see usage.py PROVIDER_NORMALIZERS)
