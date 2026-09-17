@@ -471,3 +471,8 @@ the design intentionally removed). Nothing estimand-grade is lost: no
 capability was ever promoted in this epoch and no downstream/reuse cell
 ran; the recorded epoch-1 evidence is acquisition-path evidence (T0/T1
 verdicts + one validated denial).
+
+
+## EPOCH-1 CLOSED — see EPOCH-1-CLOSURE.md (2026-09-17)
+
+Ruling: EPOCH-2 PROTOCOL; epoch 1 terminated-not-repaired; no abatement mechanism; epoch-1 cells archived and NOT carried forward; epoch-2 requires fresh locks + a new finalization commit and re-runs the order from the beginning. Epoch-1 artifacts are immutable historical evidence.
