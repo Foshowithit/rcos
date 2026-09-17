@@ -1,5 +1,7 @@
 # Filmstrip video verification protocol
 
+Registry id: `filmstrip-verify` · kind: `runbook`
+
 Never trust a video file by its size or by prose claims. Extract 6 frames
 at even timestamps, review each frame with per-frame motion notes, run
 volumedetect for the audio bed, and verify the math is distinct per frame.

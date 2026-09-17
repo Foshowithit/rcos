@@ -1,5 +1,7 @@
 # Local talking heads (LivePortrait on the Dell, video-driven)
 
+Registry id: `local-talking-heads` · kind: `runbook`
+
 Generate a talking, moving head from a still — locally, on the Dell's A3000
 (6 GB), no paid video lane. Fork of `KlingTeam/LivePortrait`, venv-isolated so
 it cannot disturb the Dell's other GPU work.

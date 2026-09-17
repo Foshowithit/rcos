@@ -1,0 +1,6 @@
+file evidence/face-in-scene-shot/eval-2/shot-face-v2-r3.mp4
+container duration 2.000s  streams: h264, aac
+video h264 1080x1080
+audio aac 48000Hz 2ch
+audio RMS -inf dBFS
+FAIL MUST_SOUND but RMS None dBFS below -60 floor (silent track)

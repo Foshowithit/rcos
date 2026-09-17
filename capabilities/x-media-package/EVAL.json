@@ -1,0 +1,9 @@
+{
+  "capability": "x-media-package",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "platform-limits", "kind": "deterministic", "check": "duration <= 140s; aspect in [0.5, 2.0]; caption 1..280 chars; alt-text 1..1000 chars" },
+    { "id": "poster-extract", "kind": "deterministic", "check": "x-poster.jpg extracted at min(1.0, dur/3)" },
+    { "id": "poster-reads", "kind": "llm", "check": "sighted read of the poster: subject legible, no broken frame as the thumbnail face" }
+  ]
+}

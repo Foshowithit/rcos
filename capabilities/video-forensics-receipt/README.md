@@ -1,5 +1,7 @@
 # Video forensics receipt (reference-clip measurer)
 
+Registry id: `video-forensics-receipt` · kind: `script`
+
 Turn any video — a reference film OR one of our own deliverables — into a
 forensics receipt: cut rhythm, loudness, color, motion, contact sheet, with the
 metric definitions recorded alongside the numbers so no reader has to guess how

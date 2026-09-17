@@ -32,8 +32,11 @@
       "name": "Muse image generation lane",
       "kind": "runbook",
       "version": "1.0.0",
-      "status": "candidate",
-      "admitted_after": [],
+      "status": "promoted",
+      "admitted_after": [
+        "fapcoin-title-card-native",
+        "bearing-product-shot"
+      ],
       "evals": [
         {
           "task_id": "fapcoin-title-card-native",
@@ -81,8 +84,13 @@
       "name": "Browser-verify web artifacts",
       "kind": "runbook",
       "version": "1.0.0",
-      "status": "candidate",
-      "admitted_after": [],
+      "status": "promoted",
+      "admitted_after": [
+        "charprobe-captures",
+        "scene8-char-spotcaptures",
+        "chalk-scene-font-assert",
+        "chalk-scene-font-assert-r2"
+      ],
       "evals": [
         {
           "task_id": "charprobe-captures",
@@ -545,13 +553,21 @@
       "name": "Local textured characters (Hunyuan3D-2.1 MLX on Mac)",
       "kind": "runbook",
       "version": "1.0.0",
-      "status": "candidate",
-      "admitted_after": [],
+      "status": "promoted",
+      "admitted_after": [
+        "hero-front-textured-e2e",
+        "image-to-3D bearing: muse product shot -> prep_518 -> shape -> texture; gate on geometry extents + watertight + texture embed, then sighted"
+      ],
       "evals": [
         {
           "task_id": "hero-front-textured-e2e",
           "verdict": "ship",
           "run_id": "fapcoin-webgl/charforge/hunyuan/textured.glb (14.1MB, PBR 4096 albedo+MR, human extents, watertight shape; muse SHIP body / KILL face-closeup); agent report in shared AGENTS.md 09-17"
+        },
+        {
+          "task_id": "image-to-3D bearing: muse product shot -> prep_518 -> shape -> texture; gate on geometry extents + watertight + texture embed, then sighted",
+          "verdict": "ship",
+          "run_id": "hunyuan-eval2-bearing"
         }
       ],
       "reuse_count": 0,
@@ -563,8 +579,11 @@
       "name": "Face-in-scene compositing (talking frames as deterministic scene texture)",
       "kind": "runbook",
       "version": "1.0.0",
-      "status": "candidate",
-      "admitted_after": [],
+      "status": "promoted",
+      "admitted_after": [
+        "talking-portrait-insert-3s",
+        "slate-study-portrait-run3"
+      ],
       "evals": [
         {
           "task_id": "talking-portrait-insert-3s",
@@ -596,8 +615,11 @@
       "name": "Preview Server Verify",
       "kind": "script",
       "version": "0.1.0",
-      "status": "candidate",
-      "admitted_after": [],
+      "status": "promoted",
+      "admitted_after": [
+        "dashboard-and-scene-serve-run3",
+        "third artifact: serve+pin-verify receipt-figure-render eval-2 fig-verdicts.png; transport + authoring-time pin + teardown all pass"
+      ],
       "evals": [
         {
           "task_id": "dashboard-serve-run1",
@@ -613,6 +635,11 @@
           "task_id": "dashboard-and-scene-serve-run3",
           "verdict": "ship",
           "run_id": "eval-1 dashboard.html + eval-2 scene_v2.html, both --expect-sha256 pinned; attack receipt exit 3 STALE_OR_WRONG_BYTES"
+        },
+        {
+          "task_id": "third artifact: serve+pin-verify receipt-figure-render eval-2 fig-verdicts.png; transport + authoring-time pin + teardown all pass",
+          "verdict": "ship",
+          "run_id": "psv-figpng"
         }
       ],
       "reuse_count": 0,
@@ -624,13 +651,21 @@
       "name": "Audio Offline Verify",
       "kind": "script",
       "version": "0.1.0",
-      "status": "candidate",
-      "admitted_after": [],
+      "status": "promoted",
+      "admitted_after": [
+        "chalk-vo-and-silent-mux",
+        "voiced receipt on a second artifact (chalk-eval1) with must-sound on; plus honest FAIL receipt: dispatch video has no audio stream"
+      ],
       "evals": [
         {
           "task_id": "chalk-vo-and-silent-mux",
           "verdict": "ship",
           "run_id": "av_check.py: eval-1 chalk-eval2.mp4 must-sound PASS (h264+aac 3.0s RMS -35.1 dBFS); eval-2 shot-face-v2-r3.mp4 report-only PASS (RMS -inf by-design); attack mute file vs must-sound = exit 3"
+        },
+        {
+          "task_id": "voiced receipt on a second artifact (chalk-eval1) with must-sound on; plus honest FAIL receipt: dispatch video has no audio stream",
+          "verdict": "ship",
+          "run_id": "av-chalk1-dispatchfail"
         }
       ],
       "reuse_count": 0,
@@ -642,13 +677,21 @@
       "name": "X Media Package",
       "kind": "workflow",
       "version": "0.1.0",
-      "status": "candidate",
-      "admitted_after": [],
+      "status": "promoted",
+      "admitted_after": [
+        "chalk-and-dispatch-packages",
+        "third package: face-in-scene slate-study mp4 + caption + alt; limits pass, poster muse SHIP"
+      ],
       "evals": [
         {
           "task_id": "chalk-and-dispatch-packages",
           "verdict": "ship",
           "run_id": "xcheck.py eval-1 chalk-eval2 (1.78 aspect, 3s) + eval-2 rcos-dispatch-eval-2-out (1280x720, 4s), both PASS w/ caption+alt; attack caption 321 chars = exit 3; muse poster gate SHIP"
+        },
+        {
+          "task_id": "third package: face-in-scene slate-study mp4 + caption + alt; limits pass, poster muse SHIP",
+          "verdict": "ship",
+          "run_id": "xpkg-slatestudy"
         }
       ],
       "reuse_count": 0,
@@ -660,11 +703,25 @@
       "name": "Receipt Figure Render",
       "kind": "workflow",
       "version": "0.1.0",
-      "status": "candidate",
-      "admitted_after": [],
-      "evals": [],
+      "status": "promoted",
+      "admitted_after": [
+        "registry-verdict-figures",
+        "regeneration-after-change: figures re-rendered after registry moved 74->75 evals; second-code-path checker diffs sidecar vs fresh registry recompute"
+      ],
+      "evals": [
+        {
+          "task_id": "registry-verdict-figures",
+          "verdict": "ship",
+          "run_id": "receipt_figures.py from registry/capability-registry.json (74 evals / 20 caps) + check_figures.py recompute PASS + tampered-sidecar attack exit 3 + muse legibility SHIP"
+        },
+        {
+          "task_id": "regeneration-after-change: figures re-rendered after registry moved 74->75 evals; second-code-path checker diffs sidecar vs fresh registry recompute",
+          "verdict": "ship",
+          "run_id": "fig-regen-75x20"
+        }
+      ],
       "reuse_count": 0,
-      "last_eval": null,
+      "last_eval": "2026-09-17",
       "lineage": "OW Lab exhibit pass 09-17 (figures generated from artifacts) + figure-legibility-traps"
     }
   ]

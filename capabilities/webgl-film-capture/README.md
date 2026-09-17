@@ -1,5 +1,7 @@
 # Deterministic WebGL film capture pipeline (CDP rgba→vflip→cards→mux)
 
+Registry id: `webgl-film-capture` · kind: `runbook`
+
 CDP rig (`cap.cjs`): Node → Chrome (Metal ANGLE) → per-frame raw RGBA over a
 local HTTP sink (never the CDP WS — multi-MB evaluate returns kill it) →
 `frames/f*.rgba` + manifest with per-frame md5. Then `pipeline8`-style finish:

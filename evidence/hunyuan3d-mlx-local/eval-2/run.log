@@ -1,0 +1,47 @@
+== shape 18:59:15 ==
+[Stage 1] output     : out_shape/shape.glb
+[Stage 1] weights    : dgrauet/hunyuan3d-2.1-mlx (fp16 default)
+[Stage 1] peak RSS at start: 0.05 GB
+Fetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]Fetching 5 files: 100%|██████████| 5/5 [00:00<00:00, 3605.21it/s]
+[Stage 1] pipeline ready in 2.3s (peak RSS 7.23 GB)
+Hierarchical Volume Decoding [r65]: 274625 points
+Hierarchical Volume Decoding [r129]: 373485 points (of 2146689 total)
+Hierarchical Volume Decoding [r257]: 1488269 points (of 16974593 total)
+[Stage 1] generated in 492.9s (286384 verts, 572904 faces)
+[Stage 1] extents    : [1.97885025 1.98754156 0.37871361]
+[Stage 1] bounds     : [[-0.9946253299713135, -0.9971956014633179, -0.19342494010925293], [0.9842249155044556, 0.9903459548950195, 0.185288667678833]]
+[Stage 1] watertight : True
+[Stage 1] peak RSS   : 7.26 GB
+[Stage 1] saved      : out_shape/shape.glb (9.8 MB)
+[TIMING] shape load 2.3s + infer 492.9s = 495.2s total
+== texture 19:07:31 ==
+[Stage 2] mesh       : out_shape/shape.glb
+[Stage 2] reference  : ref_518.png
+[Stage 2] output     : out_tex/textured.obj (+ .glb)
+[Stage 2] cfg: max_selected_view_num=6 resolution=512 texture_size=4096 render_size=2048 mlx_diffusion=True mlx_superres=True
+Fetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]Fetching 5 files: 100%|██████████| 5/5 [00:00<00:00, 2306.59it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading VAE...
+Loading DINOv2...
+Loading UNet...
+  Loaded 1054/1061 main UNet weights (remaining keys load into text embeds + DINO proj below)
+Loading dual-stream reference UNet...
+  Loaded 686/686 dual UNet weights
+All components loaded.
+MLX diffusion model loaded.
+MLX super-resolution loaded (/Users/adam26/.cache/huggingface/hub/models--dgrauet--hunyuan3d-2.1-mlx/snapshots/5b1cf9ae1114c0b046d9385fd4f5ac6570df5287/realesrgan_x4plus.safetensors).
+[Stage 2] pipeline ready in 0.6s (peak RSS 0.28 GB)
+  Encoding conditions...
+  Extracting DINO features...
+  Extracting reference features...
+  Denoising (15 steps, 6 views, CFG=3.0)...
+    step 0/15: t=999, range=9.3
+    step 5/15: t=666, range=11.5
+    step 10/15: t=332, range=18.8
+    step 14/15: t=66, range=21.8
+  Decoding...
+    decoded 6/12
+    decoded 12/12
+[Stage 2] texture synthesized in 403.9s
+[Stage 2] peak RSS   : 5.56 GB
+[TIMING] texture load 0.6s + synth 403.9s = 404.5s total

@@ -1,0 +1,5 @@
+GET http://127.0.0.1:52734/fig-verdicts.png -> HTTP 200 (6551 bytes)
+sha256 served 384e4fda1b8526f2  docroot-disk 384e4fda1b8526f2
+sha256 expect 384e4fda1b8526f2 (pinned at authoring time)
+teardown: port 52734 refuses (closed)
+SERVE_VERIFY_PASS

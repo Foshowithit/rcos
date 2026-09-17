@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<title>shot_face v2 — cooler slate study, 2.0s cut (eval-2 re-parameterization)</title>
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style>
+</head>
+<body>
+<script src="vendor/three.min.js"></script>
+<script>
+'use strict';
+/* Composition proof: a face-sequence (frames from the Dell talking-head render)
+ * playing as a LIVE PORTRAIT on a wall, lit like a scene — the "cut to the guy
+ * saying the line" movie grammar, fully deterministic (PNG frames, no video
+ * decode in the capture path). CDP-capture compatible. */
+const params = new URLSearchParams(location.search);
+const CAP_W = parseInt(params.get('w') || '1080', 10);
+const SINK = params.get('sink');
+const FPS = 24;                       /* capture fps */
+const FACE_FPS = 25;                  /* the face sequence's fps */
+const NFRAMES = 48;                   /* 3.0s shot */
+const FACE_DIR = params.get('faces') || 'faces_f/';
+const NFACE = 150;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(CAP_W, CAP_W);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x030507);
+const camera = new THREE.PerspectiveCamera(34, 1, 0.05, 40);
+
+/* ---- the study wall + gold frame + live portrait ---- */
+const wallTex = (() => {                       /* warm damask-ish wallpaper (canvas) */
+  const c = document.createElement('canvas'); c.width = c.height = 512;
+  const g = c.getContext('2d');
+  g.fillStyle = '#151b23'; g.fillRect(0, 0, 512, 512);
+  const h = (n) => Math.sin(n * 127.1 + 311.7) * 43758.5453 % 1;
+  for (let i = 0; i < 1400; i++) {             /* faint vertical silk streaks */
+    const x = (h(i * 1.7) + 1) % 1 * 512, a = ((h(i * 2.3) + 1) % 1) * 0.05;
+    g.strokeStyle = `rgba(140,170,205,${a})`; g.beginPath();
+    g.moveTo(x, 0); g.lineTo(x + ((h(i * 3.1) + 1) % 1 - 0.5) * 30, 512); g.stroke();
+  }
+  for (let i = 0; i < 60; i++) {               /* damask medallions, very subtle */
+    const x = (h(i * 5.1) + 1) % 1 * 512, y = (h(i * 6.3) + 1) % 1 * 512, r = 14 + ((h(i * 7.7) + 1) % 1) * 20;
+    g.strokeStyle = 'rgba(150,180,215,0.07)'; g.lineWidth = 2;
+    g.beginPath(); g.ellipse(x, y, r, r * 0.62, ((h(i * 8.9) + 1) % 1) * 3.14, 0, 6.28); g.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 2.2);
+  t.encoding = THREE.sRGBEncoding;
+  return t;
+})();
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(8, 6),
+  new THREE.MeshStandardMaterial({ map: wallTex, color: 0xbfae9a, roughness: 0.95 }));
+wall.receiveShadow = true;
+wall.position.set(0, 2.4, -2.6); scene.add(wall);
+const frame = new THREE.Mesh(new THREE.BoxGeometry(1.06, 1.34, 0.07),
+  new THREE.MeshStandardMaterial({ color: 0x6b5327, roughness: 0.45, metalness: 0.6 }));
+frame.position.set(0, 1.62, -2.57); frame.castShadow = true; scene.add(frame);
+const alpha = new THREE.Mesh(new THREE.PlaneGeometry(0.94, 1.22),
+  new THREE.MeshStandardMaterial({ color: 0x2b2118, roughness: 0.9 }));
+alpha.position.set(0, 1.62, -2.5335); scene.add(alpha);   /* matte reveal peeking past the frame front (-2.535) */
+/* soft contact-shadow halo grounding the frame on the wall (muse KILL fix) */
+const aoTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const rg = g.createRadialGradient(128, 128, 40, 128, 128, 126);
+  rg.addColorStop(0, 'rgba(0,0,0,0.55)'); rg.addColorStop(0.55, 'rgba(0,0,0,0.28)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(c);
+})();
+const ao = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.0),
+  new THREE.MeshBasicMaterial({ map: aoTex, transparent: true, depthWrite: false }));
+ao.position.set(0, 1.6, -2.568); scene.add(ao);
+
+/* the face canvas texture (updated per capture frame) */
+const faceCanvas = document.createElement('canvas');
+faceCanvas.width = 768; faceCanvas.height = 768;
+const fctx = faceCanvas.getContext('2d');
+const faceTex = new THREE.CanvasTexture(faceCanvas);
+faceTex.encoding = THREE.sRGBEncoding;
+const portrait = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.18),
+  new THREE.MeshBasicMaterial({ map: faceTex, color: 0xb0b8c4 }));  /* graded ~30% down + cooled to sit in the slate room */
+portrait.position.set(0, 1.62, -2.531); scene.add(portrait);        /* must stay IN FRONT of the solid frame box — inside = occluded (run-2 KILL) */
+
+/* light raking the wall so the gilt frame and room feel real */
+const lamp = new THREE.SpotLight(0xffd9a8, 2.2, 14, 0.85, 0.9, 1.6);
+lamp.position.set(-2.4, 2.6, 1.2); lamp.target.position.set(0, 1.5, -2.5);
+lamp.castShadow = true; lamp.shadow.mapSize.set(2048, 2048); lamp.shadow.radius = 6; lamp.shadow.bias = -0.0002;
+scene.add(lamp); scene.add(lamp.target);
+const fill = new THREE.PointLight(0x9fb4d9, 0.25, 8, 2); fill.position.set(1.8, 1.7, 0.6); scene.add(fill);
+/* soft glow from the portrait itself (a lit thing in a dark room) */
+const faceGlow = new THREE.PointLight(0xffe0b8, 0.5, 3.2, 2); faceGlow.position.set(0, 1.62, -2.3); scene.add(faceGlow);
+scene.add(new THREE.AmbientLight(0x241c14, 0.5));
+
+/* ---- preload the face frames ---- */
+const faces = new Array(NFACE);
+let loaded = 0;
+for (let i = 1; i <= NFACE; i++) {
+  const img = new Image();
+  img.onload = img.onerror = () => { if (++loaded === NFACE) window.__faces = true; };
+  img.src = FACE_DIR + 'f' + String(i).padStart(3, '0') + '.png';
+  faces[i - 1] = img;
+}
+
+/* ---- camera: slow push-in on the portrait ---- */
+function applyCamera(t) {
+  const k = t / (NFRAMES / FPS);                     /* 0..1 */
+  const e = k * k * (3 - 2 * k);                     /* smoothstep */
+  const z = 1.95 - e * 0.5;
+  camera.position.set(Math.sin(t * 0.4) * 0.012, 1.63 + Math.sin(t * 0.5) * 0.008, z);
+  camera.lookAt(0, 1.62 + e * 0.015, -2.5);
+}
+
+let lastFace = -1;
+function renderAt(t) {
+  const fi = Math.min(NFACE - 1, Math.floor(t * FACE_FPS));
+  if (fi !== lastFace && faces[fi] && faces[fi].complete) {
+    fctx.drawImage(faces[fi], 0, 0, 768, 768);
+    /* vignette feathering the portrait into the matte — kills the cutout edge */
+    const vg = fctx.createRadialGradient(384, 384, 210, 384, 384, 384);
+    vg.addColorStop(0, 'rgba(16,13,10,0)'); vg.addColorStop(1, 'rgba(16,13,10,0.62)');
+    fctx.fillStyle = vg; fctx.fillRect(0, 0, 768, 768);
+    faceTex.needsUpdate = true;
+    lastFace = fi;
+  }
+  applyCamera(t);
+  renderer.render(scene, camera);
+}
+
+window.__ready = false;
+window.__info = { w: CAP_W, h: CAP_W, fps: FPS, nframes: NFRAMES };
+window.__setTime = (t) => { renderAt(t); };
+window.__postRaw = (t, name) => new Promise((res) => {
+  renderAt(t);
+  const gl = renderer.getContext();
+  const buf = new Uint8Array(CAP_W * CAP_W * 4);
+  gl.readPixels(0, 0, CAP_W, CAP_W, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+  fetch(`http://${SINK}/raw/${encodeURIComponent(name)}`, { method: 'POST', body: buf })
+    .then(() => res('posted ' + name)).catch((e) => res('err ' + e.message));
+});
+const waitFaces = () => { if (window.__faces) { window.__ready = true; } else setTimeout(waitFaces, 150); };
+waitFaces();
+</script>
+</body>
+</html>

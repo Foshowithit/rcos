@@ -1,5 +1,7 @@
 # Creative study loop (reference -> measured targets)
 
+Registry id: `creative-study-loop` · kind: `runbook`
+
 The acquisition loop that turns best-in-class creative work into measured
 targets our productions are gated against. Home:
 `~/.zcode/workspace/default/creative-study/`.

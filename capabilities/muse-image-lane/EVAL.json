@@ -3,7 +3,8 @@
   "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
   "gates": [
     { "id": "vault-key", "kind": "deterministic", "check": "request authenticates from the Mac vault key ref; the key is never printed or committed" },
-    { "id": "spelled-text", "kind": "llm", "check": "every spelled word in the image matches the brief exactly" },
-    { "id": "dimensions", "kind": "deterministic", "check": "delivered asset matches the lane's native 2240x1120 shape" }
+    { "id": "transport", "kind": "deterministic", "check": "HTTP 200, b64 payload decodes, sips WebP->PNG conversion yields a nonzero image" },
+    { "id": "dimensions", "kind": "deterministic", "check": "delivered asset matches the lane's native shape (2240x1120 / 1600x2240)" },
+    { "id": "sighted-consensus", "kind": "llm", "check": "muse-spark sighted prompt-adherence read with SHIP x2 consensus; spelled words match the brief exactly" }
   ]
 }

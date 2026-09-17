@@ -1,5 +1,7 @@
 # Chalk explainer capture recipe
 
+Registry id: `chalk-capture-recipe` · kind: `runbook`
+
 Canvas capture for the chalk-explainer engine: warm up with
 `__cineFrame(0)`, explicitly `document.fonts.load` both Caveat weights,
 re-await `fonts.ready` before capture (canvas measureText does NOT trigger

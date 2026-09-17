@@ -1,0 +1,9 @@
+{
+  "capability": "audio-offline-verify",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "container", "kind": "deterministic", "check": "ffprobe parses; video codec matches --expect-video; duration inside [--min-s, --max-s]" },
+    { "id": "audio-track", "kind": "deterministic", "check": "audio codec matches --expect-audio (aac present, or genuinely absent when 'none')" },
+    { "id": "sounds", "kind": "deterministic", "check": "with --audio-must-sound: astats RMS_level > -60 dBFS (None/-inf = FAIL); RMS always reported" }
+  ]
+}

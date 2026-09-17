@@ -1,0 +1,13 @@
+import { chromium } from '/Users/adam26/.nvm/versions/node/v24.15.0/lib/node_modules/playwright/index.mjs';
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const page = await browser.newPage({ viewport: { width: 900, height: 900 } });
+page.on('console', m => console.log('CONSOLE[' + m.type() + '] ' + m.text().slice(0, 200)));
+page.on('pageerror', e => console.log('PAGEERROR ' + String(e).slice(0, 300)));
+page.on('response', r => { if (r.status() >= 400) console.log('HTTP' + r.status() + ' ' + r.url()); });
+page.on('requestfailed', r => console.log('REQFAIL ' + r.url().slice(-60) + ' ' + (r.failure()?.errorText || '')));
+await page.goto('http://127.0.0.1:8751/viewer.html', { waitUntil: 'networkidle', timeout: 20000 }).catch(e => console.log('GOTO ' + String(e).slice(0, 120)));
+await page.waitForTimeout(8000);
+const st = await page.evaluate('({ready: window.__ready, err: window.__error || null, hasThree: !!window.__render})').catch(e => 'EVALFAIL ' + String(e).slice(0, 120));
+console.log('STATE ' + JSON.stringify(st));
+await page.screenshot({ path: 'debug.png' });
+await browser.close();

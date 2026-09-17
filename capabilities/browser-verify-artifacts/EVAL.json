@@ -2,8 +2,9 @@
   "capability": "browser-verify-artifacts",
   "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
   "gates": [
-    { "id": "http-serve", "kind": "deterministic", "check": "page served over http(s); file:// gets a zero" },
-    { "id": "zero-console-errors", "kind": "deterministic", "check": "console error count captured during the pass is exactly 0" },
-    { "id": "rendered-proof", "kind": "deterministic", "check": "a screenshot or dataURL capture of the rendered state is archived" }
+    { "id": "http-serve", "kind": "deterministic", "check": "page served over http(s); file:// refused; every fetched resource status < 400" },
+    { "id": "zero-console-errors", "kind": "deterministic", "check": "console error count and pageerror count across load + probe window are exactly 0" },
+    { "id": "rendered-proof", "kind": "deterministic", "check": "screenshot archived; canvas pixel SD > 4 (blank-screen check — all-green empty frame fails)" },
+    { "id": "sighted", "kind": "llm", "check": "muse-spark reads the archived screenshot for gross defects before any ship call" }
   ]
 }

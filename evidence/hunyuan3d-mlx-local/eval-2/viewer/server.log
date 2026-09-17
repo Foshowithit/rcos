@@ -1,0 +1,9 @@
+::ffff:127.0.0.1 - - [17/Sep/2026 19:43:51] "GET /viewer.html HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [17/Sep/2026 19:43:51] "GET /three.module.js HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [17/Sep/2026 19:43:51] "GET /environments/RoomEnvironment.js HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [17/Sep/2026 19:43:51] "GET /loaders/GLTFLoader.js HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [17/Sep/2026 19:43:51] "GET /three.core.js HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [17/Sep/2026 19:43:51] "GET /utils/SkeletonUtils.js HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [17/Sep/2026 19:43:51] "GET /utils/BufferGeometryUtils.js HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [17/Sep/2026 19:43:52] "GET /textured.glb HTTP/1.1" 200 -
+::ffff:127.0.0.1 - - [17/Sep/2026 19:43:52] "GET /favicon.ico HTTP/1.1" 200 -

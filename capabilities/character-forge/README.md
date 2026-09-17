@@ -1,5 +1,7 @@
 # Character forge: muse sheet → TripoSR → standup GLB
 
+Registry id: `character-forge` · kind: `workflow`
+
 One character image (clean background, A-pose or seated) → film-ready GLB
 (1.8m normalized, +Y up, feet origin) via TripoSR on the Dell, packaged by
 standup.py, gated fail-closed, receipted. Registered as the Archon workflow

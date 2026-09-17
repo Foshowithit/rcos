@@ -1,0 +1,3 @@
+[0m→ [0mRead frames/f0000.png
+[0m→ [0mRead frames/f0047.png
+KILL — face plane is unlit fullbright white (`scene_v2.html:74` MeshBasicMaterial) floating 3.5cm in front of frame front (`-2.5` vs `-2.535`), zero frame shadow/contact into dark wall, reads as sticker not scene.

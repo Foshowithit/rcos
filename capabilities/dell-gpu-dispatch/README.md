@@ -1,5 +1,7 @@
 # Dell GPU-first render/encode dispatch
 
+Registry id: `dell-gpu-dispatch` · kind: `runbook`
+
 Renders are Dell work, never the Mac. Encode with `h264_nvenc`, Blender
 with `-t 16`, Chrome capture with `--use-angle=openGL
 --ignore-gpu-blocklist`. Byte-level determinism is unfixable in EEVEE —

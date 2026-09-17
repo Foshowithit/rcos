@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- hunyuan3d-mlx-local eval-2 sighted gate: render the textured bearing GLB -->
+<html><head><meta charset="utf-8">
+<script type="importmap">
+{ "imports": { "three": "./three.module.js" } }
+</script>
+<style>html,body{margin:0;background:#1a1c20}#c{display:block}</style>
+</head><body>
+<canvas id="c" width="900" height="900"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from './loaders/GLTFLoader.js';
+import { RoomEnvironment } from './environments/RoomEnvironment.js';
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+renderer.setSize(900, 900, false);
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.background = new THREE.Color(0x1a1c20);
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+camera.position.set(2.6, 1.7, 3.2);
+camera.lookAt(0, 0, 0);
+scene.add(new THREE.HemisphereLight(0xdfe6ee, 0x30343b, 1.15));
+const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(3, 5, 4); scene.add(key);
+const rim = new THREE.DirectionalLight(0xbfd0e0, 0.8); rim.position.set(-4, 2, -3); scene.add(rim);
+new GLTFLoader().load('./textured.glb', (g) => {
+  const box = new THREE.Box3().setFromObject(g.scene);
+  const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
+  g.scene.position.sub(c);
+  const f = 2.2 / Math.max(s.x, s.y, s.z);
+  g.scene.scale.setScalar(f);
+  scene.add(g.scene);
+  renderer.render(scene, camera);
+  window.__ready = true;
+}, undefined, (e) => { window.__error = String(e); window.__ready = true; });
+window.__render = () => renderer.render(scene, camera);
+</script></body></html>

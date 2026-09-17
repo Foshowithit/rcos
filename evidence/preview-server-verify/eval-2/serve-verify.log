@@ -1,0 +1,5 @@
+GET http://127.0.0.1:50773/scene_v2.html -> HTTP 200 (7461 bytes)
+sha256 served 9cf465d07097a640  docroot-disk 9cf465d07097a640
+sha256 expect 9cf465d07097a640 (pinned at authoring time)
+teardown: port 50773 refuses (closed)
+SERVE_VERIFY_PASS

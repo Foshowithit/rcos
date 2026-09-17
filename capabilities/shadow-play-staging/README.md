@@ -1,5 +1,7 @@
 # Backlit shadow-play staging + light geography
 
+Registry id: `shadow-play-staging` · kind: `runbook`
+
 The craft recipe behind the fapcoin shadow films: a figure sits BEHIND a
 backlit paper screen and only its shadow is the art. Proven shape:
 - Emissive paper (emissiveMap) + ShadowMaterial catcher ~1.2cm in front

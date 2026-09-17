@@ -25,17 +25,21 @@ test('dashboard is deterministic and summarizes the registry', () => {
 
 test('promoted capabilities sort first with eval dots', () => {
   const reg = JSON.parse(JSON.stringify(SEED));
-  const idx = reg.capabilities.findIndex((c) => c.status === 'candidate');
-  reg.capabilities[idx].status = 'promoted';
-  reg.capabilities[idx].admitted_after = ['t-1', 't-2'];
-  reg.capabilities[idx].evals = [
+  // seed-state-independent: the registry may be fully promoted, so build the
+  // two candidate slots the sort invariant needs from the promoted tail.
+  const tail = reg.capabilities.filter((c) => c.status === 'promoted').slice(-2);
+  assert.equal(tail.length, 2, 'registry keeps at least two promoted');
+  const [a, b] = tail;
+  a.status = 'candidate';
+  b.status = 'candidate';
+  a.status = 'promoted';
+  a.admitted_after = ['t-1', 't-2'];
+  a.evals = [
     { task_id: 't-1', verdict: 'ship', run_id: 'r-1' },
     { task_id: 't-2', verdict: 'ship', run_id: 'r-2' }
   ];
   const html = renderDashboard(reg);
   assert.match(html, new RegExp(counts(reg).promoted + ' promoted'));
-  // the just-promoted capability renders before any remaining candidate
-  const stillCandidate = reg.capabilities.find((c) => c.status === 'candidate');
-  assert.ok(stillCandidate, 'registry keeps at least one candidate');
-  assert.ok(html.indexOf(reg.capabilities[idx].id) < html.indexOf(stillCandidate.id));
+  // the just-promoted capability renders before the remaining candidate
+  assert.ok(html.indexOf(a.id) < html.indexOf(b.id), 'freshly promoted sorts before remaining candidate');
 });

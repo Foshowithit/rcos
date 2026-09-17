@@ -1,0 +1,2 @@
+WINDOW-12: mean=4.39 min=2.91
+PASS (threshold: window min > 2.0)

@@ -1,5 +1,7 @@
 # HOG QA headless suite pattern
 
+Registry id: `hog-qa-suite` · kind: `script`
+
 ## Contract
 - Covers: pre-ship QA of the HOG CRANKERS game (and any `game-fleet/` web
   build served on localhost) — automated Playwright passes across the 5

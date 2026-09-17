@@ -1,5 +1,7 @@
 # QR camo embed recipe
 
+Registry id: `qr-camo-embed` · kind: `script`
+
 Scannable QR embedded INTO artwork (Twitter-header class output), blended
 so it reads as part of the piece — not invisible, not a sticker.
 

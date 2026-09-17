@@ -1,0 +1,5 @@
+GET http://127.0.0.1:50766/dashboard.html -> HTTP 200 (29 bytes)
+sha256 served 074dc7bb4cbe03a1  docroot-disk 074dc7bb4cbe03a1
+sha256 expect d7a5a182c099b251 (pinned at authoring time)
+teardown: port 50766 refuses (closed)
+FAIL STALE_OR_WRONG_BYTES served != expected (split-brain catch)
