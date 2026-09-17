@@ -46,12 +46,21 @@ import usage as UG            # noqa: E402
 from run_arm_h1 import (LANES, _manifest_tree_sha256,  # noqa: E402
                         CANDIDATE_INPUT_MANIFEST_SCHEMA)
 
-# Positive-work usage: 1500 total prompt tokens, 400 cached -> 1100 uncached,
-# 250 output -> primary_work 1350. ZERO-WORK (primary_work <= 0) must never
-# be the accidental shape of a fixture.
-USAGE_RAW = {"prompt_tokens": 1500, "completion_tokens": 250,
-             "total_tokens": 1750,
-             "prompt_tokens_details": {"cached_tokens": 400}}
+# Positive-work usage, schema-correct per lane (AMEND-2026-09-16-lane-p:
+# P is anthropic-messages, so input_tokens 1500 EXCLUDES the 400
+# cache-read tokens -> uncached 1500, primary_work 1750; openai lanes:
+# prompt_tokens 1500 cache-inclusive -> uncached 1100, primary_work
+# 1350). ZERO-WORK (primary_work <= 0) must never be the accidental
+# shape of a fixture. The raw shape follows the lane's preregistered
+# adapter.
+def _usage_raw_for(lane):
+    if (UG.PROVIDER_NORMALIZERS[LANES[lane]["normalizer"]]
+            ["raw_schema"]) == "anthropic-messages":
+        return {"input_tokens": 1500, "output_tokens": 250,
+                "cache_read_input_tokens": 400}
+    return {"prompt_tokens": 1500, "completion_tokens": 250,
+            "total_tokens": 1750,
+            "prompt_tokens_details": {"cached_tokens": 400}}
 GEN_PARAMS = {"temperature": 0, "max_tokens": 16, "top_p": 1}
 MESSAGES = [{"role": "user", "content": "FIXTURE-ACK"}]
 DEFAULT_SOLVER = ("def solve(input_dir, output_path):\n"
@@ -83,9 +92,10 @@ def _write_usage_evidence(d, lane):
                "request_body_sha256": hashlib.sha256(blob).hexdigest(),
                "request_body_file": req_name,
                "request_body_file_sha256": hashlib.sha256(blob).hexdigest(),
-               "usage_raw": USAGE_RAW,
+               "usage_raw": _usage_raw_for(lane),
                "usage_raw_sha256": hashlib.sha256(
-                   json.dumps(USAGE_RAW, sort_keys=True).encode()).hexdigest(),
+                   json.dumps(_usage_raw_for(lane),
+                              sort_keys=True).encode()).hexdigest(),
                "normalizer_id": spec["normalizer"],
                "normalizer_version": UG.NORMALIZER_VERSION,
                "normalizer_rule": "fixture_modelrun: hermetic, not evidence"}
@@ -95,7 +105,8 @@ def _write_usage_evidence(d, lane):
     nu = UG.write_normalized_usage(rp)
     provider_obj = {"id": f"fixture-{lane.lower()}-{call_id}",
                     "model": spec["echo_acceptable"][0],
-                    "created": int(time.time()), "usage": USAGE_RAW,
+                    "created": int(time.time()),
+                    "usage": _usage_raw_for(lane),
                     "choices": [{"message": {"content": "FIXTURE-ACK"}}]}
     idp = ID.record_identity(d, spec["base"], spec["model"], provider_obj,
                              extra_params=GEN_PARAMS,

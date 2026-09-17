@@ -204,14 +204,16 @@ ARRIVAL_FRESH = json.dumps({
     "decision": "fresh",
     "execution_payload": {"solver_py": SOLVER_T0},
     "notes": "h32 fake arrival"})
+# Lane-P provider response model (AMEND-2026-09-16-lane-p):
+# anthropic-style /messages reply from union-alpha. input_tokens
+# EXCLUDES the 400 cache-read tokens (reported separately).
 RESP_TMPL = {
-    "id": "chatcmpl-h32-0001", "object": "chat.completion",
-    "created": 1799999999, "model": "minimax-m3",
-    "choices": [{"index": 0, "finish_reason": "stop",
-                 "message": {"role": "assistant", "content": None}}],
-    "usage": {"prompt_tokens": 1500, "completion_tokens": 250,
-              "total_tokens": 1750,
-              "prompt_tokens_details": {"cached_tokens": 400}}}
+    "id": "msg_h32-0001", "type": "message", "role": "assistant",
+    "model": "union-alpha",
+    "content": [{"type": "text", "text": None}],
+    "stop_reason": "end_turn",
+    "usage": {"input_tokens": 1500, "output_tokens": 250,
+              "cache_read_input_tokens": 400}}
 
 
 class FakeResp:
@@ -232,7 +234,7 @@ class FakeResp:
 
 def install_counting_transport(usage_mod, content):
     payload = json.loads(json.dumps(RESP_TMPL))
-    payload["choices"][0]["message"]["content"] = content
+    payload["content"][0]["text"] = content
     calls = []
 
     def fake_urlopen(req, timeout=None):
