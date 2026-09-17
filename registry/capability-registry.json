@@ -290,6 +290,24 @@
       "reuse_count": 0,
       "last_eval": "2026-09-17",
       "lineage": "dgrauet/hunyuan3d-2.1-mlx + PR8 scheduler patch + prep_reference.py (rembg+recenter); hero_front -> textured.glb 2026-09-17 (shape 8-11min, texture 19min, RSS <=8.2GB, extents 0.77/1.99/0.48, 4096 PBR); venv ~/venvs/hunyuan3d-mlx; known: face close-ups collapse (route faces to local-talking-heads)"
+    },
+    {
+      "id": "face-in-scene-shot",
+      "name": "Face-in-scene compositing (talking frames as deterministic scene texture)",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "talking-portrait-insert-3s",
+          "verdict": "ship",
+          "run_id": "fapcoin-webgl/build/shot-face-3s.mp4 (3.0s 1080 h264+aac, motion 3.2-6.3, muse SHIP 'usable speaking-portrait insert'); commit 683ea74"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "shot_face.html + build/shot-face-3s.mp4 (2026-09-17): LivePortrait frames as a live framed portrait on a study wall; PNG-sequence capture (no video decode in the CDP path); z-gap trap (coplanar planes z-fight); muse SHIP; consumer: fapcoin films"
     }
   ]
 }
