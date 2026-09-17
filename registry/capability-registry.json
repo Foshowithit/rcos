@@ -272,6 +272,24 @@
       "reuse_count": 0,
       "last_eval": "2026-09-17",
       "lineage": "workspace/default/creative-study/{README,QUEUE,PLAYBOOK}.md + rig; round-1 2026-09-17 classes I/L/M measured, ours-films compared, targets written receipt-cited"
+    },
+    {
+      "id": "hunyuan3d-mlx-local",
+      "name": "Local textured characters (Hunyuan3D-2.1 MLX on Mac)",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "hero-front-textured-e2e",
+          "verdict": "ship",
+          "run_id": "fapcoin-webgl/charforge/hunyuan/textured.glb (14.1MB, PBR 4096 albedo+MR, human extents, watertight shape; muse SHIP body / KILL face-closeup); agent report in shared AGENTS.md 09-17"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "dgrauet/hunyuan3d-2.1-mlx + PR8 scheduler patch + prep_reference.py (rembg+recenter); hero_front -> textured.glb 2026-09-17 (shape 8-11min, texture 19min, RSS <=8.2GB, extents 0.77/1.99/0.48, 4096 PBR); venv ~/venvs/hunyuan3d-mlx; known: face close-ups collapse (route faces to local-talking-heads)"
     }
   ]
 }
