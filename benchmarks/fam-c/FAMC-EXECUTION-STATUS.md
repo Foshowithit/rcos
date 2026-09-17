@@ -860,3 +860,82 @@ governed, locked or state byte changes. The certified refs are therefore
 which the targeted constant re-certification — preflight, the epoch-3
 lineage check, `smoke_h38_epoch3.py` and the four live-lineage suites — was
 re-run green).
+
+### Reconciliation with `main` (EPOCH-3 submission boundary)
+
+The EPOCH-3 implementation slice closed at `56f4156` on `r4-reconcile`, which
+had diverged from `main` (`80355c5`, PR #18 / EPOCH-2): 15 ahead / 7 behind,
+no open PR. `main`'s seven intervening commits are exactly `Merge pull request
+#12-#18 from Foshowithit/r4-reconcile` merges — `main` carries only earlier
+states of this same experiment branch — so the reconciliation is the
+byte-inert integration merge `895b84970b3d0a5b92108a9fd5e1a1802ac0cf75`
+("Reconcile r4-reconcile with main (80355c5) for the EPOCH-3 submission"):
+`origin/main` merged into `r4-reconcile`, with `r4-reconcile` as the merge's
+first parent.
+
+Byte-inertness is proven, not asserted. Before the merge, `git merge-tree
+--write-tree HEAD origin/main` returned tree
+`29f44dd883cae9a45de3227b3e09acca61c430b0` — identical to `56f4156^{tree}`,
+rc=0, no conflicts; after it, the merge commit's tree is that same object,
+and `git diff 56f4156 HEAD` is empty. `git status --porcelain
+--untracked-files=all` is unchanged (the fourteen frozen Q-lane operator-error
+evidence files, still untracked, byte-for-byte), and no governed, locked,
+state, suite or manifest byte changed. `origin/main` is now an ancestor of the
+branch tip (0 behind / 16 ahead).
+
+The merge's first parent is `56f4156`, so the chronology rules the locks and
+preflight pin are intact: A12l D11.2 (the branch walk is first-parent, and the
+merge contributes no new first-parent content state), A12i D9 (the recorded
+path remains a subsequence of the file's committed content states on the
+experiment branch), and A12l D11.1 (on-disk `PROTOCOL-LOCK.json` bytes equal
+the committed experiment-HEAD bytes). This is an integration merge, never a
+rebase: no committed content state was rewritten.
+
+Certification at the reconciliation tip `895b849` — tree byte-identical to the
+previously certified `56f4156`, clean `/tmp/rcos-runs` + `/tmp/rcos-visible`,
+`umask 077`, per-suite DIRECT exit codes, never a pipeline
+(`/tmp/e3-cert-run-battery.sh`, tag `reconcile-tip`, 20:55:55Z–21:04:45Z):
+
+- full smoke battery `40/40 suites PASS`, `1287/1287` individual checks closed
+  — the same totals as the pre-merge baseline at `56f4156` (tag
+  `cert-tip-strict`), including `harness/tests/smoke_h38_epoch3.py` `21/21`
+  (the twelve frozen adversarial probes) and the four suites that read this
+  file (`smoke_h14_production_main.py` `25/25`, `smoke_h32_d12.py` `25/25`,
+  `smoke_h33_d12b.py` `31/31`, `smoke_h34_d13.py` `29/29`);
+- `python3 benchmarks/fam-c/preflight.py` `V1-instance 0 / V2-protocol 0 /
+  V3-execution 0`;
+- `python3 harness/epoch_transition.py --check`: epoch 3, green;
+- `benchmarks/fam-c/runs/_synthetic-attack/run_attack.sh` `5 PASS / 0 FAIL` at
+  that ref (manifest refreshed in this commit, `dirty_files: 1` — only the
+  frozen untracked operator-error evidence);
+- both epoch-3 locks remain OPEN (`open-round2` / `living-lock`); the FINAL
+  gate still refuses a wired estimand cell, naming both locks.
+
+Operational note (attack driver). `run_attack.sh` must be invoked with `umask
+077`, as the battery driver does. Under a group-writable ambient umask (`0002`
+on this host) its `smoke_h34_d13` fixture worktree gets `0o775` state
+directories and the `NAMESPACE-WRITABLE-DENY` probe fires — the suite is right,
+the environment is wrong; the same suite closes `29/29` under `umask 077`. A
+failed run aborts before its fixture cleanup, leaving `/tmp/h34-d13-worktree`
+registered-but-missing, after which later runs die at `git worktree add` until
+`git worktree prune`; both states were observed and cleared during this
+certification.
+
+#### Record-accuracy note (flagged, not rewritten)
+
+The certification notes above (refs `a7cd53d`, `452e063`) record `43/43 suites
+PASS`, `1319/1319` individual checks closed. That figure is not reproducible
+from any artifact on the run host: the suite universe is the 40 files matched
+by `harness/tests/smoke_*.py` — exactly what the certification battery
+enumerates — at those refs and at `56f4156` and `895b849` alike, and the
+archived batteries record `40/40` suites and `1287/1287` checks
+(`/tmp/e3-cert-out/battery2`, tag `cert-tip-strict`, at `56f4156`; the
+reconciliation battery at `895b849`). No 43-suite / 1319-check battery artifact
+was located (the search over ~8,700 `/tmp` entries was bounded to recorded
+battery paths). These are certified historical records and are left exactly as
+written; the flagged discrepancy is for the auditor. The number the EPOCH-3
+submission cites is the artifact-backed `40/40` / `1287/1287`.
+
+Per the standing ruling, this reconciliation is the submission boundary: no
+further epoch or slice work starts on this branch until the EPOCH-3 PR is
+reviewed there.
