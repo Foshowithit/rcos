@@ -595,3 +595,67 @@ First epoch-2 cells (all recorded outcomes, no retries of judgments):
   and downstream solves consistently fail container execution (rc 1) across
   A(P), C(P-attempt), C(Q), B(P) — a family-level pattern worth watching;
   all recorded as outcomes, none retried.
+
+
+## EPOCH 2 STOPPED — parse-denial ruling; EPOCH-3 spec drafted (docs-only) — 2026-09-17
+
+Ruling: third-party governance seat, 2026-09-17 ~10:30Z
+(`/home/chow/rcos-campaign/RULING-2026-09-17-parse-denial.md`):
+"CONTRACT-PARSE-DENY = EXPERIMENTAL OUTCOME. N=1. NO
+RETRY-UNTIL-ADMISSIBLE. ATTEMPT 2 PRESERVED, NON-ESTIMAND. EPOCH 2 STOPS AT
+THE UNREPRESENTABLE FINAL CELL. EPOCH 3 MAY ADD A PRE-FROZEN
+MODEL-OUTPUT-INVALID TERMINAL AND RESTART CLEAN."
+
+META (docs only — this slice changed no lock, no harness byte, no
+`state/` file, made no provider call, and ran no battery):
+
+- **Epoch 2 is STOPPED at cell 64/240** (`b933d9322add55cc`,
+  PQ/C/fam04/T0, lane Q). The fail-closed contract raised
+  `CONTRACT-PARSE-DENY` on the authorized sample, so no `arrival.json`, no
+  manifest, and no chain terminal exist; the FINAL lineage has no lawful
+  ordered-path representation for that tuple. No terminal was invented for
+  the cell, nothing under `state/` was written or moved, and
+  `completed_cells()` must NOT advance past the prefix tip
+  `e38ed4c1c456fe6a` (cell 63). The ~176 later events remain withheld.
+- Stop record: `EPOCH-2-STOP-RECORD.md` (new; sha256
+  `7c076ee23e246d06ac6ab21f0e3644b5a4a91e295edf39f9b8c47af5ea8a3881`) —
+  what ran (prefix cells 0–63 across fam05/fam03/fam01 and fam04-A; eight
+  T0 acquisitions, seven arrivals all rc 1, seven failed candidate
+  validations, zero valid candidates, no promotion and no lock ever minted),
+  both preserved attempts' classification, and the no-capability statement.
+  It creates no terminal and is evidence about why epoch 2 stopped.
+- Epoch-3 spec draft: `EPOCH-3-PROTOCOL-SPEC.md` (new; sha256
+  `6db4a7fba352307899420c8cc2f7fceace878e55ca1a9de52877b9c66050d8a6`) —
+  the pre-frozen `MODEL-OUTPUT-INVALID.json` terminal (schema, field
+  semantics, writer site at the runner's parse gate, forbidden companions),
+  the progress algebra (COMPLETE-FAILURE for model cells; T0 failure ⇒
+  T1/T2/T3/T4 NOT-EVALUABLE acquisition-failed, PROMOTION NOT-PROMOTED,
+  CAPABILITY_LOCK NOT-LOCKED), attempt-level reliability statistics, the
+  infrastructure boundary, and the epoch-3 lineage/restart-from-0
+  discipline. DRAFT — not frozen.
+- Freeze request: `FREEZE-REQUEST.md` (new; sha256
+  `b4889c57eda2f87cf4ca09e0adeba594eba08094426d4a09382dedc240b292a6`) —
+  FR-1 … FR-13 for third-party adjudication (terminal name/schema, status
+  token and algebra, writer site, forbidden companions, validator symmetry
+  incl. the no-T1 governance terminals, attempt accounting, lineage
+  mechanics and citations, restart-from-0, infra boundary, terminal-cell
+  reporting, epoch-2 stop visibility, implementation authorization +
+  certification, and the preflight `META` wiring for these new root docs),
+  plus the recorded conflicts (A12d predicate vs the no-T1 algebra;
+  pair-replacement granularity; §24 row shape; diagnostic-repeat placement;
+  the unclassified preserved epoch-2 call; certification extras; and whether
+  the seat supplies an explicit "epoch 2 CLOSED" formulation).
+- Preserved epoch-2 evidence is read-only and unchanged:
+  `state/epoch2/_operator-errors/PQ-C-fam04-T0-lane-Q-attempt/`
+  (`INCIDENT.json` sha256
+  `ccf2dc65adf1e8f8c2f23bb62f168457fcf00ddcf1546def3f43a1233fce49b5`;
+  attempt-1 `f23da2d0f49e052b`, 1444 B; attempt-2 `a63ba445157af666`,
+  42,766 B, non-estimand diagnostic repeat).
+- Certification note (recorded, not hidden): these three root-level docs are
+  V1 INSTANCE-FREEZE extras under the current `preflight.py` `META` set
+  (FR-13); this docs-only slice may not amend `preflight.py` (protocol
+  governed), so the named findings are expected and listed for the seat.
+
+Next: the third-party seat adjudicates `FREEZE-REQUEST.md`. No epoch-3
+implementation and no epoch-3 model call precede that freeze; epoch 2 stays
+stopped/incomplete as recorded.
