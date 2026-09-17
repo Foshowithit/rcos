@@ -4,12 +4,13 @@ Requested: 2026-09-17, by the operator session, per the ruling at
 `/home/chow/rcos-campaign/RULING-2026-09-17-parse-denial.md` ("EPOCH 3 MAY
 ADD A PRE-FROZEN MODEL-OUTPUT-INVALID TERMINAL AND RESTART CLEAN").
 
-Artifacts under request (bytes as shipped in the docs-only slice; sha256):
+Artifacts under request (CORRECTED bytes from the docs-only correction
+commit on `r4-reconcile`, child of `8b5e270`; sha256):
 
 - `benchmarks/fam-c/EPOCH-3-PROTOCOL-SPEC.md`
-  sha256 `6db4a7fba352307899420c8cc2f7fceace878e55ca1a9de52877b9c66050d8a6`
+  sha256 `1ce2bbc8b8981b4c1a51c6858a6f5c3950b5a9476fb2a3f8d99351308d3166d7`
 - `benchmarks/fam-c/EPOCH-2-STOP-RECORD.md`
-  sha256 `7c076ee23e246d06ac6ab21f0e3644b5a4a91e295edf39f9b8c47af5ea8a3881`
+  sha256 `4e0e84ec6c4f13baebd319b40e11ce1beb6258110146fb1d6066afed74e70f4c`
 
 How to freeze: return an adjudication per item (ACCEPT / ACCEPT-AS-AMENDED
 with the amended text / REJECT with reason). On ACCEPT of every item, the
@@ -23,7 +24,58 @@ considered, and the consequence of the decision.
 
 ---
 
+## ADJUDICATION OUTCOME — 2026-09-17 (third-party seat)
+
+Verdict: **ACCEPT-AS-AMENDED AT THE DESIGN LEVEL — EPOCH 3 IS NOT YET
+FROZEN, AND IMPLEMENTATION IS NOT YET AUTHORIZED.** Authority (verbatim
+record): `/home/chow/rcos-campaign/FREEZE-ADJUDICATION-2026-09-17.md`. The
+seat verified that `8b5e27011cfa0b4640af11840b2b45c0d641cfc7` is genuinely
+spec-first (docs only; no harness byte, lock, or `state/` evidence changed)
+and approved the architecture, requiring ONE more docs-only correction commit
+applying the item amendments below. The seat will adjudicate the DIFF only
+against its ruling — no new criteria at that point — and if it matches, the
+next ruling is `EPOCH-3-SPEC-FROZEN — IMPLEMENTATION AUTHORIZED`.
+
+Applied in: the docs-only correction commit on `r4-reconcile` (child of
+`8b5e270`), touching only `EPOCH-3-PROTOCOL-SPEC.md`,
+`EPOCH-2-STOP-RECORD.md`, `FREEZE-REQUEST.md`, and — to record this ruling —
+`FAMC-EXECUTION-STATUS.md`. No harness change, no lock change, no `state/`
+write, no model call.
+
+Supersession rule: for every item disposed ACCEPT-AS-AMENDED, the NORMATIVE
+text is the corrected `EPOCH-3-PROTOCOL-SPEC.md` at the section named below;
+any proposal wording in this request that differs from it is superseded. This
+request remains historical META (per the seat's FR-13 ruling); its
+disposition table is the record of what was asked and how it was ruled.
+
+| Item | Disposition | Amendment applied (normative location) |
+|---|---|---|
+| FR-1 | ACCEPT-AS-AMENDED | Production cell-identity surface (16-hex frozen ORDER-EXPANSION cell id, full field set), required non-null identity record, execution-authority bindings (protocol/execution lock, harness manifest, frozen spec sha), machine schema drops the local ruling path; validator re-runs the request/adapter/usage/identity binding checks AND replays `raw-<call_id>.txt` through `extract()` requiring the same eligible named error — replay yielding an arrival or a different error ⇒ INADMISSIBLE (spec §1) |
+| FR-2 | ACCEPT-AS-AMENDED | COMPLETE-FAILURE keeps progress, but its experimental task outcome is FAIL / non-SHIP, not missing evidence; algebra extended to BOTH acquisition events — T0 terminal, and T0 COMPLETE + T1 terminal with a real, never-validated candidate (spec §3) |
+| FR-3 | ACCEPT-AS-AMENDED | Writer site stated semantically (no line-number normativity); required ordering: persist request/receipt/normalized usage/identity + preserved response + attempt-ledger row → invoke `extract(raw)` → atomically create the write-once terminal; duplicate refuses; no `note_cell_completed()` (spec §2) |
+| FR-4 | ACCEPT | Forbidden-companion rule kept as submitted: call-capture evidence may coexist; any execution-implying companion makes the terminal INADMISSIBLE (spec §1) |
+| FR-5 | ACCEPT-AS-AMENDED | Exact governance evidence union frozen and supports both failure events; `reason: acquisition-failed` + `failure_event` + evidence binding in PROMOTION-OUTCOME.json; CAPABILITY-LOCK-OUTCOME.json binds the promotion bytes + same evidence; a null tip is never equivalent to an existing chain; validator re-derives from disk; genuine epoch-3 schema extension (spec §3.1) |
+| FR-6 | ACCEPT-AS-AMENDED | No diagnostic repeats in the live walk — a second same-cell provider invocation is `ATTEMPT-BUDGET-DENY`; the attempt ledger is the enumeration authority (binds the request body, null response only for a true no-sample infrastructure failure, hashes cross-check files, one row per lawful terminal); both statistics kept plus denominator decomposition (spec §4) |
+| FR-7 | ACCEPT-AS-AMENDED | Transition additionally cites the corrected stop-record sha, the frozen spec sha + its freeze commit, the exact frozen ORDER-EXPANSION.json sha, plus the epoch-2 lock hashes/transition hash/finalization commit; epoch machinery extension remains a post-freeze implementation item (spec §6) |
+| FR-8 | ACCEPT-AS-AMENDED | Restart at event 0, absolutely no splicing; wording corrected to a PILOT-GRADE estimand series per PREREG §18.1, never a "claim-grade Fam-C series" (spec §6) |
+| FR-9 | ACCEPT-AS-AMENDED | Sample boundary frozen (MODEL SAMPLE EXISTS = bound adapter returned a completion/sample object with lane-attributable model text handed to the frozen parser; provider/transport error before such a sample stays infrastructure even with an error body; unestablishable required identity = inadmissible/missing, not a terminal); acquisition replacement unit = indivisible T0+T1 of one (block, universe, family), one linked replacement from a fresh namespace, restart at T0, second failure ⇒ missing acquisition evidence / NOT-EVALUABLE / INCONCLUSIVE (spec §5) |
+| FR-10 | ACCEPT-AS-AMENDED | Evidence row corrected (ship:false; hidden_tests_passed and checker verdict/rc null; run_manifest_hash null; evidence_hash = terminal_record_sha256, retained explicitly; model_calls 1; retries 0; terminal_class MODEL-OUTPUT-INVALID as estimand evidence); capability_available derived from the frozen cell/validated lock while selection/load/invocation/consumption/material contribution stay false; T2/T3 terminal is a non-SHIP correctness failure, a treatment T4 terminal is never a specificity rejection (spec §4.1) |
+| FR-11 | ACCEPT-AS-AMENDED | Epoch 2 remains STOPPED / INCOMPLETE (not "closed"); no new epoch-2 state write; stop record reworded to the frozen index-63/index-64 sentence; "epoch-closure annex" renamed "epoch-stop annex" (`EPOCH-2-STOP-RECORD.md`) |
+| FR-12 | ACCEPT-AS-AMENDED, IMPLEMENTATION AUTHORIZATION DEFERRED until the corrected bytes are frozen | Twelve required adversarial probes plus full battery, V1/V2/V3 `0/0/0`, transition/lock certification, and post-FINAL refusal proofs; no epoch-3 model call before both epoch-3 locks are FINAL (spec §7) |
+| FR-13 | ACCEPT-AS-AMENDED | New root files / epoch-3 lock names join V1 META so they are not mistaken for frozen task-instance bytes; the V2/protocol-governed set extends to the existing seven files + `EPOCH-3-PROTOCOL-SPEC.md` (META must not exempt the spec from the epoch-3 protocol lock); `FREEZE-REQUEST.md` stays historical META; the preflight amendment is a post-freeze implementation item (spec §7 step 2) |
+
+Freeze status after this correction: NOT FROZEN; implementation remains
+unauthorized. The expected next ruling on these corrected bytes is
+`EPOCH-3-SPEC-FROZEN — IMPLEMENTATION AUTHORIZED`; if issued, the spec bytes
+become the frozen protocol text (recorded in the epoch-3 protocol lock's
+governed map per FR-13) and `EPOCH-3-TRANSITION.json` cites the frozen spec
+sha and its freeze commit (FR-7).
+
+---
+
 ## FR-1 — Terminal name and schema
+
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED.** Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §1 (proposal wording below is superseded where it differs).
 
 **Decision needed.** Is `MODEL-OUTPUT-INVALID.json` with schema
 `famc-model-output-invalid-v1` (EPOCH-3-PROTOCOL-SPEC.md §1, field list and
@@ -54,6 +106,8 @@ epoch 3 repeats epoch 2's stopping condition.
 
 ## FR-2 — Terminal status token and progress algebra
 
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED.** Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §3 (and §3.1).
+
 **Decision needed.** Is `terminal_status: "COMPLETE-FAILURE"` the status token
 that the walk treats as progress-valid for model cells, with the T0 algebra
 of §3?
@@ -82,6 +136,8 @@ without any retry, and no failure is ever reported as success.
 
 ## FR-3 — Writer site and write-once discipline
 
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED.** Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §2.
+
 **Decision needed.** Is the runner's parse gate the only writer?
 
 **Proposed text.** §2 verbatim: the terminal is written by
@@ -104,6 +160,8 @@ denies the sample, by the harness, before any adjudication; operators cannot
 manufacture or suppress it.
 
 ## FR-4 — Forbidden companions and "no fabricated evidence"
+
+**Disposition (2026-09-17): ACCEPT (unchanged).** Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §1.
 
 **Decision needed.** Is the companion rule of §1 (no `arrival.json`, no
 `H1-RUN-MANIFEST.json`, no `EVIDENCE-CHAIN.jsonl`, no candidate/adapter
@@ -129,6 +187,8 @@ evidence the accounting statistics depend on.
 half-executed evidence; attempt-level accounting keeps its raw material.
 
 ## FR-5 — Validator symmetry (the part that currently has no lawful path)
+
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED.** Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §3 and §3.1.
 
 **Decision needed.** Does the freeze authorize the matching authority-side
 changes: `order.progress_valid()` accepting `COMPLETE-FAILURE` for model
@@ -162,6 +222,8 @@ continuation rule extends to the no-candidate case without retry and without
 a fabricated candidate.
 
 ## FR-6 — Attempt accounting, statistics, and per-attempt preservation
+
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED** (no diagnostic repeats in the live walk; ledger is the enumeration authority; denominator decomposition reported). Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §4.
 
 **Decision needed.** Are the two statistics, the attempt ledger, and the
 per-attempt response-text preservation rule of §4 frozen?
@@ -198,6 +260,8 @@ derivable from preserved bytes; epoch 3 must not reproduce that loss.
 
 ## FR-7 — Epoch-3 lineage mechanics (fresh locks, citing what)
 
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED.** Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §6.
+
 **Decision needed.** Is the epoch-3 lineage record `EPOCH-3-TRANSITION.json`
 with §6's citations the frozen mechanism, and does the freeze authorize the
 matching epoch machinery extension (`harness/epoch.py` is epoch-2-specific
@@ -230,6 +294,8 @@ locks cannot inherit or amend the epoch-2 lineage.
 
 ## FR-8 — Restart from event 0, no splicing
 
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED** (PILOT-GRADE wording correction, PREREG §18.1). Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §6.
+
 **Decision needed.** Is the restart rule frozen (epoch 3 walks the frozen
 240-event order from ORDER-EXPANSION cell index 0, `9907c5cb038c02e0`), with
 epoch 2 preserved as a stopped/incomplete epoch whose cells populate no
@@ -252,6 +318,8 @@ re-derived under epoch 3.
 epoch-3 semantics, at the cost of repeating the executed prefix.
 
 ## FR-9 — Infrastructure boundary (restated) and replacement granularity
+
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED** (MODEL SAMPLE EXISTS boundary; acquisition replacement unit = indivisible T0+T1). Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §5.
 
 **Decision needed.** Is §5's mechanical boundary — response body exists ⇒
 experimental outcome, no response body (503-class, task receipt/execution
@@ -278,6 +346,8 @@ seven candidate validations failed, all roll-up verdicts blocked/fix) remains
 reportable as an experimental finding rather than an invalidation.
 
 ## FR-10 — Terminal-cell reporting: exit code, evidence row, admissibility
+
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED** (exit code 0 kept; evidence row corrected). Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §4.1.
 
 **Decision needed.** Three small mechanical choices for a terminal cell:
 (1) runner exit code; (2) its prereg §24 evidence-table row; (3) its
@@ -309,6 +379,8 @@ upgraded or omitted.
 
 ## FR-11 — Epoch-2 stop visibility (no state writes)
 
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED** (STOPPED/INCOMPLETE, not "closed"; frozen index-63/index-64 sentence; "epoch-stop annex"). Normative text: `EPOCH-2-STOP-RECORD.md`.
+
 **Decision needed.** Is the epoch-2 stop mechanism sufficient as: the
 `EPOCH-2-STOP-RECORD.md` bytes, the `INCIDENT.json` under
 `state/epoch2/_operator-errors/`, the status addendum in
@@ -332,6 +404,8 @@ transition needs frozen bytes to cite.
 evidence; epoch 3's boundary is verifiable against an immutable document.
 
 ## FR-12 — Implementation authorization and certification
+
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED; IMPLEMENTATION AUTHORIZATION DEFERRED until the corrected spec bytes are frozen.** Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §7 (twelve required adversarial probes + certification standard).
 
 **Decision needed.** Does the freeze authorize the implementation set
 (terminal writer in `run_arm_h1.py`; strict validator, `progress_valid`
@@ -362,6 +436,8 @@ certification exists to prove.
 implementation is certified rather than asserted.
 
 ## FR-13 — Certification wiring for the new root-level protocol docs
+
+**Disposition (2026-09-17): ACCEPT-AS-AMENDED** (V1 META additions; V2/governed set = seven files + `EPOCH-3-PROTOCOL-SPEC.md`; `FREEZE-REQUEST.md` stays historical META; preflight amendment is a post-freeze implementation item). Normative text: `EPOCH-3-PROTOCOL-SPEC.md` §7 step 2.
 
 **Decision needed.** The three new documents and the future
 `EPOCH-3-TRANSITION.json` sit at the Fam-C root, where preflight's V1

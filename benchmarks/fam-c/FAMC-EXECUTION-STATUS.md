@@ -659,3 +659,49 @@ META (docs only — this slice changed no lock, no harness byte, no
 Next: the third-party seat adjudicates `FREEZE-REQUEST.md`. No epoch-3
 implementation and no epoch-3 model call precede that freeze; epoch 2 stays
 stopped/incomplete as recorded.
+
+
+## EPOCH-3 FREEZE ADJUDICATED (ACCEPT-AS-AMENDED) — correction landed — 2026-09-17
+
+Ruling: third-party governance seat, 2026-09-17, recorded at
+`/home/chow/rcos-campaign/FREEZE-ADJUDICATION-2026-09-17.md`: **VERDICT
+ACCEPT-AS-AMENDED AT THE DESIGN LEVEL — "EPOCH 3 IS NOT YET FROZEN, AND
+IMPLEMENTATION IS NOT YET AUTHORIZED."** The seat verified that
+`8b5e27011cfa0b4640af11840b2b45c0d641cfc7` is genuinely spec-first (docs
+only; no harness byte, lock, or `state/` evidence changed), approved the
+architecture, and required ONE docs-only correction commit applying the
+item amendments FR-1 … FR-13. It will adjudicate the DIFF only against its
+ruling (no new criteria); if it matches, the next ruling is
+`EPOCH-3-SPEC-FROZEN — IMPLEMENTATION AUTHORIZED`.
+
+Applied (docs-only correction commit, child of `8b5e270` on `r4-reconcile`):
+
+- `EPOCH-3-PROTOCOL-SPEC.md` (sha256
+  `1ce2bbc8b8981b4c1a51c6858a6f5c3950b5a9476fb2a3f8d99351308d3166d7`) —
+  FR-1 production cell-identity/authority terminal schema + raw-response
+  replay validator; FR-2 FAIL / non-SHIP correctness semantics and the T1
+  failure branch; FR-3 semantic writer site + required ordering; FR-5 §3.1
+  governance evidence union; FR-6 `ATTEMPT-BUDGET-DENY` + ledger-as-
+  enumeration-authority + denominator decomposition; FR-7 transition
+  citations; FR-8 PILOT-GRADE wording (PREREG §18.1); FR-9 MODEL SAMPLE
+  EXISTS boundary + acquisition replacement unit; FR-10 §4.1 terminal-cell
+  reporting; FR-12 twelve-probe certification standard; FR-13 preflight
+  governance (implementation item).
+- `EPOCH-2-STOP-RECORD.md` (sha256
+  `4e0e84ec6c4f13baebd319b40e11ce1beb6258110146fb1d6066afed74e70f4c`) —
+  FR-11: frozen index-63/index-64 sentence, "epoch-closure annex" renamed
+  "epoch-stop annex", epoch 2 remains STOPPED / INCOMPLETE (not "closed").
+- `FREEZE-REQUEST.md` (sha256
+  `9c60056d87f29a8799aa2ba8750cbae942f9aab88d1ce9310dcab8cfcaeab232`) —
+  adjudication outcome recorded: verdict, verified base commit, per-item
+  dispositions FR-1 … FR-13, supersession rule; remains historical META.
+- This status addendum (META, docs only).
+
+Discipline: no harness byte changed, no lock touched, no `state/` write, no
+model call; the untracked epoch-2 operator-error evidence is untouched.
+
+State of the campaign: epoch 2 remains exactly STOPPED / INCOMPLETE with
+highest progress-valid cell index 63; the stop record creates no terminal for
+cell 64 and no walk may include cell 64 or any later cell in the completed
+prefix. Epoch 3 remains unfrozen and implementation unauthorized pending the
+seat's ruling on these corrected bytes.

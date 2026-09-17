@@ -12,9 +12,12 @@ PRE-FROZEN MODEL-OUTPUT-INVALID TERMINAL AND RESTART CLEAN."** … "Do not
 mutate FINAL to make the walk convenient." … "Epoch 2 remains preserved as a
 stopped/incomplete experimental epoch."
 
-This record is an epoch-closure annex. It is NOT a cell terminal, it writes
-nothing under `state/`, and it MUST NOT cause `completed_cells()` (or any
-other walk) to advance past cell index 64.
+This record is an epoch-stop annex. It is NOT a cell terminal and it writes
+nothing under `state/`. Frozen wording (adjudication 2026-09-17, FR-11):
+
+> Highest progress-valid epoch-2 cell index is 63. The stop record MUST NOT
+> make cell index 64 progress-valid, and MUST NOT cause any walk to include
+> cell 64 or any later cell in the completed prefix.
 
 ## Epoch-2 identity (frozen, immutable)
 
@@ -160,16 +163,18 @@ records.
 EPOCH 2 STOPS AT THIS PREFIX. The ~176 later events remain withheld. With no
 lawful terminal representation under FINAL, advancing past cell 64 would
 require changing frozen execution semantics after observing the outcome;
-FINAL is not mutated to make the walk convenient. Epoch 2 remains a stopped,
-incomplete, preserved experimental epoch at its recorded FINAL locks and
-state bytes. Its artifacts are immutable historical evidence and MUST NOT be
+FINAL is not mutated to make the walk convenient. Epoch 2 remains exactly
+STOPPED / INCOMPLETE — not "closed" — preserved at its recorded FINAL locks
+and state bytes, and no new epoch-2 state write is required or permitted. Its artifacts are immutable historical evidence and MUST NOT be
 amended, reclassified, replayed into, carried forward, or used to satisfy
 cells in a later epoch. The epoch-2 cell prefix may be reported only as
 stopped-prefix evidence, never as a completed segment of the 240-event order.
 
 This record creates no terminal for cell 64, does not make the cell
 COMPLETE-FAILURE, does not write under `state/`, and must not cause
-`completed_cells()` to advance. The lawful representation of this failure
+`completed_cells()` to advance: the highest progress-valid epoch-2 cell index
+is 63, and no walk may include cell 64 or any later cell in the completed
+prefix. The lawful representation of this failure
 class arrives only with the pre-frozen epoch-3 terminal
 (`EPOCH-3-PROTOCOL-SPEC.md`), and epoch 3 restarts the order from event 0
 (`FREEZE-REQUEST.md` FR-7/FR-8).
