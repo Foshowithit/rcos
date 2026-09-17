@@ -281,9 +281,14 @@
           "task_id": "creative-study-round4",
           "verdict": "ship",
           "run_id": "study-round4"
+        },
+        {
+          "task_id": "creative-study-round5",
+          "verdict": "ship",
+          "run_id": "study-round5"
         }
       ],
-      "reuse_count": 1,
+      "reuse_count": 2,
       "last_eval": "2026-09-17",
       "lineage": "creative-study/rig/study_run.py; 2026-09-17 round-1: 17 reference clips + 3 own films measured on Dell (ffmpeg scene>0.30/0.50 cuts, ebur128 loudness, 1fps thumbnails -> color/motion, k-means palette, contact sheet); receipts at workspace/default/creative-study/studies/*.json"
     },
@@ -317,9 +322,14 @@
           "task_id": "creative-study-round4-loop",
           "verdict": "ship",
           "run_id": "study-round4-loop"
+        },
+        {
+          "task_id": "creative-study-round5-loop",
+          "verdict": "ship",
+          "run_id": "study-round5-loop"
         }
       ],
-      "reuse_count": 1,
+      "reuse_count": 2,
       "last_eval": "2026-09-17",
       "lineage": "workspace/default/creative-study/{README,QUEUE,PLAYBOOK}.md + rig; round-1 2026-09-17 classes I/L/M measured, ours-films compared, targets written receipt-cited"
     },
