@@ -271,6 +271,11 @@
           "task_id": "creative-study-round2",
           "verdict": "ship",
           "run_id": "study-round2"
+        },
+        {
+          "task_id": "creative-study-round3",
+          "verdict": "ship",
+          "run_id": "study-round3"
         }
       ],
       "reuse_count": 0,
@@ -297,6 +302,11 @@
           "task_id": "creative-study-round2-loop",
           "verdict": "ship",
           "run_id": "study-round2-loop"
+        },
+        {
+          "task_id": "creative-study-round3-loop",
+          "verdict": "ship",
+          "run_id": "study-round3-loop"
         }
       ],
       "reuse_count": 0,
