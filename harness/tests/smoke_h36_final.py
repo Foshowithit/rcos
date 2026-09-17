@@ -83,18 +83,38 @@ check("A0 real three-authority preflight is green in this checkout",
       PF.validate_all(FAMC) == [], str(PF.validate_all(FAMC))[:200])
 # A0b (final epoch): on a FINAL repo the LIVE gate must PASS for a
 # descent-valid tree — the positive counterpart of the refusal proofs
-# below (which run against the open fixture worktree).
-if json.load(open(os.path.join(FAMC, "EXECUTION-LOCK.json"))).get("status") == "FINAL":
-    import subprocess as _sp
-    _probe = (
-        "import sys; sys.path.insert(0, %r); import run_arm_h1 as RA; "
-        "print(RA.final_lock_gate(%r))" % (
-            os.path.join(FAMC, "harness-run"), FAMC))
-    _pr = _sp.run([sys.executable, "-c", _probe], capture_output=True,
-                  text=True)
+# below (which run against the open fixture worktree). EPOCH-2
+# (EPOCH-1-CLOSURE.md): once the explicit transition record exists the
+# ACTIVE authorities are the fresh epoch-2 locks; a live gate probe then
+# PASSES only when BOTH of them are FINAL — while they are submitted OPEN
+# (the owner finalizes later) the correct live answer is the named
+# LOCK-NOT-FINAL refusal naming the epoch-2 lock. Both shapes are proved
+# here against whichever epoch the checkout is in.
+import epoch as _EP  # noqa: E402  (active-epoch lock resolution)
+_act_locks = _EP.active_lock_names(FAMC)
+try:
+    _act_states = [json.load(open(os.path.join(FAMC, n))).get("status")
+                   for n in _act_locks]
+except (OSError, ValueError):
+    _act_states = []
+_probe = (
+    "import sys; sys.path.insert(0, %r); import run_arm_h1 as RA; "
+    "print(RA.final_lock_gate(%r))" % (
+        os.path.join(FAMC, "harness-run"), FAMC))
+_pr = subprocess.run([sys.executable, "-c", _probe], capture_output=True,
+                     text=True)
+if _act_states == ["FINAL", "FINAL"]:
     check("A0b live post-FINAL gate PASSES on the real tree (descent-valid)",
           _pr.returncode == 0 and _pr.stdout.strip() == "[]",
           (_pr.stdout + _pr.stderr)[:200])
+else:
+    _live_gate = _pr.stdout.strip()
+    check("A0b live gate REFUSES the OPEN active-epoch locks (LOCK-NOT-FINAL, "
+          "naming them) — the epoch-1 FINAL locks authorize nothing under "
+          "epoch 2",
+          _pr.returncode == 0 and "LOCK-NOT-FINAL" in _live_gate
+          and all(n in _live_gate for n in _act_locks),
+          (_pr.stdout + _pr.stderr)[:240])
 
 # ---------------------------------------------------------------- surface
 # One disposable git worktree: real git history for the ancestry checks,

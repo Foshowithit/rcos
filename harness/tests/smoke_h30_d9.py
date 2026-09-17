@@ -114,12 +114,12 @@ def _live_branch_seq(fn):
 
 
 _SEQ = {fn: _live_branch_seq(fn) for fn in PF.PROTOCOL_GOVERNED}
-# Re-certified at A16 (f223675): preflight.py lineage 25 at 0cf5b9d (the
-# R4-RECONCILE-P0-R4-4 forward amendment, base d94dcf4) plus one
-# A16-FINAL-SEMANTICS commit -> 26.
+# Re-certified at EPOCH-2 (r4-reconcile EPOCH-2 slice): preflight.py at 26
+# plus the terminal-outcome/epoch-2 acceptance commit -> 27.
 check("D9.1-LIVE branch-sequence lengths match the certified facts "
       "(untouched files 5/1/7; preflight.py at its D11 24 plus one "
-      "R4-RECONCILE-P0-R4-4 commit to 25 plus one A16 commit to 26, "
+      "R4-RECONCILE-P0-R4-4 commit to 25 plus one A16 commit to 26 plus "
+      "one EPOCH-2 commit to 27, "
       "PREREG.md by its three D11 commits to 22 plus one "
       "D12 commit to 23 plus one D12b commit to 24 plus one "
       "D12c commit to 25 plus one D12d commit to 26 plus one "
@@ -128,7 +128,7 @@ check("D9.1-LIVE branch-sequence lengths match the certified facts "
       "HARNESS-READINESS.md at its D10 12 plus one PROTOCOL-FINAL forward to 13)",
       {fn: len(_SEQ[fn]) for fn in PF.PROTOCOL_GOVERNED} == {
           "PREREG.md": 29, "ORDER.md": 5, "LANES.md": 6,
-          "HARNESS-READINESS.md": 13, "preflight.py": 26,
+          "HARNESS-READINESS.md": 13, "preflight.py": 27,
           "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str({fn: len(s) for fn, s in _SEQ.items()}))
 
@@ -184,7 +184,8 @@ _V3 = [f for f in _ALL if f.startswith("V3")]
 check("D9.1-LIVE preflight counts are 0/0/0",
       (len(_V1), len(_V2), len(_V3)) == (0, 0, 0),
       f"{len(_V1)}/{len(_V2)}/{len(_V3)}")
-_TIPS, _TIP_FIND = PF.protocol_tips(FAMC, FREEZE)
+# EPOCH-2: the live-lineage probe judges the ACTIVE authority.
+_TIPS, _TIP_FIND = PF.active_protocol_tips(FAMC, FREEZE)
 check("D9.1-LIVE validator tips computed for every governed file",
       _TIP_FIND == []
       and sorted(_TIPS) == sorted(PF.PROTOCOL_GOVERNED),

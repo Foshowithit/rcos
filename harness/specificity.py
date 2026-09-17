@@ -80,6 +80,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import conformance as conformancemod  # noqa: E402
+import epoch as _epoch  # noqa: E402
 import order as ordermod  # noqa: E402
 
 LOCK_FILENAME = "CAPABILITY_LOCK.json"
@@ -240,12 +241,17 @@ def _governed_lock_verdict(fam_c_dir, block, universe, family, livemap):
 
 
 def _stray_capability_dirs(fam_c_dir, expected_capdirs):
-    """The ONLY disk walk: capability dirs under state/ that are NOT in
-    the order expansion, plus ANY unexpected symlink anywhere beneath
-    state/. Returns sorted stray paths. Never raises."""
+    """The ONLY disk walk: capability dirs under the ACTIVE epoch's state
+    root that are NOT in the order expansion, plus ANY unexpected symlink
+    anywhere beneath it. Returns sorted stray paths. Never raises.
+
+    EPOCH-2 (EPOCH-1-CLOSURE.md): once the epoch-2 transition record
+    exists the walk is scoped to state/epoch2/** — epoch-1 state is
+    historical evidence, never scanned by epoch-2 machinery. Under epoch 1
+    the root is state/ exactly as before (harness/epoch.py)."""
     out = []
     try:
-        state_root = os.path.join(fam_c_dir, "state")
+        state_root = _epoch.state_root(fam_c_dir)
         if not os.path.isdir(state_root):
             return out
         for dirpath, dirnames, filenames in os.walk(
