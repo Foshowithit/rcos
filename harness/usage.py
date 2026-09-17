@@ -141,6 +141,14 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
             reply = data["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError) as e:
             raise RuntimeError(f"USAGE-MALFORMED {endpoint} {model}: {e}")
+        if reply is None:
+            # Round-4 reconcile follow-up: a quota/error payload can carry
+            # choices[].message.content = null (kenari free lane). Fail with
+            # the named INCONCLUSIVE path plus the payload, never a TypeError.
+            raise RuntimeError(
+                f"USAGE-CALL-FAIL {endpoint} {model}: provider returned "
+                f"null reply content (quota or error payload): "
+                f"{json.dumps(data)[:200]}")
         # Provenance layer: raw block + its hash travel with every receipt.
         # Normalization is a separate, versioned, reproducible step below.
         import hashlib as _hl

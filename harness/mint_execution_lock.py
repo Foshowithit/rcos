@@ -11,15 +11,30 @@ so that amendment stays manual.
 Usage:
   python3 harness/mint_execution_lock.py --slice a9-item-7 \
       --reason "what changed and why" [--status open-round2] [--check]
+  python3 harness/mint_execution_lock.py --finalize --slice a16 \
+      --reason "audit sign-off recorded" [--check]
 
 --check reports whether the lock is stale (exit 1) without writing.
-Stdlib only. The lock file itself is authoritative via git history.
+--finalize (A16 FINAL-lock semantics, audit round-3 item 4) is the ONE
+terminal transition: it refuses while any harness byte is unrecorded
+(finalization pins exactly the bytes the re-minted lock already names),
+appends the terminal amendment (status_after "FINAL", empty file map),
+and records `status: "FINAL"`, `finalized_at` (UTC) and
+`finalization_commit` (git HEAD at finalization). Once FINAL (or once a
+terminal amendment exists), ANY further mint or finalize is REFUSED with
+the named EXECUTION-LOCK-FINAL-REFUSED error — fail-closed, no
+"add amendment and keep going" path exists in the epoch (the validator
+side is preflight.validate_execution_final). --check still works on a
+FINAL lock (staleness reporting only). Stdlib only. The lock file itself
+is authoritative via git history.
 """
 import argparse
 import hashlib
 import json
 import os
+import subprocess
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -57,16 +72,55 @@ def _manifest_sha(files):
     return hashlib.sha256("\n".join(lines).encode()).hexdigest()
 
 
+def _manifest_sha(files):
+    lines = sorted(f"{k}:{v}" for k, v in files.items())
+    return hashlib.sha256("\n".join(lines).encode()).hexdigest()
+
+
+def _terminal(lock):
+    """True iff the lock has reached its terminal FINAL state: either the
+    recorded status or any recorded amendment carries it (belt: a tampered
+    status cannot reopen an epoch whose terminal amendment survives)."""
+    if lock.get("status") == "FINAL":
+        return True
+    am = lock.get("amendments")
+    return (isinstance(am, list)
+            and any(isinstance(a, dict) and a.get("status_after") == "FINAL"
+                    for a in am))
+
+
+def _head_commit():
+    p = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"],
+                       capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError("EXEC-COMMIT-UNAVAILABLE: "
+                           + (p.stderr or p.stdout).strip()[:200])
+    return p.stdout.strip()
+
+
+def _refuse_final():
+    print("EXECUTION-LOCK-FINAL-REFUSED: the lock is FINAL (terminal "
+          "epoch); minting amendments or re-finalizing is forbidden "
+          "(audit round-3 item 4)")
+    return 1
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--slice")
     ap.add_argument("--reason")
     ap.add_argument("--status", default="open-round2")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--finalize", action="store_true")
     a = ap.parse_args()
+    if a.finalize and a.status != "open-round2":
+        ap.error("--status is meaningless with --finalize (status becomes "
+                 "FINAL)")
     if not a.check and not (a.slice and a.reason):
         ap.error("--slice and --reason are required when minting")
     lock = json.load(open(LOCK))
+    if not a.check and _terminal(lock):
+        return _refuse_final()
     files = lock["harness_files"]
     entry = next((r for r in files
                   if r.startswith("benchmarks/fam-c/harness-run/")), None)
@@ -100,6 +154,8 @@ def main():
     if a.check:
         stale = bool(changed) or new_manifest != lock["harness_manifest_sha256"]
         print("EXECUTION-LOCK: " + ("STALE" if stale else "current"))
+        if _terminal(lock):
+            print("  FINAL (terminal epoch: further minting is refused)")
         for rel, c in sorted(changed.items()):
             print(f"  changed: {rel}")
         if consts_err is not None:
@@ -109,6 +165,45 @@ def main():
             print("  frozen_constants mirror drift (re-mint to sync)")
             return 1
         return 1 if stale else 0
+    if a.finalize:
+        # A16: the ONE terminal transition. Finalization pins exactly the
+        # bytes the current lock already names — a stale lock must be
+        # re-minted FIRST (its own explicit amendment), never folded into
+        # the finalization record.
+        if consts_err is not None:
+            print(f"EXECUTION-LOCK-FINAL-REFUSED frozen_constants "
+                  f"unreadable: {consts_err}")
+            return 1
+        if changed or consts_stale or \
+                new_manifest != lock["harness_manifest_sha256"]:
+            _why = f"{len(changed)} unrecorded harness file(s)"
+            if consts_stale:
+                _why += " + frozen_constants drift"
+            print("EXECUTION-LOCK-FINAL-REFUSED: the lock is stale ("
+                  + _why + "); re-mint via an explicit amendment BEFORE "
+                  "finalization (finalization pins the recorded bytes)")
+            return 1
+        try:
+            head = _head_commit()
+        except RuntimeError as e:
+            print(f"EXECUTION-LOCK-FINAL-REFUSED {e}")
+            return 1
+        lock["amendments"].append({
+            "from_manifest": lock["harness_manifest_sha256"],
+            "to_manifest": lock["harness_manifest_sha256"],
+            "files": {}, "reason": a.reason, "slice": a.slice,
+            "status_after": "FINAL"})
+        lock["status"] = "FINAL"
+        lock["finalized_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ",
+                                             time.gmtime())
+        lock["finalization_commit"] = head
+        with open(LOCK, "w") as f:
+            json.dump(lock, f, indent=1)
+            f.write("\n")
+        print(f"EXECUTION-LOCK FINALIZED at {head} "
+              f"({lock['finalized_at']}); the epoch is terminal — "
+              "further minting is refused")
+        return 0
     if not changed and not consts_stale:
         print("EXECUTION-LOCK: no harness byte changed; nothing to mint")
         return 0

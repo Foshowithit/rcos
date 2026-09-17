@@ -21,6 +21,13 @@ every refusal condition, or nothing runs.
       HARNESS-READINESS + this validator) match EITHER their frozen bytes
       OR an explicit forward amendment recorded in PROTOCOL-LOCK.json.
       Unlisted drift fails this lock (never a silent substitution).
+      A16: the lock itself carries a terminal-state machine — status
+      "living-lock" or "FINAL"; a FINAL lock records finalized_at,
+      finalization_commit (an ancestor of HEAD) and
+      finalized_amendment_count, refuses amendments past FINAL, and must
+      pin the ORDER-EXPANSION.json protocol artifact (A11b P0-5); a
+      recorded pin is enforced against the live bytes from the moment it
+      exists.
       A12d slice D7: the amendments per governed file must form ONE
       linear path from the frozen (or post-freeze genesis) node to
       exactly one tip, and the on-disk bytes must equal that tip
@@ -42,6 +49,12 @@ every refusal condition, or nothing runs.
       match EXECUTION-LOCK.json. Status rides along: `open-round2`
       (placeholder, re-minted on every harness change) until round-2 #14
       mints the FINAL lock after items 1-13 + synthetic attack.
+      A16: the FINAL terminal state is enforced here — status
+      "open-round2" or "FINAL"; a FINAL lock records finalized_at and
+      finalization_commit (verified an ancestor of HEAD), keeps exactly
+      one terminal amendment as the LAST amendment (amendments past
+      FINAL refuse), and never reopens (a terminal amendment under an
+      open status refuses).
 
 Meta files (FREEZE.json, FREEZE-HASHES.sha256, *-LOCK.json, AUDIT-*,
 FAMC-EXECUTION-STATUS.md, ORDER-EXPANSION.json) are pinned by git history
@@ -469,6 +482,221 @@ def validate_lock_global(lock):
     return out
 
 
+# A16 FINAL-lock semantics (audit round-3 item 4; A11b P0-5). Both lock
+# authorities need a true TERMINAL state: status "FINAL" with the UTC
+# finalization stamp, the finalization commit recorded, amendments
+# forbidden past it ("no 'add amendment and keep going' path exists in
+# the same experimental epoch"), and the runner refusing a non-FINAL
+# lock on the wired estimand surface (run_arm_h1.final_lock_gate).
+# Recording a pin or finalization fields is a MECHANISM rehearsal only
+# while status stays open-round2 / living-lock — the actual finalization
+# is a later, auditor-gated act.
+_FINAL_STATUS = "FINAL"
+# UTC stamp, e.g. 2026-09-16T23:59:00Z; the mint tool writes gmtime()
+# stamps of exactly this shape.
+_UTC_STAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+# Git commit sha: 40-hex (this repo is SHA-1); 64 accepted so a future
+# SHA-256 repository cannot silently fail the shape check.
+_COMMIT_RE = re.compile(r"^[0-9a-f]{40}([0-9a-f]{24})?$")
+# A11b P0-5: the exact ORDER-EXPANSION.json bytes are METHODOLOGY — the
+# lock may pin them as protocol artifacts (sha256), enforced from the
+# moment the pin exists (never merely at FINAL).
+PROTOCOL_ARTIFACTS = ("ORDER-EXPANSION.json",)
+
+
+def _finalization_ancestry_finding(root, commit, prefix):
+    """Git-aware A16 ancestry check: a FINAL lock's recorded
+    finalization_commit must be an ancestor of HEAD (equal is fine — a
+    commit is its own ancestor), else the named finding. Fails closed:
+    an unresolvable/fabricated commit refuses (history rewritten, or the
+    record was appended after the fact)."""
+    try:
+        _git(["merge-base", "--is-ancestor", commit, "HEAD"], cwd=root)
+    except RuntimeError as e:
+        return (f"{prefix}: finalization_commit {commit[:12]} is not an "
+                f"ancestor of HEAD ({e}; fail closed — history rewritten, "
+                f"or the record was fabricated after finalization?)")
+    return None
+
+
+def validate_execution_final(lock):
+    """A16, EXECUTION authority FINAL semantics (pure function of the lock
+    bytes — no git, no disk reads; the git-aware ancestry check lives in
+    validate_execution, which calls this). Returns findings (empty = green).
+
+    Status vocabulary: "open-round2" (living placeholder, re-minted on
+    every harness change) or "FINAL" (terminal). Once FINAL:
+      * `finalized_at` (UTC stamp) and `finalization_commit` (40-hex git
+        sha) are REQUIRED — a FINAL lock without them is malformed and is
+        never silently trusted;
+      * exactly ONE terminal amendment (status_after "FINAL") must exist
+        and must be the LAST amendment — any entry after it is the
+        forbidden keep-going path (named refusal, fail closed);
+    and conversely a lock that is NOT FINAL may not carry a terminal
+    amendment at all (there is no reopen path: once FINAL, always FINAL
+    within the epoch). Malformed containers fail closed naming the
+    defect."""
+    pre = "V3 EXECUTION-LOCK: "
+    if not isinstance(lock, dict):
+        return [pre + "lock is not an object"]
+    out = []
+    status = lock.get("status")
+    if status not in ("open-round2", "FINAL"):
+        out.append(pre + f"unknown status {status!r} (the status "
+                   "vocabulary is 'open-round2' or 'FINAL')")
+    am = lock.get("amendments", [])
+    if not isinstance(am, list):
+        return out + [pre + "amendments list is not a list"]
+    term = [i for i, a in enumerate(am)
+            if isinstance(a, dict) and a.get("status_after") == "FINAL"]
+    if status == _FINAL_STATUS:
+        fa = lock.get("finalized_at")
+        if not (isinstance(fa, str) and _UTC_STAMP_RE.match(fa)):
+            out.append(pre + f"FINAL lock finalized_at {fa!r} is absent "
+                       "or not a UTC stamp of the form "
+                       "YYYY-MM-DDTHH:MM:SSZ (a FINAL lock records when "
+                       "it was sealed)")
+        fc = lock.get("finalization_commit")
+        if not (isinstance(fc, str) and _COMMIT_RE.match(fc)):
+            out.append(pre + f"FINAL lock finalization_commit {fc!r} is "
+                       "absent or not a 40-hex git commit sha (a FINAL "
+                       "lock records the HEAD it was sealed at)")
+        if not term:
+            out.append(pre + "FINAL lock records no terminal amendment "
+                       "(status_after \"FINAL\"): the finalization event "
+                       "must be part of the append-only amendment chain")
+        if len(term) > 1:
+            out.append(pre + f"{len(term)} terminal FINAL amendments "
+                       "recorded (exactly one finalization event exists)")
+        if term and term[-1] != len(am) - 1:
+            out.append(pre + "amendment(s) past FINAL (refused: audit "
+                       "round-3 item 4 — once FINAL, minting is "
+                       "forbidden; no 'add amendment and keep going' "
+                       "path exists in the experimental epoch)")
+    elif term:
+        out.append(pre + f"lock carries a terminal FINAL amendment but "
+                   f"status is {status!r} (a FINAL lock cannot be "
+                   "reopened: terminal state violated)")
+    return out
+
+
+def validate_protocol_final(lock):
+    """A16, PROTOCOL authority FINAL semantics (pure function of the lock
+    bytes; the pin-bytes match and the ancestry check live in
+    protocol_tips, which calls this). Returns findings (empty = green).
+
+    Status vocabulary: "living-lock" (a pre-A16 lock with no status key
+    reads as exactly that) or "FINAL" (terminal). Once FINAL: the same
+    finalized_at / finalization_commit requirements as the execution
+    authority, PLUS `finalized_amendment_count` must equal the present
+    amendment count (any amendment appended after finalization is the
+    forbidden keep-going path — the protocol lock's amendments are
+    per-file chains, so the recorded count is the terminal marker), PLUS
+    the ORDER-EXPANSION.json protocol-artifact pin must be present
+    (A11b P0-5: experimental ordering is methodology). A non-FINAL lock
+    carrying finalization fields is an inconsistent terminal state and
+    refuses."""
+    pre = "V2 PROTOCOL-LOCK: "
+    if not isinstance(lock, dict):
+        return [pre + "lock is not an object"]
+    out = []
+    status = lock.get("status")
+    if status is not None and status not in ("living-lock", "FINAL"):
+        out.append(pre + f"unknown status {status!r} (the status "
+                   "vocabulary is 'living-lock' or 'FINAL')")
+    am = lock.get("amendments", [])
+    if not isinstance(am, list):
+        return out + [pre + "lock amendments list is not a list"]
+    has_fields = any(k in lock for k in ("finalized_at",
+                                         "finalization_commit",
+                                         "finalized_amendment_count"))
+    if status == _FINAL_STATUS:
+        fa = lock.get("finalized_at")
+        if not (isinstance(fa, str) and _UTC_STAMP_RE.match(fa)):
+            out.append(pre + f"FINAL lock finalized_at {fa!r} is absent "
+                       "or not a UTC stamp of the form "
+                       "YYYY-MM-DDTHH:MM:SSZ (a FINAL lock records when "
+                       "it was sealed)")
+        fc = lock.get("finalization_commit")
+        if not (isinstance(fc, str) and _COMMIT_RE.match(fc)):
+            out.append(pre + f"FINAL lock finalization_commit {fc!r} is "
+                       "absent or not a 40-hex git commit sha (a FINAL "
+                       "lock records the HEAD it was sealed at)")
+        n = lock.get("finalized_amendment_count")
+        if not isinstance(n, int) or isinstance(n, bool):
+            out.append(pre + "FINAL lock must record "
+                       "finalized_amendment_count as an int (the "
+                       "per-file-chain lock's terminal marker)")
+        elif n != len(am):
+            out.append(pre + f"FINAL lock records {n} amendment(s) but "
+                       f"{len(am)} are present: amendment(s) past FINAL "
+                       "(refused: audit round-3 item 4 — once FINAL, "
+                       "amendments are forbidden; no 'add amendment and "
+                       "keep going' path exists in the experimental "
+                       "epoch)")
+        arts = lock.get("protocol_artifacts")
+        if not isinstance(arts, dict) or \
+                "ORDER-EXPANSION.json" not in arts:
+            out.append(pre + "FINAL lock carries no ORDER-EXPANSION.json "
+                       "protocol-artifact pin (A11b P0-5: experimental "
+                       "ordering is methodology, not implementation)")
+    elif has_fields:
+        out.append(pre + f"finalization field(s) present but status is "
+                   f"{status!r} (inconsistent terminal state: the status "
+                   "vocabulary is 'living-lock' or 'FINAL')")
+    return out
+
+
+def validate_protocol_artifact_pin(lock, fam_c_dir):
+    """A16 (A11b P0-5): verify recorded protocol-artifact pins against the
+    LIVE bytes. A pin, once recorded, IS the authority: drifted bytes are
+    a V2 finding from the moment the pin exists — never only at FINAL
+    (the pin is recorded pre-FINAL precisely so the ordering bytes cannot
+    drift silently while the epoch stays open). Needs only the pinned
+    files inside `fam_c_dir` (hermetic fixture safe); the FINAL-presence
+    requirement is validate_protocol_final's."""
+    pre = "V2 PROTOCOL-LOCK: "
+    if not isinstance(lock, dict):
+        return [pre + "lock is not an object"]
+    arts = lock.get("protocol_artifacts")
+    if arts is None:
+        return []
+    if not isinstance(arts, dict):
+        return [pre + f"protocol_artifacts {arts!r} is not an object "
+                "(the pin map is {artifact name: sha256})"]
+    out = []
+    for name in sorted(arts):
+        if name not in PROTOCOL_ARTIFACTS:
+            out.append(pre + f"protocol_artifacts names unknown artifact "
+                       f"{name!r} (the pinned-artifact vocabulary is "
+                       f"{list(PROTOCOL_ARTIFACTS)})")
+            continue
+        want = arts[name]
+        if not (isinstance(want, str) and _HEX64.match(want)):
+            out.append(pre + f"protocol artifact {name!r} pin {want!r} "
+                       "is not 64-lowercase-hex")
+            continue
+        fp = os.path.join(fam_c_dir, name)
+        if not os.path.exists(fp):
+            out.append(pre + f"pinned protocol artifact {name!r} is "
+                       f"missing under {fam_c_dir}")
+            continue
+        try:
+            live = _sha(fp)
+        except OSError as e:
+            out.append(pre + f"pinned protocol artifact {name!r} "
+                       f"unreadable: {e}")
+            continue
+        if live != want:
+            out.append(pre + f"protocol artifact {name} drifted from its "
+                       f"pinned sha {want[:12]} (live {live[:12]}): the "
+                       "pinned bytes are the authority — experimental "
+                       "ordering is methodology (A11b P0-5); a new pin "
+                       "requires a fresh recorded lock update, never "
+                       "silent drift")
+    return out
+
+
 def validate_file_chain(fn, frozen_sha, amendments, disk_sha,
                         governed_sha, branch_seq=None,
                         lock_authority_ok=None):
@@ -776,6 +1004,22 @@ def protocol_tips(fam_c_dir, freeze_commit):
     # exact governed set, governed amendment files only, named
     # container failures).
     findings.extend(validate_lock_global(lock))
+    # A16 FINAL-lock semantics (audit round-3 item 4, A11b P0-5): the
+    # terminal-state rules for the protocol authority (status shape,
+    # finalized_at/finalization_commit presence, amendments-past-FINAL
+    # via finalized_amendment_count, FINAL => ORDER-EXPANSION.json pin
+    # present), the live-bytes match for any recorded protocol-artifact
+    # pin (enforced from the moment the pin exists), and the git-aware
+    # ancestry of a recorded finalization_commit (well-formed commits
+    # only: the shape finding already names a malformed one).
+    findings.extend(validate_protocol_final(lock))
+    findings.extend(validate_protocol_artifact_pin(lock, fam_c_dir))
+    _fc = lock.get("finalization_commit")
+    if isinstance(_fc, str) and _COMMIT_RE.match(_fc):
+        _f = _finalization_ancestry_finding(root, _fc,
+                                            "V2 PROTOCOL-LOCK")
+        if _f:
+            findings.append(_f)
     if auth:
         # A12l slice D11.1: a lock that fails its own byte authority
         # certifies no tips — the contents are diagnosed, never
@@ -1062,6 +1306,19 @@ def validate_execution(fam_c_dir):
                            f"the execution lock: {rel} (the lock must cover "
                            "the whole harness package root; re-mint via an "
                            "explicit amendment)")
+    # A16 FINAL-lock semantics: the terminal-state rules (status shape,
+    # finalized_at/finalization_commit presence, amendments-past-FINAL
+    # refusal) plus the git-aware ancestry of a recorded
+    # finalization_commit. Pure part first, ancestry only when the
+    # recorded commit is well-formed (the shape finding already names a
+    # malformed one).
+    out += validate_execution_final(lock)
+    _fc = lock.get("finalization_commit")
+    if isinstance(_fc, str) and _COMMIT_RE.match(_fc):
+        _f = _finalization_ancestry_finding(root, _fc,
+                                            "V3 EXECUTION-LOCK")
+        if _f:
+            out.append(_f)
     return out
 
 

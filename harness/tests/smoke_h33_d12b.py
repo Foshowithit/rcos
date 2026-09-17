@@ -323,6 +323,10 @@ WRA.BASE = os.path.join(WT, "benchmarks", "fam-c")
 WRA.ROOT = WT
 WRA.HARNESS = os.path.join(WT, "harness")
 WRA.preflight_validate_all = lambda *_a, **_k: []
+# A16: the FINAL-lock start gate is the same lock-gate family as the
+# stub above (H36 owns the live gate); this surface exercises the
+# checker-mutation path, not the epoch policy.
+WRA.final_lock_gate = lambda *_a, **_k: []
 import usage as WUSAGE  # noqa: E402
 import order as WORDER  # noqa: E402
 import admissibility as WADM  # noqa: E402

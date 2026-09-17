@@ -135,7 +135,10 @@ open(os.path.join(v3, "harness", "x.py"), "w").write("v1\n")
 git(v3, "init", "-q")
 git(v3, "add", "-A")
 git(v3, "commit", "-qm", "harness")
-elock = {"status": "open-test",
+# Status fixture corrected at A16 (f223675): status now carries terminal
+# semantics, so the fixture models a genuinely OPEN lock with the real
+# open-round2 marker instead of the arbitrary pre-A16 "open-test".
+elock = {"status": "open-round2",
          "harness_manifest_sha256": "00" * 32,
          "harness_files": {"harness/x.py": sha("v1\n")},
          "amendments": []}

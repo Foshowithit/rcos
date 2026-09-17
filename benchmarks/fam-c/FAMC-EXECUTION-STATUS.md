@@ -309,3 +309,93 @@ stays STOPPED for estimand-grade runs pending: the live P/Q calibration pair
 (quota-gated; retry scheduled 2026-09-16 20:10 EDT), then PROTOCOL-LOCK
 FINAL (pinning the ORDER-EXPANSION sha 4510076a…), then EXECUTION-LOCK
 FINAL, then the first authorized cell.
+
+## A16 — FINAL-lock semantics (MECHANISM ONLY; locks remain OPEN) — 2026-09-16
+
+Round-3 audit item 4 and A11b P0-5 required a true terminal state for both
+lock authorities — status FINAL with the finalization stamp and commit
+recorded, amendments forbidden past it, the runner refusing a non-FINAL
+lock, the first estimand run descending from the finalization commit, and
+"no 'add amendment and keep going' path exists in the same experimental
+epoch" — plus the ORDER-EXPANSION.json sha pinned as a protocol artifact
+(experimental ordering is methodology). A16 lands that MECHANISM in
+d75e379 (runner gate + terminal mint + EXECUTION-LOCK re-mint) and
+f223675 (preflight enforcement + PROTOCOL-LOCK pin), 53d15c7 (proof suite
++ strict re-certification). **Both locks remain OPEN: EXECUTION-LOCK
+status stays `open-round2` (72 amendments after the A16 re-mint) and
+PROTOCOL-LOCK status is now explicitly `living-lock` (54 amendments).**
+No status was flipped; actual finalization awaits the live P/Q
+calibration pair and an auditor sign-off round.
+
+What is now enforced (preflight.py, listed forward amendment #54
+A16-FINAL-SEMANTICS, base d75e379):
+
+- EXECUTION authority: status vocabulary `open-round2`|`FINAL`. A FINAL
+  lock requires `finalized_at` (UTC stamp) and a 40-hex
+  `finalization_commit`, carries exactly one terminal amendment
+  (status_after "FINAL") as the LAST amendment; amendments past FINAL
+  refuse, and a terminal amendment under an open status refuses (no
+  reopen path). `harness/mint_execution_lock.py --finalize` is the one
+  terminal transition — it refuses while any harness byte is unrecorded
+  (finalization pins exactly the recorded bytes) — and every later
+  mint/finalize is refused with the named EXECUTION-LOCK-FINAL-REFUSED,
+  even with drifted bytes on disk.
+- PROTOCOL authority: status vocabulary `living-lock`|`FINAL` (a
+  pre-A16 lock with no status key reads as living-lock). FINAL
+  additionally requires `finalized_amendment_count` == the present
+  amendment count (the per-file-chain terminal marker) and the
+  ORDER-EXPANSION.json pin; finalization fields under a non-FINAL status
+  refuse as an inconsistent terminal state.
+- ORDER-EXPANSION.json is pinned as a protocol artifact:
+  PROTOCOL-LOCK `protocol_artifacts` records sha256
+  449be793cf764204b8326a56914dd19c90f16371600db9d97faf60ccbe43f47a (the
+  exact current bytes), verified against the live bytes from the moment
+  the pin exists — never only at FINAL (A11b P0-5).
+- A FINAL lock's `finalization_commit` is verified an ancestor of HEAD
+  (`git merge-base --is-ancestor`) by both validators (V2 via
+  protocol_tips, V3 via validate_execution); unresolvable commits fail
+  closed.
+
+Runner gate (run_arm_h1.final_lock_gate, called from main() after order
+authorization and the derived-path binding, before any estimand
+namespace or provider call): a WIRED estimand-surface cell refuses START
+(FINAL-LOCK-GATE refuse start) unless BOTH locks are FINAL — named
+LOCK-NOT-FINAL per open or malformed lock — and, once FINAL, unless the
+run's execution_harness_commit equals or descends from the execution
+lock's finalization_commit — named LOCK-DESCENT-REFUSED. The
+--dev-unwired-outdir escape (wire=False, manifest dev_mode=true) and
+harness-validation (H1-*) runs never reach the gate; admissibility
+continues to exclude both from estimand-grade data, so the
+harness-validation/estimand distinction is preserved end to end. The
+full-pipeline suites (h14/h32/h33/h34) stub final_lock_gate beside
+their existing lock-gate stub; the LIVE gate is proved by the new
+`harness/tests/smoke_h36_final.py` (33/33, hermetic).
+
+Certified-facts constants re-certified STRICTLY (h28/h29/h30/h31 — the
+constants correctly caught real record changes; the checks were not
+loosened): PROTOCOL-LOCK amendments 52 → 54 (53 at 0cf5b9d via
+R4-RECONCILE-P0-R4-4, base d94dcf4, + 1 A16-FINAL-SEMANTICS at f223675);
+preflight.py first-parent lineage 24 → 26 (same two commits). Two
+fixtures updated to keep modeling reality exactly: h28's linear-chain
+probe anchors the exact `validate_protocol(fam_c_dir` definition (the
+A16 functions validate_protocol_final/validate_protocol_artifact_pin
+share the old looser split prefix); h5's V3 fixture uses the real
+`open-round2` marker instead of the pre-A16 arbitrary "open-test".
+
+Round-5 record nits folded in: AUDIT-ROUND4.md "amendments 69–71"
+corrected to re-mints 69/70 + the 53rd PROTOCOL-LOCK forward amendment
+(#71 R4-RECONCILE-QPATH landed later, in the calibration follow-up); the
+actual slice id is R4-RECONCILE-P0-R4-4 (base d94dcf4) — no literal
+"AMEND-2026-09-16-r4-reconcile" id exists anywhere in the repo; and the
+ORDER-EXPANSION pin is the file's sha256 449be793… — the "4510076a…"
+written in the Round-4 records is the order_sha256 of ORDER.md recorded
+INSIDE the expansion (correct in AUDIT-ROUND4.md's main↔branch note,
+wrong in the two "pinning sha" references, both now corrected).
+
+Verification at the A16 code tip 53d15c7 (clean tree, cleaned
+/tmp/rcos-runs + /tmp/rcos-visible, per-suite 240s cap, un-piped exit
+codes): full smoke battery 38/38 PASS (37 pre-existing +
+smoke_h36_final.py); `python3 benchmarks/fam-c/preflight.py` 0/0/0;
+`benchmarks/fam-c/runs/_synthetic-attack/run_attack.sh` 5/5. HARNESS-READINESS.md
+remains untouched (deferred to the PROTOCOL-FINAL slice, unchanged
+disposition).
