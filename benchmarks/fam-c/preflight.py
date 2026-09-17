@@ -82,10 +82,29 @@ import conformance
 FREEZE_COMMIT = "d1292434a261f44ad910c556e18624cef1676f37"
 
 # Protocol docs with a life after the freeze: frozen bytes OR a listed
-# forward amendment, never unlisted drift.
+# forward amendment, never unlisted drift. EPOCH-3 (EPOCH-3-PROTOCOL-SPEC.md
+# §7 "Preflight governance", FR-13 frozen): V2's governed set becomes the
+# EXISTING SEVEN files plus EPOCH-3-PROTOCOL-SPEC.md — an epoch-3-scoped
+# extension (protocol_governed()), never a retroactive rewrite of the
+# closed epochs' FINAL lock records. Being V1 META does NOT exempt
+# EPOCH-3-PROTOCOL-SPEC.md from V2.
 PROTOCOL_GOVERNED = ["PREREG.md", "ORDER.md", "LANES.md",
                      "HARNESS-READINESS.md", "preflight.py",
                      "T4-SEMANTIC-IDS.json", "T4-CONFORMANCE.json"]
+EPOCH3_GOVERNED = PROTOCOL_GOVERNED + [_epoch.EPOCH3_SPEC_FILE]
+
+
+def protocol_governed(fam_c_dir=None):
+    """The ACTIVE epoch's V2 governed set (EPOCH-3-PROTOCOL-SPEC.md §7
+    frozen rule): the existing seven governed files, PLUS
+    EPOCH-3-PROTOCOL-SPEC.md once epoch 3 is active. Epoch 1 and epoch 2
+    keep their own recorded sets — the frozen rule is an epoch-3 extension,
+    never a mutation of read-only historical locks."""
+    if fam_c_dir is not None and _epoch.is_epoch3(fam_c_dir):
+        return list(EPOCH3_GOVERNED)
+    return list(PROTOCOL_GOVERNED)
+
+
 # Meta pointers: integrity rides on git history + lock records.
 META = {"FREEZE.json", "FREEZE-HASHES.sha256", "PROTOCOL-LOCK.json",
         "EXECUTION-LOCK.json", "FAMC-EXECUTION-STATUS.md",
@@ -100,7 +119,18 @@ META = {"FREEZE.json", "FREEZE-HASHES.sha256", "PROTOCOL-LOCK.json",
         # are simply not walked; each is validated by its own authority
         # once it exists.
         "EPOCH-1-CLOSURE.md", _epoch.TRANSITION_FILE,
-        _epoch.EXECUTION_LOCK_FILE, _epoch.PROTOCOL_LOCK_FILE}
+        _epoch.EXECUTION_LOCK_FILE, _epoch.PROTOCOL_LOCK_FILE,
+        # EPOCH-3 acceptance (EPOCH-3-PROTOCOL-SPEC.md §7, FR-13 frozen):
+        # these six are META ADDITIONS to the set above (never a
+        # replacement), each validated by its own authority — the stop
+        # record by the epoch-3 transition citation, the transition and
+        # both fresh locks by epoch/lock validation, the spec by BOTH V1
+        # META and V2 PROTOCOL_GOVERNED, and the freeze request as
+        # historical META (never protocol authority).
+        _epoch.EPOCH2_STOP_RECORD_FILE, _epoch.EPOCH3_SPEC_FILE,
+        "FREEZE-REQUEST.md", _epoch.EPOCH3_TRANSITION_FILE,
+        _epoch.EPOCH3_EXECUTION_LOCK_FILE,
+        _epoch.EPOCH3_PROTOCOL_LOCK_FILE}
 OPERATIONAL_DIRS = {"runs", "capabilities", "harness-run"}
 
 
@@ -140,7 +170,7 @@ def validate_instance(fam_c_dir, freeze_commit):
         if line:
             h, p = line.split("  ", 1)
             manifest[p] = h
-    governed = set(PROTOCOL_GOVERNED)
+    governed = set(protocol_governed(fam_c_dir))
     for p, h in sorted(manifest.items()):
         if p in governed:
             continue  # living protocol doc: V2 authority owns this path
@@ -151,17 +181,19 @@ def validate_instance(fam_c_dir, freeze_commit):
             out.append(f"V1 INSTANCE-FREEZE: hash mismatch vs frozen "
                        f"manifest: {p}")
     on_disk = set()
-    _state_root = os.path.abspath(_epoch.state_root(fam_c_dir))
+    # Runtime state is evidence, never a frozen instance input: EVERY epoch
+    # state root (state/, state/epoch2/, state/epoch3/) is pruned, so a
+    # third epoch's activation can never turn the preserved epoch-1/epoch-2
+    # evidence trees into "extra file not in freeze manifest" findings.
+    _state_roots = [os.path.abspath(p) for p in _epoch.state_roots(fam_c_dir)]
+
+    def _in_state(p):
+        return any(p == r or p.startswith(r + os.sep) for r in _state_roots)
     for root, dirs, files in os.walk(fam_c_dir):
         if os.path.basename(root) in OPERATIONAL_DIRS:
             dirs[:] = []
             continue
-        # Runtime state is evidence, never a frozen instance input: neither
-        # the epoch-1 evidence tree nor the epoch-2 state prefix
-        # (state/epoch2/**) is judged by the freeze manifest. Everything
-        # else under benchmarks/fam-c stays exactly as before.
-        if os.path.abspath(root) == _state_root or \
-                os.path.abspath(root).startswith(_state_root + os.sep):
+        if _in_state(os.path.abspath(root)):
             dirs[:] = []
             continue
         dirs[:] = [d for d in dirs if d != "__pycache__"]
@@ -452,15 +484,18 @@ def validate_lock_history(fam_c_dir):
     return []
 
 
-def validate_lock_global(lock):
+def validate_lock_global(lock, governed_files=None):
     """A12d slice D8.2: lock-global hygiene (pure function of the lock
     bytes — no git, no disk reads). Returns findings (empty = green);
     every finding names the offending key or file literally.
 
-    The `governed` key set must be EXACTLY the seven
-    PROTOCOL_GOVERNED files (an extra key such as TYPO.md fails), and
-    every amendment entry's `file` must name a governed file (a
-    TYPO.md, missing, or None file fails).
+    The `governed` key set must be EXACTLY the ACTIVE epoch's governed set
+    (an extra key such as TYPO.md fails), and every amendment entry's
+    `file` must name a governed file (a TYPO.md, missing, or None file
+    fails). EPOCH-3: `governed_files` defaults to the existing seven
+    PROTOCOL_GOVERNED files; the epoch-3 authority passes
+    protocol_governed(fam_c_dir) — the seven plus
+    EPOCH-3-PROTOCOL-SPEC.md (§7 frozen FR-13 rule).
 
     A12i slice D9.2: malformed containers fail closed with a named
     finding, never a traceback. A non-object lock, a non-object
@@ -468,6 +503,7 @@ def validate_lock_global(lock):
     container; a non-object amendment entry fails naming its index.
     Container types are normalized BEFORE any `.get()` is reached.
     """
+    _gov_files = list(governed_files or PROTOCOL_GOVERNED)
     out = []
     if not isinstance(lock, dict):
         return ["V2 PROTOCOL-LOCK: lock is not an object (the lock top "
@@ -476,10 +512,10 @@ def validate_lock_global(lock):
     governed = lock.get("governed", {})
     if not isinstance(governed, dict):
         return ["V2 PROTOCOL-LOCK: lock governed map is not an object"]
-    for key in sorted(set(governed) - set(PROTOCOL_GOVERNED)):
+    for key in sorted(set(governed) - set(_gov_files)):
         out.append(f"V2 PROTOCOL-LOCK: governed carries an ungoverned "
                    f"key {key!r} (the governed set must be exactly the "
-                   f"seven PROTOCOL_GOVERNED files)")
+                   f"active epoch's {len(_gov_files)} governed files)")
     amendments = lock.get("amendments", [])
     if not isinstance(amendments, list):
         return out + ["V2 PROTOCOL-LOCK: lock amendments list is not a "
@@ -492,7 +528,7 @@ def validate_lock_global(lock):
                        f"an object naming a governed file)")
             continue
         fn = a.get("file")
-        if fn not in PROTOCOL_GOVERNED:
+        if fn not in _gov_files:
             out.append(f"V2 PROTOCOL-LOCK: amendment names an ungoverned "
                        f"file {fn!r} (every amendment file must name a "
                        f"governed file)")
@@ -984,7 +1020,7 @@ def protocol_tips(fam_c_dir, freeze_commit, lock_name="PROTOCOL-LOCK.json",
     if lock.get("freeze_commit") != freeze_commit:
         findings.append("V2 PROTOCOL-LOCK: lock freeze_commit != instance "
                         "freeze (locks disagree on the freeze)")
-    for fn in PROTOCOL_GOVERNED:
+    for fn in protocol_governed(fam_c_dir):
         want = governed.get(fn)
         if not want:
             findings.append(f"V2 PROTOCOL-LOCK: {fn} not governed by lock")
@@ -1043,7 +1079,8 @@ def protocol_tips(fam_c_dir, freeze_commit, lock_name="PROTOCOL-LOCK.json",
     # A12d slice D8.2, A12i slice D9.2: lock-global hygiene (pure:
     # exact governed set, governed amendment files only, named
     # container failures).
-    findings.extend(validate_lock_global(lock))
+    findings.extend(validate_lock_global(
+        lock, governed_files=protocol_governed(fam_c_dir)))
     # A16 FINAL-lock semantics (audit round-3 item 4, A11b P0-5): the
     # terminal-state rules for the protocol authority (status shape,
     # finalized_at/finalization_commit presence, amendments-past-FINAL
@@ -1125,6 +1162,8 @@ def validate_protocol(fam_c_dir, freeze_commit):
     root. Without a record, this function is byte-for-byte the epoch-1
     path below.
     """
+    if _epoch.is_epoch3(fam_c_dir):
+        return validate_protocol_epoch3(fam_c_dir, freeze_commit)
     if _epoch.is_epoch2(fam_c_dir):
         return validate_protocol_epoch2(fam_c_dir, freeze_commit)
     out = []
@@ -1282,6 +1321,11 @@ def active_protocol_tips(fam_c_dir, freeze_commit):
     epoch-2 lock against its recorded genesis base. Live-lineage probes
     ("disk sha256 == the validator's unique tip") use THIS entry point so
     they judge the active authority, exactly as validate_protocol()."""
+    if _epoch.is_epoch3(fam_c_dir):
+        rec = _epoch.transition_record3(fam_c_dir)
+        return protocol_tips(fam_c_dir, freeze_commit,
+                             lock_name=_epoch.EPOCH3_PROTOCOL_LOCK_FILE,
+                             base_map=_epoch.genesis_base_map(rec or {}))
     if _epoch.is_epoch2(fam_c_dir):
         rec = _epoch.transition_record(fam_c_dir)
         return protocol_tips(fam_c_dir, freeze_commit,
@@ -1327,7 +1371,7 @@ def validate_protocol_epoch2(fam_c_dir, freeze_commit):
         # the fresh chain anchors exactly on the transition-time bytes.
         gov = obj.get("governed") if isinstance(obj.get("governed"),
                                                 dict) else {}
-        for fn in PROTOCOL_GOVERNED:
+        for fn in protocol_governed(fam_c_dir):
             if gov.get(fn) != base_map.get(fn):
                 out.append(
                     f"V2 PROTOCOL-LOCK: epoch-2 lock governs {fn} at "
@@ -1398,6 +1442,8 @@ def validate_execution(fam_c_dir):
     HISTORICAL record (closure-cited FINAL bytes) — see
     validate_execution_epoch2(). Without a record, byte-for-byte the
     epoch-1 path below."""
+    if _epoch.is_epoch3(fam_c_dir):
+        return validate_execution_epoch3(fam_c_dir)
     if _epoch.is_epoch2(fam_c_dir):
         return validate_execution_epoch2(fam_c_dir)
     out = []
@@ -1516,6 +1562,153 @@ def validate_execution_epoch2(fam_c_dir):
         out.append(pre + "lock lists no harness files")
     # Item-7 completeness, exactly as the epoch-1 authority: the runner's
     # import closure and the whole harness package root must be covered.
+    listed = set(lock.get("harness_files", {}))
+    entry = next((r for r in listed if r.startswith("benchmarks/fam-c/"
+                                                    "harness-run/")), None)
+    if entry:
+        for rel in sorted(_harness_closure(root, entry)):
+            if rel not in listed:
+                out.append(pre + f"unlisted harness module in the runner's "
+                           f"import closure: {rel} (add it to the lock via "
+                           "an explicit amendment)")
+    hdir = os.path.join(root, "harness")
+    if os.path.isdir(hdir):
+        for name in sorted(os.listdir(hdir)):
+            if not name.endswith(".py"):
+                continue
+            rel = f"harness/{name}"
+            if rel not in listed:
+                out.append(pre + f"harness module not listed in the "
+                           f"execution lock: {rel} (the lock must cover "
+                           "the whole harness package root; re-mint via an "
+                           "explicit amendment)")
+    out += validate_execution_final(lock)
+    _fc = lock.get("finalization_commit")
+    if isinstance(_fc, str) and _COMMIT_RE.match(_fc):
+        _f = _finalization_ancestry_finding(root, _fc, "V3 EXECUTION-LOCK")
+        if _f:
+            out.append(_f)
+    return out
+
+
+def validate_protocol_epoch3(fam_c_dir, freeze_commit):
+    """V2 PROTOCOL-LOCK, EPOCH-3 acceptance (EPOCH-3-PROTOCOL-SPEC.md §6/§7,
+    frozen). Returns findings (empty = green).
+
+    The epoch-3 boundary is audited through the frozen citations
+    (epoch.validate_record3: the record's own contract, the corrected stop
+    record's bytes, the frozen spec sha + freeze commit, the exact
+    ORDER-EXPANSION pin, and the epoch-2 boundary it builds on — including
+    both epoch-2 FINAL locks as historical records). The FRESH epoch-3
+    protocol lock then rides the SAME structural rules as epoch 2: unique
+    linear append-only chains per governed file from the epoch-3 genesis
+    base recorded in the transition, disk == the unique tip, governed ==
+    base, lock-global hygiene, ORDER-EXPANSION.json pin re-verified live,
+    status vocabulary ("living-lock" | "FINAL"). The epoch-2 lock is a
+    HISTORICAL record now (epoch-2-recorded bytes + FINAL status); the
+    epoch-1 locks stay historical and both closed-epoch histories stay
+    append-only.""" 
+    out = ["V2 PROTOCOL-LOCK: " + f
+           for f in _epoch.validate_record3(fam_c_dir)]
+    out += _epoch.validate_epoch2_historical_lock(
+        fam_c_dir, _epoch.PROTOCOL_LOCK_FILE,
+        _epoch.EPOCH2_PROTOCOL_LOCK_SHA256, "V2 PROTOCOL-LOCK")
+    out += _epoch.validate_epoch1_historical_lock(
+        fam_c_dir, _epoch.EPOCH1_PROTOCOL_LOCK_FILE,
+        _epoch.EPOCH1_PROTOCOL_LOCK_SHA256, "V2 PROTOCOL-LOCK")
+    rec = _epoch.transition_record3(fam_c_dir)
+    base_map = _epoch.genesis_base_map(rec) if rec else {}
+    _tips, chain_findings = active_protocol_tips(fam_c_dir, freeze_commit)
+    out += chain_findings
+    lp = os.path.join(fam_c_dir, _epoch.EPOCH3_PROTOCOL_LOCK_FILE)
+    obj = None
+    try:
+        with open(lp) as f:
+            obj = json.load(f)
+    except (OSError, ValueError) as e:
+        out.append(f"V2 PROTOCOL-LOCK: epoch-3 lock unparsable: {e}")
+    if isinstance(obj, dict):
+        gov = obj.get("governed") if isinstance(obj.get("governed"),
+                                                dict) else {}
+        for fn in protocol_governed(fam_c_dir):
+            if gov.get(fn) != base_map.get(fn):
+                out.append(
+                    f"V2 PROTOCOL-LOCK: epoch-3 lock governs {fn} at "
+                    f"{str(gov.get(fn))[:12]} != the transition-record "
+                    f"genesis base {str(base_map.get(fn))[:12]} (the "
+                    f"fresh lineage must anchor on the recorded "
+                    f"transition-time bytes; lock edited?)")
+        out += validate_protocol_final(obj)
+        out += validate_protocol_artifact_pin(obj, fam_c_dir)
+        try:
+            root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
+        except RuntimeError as e:
+            out.append(f"V2 PROTOCOL-LOCK: git unavailable: {e}")
+            root = None
+        if root is not None:
+            _fc = obj.get("finalization_commit")
+            if isinstance(_fc, str) and _COMMIT_RE.match(_fc):
+                _f = _finalization_ancestry_finding(root, _fc,
+                                                    "V2 PROTOCOL-LOCK")
+                if _f:
+                    out.append(_f)
+    # both closed epochs' append-only histories stay immutable
+    out += validate_lock_history(fam_c_dir)
+    for f in order_verify_expansion(fam_c_dir):
+        out.append("V2 PROTOCOL-LOCK: " + f)
+    out += validate_t4_registry(fam_c_dir)
+    out += validate_t4_conformance(fam_c_dir)
+    return out
+
+
+def validate_execution_epoch3(fam_c_dir):
+    """V3 EXECUTION-LOCK, EPOCH-3 acceptance (EPOCH-3-PROTOCOL-SPEC.md §6,
+    frozen). Returns findings (empty = green).
+
+    The FRESH epoch-3 execution lock is the live authority: `epoch: 3` +
+    the transition citation (record bytes + the epoch-2 boundary facts),
+    the SAME harness-bytes/closure rules (every listed module present and
+    byte-identical, the runner's import closure and the whole harness
+    package root covered), the SAME terminal-state vocabulary
+    ("open-round2" | "FINAL") and finalization-ancestry rule. The epoch-2
+    and epoch-1 locks are HISTORICAL records: recorded FINAL bytes that
+    epoch 3 must not delete, move, or rewrite — their recorded harness
+    hashes are deliberately NOT enforced against the live tree, because the
+    epoch-3 lineage governs the harness now."""
+    pre = "V3 EXECUTION-LOCK: "
+    out = []
+    lp = os.path.join(fam_c_dir, _epoch.EPOCH3_EXECUTION_LOCK_FILE)
+    if not os.path.exists(lp):
+        return [pre + f"{_epoch.EPOCH3_EXECUTION_LOCK_FILE} missing (epoch 3 "
+                f"is active: the fresh epoch-3 lock is the live execution "
+                f"authority; mint it via harness/epoch_transition.py)"]
+    try:
+        with open(lp) as f:
+            lock = json.load(f)
+    except ValueError as e:
+        return [pre + f"epoch-3 lock unparsable: {e}"]
+    out += _epoch.validate_epoch3_lock_binding(
+        fam_c_dir, _epoch.EPOCH3_EXECUTION_LOCK_FILE, "V3 EXECUTION-LOCK")
+    out += _epoch.validate_epoch2_historical_lock(
+        fam_c_dir, _epoch.EXECUTION_LOCK_FILE,
+        _epoch.EPOCH2_EXECUTION_LOCK_SHA256, "V3 EXECUTION-LOCK")
+    out += _epoch.validate_epoch1_historical_lock(
+        fam_c_dir, _epoch.EPOCH1_EXECUTION_LOCK_FILE,
+        _epoch.EPOCH1_EXECUTION_LOCK_SHA256, "V3 EXECUTION-LOCK")
+    try:
+        root = _git(["rev-parse", "--show-toplevel"], cwd=fam_c_dir)
+    except RuntimeError as e:
+        return out + [pre + f"git unavailable: {e}"]
+    for rel, want in sorted(lock.get("harness_files", {}).items()):
+        fp = os.path.join(root, rel)
+        if not os.path.exists(fp):
+            out.append(pre + f"harness file missing: {rel} "
+                       "(re-mint via explicit amendment, never skip)")
+        elif _sha(fp) != want:
+            out.append(pre + f"harness bytes changed: {rel} "
+                       "(re-mint via explicit amendment commit)")
+    if not lock.get("harness_files"):
+        out.append(pre + "lock lists no harness files")
     listed = set(lock.get("harness_files", {}))
     entry = next((r for r in listed if r.startswith("benchmarks/fam-c/"
                                                     "harness-run/")), None)
