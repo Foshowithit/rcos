@@ -1,0 +1,33 @@
+{
+  "capability": "video-forensics-receipt",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-10 corpus: 4 canonical animation / motion-design works measured, one per shippable grammar (anim-luxo-jr 131.4s, anim-rsa-drive 647.8s official RSA, anim-paperman 379.5s, anim-powers-of-ten 540.7s official Eames Office); rig/verify_receipts.py on the full corpus: 'checked 56 receipts — ALL DETERMINISTIC GATES PASS'. 4/4 label-integrity reads PASS at judge time (muse lane; dense montages for the 0-3-cut sources, with the PoT sampling caveat documented). The class's central finding is a rig-limitation finding (cut counts are not edit rates for animation: continuous take reads 0, line boil reads 300) — documented as a measurement boundary and an explicit v0.3 rig item, not normalized away; motion and loudness metrics remain valid and are what the class rules use. Same disposition as study-round3/6/7/8/9: no bad receipts remain.",
+  "gates": [
+    {
+      "id": "deterministic-gates",
+      "pass": true,
+      "evidence": "Round-10 receipt set: anim-luxo-jr (131.38s, 0 cuts, hard_n 0, med 131.38s, cps 0.0076, motion 0.0309, still 0.254, luma 0.080, sat 0.427, n80 4, LUFS -24.8, LRA 13.6, TP +0.1), anim-rsa-drive (647.79s, 36 cuts, hard 2, cps 0.0571, med 8.36s, motion 0.08, still 0.11, luma 0.861, sat 0.095, n80 4, -25.2, 10.1, -3.0), anim-paperman (379.53s, 300 cuts flagged as within-shot animation noise (147 hard at 0.50 threshold, 60fps HFR source), motion 0.1574, still 0.193, luma 0.406, sat 0.057, n80 5, -19.6, 24.7, -1.2), anim-powers-of-ten (540.65s, 3 cuts, hard 0, med 20.25s, motion 0.031, still 0.419, luma 0.146, sat 0.53, n80 4, -26.3, 6.2, -13.3). rig/verify_receipts.py: 'checked 56 receipts — ALL DETERMINISTIC GATES PASS'."
+    },
+    {
+      "id": "sheet-reads",
+      "pass": true,
+      "evidence": "sheet-reads (llm gate): 4/4 sources read at judge time via the free opencode muse vision lane. Luxo Jr. (dense fps=1/8 montage): small desk lamp bouncing a ball, parent lamp reacting, dark stage + wood floor — exactly the 1986 short. RSA Animate: 36 frames of hand drawing text/pictures on white paper in black+red ('AUTONOMY MASTERY PURPOSE' etc.) — confirmed. Paperman: monochrome 1930s-40s NY, office worker, paper airplanes, hand-drawn-over-CG look — confirmed (and the reader transcribed the rig's burned-in profile line independently). Powers of Ten (dense montage): picnic -> Chicago lakefront -> Earth -> moon orbit -> solar system -> starfields with centered scale squares, +1 power of ten per step — confirmed on the outward leg; reader correctly noted the return/atom leg was not sampled (25-tile cap at fps=1/8 on a 541s source) — sampling caveat documented in PLAYBOOK."
+    },
+    {
+      "id": "label-integrity",
+      "pass": true,
+      "evidence": "Slug-to-content pairing confirmed for all 4 R10 fetches; two official channels (Royal Society of Arts u6XAPnuFjJc, Eames Office 0fKBhvDjuy0) and two clean fan uploads with documented channel caveats (Luxo zmhZm5FRV4s, Paperman XrqSF2OOz_M — no official channel upload surfaced in searches). Receipt source metadata matches each sheet's content; no mislabeled or corrupt receipt this round (the R9 replace-not-merge rule was followed: no same-slug re-fetches were needed)."
+    },
+    {
+      "id": "tooling-defect-found-and-fixed",
+      "pass": true,
+      "evidence": "Rig limitation measured and bounded this round: the scene-cut detector is calibrated for live action and fails IN BOTH DIRECTIONS on animation — a genuinely continuous 131s take reads 0 cuts (correct here, but the detector cannot distinguish intent), while Paperman's within-shot animation change (hand-drawn line boil at 60fps) reads 300 detections (147 hard) against a real cinematic edit, i.e. cut counts are event density, not editorial intent, for animation. Handled by documenting the boundary in the receipt + PLAYBOOK class-A section, restricting class-A published metrics to motion/loudness/palette, and logging the animation-aware threshold (within-shot motion baseline) as rig v0.3. Second smaller item logged: dense-montage rate must scale with source duration (the fps=1/8 25-tile montage covered only the first ~200s of Powers of Ten)."
+    },
+    {
+      "id": "limitation-documented",
+      "pass": true,
+      "evidence": "Limits documented, not normalized: animation cut counts explicitly marked invalid (range published with the caveat marker in the PLAYBOOK table); no full video watched; dense-montage sampling gap on the 541s source stated (return leg unsampled, identity confirmed on the outward leg); Luxo/Paperman fan-channel caveats; Paperman loudness carries a 60fps re-encode caveat. n=4 class (one per grammar) flagged for widening. No keys, no paid lanes (free muse vision lane for reads)."
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "capability": "creative-study-loop",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-10 loop run: QUEUE.md advanced per protocol (unit A opened, 4 concrete rows added with video ids and channel caveats, all 4 completed and struck), PLAYBOOK.md gained a receipt-cited class-A section plus cross-class updates, RCOS eval submitted for both capabilities. Corpus end state: 56 receipts (51 reference films + 5 own), all deterministic gates verified. ALL SIX backlog classes are now open — the loop transitions from first-pass coverage to widenings.",
+  "gates": [
+    {
+      "id": "queue-advance",
+      "pass": true,
+      "evidence": "Unit A (animation / motion-graphics grammar) opened as the last open backlog class; QUEUE.md Round 10 section holds 4 concrete sources (Luxo Jr., RSA Animate Drive, Paperman, Powers of Ten) with statuses, channel caveats, and per-slug headline numbers; backlog row A struck; round log notes all six backlog classes are now OPEN and the next rounds are widenings (n->8), the Dom Perignon re-queue, or production-driven new classes."
+    },
+    {
+      "id": "receipt-citations",
+      "pass": true,
+      "evidence": "Every class-A PLAYBOOK number traces to studies/<slug>.json: canvas extremes (RSA luma 0.861 brightest receipt ever; Luxo 0.080 black stage), the stillness gap (RSA 0.11 vs ours-explainer-smoke7.json 0.96), narration band (PoT LRA 6.2 inside class-D/E <=6), and the detector-invalid cut counts (published with caveat markers). Corpus counts updated: 51 reference films / 56 receipts in the palette-discipline finding."
+    },
+    {
+      "id": "cross-class-fold-in",
+      "pass": true,
+      "evidence": "Class-A results folded into the cross-class layer: palette finding counts 47/52 -> 51/56; the narration-LRA finding now confirmed a third time (PoT 6.2 joins classes D and E); zero-cut continuous forms now attested across three classes (M's NIN one-take, Ty's continuous builds, A's Luxo) and R9's hard_n-0 craft signal; open questions extended (all six classes open; rig v0.3 animation-aware threshold added alongside v0.2 items)."
+    },
+    {
+      "id": "ours-vs-reference",
+      "pass": true,
+      "evidence": "No own film was re-measured this round (protocol requires the ours-vs-reference row update only on re-measurement); the class-A section cites existing own receipts where they land in the new envelopes: ours-fapcoin-v3.json luma 0.087 sits in Luxo's black-stage canvas neighborhood, and ours-explainer-smoke7.json stillness 0.96 vs RSA 0.11 is called out in the PLAYBOOK as the single actionable gap for the explainer system (add draw-on motion)."
+    },
+    {
+      "id": "media-hygiene",
+      "pass": true,
+      "evidence": "Third-party media never entered either repo (clips and dense montages on the Dell at tmp/creative-study; sheets/montages in gitignored .media/; verify_receipts media-containment gate green on 56 receipts). No keys, no paid lanes - free muse vision lane for sheet reads; Dell did fetch/decode. Round ran within budget."
+    }
+  ]
+}
