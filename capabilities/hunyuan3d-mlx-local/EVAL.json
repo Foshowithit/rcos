@@ -1,0 +1,11 @@
+{
+  "capability": "hunyuan3d-mlx-local",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "mac-local-only", "kind": "deterministic", "check": "the run used the dedicated Mac venv (~/venvs/hunyuan3d-mlx) + MLX; no paid lane, no API spend" },
+    { "id": "artifact-completeness", "kind": "deterministic", "check": "output GLB carries PBR texture maps (4096 albedo + metal-rough), watertight shape, and recorded human extents (hero_front run: 0.77 / 1.99 / 0.48, 14.1 MB)" },
+    { "id": "budget-recorded", "kind": "deterministic", "check": "receipt records shape + texture wall time and peak RSS (hero_front: shape 8-11 min, texture 19 min, RSS <= 8.2 GB)" },
+    { "id": "reference-prep", "kind": "deterministic", "check": "the reference sheet passed prep_reference.py (rembg + recenter) before generation" },
+    { "id": "face-routing", "kind": "llm", "check": "sighted read: body/garment shapes pass, and no face close-up is shipped from this path — faces route to local-talking-heads (hero_front: muse SHIP body / KILL face-closeup)" }
+  ]
+}

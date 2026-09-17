@@ -1,0 +1,10 @@
+{
+  "capability": "face-in-scene-shot",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "deterministic-capture-path", "kind": "deterministic", "check": "the shot runs through the PNG-sequence capture path (no video decode inside the CDP loop) and the output is a real encoded mp4 (hero run: shot-face-3s.mp4, 3.0s 1080 h264+aac)" },
+    { "id": "z-gap", "kind": "deterministic", "check": "the framed portrait plane carries a z-gap from the wall plane (coplanar planes z-fight — the trap this capability exists to avoid)" },
+    { "id": "motion-present", "kind": "deterministic", "check": "measured in-frame motion of the portrait region is non-trivial (hero run: 3.2-6.3)" },
+    { "id": "reads-as-insert", "kind": "llm", "check": "sighted read: the talking portrait reads as a usable speaking-portrait insert in the scene (hero run: muse SHIP), not a floating sticker or a strobing artifact" }
+  ]
+}

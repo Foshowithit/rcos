@@ -251,8 +251,11 @@
       "name": "Video forensics receipt (reference-clip measurer)",
       "kind": "script",
       "version": "0.1.0",
-      "status": "candidate",
-      "admitted_after": [],
+      "status": "promoted",
+      "admitted_after": [
+        "creative-study-round1-complete",
+        "creative-study-round2"
+      ],
       "evals": [
         {
           "task_id": "creative-study-round1",
@@ -263,6 +266,11 @@
           "task_id": "creative-study-round1-complete",
           "verdict": "ship",
           "run_id": "study-round1-complete"
+        },
+        {
+          "task_id": "creative-study-round2",
+          "verdict": "ship",
+          "run_id": "study-round2"
         }
       ],
       "reuse_count": 0,
@@ -274,13 +282,21 @@
       "name": "Creative study loop (reference -> measured targets)",
       "kind": "runbook",
       "version": "0.1.0",
-      "status": "candidate",
-      "admitted_after": [],
+      "status": "promoted",
+      "admitted_after": [
+        "creative-study-round1-loop",
+        "creative-study-round2-loop"
+      ],
       "evals": [
         {
           "task_id": "creative-study-round1-loop",
           "verdict": "ship",
           "run_id": "study-round1-loop"
+        },
+        {
+          "task_id": "creative-study-round2-loop",
+          "verdict": "ship",
+          "run_id": "study-round2-loop"
         }
       ],
       "reuse_count": 0,
