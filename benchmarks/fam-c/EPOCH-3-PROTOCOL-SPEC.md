@@ -576,10 +576,10 @@ form as epoch 2, and it RESTARTS the frozen 240-event order from event 0:
 
 ### Preflight governance (FR-13 — frozen, normative; the rule of §7 step 2)
 
-The epoch-3 preflight governance sets are exactly these, and no others:
+The epoch-3 preflight governance extensions are exactly:
 
 ```text
-V1 META:
+V1 META additions:
   EPOCH-2-STOP-RECORD.md
   EPOCH-3-PROTOCOL-SPEC.md
   FREEZE-REQUEST.md
@@ -588,7 +588,7 @@ V1 META:
   PROTOCOL-LOCK-EPOCH3.json
 
 V2 PROTOCOL_GOVERNED:
-  existing seven governed files
+  the existing seven governed files
   + EPOCH-3-PROTOCOL-SPEC.md
 ```
 

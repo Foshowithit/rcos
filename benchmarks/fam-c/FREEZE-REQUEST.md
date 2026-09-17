@@ -5,11 +5,11 @@ Requested: 2026-09-17, by the operator session, per the ruling at
 ADD A PRE-FROZEN MODEL-OUTPUT-INVALID TERMINAL AND RESTART CLEAN").
 
 Artifacts under request (CORRECTED bytes from the docs-only correction
-commit on `r4-reconcile`, child of `0efa1149b07de41aeff498a7f3bd4481fb192672`;
+commit on `r4-reconcile`, child of `2527303d4a3e8791cd7e3bf82cba02e7dd79184d`;
 sha256):
 
 - `benchmarks/fam-c/EPOCH-3-PROTOCOL-SPEC.md`
-  sha256 `afb0d153e07935f772aa729b230ab5a535838a82a94e674300a213d6abcae7d8`
+  sha256 `28cdf2a232f74ad44d2ca5de278352c152a976be3c85084c18aea8acab99c226`
 - `benchmarks/fam-c/EPOCH-2-STOP-RECORD.md`
   sha256 `4e0e84ec6c4f13baebd319b40e11ce1beb6258110146fb1d6066afed74e70f4c`
 
@@ -88,6 +88,35 @@ EPOCH-3-PROTOCOL-SPEC.md from V2. FREEZE-REQUEST.md remains historical META,
 not protocol authority."). This request was updated only to record the new
 spec hash/status; it remains historical META and is not the authority for the
 rule.
+
+## THIRD ADJUDICATION — 2026-09-17 (third-party seat)
+
+Verdict on `2527303d4a3e8791cd7e3bf82cba02e7dd79184d`: **REFUSE — ONE FR-13
+WORDING DEFECT REMAINS (microscopic).** Authority (verbatim record):
+`/home/chow/rcos-campaign/FREEZE-RULING-3-2026-09-17.md`. The seat confirmed
+the lineage and scope are clean (exactly one commit ahead, only the two spec /
+request documents), that the missing FR-13 authority rule is now in the
+normative protocol specification (fixing the previous refusal), that the spec
+correctly keeps `EPOCH-3-PROTOCOL-SPEC.md` V2-governed even though it is also
+V1 META and correctly keeps `FREEZE-REQUEST.md` as historical META rather than
+protocol authority, and that nothing in FR-1 … FR-12 is reopened. The defect:
+the new subsection's opening sentence ("The epoch-3 preflight governance sets
+are exactly these, and no others:") would have frozen the six epoch-3 files as
+a REPLACEMENT of the existing META set rather than ADDITIONS to it, and would
+have required epoch 3 to drop existing META authorities (`FREEZE.json`,
+`FREEZE-HASHES.sha256`, the existing locks, execution status, audit records,
+`ORDER-EXPANSION.json`, epoch-1/epoch-2 lineage records).
+
+Correction applied (docs-only child of `2527303`): the subsection now opens
+with the ruling's verbatim form — "The epoch-3 preflight governance extensions
+are exactly:", a "V1 META additions:" block listing the six epoch-3 files, and
+a "V2 PROTOCOL_GOVERNED:" block listing "the existing seven governed files" +
+`EPOCH-3-PROTOCOL-SPEC.md`. The two required sentences ("Being V1 META MUST
+NOT exempt EPOCH-3-PROTOCOL-SPEC.md from V2." / "FREEZE-REQUEST.md remains
+historical META, not protocol authority.") are unchanged verbatim. No other
+content changed; this request was updated only to record the new spec hash and
+this third adjudication, and it remains historical META, not the authority for
+the rule.
 
 Freeze status after that correction: NOT FROZEN; implementation remains
 unauthorized. The expected next ruling on these corrected bytes is
