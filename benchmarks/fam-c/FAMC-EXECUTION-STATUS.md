@@ -476,3 +476,93 @@ verdicts + one validated denial).
 ## EPOCH-1 CLOSED — see EPOCH-1-CLOSURE.md (2026-09-17)
 
 Ruling: EPOCH-2 PROTOCOL; epoch 1 terminated-not-repaired; no abatement mechanism; epoch-1 cells archived and NOT carried forward; epoch-2 requires fresh locks + a new finalization commit and re-runs the order from the beginning. Epoch-1 artifacts are immutable historical evidence.
+
+
+## EPOCH-2 SLICE IMPLEMENTED — terminal-outcome progress semantics + epoch-2 lineage (2026-09-17)
+
+Per the ruling recorded in EPOCH-1-CLOSURE.md (EPOCH-2 PROTOCOL;
+terminal-outcome progress semantics), this slice lands the deadlock repair
+and the explicit epoch-2 lineage. No epoch-1 artifact was amended:
+state/PQ/** stays archived evidence, both FINAL locks keep their
+closure-recorded bytes (EXECUTION-LOCK.json f6616ea2…, PROTOCOL-LOCK.json
+96eac57b… — re-verified on disk by preflight), EPOCH-1-CLOSURE.md untouched.
+
+Harness (the ruling's algebra, harness/order.py + harness/promotion.py):
+- completed_cells()/cell_state() advance on VALIDATED event-specific
+  terminals: model cells (T0–T4) COMPLETE only; PROMOTION COMPLETE |
+  NOT-PROMOTED; CAPABILITY_LOCK COMPLETE | NOT-LOCKED; downstream cells of
+  a capability universe whose acquisition validly failed NOT-EVALUABLE;
+  INCOMPLETE/INADMISSIBLE never progress. No non-COMPLETE terminal converts
+  to COMPLETE or authorizes promotion, lock creation, capability
+  consumption, or retry (h37 proves each).
+- The CAPABILITY_LOCK event of a NOT-PROMOTED universe now HAS its terminal
+  writer: emit_capability_lock_outcome() writes
+  CAPABILITY-LOCK-OUTCOME.json (outcome NOT-LOCKED, reason
+  no-promotion-no-lock, created_from frozen-evidence, bound to the
+  promotion outcome sha256 + the REAL validated T0/T1 chain tips) into the
+  lock cell's derived run dir, fail-closed on an existing real lock, a
+  conflicting receipt, stray governance artifacts and re-invocation.
+  _not_locked_state validates the record before it can progress
+  (tampered field / forged tips / tampered bound bytes / fabricated
+  manifest / a real lock beside it => INADMISSIBLE, walk blocks).
+- promotion.advance() drives one failed universe to BOTH terminals in a
+  single call (NOT-PROMOTED recorded, then the lock event completes
+  NOT-LOCKED) and refuses with PROMOTION-DENY | LOCK-DENY; re-invocation
+  is an idempotent write-once refusal. next_event keeps deriving PROMOTION
+  while the terminal record is owed.
+
+Epoch-2 lineage (harness/epoch.py + harness/epoch_transition.py):
+- Operator commands:
+    python3 harness/epoch_transition.py --check
+    python3 harness/epoch_transition.py --transition --reason "..."
+  --transition verifies the epoch-1 closure facts on disk (refusing a
+  drifted epoch), writes EPOCH-2-TRANSITION.json (citing the closure record
+  sha256 917f379429a9… and both closure lock hashes) and mints the fresh
+  epoch-2 locks: EXECUTION-LOCK-EPOCH2.json (epoch 2, status open-round2,
+  its OWN append-only amendment lineage, 27 harness files) and
+  PROTOCOL-LOCK-EPOCH2.json (epoch 2, status living-lock, governed = the
+  transition-time governed bytes, ORDER-EXPANSION.json pin). Both carry the
+  transition citation; the transition is write-once and never finalizes.
+- All derived namespaces live under the ACTIVE epoch's state root
+  (state/epoch2/…): epoch-2 completed_cells()/cell_state()/readiness walks
+  never scan or write the archived epoch-1 evidence. Epoch-1 cells populate
+  no epoch-2 prefix positions (the ruling's archive-don't-carry-forward).
+- preflight V2/V3 accept the fresh lineage: the epoch-2 locks are the live
+  authority (same structural rules — linear append-only chains from the
+  recorded epoch-2 genesis, disk == unique tip, harness bytes/closure,
+  ORDER-EXPANSION pin re-verified, status vocabulary), while the epoch-1
+  FINAL locks are checked as HISTORICAL records (closure-cited bytes +
+  status) whose tips are no longer enforced against epoch-2 bytes. V1
+  recognizes the closure record + epoch-2 files as meta and no longer
+  judges runtime state/ — the closure commit had left preflight at 1/0/0
+  (six suites red on the same finding); this slice restores 0/0/0.
+- The runner's FINAL gate and the seal-time identity bundle read the ACTIVE
+  epoch's locks. Both epoch-2 locks are OPEN, so wired estimand cells are
+  refused with the named LOCK-NOT-FINAL finding naming the epoch-2 lock
+  until the OWNER finalizes (the epoch-1 FINAL locks authorize nothing).
+  mint_execution_lock.py is epoch-aware (re-mint/finalize the active
+  lineage; the closed epoch-1 lock is never touched): the slice's three
+  later harness changes were recorded as the epoch-2 lock's first three
+  own-lineage amendments (epoch2-slice).
+- Deferred to the owner: epoch-2 finalization (both locks -> FINAL) and the
+  epoch-2 cell execution from the beginning under the finalized lineage.
+
+Verification at code ref c62c54ff048156edfb2846b0778290587aaa7342 (clean
+/tmp/rcos-runs + /tmp/rcos-visible, per-suite direct exit codes, 300s cap):
+full smoke battery 39/39 PASS (38 pre-existing + harness/tests/
+smoke_h37_epoch2_semantics.py 26/26); `python3 benchmarks/fam-c/preflight.py`
+0/0/0; `benchmarks/fam-c/runs/_synthetic-attack/run_attack.sh` 5 PASS /
+0 FAIL at the same ref (h12 51/51, h13 50/50, h16 27/27, h25 19/19,
+h34 29/29). Baseline at the pre-slice ref a012d60 for contrast: 32/38 PASS
+with ALL six failures = `V1 INSTANCE-FREEZE: extra file not in freeze
+manifest: EPOCH-1-CLOSURE.md`.
+
+Suite updates required by the new semantics/lineage (none weakened):
+H12 adds the algebra table + the strict-prefix ledger proof; H28/H29/H30/
+H31/H35 live-lineage probes judge the ACTIVE epoch; H30/H31 certified
+preflight.py lineage constants re-certified 26 -> 27; H36's live gate proof
+is epoch-aware (open active locks => named refusal); H7's derived-namespace
+probe asserts the rule under the ACTIVE state root. Runtime: h25 (the
+minutes-scale suite) re-timed 191s baseline -> 162s after threading the
+loaded ORDER-EXPANSION through the validation walk and short-circuiting
+acquisition_failed() on the cheap committed artifacts.
