@@ -286,7 +286,9 @@ _v2_live = [f for f in PF.validate_protocol(FAMC, FREEZE)
             if f.startswith("V2")]
 check("D7.2-1 corrected lock on the real repo: V2 green",
       _v2_live == [], str(_v2_live[:2])[:200])
-_tips, _tip_find = PF.protocol_tips(FAMC, FREEZE)
+# EPOCH-2: the live-lineage probe judges the ACTIVE authority (epoch-1
+# lock, or the fresh epoch-2 lock against its recorded genesis base).
+_tips, _tip_find = PF.active_protocol_tips(FAMC, FREEZE)
 check("D7.2-1 validator tips computed for every governed file",
       _tip_find == []
       and sorted(_tips) == sorted(PF.PROTOCOL_GOVERNED),

@@ -1,0 +1,28 @@
+{
+ "transition": "epoch-1-to-epoch-2",
+ "epoch_id": "epoch2",
+ "from_epoch": 1,
+ "to_epoch": 2,
+ "ruling": "EPOCH-1-CLOSURE.md (third-party ruling, 2026-09-17): EPOCH-2 PROTOCOL + TERMINAL-OUTCOME PROGRESS SEMANTICS; epoch 1 terminated-not-repaired, immutable",
+ "epoch1_closure_record": "EPOCH-1-CLOSURE.md",
+ "closure_record_sha256": "917f379429a90f50edb20972763da028b1c86a79c04b7c3f0106fbd708758dd9",
+ "epoch1_execution_lock_sha256": "f6616ea2a495ae3f5a5d2f5d5b35b503eddc9aaca21a43358d756c1bd49b0f24",
+ "epoch1_protocol_lock_sha256": "96eac57be905b2f030f02615e4774d2a9ac2adab8c7e1aa26fe3e39efe695a54",
+ "epoch1_finalization_commit": "1e146279077b8b442e8c0542887349156aa4571f",
+ "epoch1_certification_ref": "2a1309d302440ef060a436b31152fb646758840a",
+ "state_prefix": "state/epoch2",
+ "execution_lock": "EXECUTION-LOCK-EPOCH2.json",
+ "protocol_lock": "PROTOCOL-LOCK-EPOCH2.json",
+ "genesis": {
+  "PREREG.md": "708ad2acd9b408c139d5068aebd7cda19e7f8aaab15476b852c3e2e352091192",
+  "ORDER.md": "4510076a0550788806cb86683279613cd961a6a0bb336c933fad7fae8833f469",
+  "LANES.md": "fc1059c41702c5780928e1d3fce7eaa87e9727d2465af76cfbc28269d0179032",
+  "HARNESS-READINESS.md": "34ce046ae9b16d2f3632e429b767e092df02bb8f158198387652f91e57e7c60c",
+  "preflight.py": "f7fe834fab68505793a5298b30a3e2895071db3353baf795d657926e56631a76",
+  "T4-SEMANTIC-IDS.json": "f9feaedcef50f2940328692f9d9c5aa3865f0e7dc2f8870ffa4c3529af096d57",
+  "T4-CONFORMANCE.json": "a7e044a126b615521254b2b8494603970806213f82bfb7cc59ab604196bc9654"
+ },
+ "reason": "third-party ruling EPOCH-2 PROTOCOL (EPOCH-1-CLOSURE.md): fresh locks + new lineage; owner finalizes later",
+ "created_at": "2026-09-17T05:36:58Z",
+ "created_from": "frozen-evidence (epoch-1 closure record)"
+}

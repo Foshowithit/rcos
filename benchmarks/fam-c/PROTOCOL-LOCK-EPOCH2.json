@@ -1,0 +1,31 @@
+{
+ "lock": "PROTOCOL-LOCK",
+ "epoch": 2,
+ "status": "living-lock",
+ "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
+ "note": "EPOCH-2 lineage (fresh locks + new finalization). Minted by harness/epoch_transition.py from the epoch-1 closure record; its own append-only amendment lineage (NOT an amendment to the epoch-1 lineage). The epoch-1 PROTOCOL-LOCK.json stays frozen as the historical record of the closed epoch. Forward amendments to a governed file are appended here (human-written reason), exactly as before \u2014 on this new base.",
+ "governed": {
+  "PREREG.md": "708ad2acd9b408c139d5068aebd7cda19e7f8aaab15476b852c3e2e352091192",
+  "ORDER.md": "4510076a0550788806cb86683279613cd961a6a0bb336c933fad7fae8833f469",
+  "LANES.md": "fc1059c41702c5780928e1d3fce7eaa87e9727d2465af76cfbc28269d0179032",
+  "HARNESS-READINESS.md": "34ce046ae9b16d2f3632e429b767e092df02bb8f158198387652f91e57e7c60c",
+  "preflight.py": "f7fe834fab68505793a5298b30a3e2895071db3353baf795d657926e56631a76",
+  "T4-SEMANTIC-IDS.json": "f9feaedcef50f2940328692f9d9c5aa3865f0e7dc2f8870ffa4c3529af096d57",
+  "T4-CONFORMANCE.json": "a7e044a126b615521254b2b8494603970806213f82bfb7cc59ab604196bc9654"
+ },
+ "amendments": [],
+ "protocol_artifacts": {
+  "ORDER-EXPANSION.json": "449be793cf764204b8326a56914dd19c90f16371600db9d97faf60ccbe43f47a"
+ },
+ "transition": {
+  "record": "EPOCH-2-TRANSITION.json",
+  "record_sha256": "047aef2fcfef76803cb0999edcd17027aa2997b91a7face8ad9a83012136bb6b",
+  "from_epoch": 1,
+  "epoch1_closure_record": "EPOCH-1-CLOSURE.md",
+  "epoch1_execution_lock_sha256": "f6616ea2a495ae3f5a5d2f5d5b35b503eddc9aaca21a43358d756c1bd49b0f24",
+  "epoch1_protocol_lock_sha256": "96eac57be905b2f030f02615e4774d2a9ac2adab8c7e1aa26fe3e39efe695a54",
+  "epoch1_finalization_commit": "1e146279077b8b442e8c0542887349156aa4571f",
+  "reason": "third-party ruling EPOCH-2 PROTOCOL (EPOCH-1-CLOSURE.md): fresh locks + new lineage; owner finalizes later"
+ },
+ "created_at": "2026-09-17T05:36:58Z"
+}

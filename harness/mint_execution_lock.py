@@ -27,6 +27,12 @@ the named EXECUTION-LOCK-FINAL-REFUSED error — fail-closed, no
 side is preflight.validate_execution_final). --check still works on a
 FINAL lock (staleness reporting only). Stdlib only. The lock file itself
 is authoritative via git history.
+
+EPOCH-2 (EPOCH-1-CLOSURE.md): the tool is epoch-aware — it re-mints and
+finalizes the ACTIVE epoch's execution lock. Under epoch 2 that is the
+fresh EXECUTION-LOCK-EPOCH2.json (its own append-only amendment lineage,
+never an amendment to the closed epoch-1 lock); under epoch 1 it is the
+historical path. The rest of the lifecycle is unchanged.
 """
 import argparse
 import hashlib
@@ -38,10 +44,24 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-LOCK = os.path.join(ROOT, "benchmarks", "fam-c", "EXECUTION-LOCK.json")
+FAMC = os.path.join(ROOT, "benchmarks", "fam-c")
 sys.path.insert(0, os.path.join(ROOT, "benchmarks", "fam-c"))
 from preflight import _harness_closure  # noqa: E402  (same closure rule)
 sys.path.insert(0, os.path.join(ROOT, "harness"))
+import epoch as _epoch_lineage  # noqa: E402
+
+
+def _active_lock_path():
+    """The ACTIVE epoch's execution lock (EPOCH-1-CLOSURE.md): under epoch
+    2 the fresh EXECUTION-LOCK-EPOCH2.json is the live authority — this
+    tool re-mints/finalizes THAT lineage; under epoch 1 the historical
+    path. The closed epoch-1 lock is never touched once epoch 2 is
+    active."""
+    return os.path.join(FAMC,
+                        _epoch_lineage.active_lock_names(FAMC)[0])
+
+
+LOCK = _active_lock_path()
 
 
 def _frozen_constants():

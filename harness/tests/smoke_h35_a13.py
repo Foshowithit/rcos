@@ -1169,8 +1169,13 @@ check("H35b-ISOLATION-KEYS real receipt carries the complete required "
 # clean tree.
 _bun4r = _iso4r["execution_identity"]
 _bun4s = _seal_iso4["execution_identity"]
-_lock4 = json.load(open(os.path.join(FAMC, "EXECUTION-LOCK.json")))
-_lockraw4 = open(os.path.join(FAMC, "EXECUTION-LOCK.json"), "rb").read()
+# EPOCH-2 (EPOCH-1-CLOSURE.md): the runner seals with the ACTIVE epoch's
+# execution lock (state/epoch2/** IS the epoch-2 lineage), so this control
+# reads the SAME authority — the epoch-1 lock stays a historical record.
+import epoch as _EPOCH_H35  # noqa: E402
+_ACTIVE_EL = _EPOCH_H35.active_lock_names(FAMC)[0]
+_lock4 = json.load(open(os.path.join(FAMC, _ACTIVE_EL)))
+_lockraw4 = open(os.path.join(FAMC, _ACTIVE_EL), "rb").read()
 _remap4 = {}
 for _rel4 in sorted(_bun4r["harness_manifest_map"]):
     with open(os.path.join(REPO, _rel4), "rb") as _fh4:

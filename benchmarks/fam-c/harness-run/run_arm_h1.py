@@ -191,6 +191,11 @@ from order import (verify_expansion as order_verify_expansion,
 sys.path.insert(0, BASE)
 from preflight import validate_all as preflight_validate_all
 from preflight import _harness_closure as _preflight_harness_closure
+# EPOCH-2 lineage (EPOCH-1-CLOSURE.md): the FINAL-lock gate and the
+# seal-time execution-identity bundle read the ACTIVE epoch's lock; under
+# epoch 2 that is the fresh EXECUTION-LOCK-EPOCH2.json, never the closed
+# epoch-1 lock (which stays a historical record).
+import epoch as epoch_lineage
 
 CHAIN_FILE = "EVIDENCE-CHAIN.jsonl"
 GRADING_RULE_VERSION = "checker-contract-v1"
@@ -1590,7 +1595,7 @@ def final_lock_gate(base=None, exec_sha=None):
 
     Returns a list of named findings; EMPTY means the run may start.
     For a WIRED estimand-surface cell (the only caller shape that must
-    pass this gate) BOTH lock authorities must be FINAL:
+    pass this gate) BOTH ACTIVE-EPOCH lock authorities must be FINAL:
 
       * EXECUTION-LOCK and PROTOCOL-LOCK each carry status "FINAL" with a
         UTC finalized_at and a 40-hex finalization_commit — a lock in any
@@ -1603,6 +1608,14 @@ def final_lock_gate(base=None, exec_sha=None):
         a post-FINAL estimand cell cannot execute from harness bytes
         outside the finalized lineage.
 
+    EPOCH-2 (EPOCH-1-CLOSURE.md): once the explicit epoch-2 transition
+    record exists, the ACTIVE authorities are the fresh epoch-2 locks
+    (EXECUTION-LOCK-EPOCH2.json / PROTOCOL-LOCK-EPOCH2.json); the epoch-1
+    FINAL locks are historical records and authorize nothing. The epoch-2
+    locks mint OPEN, so a wired estimand cell is refused (LOCK-NOT-FINAL,
+    naming the epoch-2 lock) until the owner finalizes epoch 2 — exactly
+    the ruling's "fresh locks + new finalization".
+
     The dev escape (--dev-unwired-outdir, wire=False, manifest
     dev_mode=true) never reaches this gate, and harness-validation
     (H1-*) runs stay lawful under an open lock: the estimand/harness-
@@ -1614,7 +1627,8 @@ def final_lock_gate(base=None, exec_sha=None):
     exec_sha = exec_sha or exec_commit()
     findings = []
     locks = {}
-    for name in ("EXECUTION-LOCK.json", "PROTOCOL-LOCK.json"):
+    _active = epoch_lineage.active_lock_names(base)
+    for name in _active:
         lock, fnd = _final_gate_lock(base, name)
         locks[name] = lock
         if lock is not None and lock.get("status") == "FINAL":
@@ -1638,7 +1652,7 @@ def final_lock_gate(base=None, exec_sha=None):
         findings.extend(fnd)
     # Descent: the EXECUTION authority owns the harness lineage, so the
     # run's harness commit is judged against ITS finalization commit.
-    el = locks.get("EXECUTION-LOCK.json")
+    el = locks.get(_active[0])
     if isinstance(el, dict):
         fc = el.get("finalization_commit")
         if isinstance(fc, str) and \
@@ -2808,7 +2822,8 @@ def execute_a13_legs(*, family, task, cap_info, cap_engine, on_exec,
         # lock artifact sha. Computed once here; grade_a13_legs
         # forwards the identical object (seal/receipt drift on any
         # of the three keys is itself acceptance-blocking).
-        _lock_path = os.path.join(BASE, "EXECUTION-LOCK.json")
+        _lock_path = os.path.join(
+            BASE, epoch_lineage.active_lock_names(BASE)[0])
         try:
             with open(_lock_path, "rb") as _lf:
                 _lock_raw = _lf.read()
