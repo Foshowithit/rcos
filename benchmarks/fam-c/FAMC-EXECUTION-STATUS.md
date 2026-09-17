@@ -408,7 +408,7 @@ battery 38/38 at that ref with direct exit codes; post-FINAL mint/amend/reopen
 refused with EXECUTION-LOCK-FINAL-REFUSED; live gate proof A0b), the first
 authorized cell of the frozen order ran:
 
-- Cell  = PQ/fam05/T0/acquisition (universe A), lane P
+- Cell 9907c5cb038c02e0 = PQ/fam05/T0/acquisition (universe A), lane P
   (OpenCode Go union-alpha), ONE real provider call. Arrival decision: fresh.
   Container rc 0. Frozen mechanical checker verdict: **fix** (the produced
   artifact does not yet satisfy the frozen checker contract — a legitimate
