@@ -388,11 +388,13 @@ check("D8.2 the 9caf3d4f explanation lives in the D8 amendment "
       in open(os.path.join(FAMC, "PREREG.md")).read())
 # Re-certified at A16 (f223675): 53 at 0cf5b9d — the R4-RECONCILE-P0-R4-4
 # preflight.py forward amendment (base d94dcf4) — plus one
-# A16-FINAL-SEMANTICS forward amendment.
+# A16-FINAL-SEMANTICS forward amendment. Re-certified at
+# AMEND-2026-09-16-lane-p (a9ba55e): + 1 lane-p forward amendment.
 check("D8.2 no other amendment entry deleted (30 at D7 - 2 removed "
       "a12 edges + 1 D8 edge + 2 D8 forward + 2 D9 forward "
-      "+ 2 D10 forward + 10 D11 forward + 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward + 1 D13 forward + 1 D13c forward + 1 A13 forward + 1 R4-RECONCILE-P0-R4-4 forward + 1 A16-FINAL-SEMANTICS forward = 54)",
-      len(LIVE_LOCK["amendments"]) == 54,
+      "+ 2 D10 forward + 10 D11 forward + 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward + 1 D13 forward + 1 D13c forward + 1 A13 forward + 1 R4-RECONCILE-P0-R4-4 forward + 1 A16-FINAL-SEMANTICS forward "
+      "+ 1 AMEND-2026-09-16-lane-p forward + 1 PROTOCOL-FINAL readiness forward = 56)",
+      len(LIVE_LOCK["amendments"]) == 56,
       str(len(LIVE_LOCK["amendments"])))
 check("D8.2 D8 recorded as its own forward amendment "
       "AMEND-2026-09-09-d8-shared-lineage (PREREG + preflight edges)",

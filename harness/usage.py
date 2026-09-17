@@ -38,6 +38,14 @@ RAW_SCHEMAS = {
         "cached": ("prompt_tokens_details", "cached_tokens"),  # absent -> 0
         "total": ("total_tokens",),                   # optional consistency
     },
+    # Canonical Anthropic /messages usage block (opencode go union-alpha
+    # lane, AMEND-2026-09-16-lane-p): input_tokens EXCLUDES cache reads;
+    # cache_read_input_tokens is reported separately (absent -> 0).
+    "anthropic-messages": {
+        "input_total": ("input_tokens",),
+        "output": ("output_tokens",),
+        "cached": ("cache_read_input_tokens",),       # absent -> 0
+    },
 }
 
 PROVIDER_NORMALIZERS = {
@@ -86,6 +94,21 @@ PROVIDER_NORMALIZERS = {
         "cache_semantics": ("prompt_tokens is TOTAL prompt input (cache "
                             "included); uncached = prompt_tokens - "
                             "prompt_tokens_details.cached_tokens")},
+    # AMEND-2026-09-16-lane-p: lane P re-registered to the OpenCode Go
+    # gateway (union-alpha, Anthropic-style /messages) after router9's
+    # monthly credit pool exhausted 2026-09-16 with estimand-grade = 0 —
+    # no estimand data ever existed on the superseded binding.
+    "opencode-go-union-alpha-v2": {
+        "raw_schema": "anthropic-messages",
+        "input_includes_cache": False,
+        "bound": {"lane": "P", "provider": "opencode-go",
+                  "model_family": "Union",
+                  "gateway_model": "union-alpha",
+                  "endpoint_base": "https://opencode.ai/zen/go/v1"},
+        "supersedes": "router9-openai-chat-v2",
+        "cache_semantics": ("input_tokens EXCLUDES cache reads; "
+                            "cache_read_input_tokens reported separately "
+                            "(absent -> 0), retained, never subtracted")},
 }
 
 
@@ -93,7 +116,8 @@ PROVIDER_NORMALIZERS = {
 def recorded_call(endpoint, api_key_name, api_key, model, messages,
                   out_dir, extra_body=None, timeout=300, tag="",
                   normalizer_id="openai-chat-total-input-v1",
-                  return_response=False):
+                  return_response=False,
+                  api_style="openai", session_header=None):
     """POST a chat-completions call, persist raw usage + metadata.
     Returns (reply_text, receipt_path); with return_response=True also
     returns the parsed provider response object as a third element, so
@@ -103,6 +127,9 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
     — never silently retried for judgment reasons here)."""
     body = dict(extra_body or {})
     body.update({"model": model, "messages": messages})
+    if api_style == "anthropic" and "max_tokens" not in body:
+        raise RuntimeError("USAGE-CONFIG: anthropic transport requires "
+                           "max_tokens in the generation params")
     blob = json.dumps(body).encode()
     os.makedirs(out_dir, exist_ok=True)
     # P1 (audit): ONE source of truth for the send AND the record. The exact
@@ -125,10 +152,21 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
             persisted = f.read()  # EXACT bytes: hashed below AND sent below
         request_body_sha256 = hashlib.sha256(persisted).hexdigest()
         t0 = time.time()
+        if api_style == "anthropic":
+            path, headers = "/messages", {
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "User-Agent": "rcos-famc-harness/1.0",
+                "Content-Type": "application/json"}
+            if session_header:
+                headers["x-opencode-session"] = session_header
+        else:
+            path, headers = "/chat/completions", {
+                "Authorization": "Bearer " + api_key,
+                "User-Agent": "rcos-famc-harness/1.0",
+                "Content-Type": "application/json"}
         req = urllib.request.Request(
-            endpoint.rstrip("/") + "/chat/completions", data=persisted,
-            headers={"Authorization": "Bearer " + api_key,
-                     "Content-Type": "application/json"})
+            endpoint.rstrip("/") + path, data=persisted, headers=headers)
         try:
             resp = urllib.request.urlopen(req, timeout=timeout)
             status = resp.status
@@ -137,10 +175,16 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
             raise RuntimeError(f"USAGE-CALL-FAIL {endpoint} {model}: "
                                f"{type(e).__name__} {str(e)[:200]}")
         wall = time.time() - t0
-        try:
-            reply = data["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError) as e:
-            raise RuntimeError(f"USAGE-MALFORMED {endpoint} {model}: {e}")
+        if api_style == "anthropic":
+            reply = "".join(b.get("text", "")
+                            for b in data.get("content", [])
+                            if isinstance(b, dict)
+                            and b.get("type") == "text")
+        else:
+            try:
+                reply = data["choices"][0]["message"]["content"]
+            except (KeyError, IndexError, TypeError) as e:
+                raise RuntimeError(f"USAGE-MALFORMED {endpoint} {model}: {e}")
         if reply is None:
             # Round-4 reconcile follow-up: a quota/error payload can carry
             # choices[].message.content = null (kenari free lane). Fail with

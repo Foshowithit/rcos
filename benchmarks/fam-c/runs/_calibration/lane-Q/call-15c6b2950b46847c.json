@@ -1,0 +1,23 @@
+{
+ "call_id": "15c6b2950b46847c",
+ "tag": "calibration-Q",
+ "endpoint": "https://kenari.id/v1",
+ "model_requested": "agnes-2-0-flash:free",
+ "wall_s": 0.0,
+ "timestamp": "2026-09-17T01:20:00Z",
+ "request_body_sha256": "eee69273d8b43bbce24204c0c7c42a53433e851be608b35a536f6b47fedf83fa",
+ "request_body_file": "call-15c6b2950b46847c.request.json",
+ "request_body_file_sha256": "eee69273d8b43bbce24204c0c7c42a53433e851be608b35a536f6b47fedf83fa",
+ "usage_raw": {
+  "prompt_tokens": 20,
+  "completion_tokens": 3,
+  "total_tokens": 23,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  }
+ },
+ "usage_raw_sha256": "864ae8e11fedc9a0149ce5c974c21db7ed75324023e948205ad028af3222b11a",
+ "normalizer_id": "kenari-openai-chat-v2",
+ "normalizer_version": "usage-norm-v1",
+ "normalizer_rule": "offline rehearsal fixture"
+}

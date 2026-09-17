@@ -1,0 +1,15 @@
+{
+ "cached_tokens": 0,
+ "call_id": "65ff1969b8ee852b",
+ "endpoint": "https://opencode.ai/zen/go/v1",
+ "input_tokens_uncached": 24,
+ "model_requested": "union-alpha",
+ "normalized_sha256": "8a2f5bc7153fe4f955e3bfdedddfab86a59d6196a79d424eccdd5c444b7c4305",
+ "normalizer_id": "opencode-go-union-alpha-v2",
+ "normalizer_rule": "primary_work = input_tokens_uncached + output_tokens; cached tokens retained separately, never zeroed, never mixed into uncached",
+ "normalizer_version": "usage-norm-v1",
+ "output_tokens": 4,
+ "primary_work": 28,
+ "raw_receipt_file": "call-65ff1969b8ee852b.json",
+ "raw_receipt_sha256": "fdccd9c8d9d0f9a84cd0a7ee61e90869134f1ee3185a87bac9bd1a66964f5910"
+}

@@ -1,0 +1,1 @@
+{"temperature": 0, "max_tokens": 256, "top_p": 1, "model": "union-alpha", "messages": [{"role": "user", "content": "Reply with exactly the token: CALIBRATION-ACK"}]}

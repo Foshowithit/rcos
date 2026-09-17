@@ -228,10 +228,11 @@ check("D11.1-GOV the append-only-forward lock policy is documented "
       open(os.path.join(FAMC, "PREREG.md")).read())
 # Re-certified at A16 (f223675): 53 at 0cf5b9d — the R4-RECONCILE-P0-R4-4
 # preflight.py forward amendment (base d94dcf4) — plus one
-# A16-FINAL-SEMANTICS forward amendment.
+# A16-FINAL-SEMANTICS forward amendment. Re-certified at
+# AMEND-2026-09-16-lane-p (a9ba55e): + 1 lane-p forward amendment.
 check("D11.1-GOV no amendment entry deleted (35 at D10 + 10 D11 "
-      "+ 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward + 1 D13 forward + 1 D13c forward + 1 A13 forward + 1 R4-RECONCILE-P0-R4-4 forward + 1 A16-FINAL-SEMANTICS forward = 54) and D11+D12+D12b+D12c+D12d+D13+D13c+A13+R4-RECONCILE-P0-R4-4+A16-FINAL-SEMANTICS recorded as forward amendments",
-      len(_LIVE_LOCK["amendments"]) == 54
+      "+ 1 D12 forward + 1 D12b forward + 1 D12c forward + 1 D12d forward + 1 D13 forward + 1 D13c forward + 1 A13 forward + 1 R4-RECONCILE-P0-R4-4 forward + 1 A16-FINAL-SEMANTICS forward + 1 AMEND-2026-09-16-lane-p forward + 1 PROTOCOL-FINAL readiness forward = 56) and D11+D12+D12b+D12c+D12d+D13+D13c+A13+R4-RECONCILE-P0-R4-4+A16-FINAL-SEMANTICS+AMEND-2026-09-16-lane-p+PROTOCOL-FINAL recorded as forward amendments",
+      len(_LIVE_LOCK["amendments"]) == 56
       and sum(1 for a in _LIVE_LOCK["amendments"]
               if a.get("slice") == "a12l-slice-d11") == 10
       and sum(1 for a in _LIVE_LOCK["amendments"]
@@ -251,7 +252,9 @@ check("D11.1-GOV no amendment entry deleted (35 at D10 + 10 D11 "
       and sum(1 for a in _LIVE_LOCK["amendments"]
               if a.get("slice") == "R4-RECONCILE-P0-R4-4") == 1
       and sum(1 for a in _LIVE_LOCK["amendments"]
-              if a.get("slice") == "A16-FINAL-SEMANTICS") == 1,
+              if a.get("slice") == "A16-FINAL-SEMANTICS") == 1
+      and sum(1 for a in _LIVE_LOCK["amendments"]
+              if a.get("slice") == "R4-RECONCILE-LANE-P") == 1,
       str(len(_LIVE_LOCK["amendments"])))
 
 # --- D11.1-HISTORY: append-only genesis (delete/edit old entries) ----
@@ -536,11 +539,12 @@ check("D11.2-LIVE first-parent sequences equal the old walk for all "
       not _BAD, f"diverged={_BAD}")
 # Re-certified at A16 (f223675): preflight.py lineage 25 at 0cf5b9d (the
 # R4-RECONCILE-P0-R4-4 forward amendment, base d94dcf4) plus one
-# A16-FINAL-SEMANTICS commit -> 26.
+# A16-FINAL-SEMANTICS commit -> 26. Re-certified at
+# AMEND-2026-09-16-lane-p (a9ba55e): LANES.md + 1 commit -> 6.
 check("D11.2-LIVE live sequence lengths match the certified D11 "
-      "facts (PREREG 29, preflight 26, rest 5/5/12/1/7)",
-      _LENS == {"PREREG.md": 29, "ORDER.md": 5, "LANES.md": 5,
-                "HARNESS-READINESS.md": 12, "preflight.py": 26,
+      "facts (PREREG 29, preflight 26, rest 5/6/12/1/7)",
+      _LENS == {"PREREG.md": 29, "ORDER.md": 5, "LANES.md": 6,
+                "HARNESS-READINESS.md": 13, "preflight.py": 26,
                 "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str(_LENS))
 

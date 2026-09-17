@@ -81,11 +81,34 @@ import preflight as PF  # noqa: E402  (real repo validator under test)
 # the probes below would otherwise be indistinguishable from lock rot.
 check("A0 real three-authority preflight is green in this checkout",
       PF.validate_all(FAMC) == [], str(PF.validate_all(FAMC))[:200])
+# A0b (final epoch): on a FINAL repo the LIVE gate must PASS for a
+# descent-valid tree — the positive counterpart of the refusal proofs
+# below (which run against the open fixture worktree).
+if json.load(open(os.path.join(FAMC, "EXECUTION-LOCK.json"))).get("status") == "FINAL":
+    import subprocess as _sp
+    _probe = (
+        "import sys; sys.path.insert(0, %r); import run_arm_h1 as RA; "
+        "print(RA.final_lock_gate(%r))" % (
+            os.path.join(FAMC, "harness-run"), FAMC))
+    _pr = _sp.run([sys.executable, "-c", _probe], capture_output=True,
+                  text=True)
+    check("A0b live post-FINAL gate PASSES on the real tree (descent-valid)",
+          _pr.returncode == 0 and _pr.stdout.strip() == "[]",
+          (_pr.stdout + _pr.stderr)[:200])
 
 # ---------------------------------------------------------------- surface
-# One disposable git worktree at HEAD: real git history for the ancestry
-# checks, real locks for the gates, all writes land in the worktree.
-p = sh(["git", "-C", REPO, "worktree", "add", "--detach", WT, "HEAD"])
+# One disposable git worktree: real git history for the ancestry checks,
+# real locks for the gates, all writes land in the worktree. EPOCH-AWARE
+# (Round-6 finalization): the A/B arc exercises the OPEN -> FINAL
+# transition, so when the real repo HEAD is already FINAL the fixture is
+# anchored at the recorded finalization_commit — the last OPEN state —
+# keeping every refusal proof intact. On an OPEN-HEAD repo the fixture
+# anchors at HEAD exactly as before.
+_real_el = json.load(open(os.path.join(FAMC, "EXECUTION-LOCK.json")))
+_anchor = "HEAD"
+if _real_el.get("status") == "FINAL":
+    _anchor = _real_el["finalization_commit"]
+p = sh(["git", "-C", REPO, "worktree", "add", "--detach", WT, _anchor])
 assert p.returncode == 0, p.stderr
 import atexit  # noqa: E402  (cleanup on ANY exit path, incl. refusal)
 _CLEANUP_DIRS = []

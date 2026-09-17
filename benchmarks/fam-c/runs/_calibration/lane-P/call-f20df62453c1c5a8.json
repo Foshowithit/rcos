@@ -1,0 +1,20 @@
+{
+ "call_id": "f20df62453c1c5a8",
+ "tag": "calibration-P",
+ "endpoint": "https://opencode.ai/zen/go/v1",
+ "model_requested": "union-alpha",
+ "wall_s": 2.92,
+ "timestamp": "2026-09-17T01:27:58Z",
+ "request_body_sha256": "510eedc82900dee5aa0f6a410ffcaead0bb938d4dd311d23e9bb50f12f3be236",
+ "request_body_file": "call-f20df62453c1c5a8.request.json",
+ "request_body_file_sha256": "510eedc82900dee5aa0f6a410ffcaead0bb938d4dd311d23e9bb50f12f3be236",
+ "usage_raw": {
+  "input_tokens": 10,
+  "output_tokens": 21,
+  "cache_read_input_tokens": 0
+ },
+ "usage_raw_sha256": "47fa247af7fdbbaaf6535898daef0bf0b7987e644aed6b532013d9dabb2bd2a6",
+ "normalizer_id": "opencode-go-union-alpha-v2",
+ "normalizer_version": "usage-norm-v1",
+ "normalizer_rule": "primary_work = input_tokens_uncached + output_tokens; cached tokens retained separately, never zeroed, never mixed into uncached"
+}

@@ -445,10 +445,29 @@
    "reason": "A16 FINAL-lock semantics (audit round-3 item 4; A11b P0-5): preflight.py enforces the terminal lock state \u2014 status vocabulary living-lock/FINAL (open-round2 on the execution authority), finalized_at + finalization_commit shape on FINAL, amendments past FINAL refused (execution: terminal-amendment position; protocol: finalized_amendment_count), the ORDER-EXPANSION.json protocol-artifact pin verified against live bytes from the moment it is recorded (experimental ordering is methodology), and a FINAL lock finalization_commit proved an ancestor of HEAD. The pin is recorded NOW (protocol_artifacts, ORDER-EXPANSION.json 449be793\u2026) and status stays living-lock \u2014 mechanism only; finalization awaits the live P/Q calibration pair + auditor sign-off. Operator-authorized A16 slice.",
    "base": "d75e379",
    "slice": "A16-FINAL-SEMANTICS"
+  },
+  {
+   "file": "LANES.md",
+   "from_sha": "31c682e8b0c702aa8a78efbb74018ed1cc0e669aec541138cf0b49d7aa9c5f27",
+   "to_sha": "fc1059c41702c5780928e1d3fce7eaa87e9727d2465af76cfbc28269d0179032",
+   "reason": "AMEND-2026-09-16-lane-p (operator-authorized): lane P re-registered from router9/minimax-m3 (monthly credit pool exhausted 2026-09-16) to OpenCode Go union-alpha (Anthropic-style /messages, x-opencode-session header, unlimited-window lane) BEFORE any estimand run existed \u2014 estimand-grade remained 0 throughout, so no estimand data is affected. New provider-bound v2 adapter opencode-go-union-alpha-v2 preregistered in usage.py with raw schema anthropic-messages; Q unchanged. Superseded router9 binding retained for historical receipt normalization only.",
+   "base": "b5e826b",
+   "slice": "R4-RECONCILE-LANE-P"
+  },
+  {
+   "file": "HARNESS-READINESS.md",
+   "from_sha": "66732960bc20cc20b4e0ff1b21ba9a71ba4ebd9b5500df4c087a3c72f47d4c46",
+   "to_sha": "34ce046ae9b16d2f3632e429b767e092df02bb8f158198387652f91e57e7c60c",
+   "reason": "PROTOCOL-FINAL slice: readiness doc refreshed to the finalization state (harness complete through A16; reconciliation + lane-P amendment + calibration pair recorded). This amendment is inside the FINAL amendment count by construction.",
+   "base": "1e14627",
+   "slice": "PROTOCOL-FINAL"
   }
  ],
- "status": "living-lock",
+ "status": "FINAL",
  "protocol_artifacts": {
   "ORDER-EXPANSION.json": "449be793cf764204b8326a56914dd19c90f16371600db9d97faf60ccbe43f47a"
- }
+ },
+ "finalized_at": "2026-09-17T03:56:59Z",
+ "finalization_commit": "1e146279077b8b442e8c0542887349156aa4571f",
+ "finalized_amendment_count": 56
 }

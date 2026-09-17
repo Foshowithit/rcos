@@ -292,10 +292,16 @@ LANES = {
     # normalizer: A1 provider-bound v2 adapter id (usage.py PROVIDER_NORMALIZERS)
     # preregistered for THIS lane's gateway + model family. New calls MUST
     # declare the v2 id; historical receipts stay on the superseded v1 id.
-    "P": {"keyfile": os.path.expanduser("~/.agent-vault/keys/router9.key"),
-          "base": "https://api.router9.com/v1", "model": "minimax-m3",
-          "family": "MiniMax", "normalizer": "router9-openai-chat-v2",
-          "echo_acceptable": ["minimax-m3"]},
+    # AMEND-2026-09-16-lane-p: P re-registered to the OpenCode Go gateway
+    # (union-alpha, Anthropic-style /messages + x-opencode-session header)
+    # after router9's monthly credit pool exhausted 2026-09-16 with
+    # estimand-grade = 0 — no estimand data ever existed on the superseded
+    # binding. Operator-authorized; see LANES.md forward amendment.
+    "P": {"keyfile": os.path.expanduser("~/.agent-vault/keys/opencode-go.key"),
+          "base": "https://opencode.ai/zen/go/v1", "model": "union-alpha",
+          "family": "Union", "normalizer": "opencode-go-union-alpha-v2",
+          "api_style": "anthropic", "session": "rcos-famc-p-lane",
+          "echo_acceptable": ["union-alpha"]},
     "Q": {"keyfile": os.path.expanduser("~/.agent-vault/keys/kenari.key"),
           "base": "https://kenari.id/v1", "model": "agnes-2-0-flash:free",
           "family": "Kenari-Agnes", "normalizer": "kenari-openai-chat-v2",
@@ -1524,7 +1530,9 @@ def call(lane, prompt, outdir, tag):
     reply, receipt, resp = recorded_call(
         cfg["base"], cfg["keyfile"], key, cfg["model"], messages, outdir,
         extra_body=extra_body, timeout=300, tag=tag,
-        normalizer_id=cfg["normalizer"], return_response=True)
+        normalizer_id=cfg["normalizer"], return_response=True,
+        api_style=cfg.get("api_style", "openai"),
+        session_header=cfg.get("session"))
     # A1 (audit round 2 item 1): normalization is part of CALL CAPTURE — the
     # immutable normalized-usage artifact is written IMMEDIATELY after every
     # recorded_call, never as a post-hoc step. expect_normalizer_id pins the
