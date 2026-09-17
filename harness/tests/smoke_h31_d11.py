@@ -38,14 +38,25 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, FAMC)
 
 import preflight as PF  # noqa: E402
+import epoch as _EPOCH_H31  # noqa: E402  (active-epoch lock resolution)
 
 RESULTS = []
 FREEZE = json.load(open(os.path.join(FAMC, "FREEZE.json")))["freeze_commit"]
 TOP = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=FAMC,
                      capture_output=True, text=True).stdout.strip()
 REPO = TOP
+# EPOCH-2 (EPOCH-1-CLOSURE.md): the D11.1 byte-authority rule applies to
+# the ACTIVE epoch's protocol lock (epoch-1 PROTOCOL-LOCK.json, or the
+# fresh epoch-2 PROTOCOL-LOCK-EPOCH2.json once the transition record
+# exists) — the epoch-1 lock stays a closure-pinned historical record.
+_ACTIVE_PROTO = _EPOCH_H31.active_lock_names(FAMC)[1]
+# validate_file_chain's direct-call finding text is lock-name-free (the
+# PURE probes below assert it verbatim); the git-aware helper names the
+# file it judged.
 AUTH_FINDING = ("V2 PROTOCOL-LOCK: PROTOCOL-LOCK.json differs from "
                 "committed experiment-HEAD authority")
+AUTH_FINDING_ACTIVE = (f"V2 PROTOCOL-LOCK: {_ACTIVE_PROTO} differs from "
+                       "committed experiment-HEAD authority")
 _ENV = dict(os.environ, GIT_CONFIG_NOSYSTEM="1", HOME="/tmp",
             GIT_AUTHOR_NAME="s", GIT_AUTHOR_EMAIL="s@s",
             GIT_COMMITTER_NAME="s", GIT_COMMITTER_EMAIL="s@s")
@@ -120,12 +131,12 @@ check("D11.1-STATIC no `--all` anywhere in benchmarks/fam-c/preflight.py",
       "--all" not in _SRC)
 
 # --- D11.1 LIVE: byte authority holds on the committed tree ------------
-_LIVE_LOCK_SHA = _sha_file(os.path.join(FAMC, "PROTOCOL-LOCK.json"))
+_LIVE_LOCK_SHA = _sha_file(os.path.join(FAMC, _ACTIVE_PROTO))
 _HEAD_LOCK = subprocess.run(
-    ["git", "show", "HEAD:benchmarks/fam-c/PROTOCOL-LOCK.json"],
+    ["git", "show", f"HEAD:benchmarks/fam-c/{_ACTIVE_PROTO}"],
     cwd=TOP, capture_output=True).stdout
-check("D11.1-LIVE on-disk lock bytes == committed experiment-HEAD "
-      "bytes",
+check("D11.1-LIVE on-disk ACTIVE-epoch lock bytes == committed "
+      "experiment-HEAD bytes",
       hashlib.sha256(_HEAD_LOCK).hexdigest() == _LIVE_LOCK_SHA)
 _V2_LIVE = [f for f in PF.validate_protocol(FAMC, FREEZE)
             if f.startswith("V2")]
@@ -145,13 +156,18 @@ def _clone(tag):
 
 
 def _forge_single_edge(repo):
-    lp = os.path.join(repo, "benchmarks", "fam-c", "PROTOCOL-LOCK.json")
+    lp = os.path.join(repo, "benchmarks", "fam-c", _ACTIVE_PROTO)
     lock = json.load(open(lp))
     root = lock["governed"]["PREREG.md"]
     tip = _content_sha(repo, "HEAD", "benchmarks/fam-c/PREREG.md")
     entries = [a for a in lock["amendments"] if a.get("file") == "PREREG.md"]
     keep = [a for a in lock["amendments"] if a.get("file") != "PREREG.md"]
-    forged = dict(entries[-1])
+    if entries:
+        forged = dict(entries[-1])
+    else:
+        # EPOCH-2: the fresh lineage starts with amendments: [] — forge the
+        # single edge directly from the recorded genesis base.
+        forged = {"file": "PREREG.md", "from_sha": root, "to_sha": tip}
     forged.update({"from_sha": root, "to_sha": tip,
                    "reason": "h31: single forged edge",
                    "slice": "h31-d11"})
@@ -166,17 +182,17 @@ _F1 = [f for f in PF.validate_protocol(
     if f.startswith("V2")]
 check("D11.1-E2E forged single-edge lock refused with the exact "
       "lock-authority finding",
-      AUTH_FINDING in _F1, str(_F1[:2])[:240])
+      AUTH_FINDING_ACTIVE in _F1, str(_F1[:2])[:240])
 
 _C2 = _clone("reformat")
-_lp2 = os.path.join(_C2, "benchmarks", "fam-c", "PROTOCOL-LOCK.json")
+_lp2 = os.path.join(_C2, "benchmarks", "fam-c", _ACTIVE_PROTO)
 json.dump(json.load(open(_lp2)), open(_lp2, "w"), indent=4)
 _F2 = [f for f in PF.validate_protocol(
     os.path.join(_C2, "benchmarks", "fam-c"), FREEZE)
     if f.startswith("V2")]
 check("D11.1-E2E cosmetic lock reformat refused (BYTE authority, "
       "not semantic equality)",
-      AUTH_FINDING in _F2, str(_F2[:2])[:240])
+      AUTH_FINDING_ACTIVE in _F2, str(_F2[:2])[:240])
 
 _C3 = _clone("clean")
 _F3 = [f for f in PF.validate_protocol(
@@ -541,10 +557,12 @@ check("D11.2-LIVE first-parent sequences equal the old walk for all "
 # R4-RECONCILE-P0-R4-4 forward amendment, base d94dcf4) plus one
 # A16-FINAL-SEMANTICS commit -> 26. Re-certified at
 # AMEND-2026-09-16-lane-p (a9ba55e): LANES.md + 1 commit -> 6.
+# Re-certified at EPOCH-2 (r4-reconcile EPOCH-2 slice): preflight.py + 1
+# commit (epoch-2 acceptance / META) -> 27.
 check("D11.2-LIVE live sequence lengths match the certified D11 "
-      "facts (PREREG 29, preflight 26, rest 5/6/12/1/7)",
+      "facts (PREREG 29, preflight 27, rest 5/6/12/1/7)",
       _LENS == {"PREREG.md": 29, "ORDER.md": 5, "LANES.md": 6,
-                "HARNESS-READINESS.md": 13, "preflight.py": 26,
+                "HARNESS-READINESS.md": 13, "preflight.py": 27,
                 "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str(_LENS))
 

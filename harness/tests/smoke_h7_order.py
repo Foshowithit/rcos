@@ -243,9 +243,17 @@ a_cell = cell("PQ", "fam05", "T2", "A")
 c_cell = cell("PQ", "fam05", "T2", "C")
 cap_a, out_a = ORD.derive_paths(FAMC, a_cell)
 cap_c, out_c = ORD.derive_paths(FAMC, c_cell)
-check("derived capability dirs are per-universe",
-      cap_a.endswith("state/PQ/A/fam05/capability")
-      and cap_c.endswith("state/PQ/C/fam05/capability"), cap_a + " | " + cap_c)
+# EPOCH-2: the derived namespace carries the ACTIVE epoch's state prefix
+# (state/epoch2/...); the per-universe derivation rule is unchanged.
+import epoch as _EPOCH_H7  # noqa: E402
+_STATE_ROOT = _EPOCH_H7.state_root(FAMC)
+check("derived capability dirs are per-universe (under the ACTIVE state "
+      "root)",
+      cap_a.startswith(_STATE_ROOT + os.sep)
+      and cap_c.startswith(_STATE_ROOT + os.sep)
+      and cap_a.endswith(os.path.join("PQ", "A", "fam05", "capability"))
+      and cap_c.endswith(os.path.join("PQ", "C", "fam05", "capability")),
+      cap_a + " | " + cap_c)
 check("derived run dir is per-cell",
       out_a.endswith(os.path.join("runs", a_cell["cell_id"])), out_a)
 check("A and C namespaces do not overlap",

@@ -434,9 +434,14 @@ def verify_namespace_ancestry(fam_c_dir, block, universe, family, tail=()):
     NAMESPACE-WRITABLE-DENY). Fail closed: never assert, never let
     realpath() normalize a symlinked parent into acceptance.
     """
-    p = _epoch.state_root(fam_c_dir)
+    p = os.path.join(fam_c_dir, "state")
     parts = [p]
-    for comp in (block, universe, family) + tuple(tail):
+    # EPOCH-2: the epoch state root is state/epoch2, so the historical
+    # state/ dir is itself a namespace ANCESTOR that must satisfy the same
+    # lstat rules (a symlinked state/ must never be traversed, epoch 1 or 2).
+    _comps = ((_epoch.STATE_SUBDIR,) if _epoch.is_epoch2(fam_c_dir) else ()) \
+        + (block, universe, family) + tuple(tail)
+    for comp in _comps:
         p = os.path.join(p, comp)
         parts.append(p)
     for part in parts:
@@ -478,7 +483,18 @@ def ensure_namespace(fam_c_dir, block, universe, family, tail=()):
         raise PermissionError(denial)
     p = _epoch.state_root(fam_c_dir)
     if not os.path.lexists(p):
-        os.mkdir(p, 0o755)          # fam_c_dir itself must already exist
+        # The epoch state root may sit one level below the historical
+        # state/ dir (state/epoch2 under epoch 2): create every missing
+        # component explicitly at 0755, no-follow — verify_namespace_ancestry
+        # already refused any symlinked component above.
+        _parent = os.path.dirname(p)
+        if not os.path.lexists(_parent):
+            os.mkdir(_parent, 0o755)    # fam_c_dir itself must already exist
+        elif not stat.S_ISDIR(os.lstat(_parent).st_mode):
+            raise PermissionError(
+                f"NAMESPACE-TYPE-DENY: {_parent} exists but is not a "
+                f"directory")
+        os.mkdir(p, 0o755)
     elif not stat.S_ISDIR(os.lstat(p).st_mode):
         raise PermissionError(f"NAMESPACE-TYPE-DENY: {p} exists but is not "
                               f"a directory")
