@@ -937,6 +937,35 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
     if _failed:
         _t1_dir = order.run_dir(fam_c_dir, t1)
         _t0_dir = order.run_dir(fam_c_dir, t0)
+        _cap = order.capability_dir(fam_c_dir, block, universe, family)
+        if os.path.exists(os.path.join(_cap, "CAPABILITY_LOCK.json")):
+            raise PermissionError(
+                "PROMOTION-DENY universe "
+                f"{block}/{family}/{universe} has a CAPABILITY_LOCK but "
+                f"its acquisition failed ({_cause}; no lock "
+                f"may exist for a failed acquisition)")
+        # EPOCH-3 (§3.1): an acquisition that terminated through a
+        # VALIDATED MODEL-OUTPUT-INVALID terminal records the terminal
+        # evidence union (failure_event + acquisition_evidence +
+        # candidate_sha256) instead of chain tips; a T0 terminal has NO
+        # candidate at all (no synthesized arrival), so the epoch-2
+        # "frozen T0 candidate" precondition does not apply to it.
+        _tev = order.acquisition_failure_terminal(fam_c_dir, block, family,
+                                                 universe)
+        if _tev is not None:
+            _op = order.emit_promotion_outcome(
+                fam_c_dir, cell, None, None, _tev["candidate_sha256"],
+                failure_event=_tev["failure_event"],
+                acquisition_evidence=_tev["acquisition_evidence"])
+            raise PermissionError(
+                f"PROMOTION-DENY universe {block}/{family}/{universe} "
+                f"carries a MODEL-OUTPUT-INVALID acquisition terminal "
+                f"(failure_event {_tev['failure_event']}, {_cause}): "
+                f"promotion is NOT-PROMOTED (terminal outcome recorded at "
+                f"{_op}), no CAPABILITY_LOCK may exist for it, and every "
+                f"downstream cell of that universe is NOT-EVALUABLE (no "
+                f"retry: a malformed model output is an experimental "
+                f"outcome, never an infrastructure-invalid run)")
         try:
             _t0_arr = _read_json(os.path.join(_t0_dir, "arrival.json"))
             _t0_src = (_t0_arr.get("execution_payload") or {}).get(
@@ -950,13 +979,6 @@ def promote_universe(fam_c_dir, block, family, universe, freeze_commit=None,
             raise PermissionError(
                 "PROMOTION-DENY T0 arrival carries no frozen candidate "
                 "(failed-acquisition outcome not recordable)")
-        _cap = order.capability_dir(fam_c_dir, block, universe, family)
-        if os.path.exists(os.path.join(_cap, "CAPABILITY_LOCK.json")):
-            raise PermissionError(
-                "PROMOTION-DENY universe "
-                f"{block}/{family}/{universe} has a CAPABILITY_LOCK but "
-                f"its T1 candidate validation failed ({_cause}; no lock "
-                f"may exist for a failed acquisition)")
         _t0_tip = order._chain_tip(os.path.join(_t0_dir,
                                                 "EVIDENCE-CHAIN.jsonl"))
         _t1_tip = order._chain_tip(os.path.join(_t1_dir,

@@ -113,6 +113,23 @@ PROVIDER_NORMALIZERS = {
 
 
 
+class NoModelSample(RuntimeError):
+    """EPOCH-3 (§5 model-sample boundary): the provider/transport produced
+    NO completion sample — a transport/HTTP error (even one carrying a
+    body), a non-JSON body, a payload with no completion object, or a null
+    reply content. Carries the EXACT request bytes and their sha256 (both
+    already computed before the wire call) so the attempt ledger can
+    enumerate the authorized invocation with `request_body_sha256` present
+    and the response/usage/identity fields null — the only lawful null
+    shape. It is an infrastructure candidate, never a
+    MODEL-OUTPUT-INVALID terminal and never a contract denial."""
+
+    def __init__(self, message, request_body_sha256, request_bytes):
+        super().__init__(message)
+        self.request_body_sha256 = request_body_sha256
+        self.request_bytes = request_bytes
+
+
 def recorded_call(endpoint, api_key_name, api_key, model, messages,
                   out_dir, extra_body=None, timeout=300, tag="",
                   normalizer_id="openai-chat-total-input-v1",
@@ -172,8 +189,9 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
             status = resp.status
             data = json.load(resp)
         except Exception as e:
-            raise RuntimeError(f"USAGE-CALL-FAIL {endpoint} {model}: "
-                               f"{type(e).__name__} {str(e)[:200]}")
+            raise NoModelSample(f"USAGE-CALL-FAIL {endpoint} {model}: "
+                                f"{type(e).__name__} {str(e)[:200]}",
+                                request_body_sha256, persisted)
         wall = time.time() - t0
         if api_style == "anthropic":
             reply = "".join(b.get("text", "")
@@ -184,15 +202,17 @@ def recorded_call(endpoint, api_key_name, api_key, model, messages,
             try:
                 reply = data["choices"][0]["message"]["content"]
             except (KeyError, IndexError, TypeError) as e:
-                raise RuntimeError(f"USAGE-MALFORMED {endpoint} {model}: {e}")
+                raise NoModelSample(f"USAGE-MALFORMED {endpoint} {model}: "
+                                    f"{e}", request_body_sha256,
+                                    persisted)
         if reply is None:
             # Round-4 reconcile follow-up: a quota/error payload can carry
             # choices[].message.content = null (kenari free lane). Fail with
             # the named INCONCLUSIVE path plus the payload, never a TypeError.
-            raise RuntimeError(
+            raise NoModelSample(
                 f"USAGE-CALL-FAIL {endpoint} {model}: provider returned "
                 f"null reply content (quota or error payload): "
-                f"{json.dumps(data)[:200]}")
+                f"{json.dumps(data)[:200]}", request_body_sha256, persisted)
         # Provenance layer: raw block + its hash travel with every receipt.
         # Normalization is a separate, versioned, reproducible step below.
         import hashlib as _hl

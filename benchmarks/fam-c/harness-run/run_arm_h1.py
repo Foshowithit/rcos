@@ -144,7 +144,7 @@ from seal_canonical import content_sha256 as seal_content_sha256
 from seal_canonical import legacy_sha256 as seal_legacy_sha256
 from usage import (recorded_call, write_normalized_usage,
                    verify_normalized_usage, verify_request_binding,
-                   verify_adapter_binding)
+                   verify_adapter_binding, NoModelSample)
 from identity import (record_identity, check_against_prereg,
                       verify_identity_binding)
 from chain import Chain
@@ -196,8 +196,20 @@ from preflight import _harness_closure as _preflight_harness_closure
 # epoch 2 that is the fresh EXECUTION-LOCK-EPOCH2.json, never the closed
 # epoch-1 lock (which stays a historical record).
 import epoch as epoch_lineage
+# EPOCH-3: the terminal validator / parse-gate replay / ledger rules live in
+# harness/order.py (the same module the walk's cell_state() uses), so the
+# runner mints ONLY terminals that the walk's strict validator accepts —
+# one authority, never two drifting implementations.
+import order as order_module
 
 CHAIN_FILE = "EVIDENCE-CHAIN.jsonl"
+# EPOCH-3 (EPOCH-3-PROTOCOL-SPEC.md §1/§4): the no-arrival terminal + the
+# per-cell attempt ledger (the enumeration authority for the two
+# lane-reliability statistics).
+MODEL_OUTPUT_INVALID_FILE = order_module.MODEL_OUTPUT_INVALID_FILE
+ATTEMPT_LEDGER_FILE = order_module.ATTEMPT_LEDGER_FILE
+ATTEMPT_LEDGER_SCHEMA = order_module.ATTEMPT_LEDGER_SCHEMA
+ATTEMPT_NO_SAMPLE = order_module.ATTEMPT_NO_SAMPLE
 GRADING_RULE_VERSION = "checker-contract-v1"
 GRADING_RULE_NOTE = ("mechanical grade = frozen checker returncode mapping "
                      "(rc0=ship, rc1=fix, else blocked); rule hash = sha256 "
@@ -921,6 +933,224 @@ def extract(raw):
     if last_err is not None:
         raise last_err
     raise ValueError("CONTRACT-PARSE-DENY: arrival has no parseable envelope")
+
+
+# ---------------------------------------------------------------------------
+# EPOCH-3 (EPOCH-3-PROTOCOL-SPEC.md, frozen): attempt accounting (N=1
+# enforced, per-attempt response preservation, ATTEMPT-LEDGER.jsonl as the
+# enumeration authority) and the write-once MODEL-OUTPUT-INVALID terminal.
+# ---------------------------------------------------------------------------
+
+def _utc_stamp():
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def attempt_budget_reasons(outdir):
+    """N=1 is ENFORCED, not declared (§4): before any provider call, a cell
+    that already carries the write-once terminal refuses
+    (MODEL-OUTPUT-INVALID-DENY) and a cell whose attempt ledger already
+    enumerates a provider invocation refuses (ATTEMPT-BUDGET-DENY). There
+    is no diagnostic_repeat state and no retry budget inside the live
+    epoch-3 walk — for contract denial, malformed output, bad generated
+    code, rc1 solver failure, or any other experimental outcome."""
+    out = []
+    tp = os.path.join(outdir, MODEL_OUTPUT_INVALID_FILE)
+    if os.path.lexists(tp):
+        out.append(f"MODEL-OUTPUT-INVALID-DENY: the cell already carries "
+                   f"the write-once terminal {MODEL_OUTPUT_INVALID_FILE} "
+                   f"({tp}); one file per cell, never overwritten")
+    try:
+        rows = _ledger_rows(outdir)
+    except (OSError, ValueError) as e:
+        out.append(f"ATTEMPT-BUDGET-DENY: attempt ledger unreadable: {e}")
+        return out
+    if rows:
+        out.append(
+            f"ATTEMPT-BUDGET-DENY: the cell's attempt ledger already "
+            f"enumerates {len(rows)} provider invocation(s); a second "
+            f"same-cell provider call is refused BEFORE any call is made "
+            f"(N=1: the authorized first sample is the only estimand "
+            f"attempt; any later diagnostic study belongs outside "
+            f"state/epoch3 and outside the frozen ORDER)")
+    return out
+
+
+def _ledger_rows(outdir):
+    p = os.path.join(outdir, ATTEMPT_LEDGER_FILE)
+    if os.path.islink(p) or not os.path.isfile(p):
+        return []
+    rows = []
+    for line in open(p):
+        if line.strip():
+            rows.append(json.loads(line))
+    return rows
+
+
+def append_attempt_ledger_row(outdir, row):
+    """Append ONE attempt-ledger row (write-once per attempt index and per
+    provider call id). The ledger is the ENUMERATION AUTHORITY: every
+    authorized provider invocation gets exactly one row, in call order."""
+    p = os.path.join(outdir, ATTEMPT_LEDGER_FILE)
+    for r in _ledger_rows(outdir):
+        if r.get("provider_call_id") == row.get("provider_call_id") or \
+                r.get("attempt_index") == row.get("attempt_index"):
+            raise SystemExit(
+                f"ATTEMPT-LEDGER-DENY: attempt_index "
+                f"{row.get('attempt_index')!r} / provider_call_id "
+                f"{row.get('provider_call_id')!r} is already enumerated "
+                f"(one row per provider invocation; a duplicate row is "
+                f"refused)")
+    with open(p, "a") as f:
+        f.write(json.dumps(row, sort_keys=True) + "\n")
+    return p
+
+
+def _call_id_from_receipt(receipt):
+    name = os.path.basename(receipt)
+    if not (name.startswith("call-") and name.endswith(".json")):
+        raise RuntimeError("ATTEMPT-LEDGER-DENY: cannot derive the provider "
+                           f"call id from {receipt!r}")
+    try:
+        cid = json.load(open(receipt)).get("call_id")
+    except (OSError, ValueError) as e:
+        raise RuntimeError(f"ATTEMPT-LEDGER-DENY: receipt unreadable: {e}")
+    if cid != name[len("call-"):-len(".json")]:
+        raise RuntimeError("ATTEMPT-LEDGER-DENY: receipt call_id "
+                           f"{cid!r} != its file name {name!r}")
+    return cid
+
+
+def record_no_sample_attempt(outdir, exc):
+    """§5/§4 — enumerate a TRUE no-model-sample infrastructure invocation.
+
+    The provider/transport failed BEFORE a completion sample existed (an
+    HTTP error body is not a sample). The exact request bytes the wire call
+    sent are persisted under the canonical request name (their sha256 is
+    the invocation's identity), and the ledger row carries
+    `request_body_sha256` with response/usage/identity null — the ONLY
+    lawful null shape. No terminal, no arrival, no fabricated sample."""
+    rb = getattr(exc, "request_body_sha256", None)
+    blob = getattr(exc, "request_bytes", None)
+    if not isinstance(rb, str) or not isinstance(blob, (bytes, bytearray)):
+        raise SystemExit(
+            "ATTEMPT-LEDGER-DENY: the no-sample event did not carry its "
+            "request bytes/hash; the invocation cannot be lawfully "
+            "enumerated (no invented row is written): " + str(exc))
+    call_id = rb[:16]
+    req_path = os.path.join(outdir, f"call-{call_id}.request.json")
+    if os.path.exists(req_path):
+        with open(req_path, "rb") as f:
+            if f.read() != bytes(blob):
+                raise SystemExit(
+                    "ATTEMPT-LEDGER-DENY: a different request body is "
+                    f"already persisted at {req_path}; refusing to "
+                    "overwrite it")
+    else:
+        with open(req_path, "wb") as f:
+            f.write(bytes(blob))
+    return append_attempt_ledger_row(outdir, {
+        "schema": ATTEMPT_LEDGER_SCHEMA, "attempt_index": 1,
+        "provider_call_id": call_id, "request_body_sha256": rb,
+        "authorized_estimand_attempt": True,
+        "outcome": ATTEMPT_NO_SAMPLE,
+        "response_text_sha256": None, "response_bytes": None,
+        "usage_receipt_sha256": None, "identity_record_sha256": None,
+        "created_utc": _utc_stamp()})
+
+
+def write_model_output_invalid(outdir, cell, order_sha, call_id, receipt,
+                               nu_path, id_path, contract_error):
+    """Mint the WRITE-ONCE MODEL-OUTPUT-INVALID terminal (§1/§2).
+
+    Preconditions (already satisfied by the caller, in this exact order):
+    the ONE recorded provider call happened; the request body, the raw
+    receipt, the normalized usage, the identity record, the preserved
+    raw-<call_id>.txt and the attempt-ledger row are all durable; and the
+    frozen extract() judged the PRESERVED bytes. This function self-checks
+    the assembled record against the walk's own strict validator and then
+    ATOMICALLY creates the terminal (O_EXCL): a duplicate or pre-existing
+    terminal refuses with MODEL-OUTPUT-INVALID-DENY and is never
+    overwritten. No note_cell_completed() happens on this path."""
+    shas = order_module.terminal_bindings(BASE)
+    rawp = os.path.join(outdir, f"raw-{call_id}.txt")
+    with open(rawp, "rb") as f:
+        raw_bytes = f.read()
+    obj = {
+        "schema": order_module.MODEL_OUTPUT_INVALID_SCHEMA,
+        "epoch": 3,
+        "terminal_status": order_module.MODEL_OUTPUT_INVALID_STATUS,
+        "experimental_outcome": True,
+        "experimental_task_outcome": "FAIL",
+        "cell_id": cell["cell_id"], "cell_index": cell["index"],
+        "block": cell["block"], "family": cell["family"],
+        "task": cell["task"], "cell_event": cell["event"],
+        "cell_kind": cell["kind"], "cell_universe": cell["universe"],
+        "cell_letter": cell["letter"], "lane": cell["lane"],
+        "arm": cell["arm"], "capability_id": cell["capability_id"],
+        "order_sha256": order_sha,
+        "provider_call_id": call_id,
+        "request_body_sha256": _json_field(receipt, "request_body_sha256"),
+        "response_text_sha256": hashlib.sha256(raw_bytes).hexdigest(),
+        "response_bytes": len(raw_bytes),
+        "usage_receipt_sha256": h(receipt),
+        "normalized_usage_sha256": h(nu_path),
+        "identity_record_sha256": h(id_path),
+        "protocol_lock_sha256": shas.get("protocol_lock_sha256"),
+        "execution_lock_sha256": shas.get("execution_lock_sha256"),
+        "execution_harness_manifest_sha256":
+            shas.get("execution_harness_manifest_sha256"),
+        "epoch3_protocol_spec_sha256":
+            shas.get("epoch3_protocol_spec_sha256"),
+        "parser_authority": list(order_module.PARSER_AUTHORITY),
+        "contract_error": contract_error,
+        "contract_rule": "A11b.2",
+        "authorized_estimand_attempt": True,
+        "attempt_index": 1,
+        "per_attempt_outcome": contract_error,
+        "created_utc": _utc_stamp(),
+        "created_by": order_module.MODEL_OUTPUT_INVALID_CREATED_BY,
+    }
+    # pre-create self-check (the ledger row is durable already and the
+    # terminal is about to be created by this same call, so the
+    # row<->terminal correspondence is asserted by the FULL validation
+    # immediately after the atomic create below).
+    findings = order_module.model_output_invalid_reasons(
+        BASE, cell, obj, outdir, terminal_pending=True)
+    if findings:
+        raise SystemExit(
+            "MODEL-OUTPUT-INVALID-DENY: refusing to mint a terminal that "
+            "the walk's strict validator does not accept: "
+            + " | ".join(findings[:3]))
+    path = os.path.join(outdir, MODEL_OUTPUT_INVALID_FILE)
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    except FileExistsError:
+        raise SystemExit(
+            f"MODEL-OUTPUT-INVALID-DENY: a terminal already exists at "
+            f"{path} (write-once: one file per cell, never overwritten)")
+    with os.fdopen(fd, "w") as f:
+        json.dump(obj, f, indent=1)
+        f.write("\n")
+        f.flush()
+        os.fsync(f.fileno())
+    # post-create full validation: the write-once terminal must satisfy the
+    # walk's strict validator INCLUDING the ledger correspondence. A failure
+    # here is loud and non-zero: the (now immutable) terminal stays on disk
+    # and the walk blocks — fail closed, never silently accepted.
+    post = order_module.validate_model_output_invalid(BASE, cell)
+    if post:
+        raise SystemExit(
+            "MODEL-OUTPUT-INVALID-DENY: the minted terminal does not "
+            "validate (the write-once file stays on disk; the walk blocks "
+            "until inspected): " + " | ".join(post[:3]))
+    return path
+
+
+def _json_field(path, key):
+    try:
+        return json.load(open(path)).get(key)
+    except (OSError, ValueError) as e:
+        raise SystemExit(f"ATTEMPT-LEDGER-DENY: {path} unreadable: {e}")
 
 
 def execute_arrival(arm, arrival, work, outdir, taskdir, cap_engine, sb,
@@ -3696,6 +3926,14 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
         if _final:
             raise RuntimeError("FINAL-LOCK-GATE refuse start: "
                                + " | ".join(_final)[:800])
+    # EPOCH-3 §4 (N=1 enforced): the attempt-budget refusal runs BEFORE any
+    # frozen-instance work and before any H-derived namespace is created, so
+    # a cell that already carries the write-once terminal or an enumerated
+    # provider invocation can never spend a second call.
+    _budget = attempt_budget_reasons(outdir)
+    if _budget:
+        raise RuntimeError(_budget[0] if len(_budget) == 1
+                           else " | ".join(_budget)[:800])
     # Refuse-START: the executed instance subtree must be byte-identical to
     # the frozen package BEFORE any model token is spent. Item-5: the
     # manifest is resolved from the freeze commit via git (the working-tree
@@ -3883,8 +4121,19 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
                            "expected_truth_sha256":
                                fro["expected_truth_sha256"]}
     open(os.path.join(outdir, "prompt.txt"), "w").write(prompt)
-    raw, receipt, nu_path, id_path, identity_family = call(
-        lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
+    try:
+        raw, receipt, nu_path, id_path, identity_family = call(
+            lane, prompt, outdir, f"H1-{lane}-{family}-{task}-{arm}")
+    except NoModelSample as e:
+        # EPOCH-3 §5 boundary: a provider/transport error BEFORE a
+        # completion sample existed is an infrastructure candidate — even
+        # when the HTTP error itself carried a body — never a contract
+        # denial, never a terminal, never a synthesized sample. The
+        # invocation is still ENUMERATED (the ledger is the enumeration
+        # authority) and the run exits non-zero: infrastructure stays
+        # infrastructure.
+        record_no_sample_attempt(outdir, e)
+        raise
     # A13 isolation artifact: this is the SINGLE provider-invocation
     # site on any cell path (verified: no other call(/recorded_call(
     # invocation exists in this runner; all traffic funnels through
@@ -3894,7 +4143,59 @@ def main(lane, family, task, arm, outdir, capdir=None, opts=None,
     # under-reports -- review invariant, enforced by the H35b
     # tripwire + counter asserts, never by prose alone.
     OB.note_provider_call()
-    arrival, parse_mode = extract(raw)
+    # EPOCH-3 §2 required ordering: (1) the ONE recorded provider call
+    # happened; (2) the request body, raw receipt, normalized usage,
+    # identity record, preserved raw-<call_id>.txt and the attempt-ledger
+    # row are persisted; (3) extract() is invoked; (4) on an eligible named
+    # denial the write-once terminal is created atomically. The parse below
+    # runs over the PRESERVED bytes (never an in-memory copy), so no raw
+    # response ever becomes durable after parsing fails, and the ledger row
+    # is durable before any terminal exists.
+    call_id = _call_id_from_receipt(receipt)
+    raw_path = os.path.join(outdir, f"raw-{call_id}.txt")
+    with open(raw_path, "w") as f:
+        f.write(raw)
+    first = order_module.replay_parse_gate(BASE, raw)
+    append_attempt_ledger_row(outdir, {
+        "schema": ATTEMPT_LEDGER_SCHEMA, "attempt_index": 1,
+        "provider_call_id": call_id,
+        "request_body_sha256": _json_field(receipt, "request_body_sha256"),
+        "authorized_estimand_attempt": True,
+        "outcome": ("ADMISSIBLE" if first["arrived"] else first["error"]),
+        "response_text_sha256": hashlib.sha256(raw.encode()).hexdigest(),
+        "response_bytes": len(raw.encode()),
+        "usage_receipt_sha256": h(receipt),
+        "identity_record_sha256": h(id_path),
+        "created_utc": _utc_stamp()})
+    with open(raw_path) as f:
+        replay = order_module.replay_parse_gate(BASE, f.read())
+    if replay["arrived"] != first["arrived"] or \
+            replay["error"] != first["error"]:
+        raise SystemExit(
+            "CONTRACT-REPLAY-DENY: the frozen parse gate is not "
+            "deterministic over the preserved response (in-memory "
+            f"{first['error']!r}/arrived={first['arrived']} vs preserved "
+            f"{replay['error']!r}/arrived={replay['arrived']}); the cell "
+            "stays incomplete and the walk blocks")
+    if not replay["arrived"] and replay["eligible"]:
+        _tp = write_model_output_invalid(outdir, cell,
+                                        expansion["order_sha256"], call_id,
+                                        receipt, nu_path, id_path,
+                                        replay["error"])
+        print(f"{lane}/{family}/{task}/{arm}: "
+              f"MODEL-OUTPUT-INVALID ({replay['error']}) — terminal "
+              f"written at {_tp}; the cell is a recorded experimental "
+              f"FAILURE (no arrival, no verdict, no note_cell_completed)")
+        # §4.1: a successfully recorded terminal exits 0 (non-zero stays
+        # reserved for infrastructure/refusal paths).
+        return order_module.terminal_exit_code()
+    if not replay["arrived"]:
+        raise SystemExit(
+            "MODEL-OUTPUT-INVALID-DENY: the frozen contract refused the "
+            f"response with a NON-eligible error {replay['error']!r}; only "
+            "the named parse-gate denials are converted to a terminal — "
+            "this cell stays incomplete and the walk blocks (fail closed)")
+    arrival, parse_mode = replay["arrival"], replay["parse_mode"]
     arrival_path = os.path.join(outdir, "arrival.json")
     open(arrival_path, "w").write(json.dumps(arrival, indent=1))
     # A12n slice D13 P0-3: arrival provenance, captured at run time.
