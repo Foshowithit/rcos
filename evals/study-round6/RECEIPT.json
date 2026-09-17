@@ -1,0 +1,33 @@
+{
+  "capability": "video-forensics-receipt",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "All deterministic gates green on the 40-receipt corpus; 4/4 sheets read and label-checked; the two defects surfaced this round (R1 luma ref-median non-reproduction; R1 text-budget prior) were caught, corrected and openly documented in-round, corpus end state clean and verified — same disposition as study-round3 (mislabel found, corrected, still ship). No bad receipts remain.",
+  "gates": [
+    {
+      "id": "deterministic-gates",
+      "pass": true,
+      "evidence": "Round-6 receipt set: 4 class-L films (bvlgari-dragoni 31.39s, cartier-panthere 60.07s, chanel-leau5 60.05s, bvlgari-wonders 30.07s). rig/verify_receipts.py on the full corpus: 'checked 40 receipts — ALL DETERMINISTIC GATES PASS'."
+    },
+    {
+      "id": "sheet-reads",
+      "pass": true,
+      "evidence": "sheet-reads (llm gate): 4/4 sheets read at judge time via the free opencode muse vision lane (muse-spark-1.3-contributor-free). Dragoni: 'CRAFTING MAGNIFICENCE / SERPENTI' head title at ~0.4s, atelier craft, near-white transitions ~13.3s/~26.2s, sustained burned-in captions, bright staging (luma 0.63). Panthère: 'Cartier PRESENTS' white-script head card, red dress through jungle/savanna/canopy/underwater vignettes, bare 'Cartier' end wordmark ~97%, no panther/product in sampled frames (stated limitation). Chanel: B&W opening (eye macro, bulb filaments), ~10 kinetic one-word overlays (NIGHT/AND/EXCESSIVE/ARTIST/MUSE/VULNERABLE/INVINCIBLE/BREAKING/MAKING), blue N°5 bottle, end tiles 'N°5 L'EAU CHANEL' + 'PARIS' + packshot. Wonders: 4 stacked head cards in the first ~5s (incl. ANNE HATHAWAY / A FILM BY PAOLO SORRENTINO), 'UNEXPECTED WONDERS' at ~96%."
+    },
+    {
+      "id": "label-integrity",
+      "pass": true,
+      "evidence": "Slug-to-content pairing confirmed from rendered sheets for all 4 R6 fetches: head/end titles on the sheets match the named sources (Dragoni head title, Cartier PRESENTS + Cartier end wordmark, Chanel N°5 L'EAU end lockup, Bvlgari/Anne Hathaway/Sorrentino cards). No mislabeled receipt this round."
+    },
+    {
+      "id": "corpus-hygiene",
+      "pass": true,
+      "evidence": "Two R1-era defects surfaced and corrected openly, not hidden: (1) the published R1 luma reference median (0.27) does not reproduce from the same five receipts (same five give 0.327; mean 0.299) — cause not reconstructible from the record, so the n=9 recomputed median (0.347) replaced it in the PLAYBOOK table and the discrepancy is flagged in the R6 'Recompute note'; (2) the R1 note's 'wordmark + ≤1 line' text budget is measured false (Chanel runs ~10 kinetic overlays; Dragoni sustained captions) — replaced with rule 7 (register-based text budgets). Density definition pinned to cuts.shot.per_sec to prevent future drift; the R1 five-member band reproduces exactly under it (0.176–1.063 / 0.720)."
+    },
+    {
+      "id": "limitation-documented",
+      "pass": true,
+      "evidence": "Limits documented, not normalized: scene-threshold detections are not certified editorial cuts (Panthère 24 detections / 2 hard on a narrative film); sheets are sampled-frame inspections - no full video was watched; sample-count caveat on Panthère (no product in sampled frames). The planned Dom Pérignon 212s/90s controlled pair was age-gated by YouTube ('Sign in to confirm your age', needs cookies — same block class as R1's HEALTH) and is recorded as blocked + substituted (chanel-leau5 + bvlgari-wonders), re-queued rather than dropped."
+    }
+  ]
+}

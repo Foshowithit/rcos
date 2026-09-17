@@ -1,0 +1,28 @@
+{
+  "capability": "creative-study-loop",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Protocol ran end-to-end inside budget: unit picked, 4 sources fetched+measured on the Dell, 4/4 sheets read, all gates verified before recording, PLAYBOOK+QUEUE updated with citations, DP pair blocked-and-substituted with reason, next unit named. Blocked item is an external access limitation (age gate), not a loop defect.",
+  "gates": [
+    {
+      "id": "queue-advance",
+      "pass": true,
+      "evidence": "Unit Lo opened per protocol and completed; backlog Lo row closed; the two Dom Perignon rows recorded as blocked (age gate, needs cookies) with substitute slugs chanel-leau5 + bvlgari-wonders marked as substitutes; DP pair re-queued in PLAYBOOK open questions; next unit named (Ty kinetic typography or S sound design)."
+    },
+    {
+      "id": "receipt-citations",
+      "pass": true,
+      "evidence": "class-L R6 rows cite studies/<slug>.json; spot-checks against receipts: bvlgari-dragoni 31.39s / 19 cuts / per_sec 0.6371 / median 0.96s / motion 0.2207 / luma 0.63 / LUFS -15.6 / TP +0.3; cartier-panthere 60.07s / 24 / 0.4162 / 1.64 / 0.1446 / sat 0.464 / -17.8 / TP 0.0; chanel-leau5 60.05s / 56 / 0.9493 / 0.76 / 0.2436 / -14.8 / TP -2.4; bvlgari-wonders 30.07s / 21 / 0.7316 / 1.14 / 0.1799 / -14.7 / TP -0.4. n=9 class envelopes in the published table recomputed from the nine studies/*.json receipts (density 0.176-1.063 / 0.720; stillness median 0.034; sat 0.049-0.464; luma 0.217-0.630)."
+    },
+    {
+      "id": "ours-vs-reference",
+      "pass": true,
+      "evidence": "Ours-vs-reference columns recomputed against the widened class (ours-fapcoin-v3: 0.02 shots/s, 26.0s median, motion 0.042, stillness 0.393, luma 0.087, TP -10.6; v6: 0.45 / 1.67 / 0.076 / 0.00 / 0.12 / -19.2). Register note updated to the widened numbers (moves if intent is the class: stillness 0.39 -> <=0.07, luma into one of the two measured brightness lanes >=0.2); new rule 6 states the two lanes from receipts."
+    },
+    {
+      "id": "media-hygiene",
+      "pass": true,
+      "evidence": "Third-party media never entered either repo: clips/frames/sheets stayed on the Dell (~/tmp/creative-study); only metrics receipts (studies/<slug>.json) and text (PLAYBOOK/QUEUE) entered the workspace repo. No keys, no paid lanes (sheet reads on the free muse vision lane). Round ran inside the ~30-min budget."
+    }
+  ]
+}
