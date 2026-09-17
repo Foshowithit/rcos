@@ -3070,22 +3070,6 @@ def terminal_exit_code():
     return 0
 
 
-def _frozen_spec_and_stop_citations(fam_c_dir):  # pragma: no cover - audit
-    """The epoch-3 lineage citations the transition record must carry (the
-    frozen spec bytes + the corrected stop record). Read-only helper for
-    certification output."""
-    out = {}
-    for key, name in (("epoch3_protocol_spec_sha256",
-                       "EPOCH-3-PROTOCOL-SPEC.md"),
-                      ("epoch2_stop_record_sha256",
-                       "EPOCH-2-STOP-RECORD.md")):
-        try:
-            out[key] = _sha256_file(os.path.join(fam_c_dir, name))
-        except OSError:
-            out[key] = None
-    return out
-
-
 # ---------------------------------------------------------------------------
 # A11.5 — production governance-event writers. The harness records a
 # PROMOTION and a CAPABILITY_LOCK through these writers (once each, fail

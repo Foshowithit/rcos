@@ -4,7 +4,7 @@
  "status": "open-round2",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "EPOCH-3 lineage (fresh locks + new finalization). Minted by harness/epoch_transition.py from the frozen epoch-2 boundary; its own append-only amendment lineage (NOT an amendment to the epoch-2 or epoch-1 lineages, which stay frozen as the historical records of the stopped epoch and the closed epoch). The status vocabulary is unchanged from epoch 2 (open-round2 | FINAL). Re-mint on every harness change via harness/mint_execution_lock.py --slice ... --reason ...; finalize only by owner authorization AFTER independent certification and the execution-authorization ruling.",
- "harness_manifest_sha256": "22162924bc7eec95fbcad8b2c5ba6dc553b3ba0507e03d761f29e8423b9ee3d7",
+ "harness_manifest_sha256": "5a644aa194da0736bdb290bef5bb8727a400ba50734cc439f0eb2f07a083b704",
  "harness_files": {
   "benchmarks/fam-c/harness-run/run_arm_h1.py": "335be43940c03782ee2a48364f21d8528bbf07ead7dab378fb4f1afcc4fd3ec7",
   "harness/a13_observer.py": "2f77b0c2db57b713c9836d0d1e3ae5473cf61d126c9c43dfeb70212208de65bc",
@@ -19,7 +19,7 @@
   "harness/frozen_visible.py": "9033d26c176d0dc3c681fecbdc8de111e057730032f2ad4dd671e2c4433e4dd9",
   "harness/identity.py": "39e21e0e2b2b880769b63a6d08b409812779f27896032fa0f41c3e5aeb76f918",
   "harness/lock.py": "0213e6a5b128d9f0e4f8d239bc65c4bca667e9ae5400ee1283e99e5b13a16cd1",
-  "harness/order.py": "31186fc90c51e6d6b2506d58f066c100af7e3af6cfcb3df9081c2654d3e11c77",
+  "harness/order.py": "80f8940ae15b8670a1c2144709ed337c9ddc3a852501676406afd724aa0c40f2",
   "harness/reuse_log.py": "ed8faffc81f423e6f5a2a87297a17c1b51d521ed7c9c2364f67061818640ad59",
   "harness/seal.py": "e84f35df34bacf0995de08fcb66a2369de0b7e9347cacd6b2d4dd59146eaa00f",
   "harness/seal_canonical.py": "25a9da15107780105300acebf3451e38194f9b8afe409bcab4248a42a578a4c7",
@@ -109,7 +109,21 @@
   },
   "expected_provider_calls_per_cell": 1
  },
- "amendments": [],
+ "amendments": [
+  {
+   "from_manifest": "22162924bc7eec95fbcad8b2c5ba6dc553b3ba0507e03d761f29e8423b9ee3d7",
+   "to_manifest": "5a644aa194da0736bdb290bef5bb8727a400ba50734cc439f0eb2f07a083b704",
+   "files": {
+    "harness/order.py": {
+     "from_sha": "31186fc90c51e6d6b2506d58f066c100af7e3af6cfcb3df9081c2654d3e11c77",
+     "to_sha": "80f8940ae15b8670a1c2144709ed337c9ddc3a852501676406afd724aa0c40f2"
+    }
+   },
+   "reason": "EPOCH-3 cleanup: drop an unused read-only audit helper from harness/order.py (no behavior change; the terminal bindings authority is unchanged)",
+   "slice": "epoch3-cleanup",
+   "status_after": "open-round2"
+  }
+ ],
  "transition": {
   "record": "EPOCH-3-TRANSITION.json",
   "record_sha256": "a3668d710bf51612fa9a45c08d908c195b4ee09b83a4ba4bb71d973b7cf9dfd5",
