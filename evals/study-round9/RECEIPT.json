@@ -1,0 +1,33 @@
+{
+  "capability": "video-forensics-receipt",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-9 corpus: 4 canonical transition/match-cut reference clips measured (mc-2001-bone 162.1s Movieclips, mc-lawrence-sun 57.5s, mc-apocalypse-fan 115.8s after substitution, mc-kane-breakfast 171.4s Movieclips); rig/verify_receipts.py on the full corpus: 'checked 52 receipts — ALL DETERMINISTIC GATES PASS'. 4/4 label-integrity reads PASS at judge time (muse lane; dense montages for the 1-3-cut sources). One corrupt receipt was produced mid-round by an in-place same-slug re-fetch (fresh source metadata merged with the stale clip's measurements) and was caught by the source-vs-metrics coherence check, deleted, and cleanly re-fetched — no bad receipts remain in the corpus end state. Same disposition as study-round3/6/7/8: defect detected, corrected, openly documented; the deterministic gates' blind spot to this corruption class is documented in the RECEIPT and PLAYBOOK.",
+  "gates": [
+    {
+      "id": "deterministic-gates",
+      "pass": true,
+      "evidence": "Round-9 receipt set (final, post-correction): mc-2001-bone (162.15s, 13 cuts, 5 hard, cps 0.0863, med 10.02s, motion 0.0614, still 0.075, luma 0.194, sat 0.445, n80 5, LUFS -22.7, LRA 21.5, TP -6.9), mc-lawrence-sun (57.52s, 1 cut, hard_n 0, cps 0.0348, med 28.76s, motion 0.0118, still 0.839, luma 0.263, sat 0.45, n80 4, -12.8, 22.0, +0.1), mc-apocalypse-fan (115.84s, 4 cuts, hard_n 0, med 21.26s, motion 0.0381, still 0.47, luma 0.139, sat 0.556, n80 4, -25.8, 20.6, -5.1), mc-kane-breakfast (171.43s, 3 cuts, hard_n 0, cps 0.0233, med 50.0s, motion 0.0452, still 0.40, luma 0.16, sat 0.076, n80 4, -27.8, 13.8, -7.3). rig/verify_receipts.py: 'checked 52 receipts — ALL DETERMINISTIC GATES PASS'."
+    },
+    {
+      "id": "sheet-reads",
+      "pass": true,
+      "evidence": "sheet-reads (llm gate): 4/4 sources read at judge time via the free opencode muse vision lane. 2001: ape/desert sequences, bone toss, orbital spacecraft, Movieclips branding. Lawrence (dense fps=1/8 montage): match/flame close-up -> sunrise glow -> red sun disk -> wide dunes, no text. Apocalypse (clean re-fetch sheet): Willard alone in dim hotel room (blinds, bed, letters), 5 tiles at 16.7/37.9/45.2/75.9s. Kane (dense montage): b/w same couple same table, dissolves, intimacy -> distance -> separate newspapers, with 'Orson Welles' annotation cards from the uploader. The first apocalypse read caught the original JoBlo clip's second half being a restoration-trailer montage -> substitution made."
+    },
+    {
+      "id": "label-integrity",
+      "pass": true,
+      "evidence": "Slug-to-content pairing confirmed for all 4 R9 fetches; two channel caveats documented (mc-lawrence-sun and mc-apocalypse-fan are fan uploads; 2001 and Kane are licensed Movieclips channels). One scope mislabel caught and corrected at judge time: the first apocalypse pick (JoBlo 'Saigon' 253s) contained the hotel sequence but its back half was a restoration-trailer montage; replaced with the scene-scoped 116s upload and re-measured. The intermediate corrupt receipt (stale metrics + fresh metadata, dur 253s vs 116s source) was caught by manual coherence check, deleted, and re-fetched cleanly; final receipt source/duration/cuts are mutually consistent (115.84s / 4 cuts / okidokivideos)."
+    },
+    {
+      "id": "tooling-defect-found-and-fixed",
+      "pass": true,
+      "evidence": "Defect surfaced and fixed in-round: re-fetching the SAME slug in place produced a corrupted receipt — fresh source metadata (okidokivideos URL) merged with the previous clip's measurements (253.05s / 59 cuts) because the stale remote artifacts were not replaced. Deterministic gates pass on stale-but-internally-consistent numbers, so only the manual source-vs-metrics coherence check caught it. Fix applied: deleted the slug's remote artifacts (clips/receipts/sheets) and re-fetched; final receipt verified coherent. Logged as rig v0.2 item: fetch must replace, not merge, on an existing slug (and a receipt should embed its clip's measured duration vs source duration for machine-checkable coherence)."
+    },
+    {
+      "id": "limitation-documented",
+      "pass": true,
+      "evidence": "Limits documented, not normalized — and this class IS the demonstration case: scene-threshold detectors structurally undercount match cuts and dissolves (Lawrence's match cut = 1 soft-detected cut, hard_n 0; Kane's ~6 dissolves = 3 cuts; Apocalypse 4 cuts/0 hard), so class-C cut counts are lower bounds and 'hard_n 0' is itself the craft signal. No full video watched; sheets/dense montages are sampled-frame inspection. Classic-era master caveats recorded (Lawrence TP +0.1 un-limited; Kane -27.8 LUFS 1941 optical audio). n=4 class with the detector-honesty rule flagged for widening (wipes, whip pans, hidden cuts). No keys, no paid lanes (free muse vision lane for reads)."
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "capability": "creative-study-loop",
+  "date": "2026-09-17",
+  "verdict": "ship",
+  "verdict_basis": "Round-9 loop run: QUEUE.md advanced per protocol (unit C opened from the backlog, 4 concrete rows added with URLs, one mid-round substitution documented, all 4 completed and struck), PLAYBOOK.md gained a receipt-cited class-C section plus cross-class count updates, RCOS eval submitted for both capabilities. Corpus end state: 52 receipts (47 reference films + 5 own), all deterministic gates verified; the round's corrupt-receipt incident was caught and fully corrected before close. Next unit A.",
+  "gates": [
+    {
+      "id": "queue-advance",
+      "pass": true,
+      "evidence": "Unit C (match-cut / transition craft) opened as the top remaining backlog class; QUEUE.md Round 9 section holds 4 concrete sources (2001 bone->satellite, Lawrence flame->sun, Apocalypse Now blades->fan, Kane breakfast dissolves) with statuses, the documented substitution (JoBlo 253s half-trailer clip -> okidokivideos 116s scene-scoped), the corrupt-receipt incident and its fix, and per-slug headline numbers; backlog row C struck; round-log entry added. Next unit A (animation / motion-graphics grammar)."
+    },
+    {
+      "id": "receipt-citations",
+      "pass": true,
+      "evidence": "Every class-C PLAYBOOK number traces to studies/<slug>.json: envelope table (cps 0.023-0.086, median shot 10.0-50.0s, LRA 13.8-24.5, LUFS -12.8..-27.8, n80 4-5) cites mc-2001-bone.json, mc-lawrence-sun.json, mc-apocalypse-fan.json, mc-kane-breakfast.json; the detector-honesty headline cites hard_n per receipt (0 in three of four; Lawrence's single cut is the match cut itself). Corpus counts updated: 47 reference films / 52 receipts in the palette-discipline finding."
+    },
+    {
+      "id": "cross-class-fold-in",
+      "pass": true,
+      "evidence": "Class-C results folded into the cross-class layer: palette finding counts 43/48 -> 47/52; open questions extended (C done at n=4; detector-honesty rule wants more transition types; next unit A); the detector-limits statement in the class-C section now doubles as the corpus-wide demonstration that 'detector events != editorial cuts' has a measurable, craft-positive face (undercount = graphics match). No prior PLAYBOOK number required correction this round; the corrupt intermediate receipt never entered PLAYBOOK."
+    },
+    {
+      "id": "ours-vs-reference",
+      "pass": true,
+      "evidence": "No own film was re-measured this round (protocol requires the ours-vs-reference row update only on re-measurement), so the section stands unchanged; class-C rules give the next bearing-film belt sequence and Too Hot machine-rhythm passes concrete targets: hold >= 21s either side of a transition, stillness >= 0.40, land transitions on LRA >= 13.8 dynamic swings, and verify transition quality with the rig (hard_n 0 on a true match cut)."
+    },
+    {
+      "id": "media-hygiene",
+      "pass": true,
+      "evidence": "Third-party media never entered either repo (clips on the Dell at tmp/creative-study incl. the dense montages; sheets/montages in gitignored .media/; verify_receipts media-containment gate green on 52 receipts). No keys, no paid lanes - free muse vision lane for sheet reads; Dell did fetch/decode. Round ran within budget."
+    }
+  ]
+}
