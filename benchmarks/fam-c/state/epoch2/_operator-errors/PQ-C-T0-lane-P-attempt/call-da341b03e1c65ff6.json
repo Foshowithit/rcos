@@ -1,0 +1,23 @@
+{
+ "call_id": "da341b03e1c65ff6",
+ "tag": "H1-Q-fam05-T0-acquisition",
+ "endpoint": "https://kenari.id/v1",
+ "model_requested": "agnes-2-0-flash:free",
+ "wall_s": 5.48,
+ "timestamp": "2026-09-17T06:47:35Z",
+ "request_body_sha256": "dac4f2ee6e39795754e0acbac9814fe8abf57a4256acd36e576147819e42ba28",
+ "request_body_file": "call-da341b03e1c65ff6.request.json",
+ "request_body_file_sha256": "dac4f2ee6e39795754e0acbac9814fe8abf57a4256acd36e576147819e42ba28",
+ "usage_raw": {
+  "completion_tokens": 543,
+  "prompt_tokens": 909,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  },
+  "total_tokens": 1452
+ },
+ "usage_raw_sha256": "0a367c3c8a7fe56e20cc2874faa53d365667683d0c13beb0b51c0afdb5360720",
+ "normalizer_id": "kenari-openai-chat-v2",
+ "normalizer_version": "usage-norm-v1",
+ "normalizer_rule": "primary_work = input_tokens_uncached + output_tokens; cached tokens retained separately, never zeroed, never mixed into uncached"
+}

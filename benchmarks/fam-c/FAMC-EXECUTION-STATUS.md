@@ -566,3 +566,32 @@ probe asserts the rule under the ACTIVE state root. Runtime: h25 (the
 minutes-scale suite) re-timed 191s baseline -> 162s after threading the
 loaded ORDER-EXPANSION through the validation walk and short-circuiting
 acquisition_failed() on the cheap committed artifacts.
+
+
+## EPOCH 2 LIVE — order walks through failure (2026-09-17)
+
+Per the EPOCH-1 closure ruling, epoch 2 was built, certified, and finalized:
+fresh locks on their own lineage (EXECUTION-LOCK-EPOCH2 FINAL at 53e72ef,
+2026-09-17T06:42:11Z; PROTOCOL-LOCK-EPOCH2 FINAL), post-FINAL refusals proven,
+battery 39/39 at the certified ref, preflight 0/0/0, smoke_h37 26/26. Cells
+execute under state/epoch2/ from the beginning.
+
+First epoch-2 cells (all recorded outcomes, no retries of judgments):
+- A/T0: blocked (arrival fresh, container rc 1). A/T1: ship arrival,
+  candidate-validation FAILED (candidate rc 1).
+- Controller advance recorded BOTH terminals in one call: NOT-PROMOTED +
+  NOT-LOCKED (state/epoch2/PQ/A/fam05/runs/55cee707..., 011ec0ec...);
+  downstream A cells NOT-EVALUABLE — the prefix walk consumed the failed
+  universe and advanced. THE EPOCH-1 DEADLOCK IS FIXED, as ruled.
+- C/T0 (lane Q): blocked. C/T1 (lane Q): blocked + validation failed;
+  both C terminals recorded; downstream C NOT-EVALUABLE.
+- B/T2 (control arm, no K): blocked (rc 1).
+- Operator-error incident (recorded, preserved): the first C/T0 attempt was
+  run on lane P by operator error; the state authority refused it
+  INADMISSIBLE (manifest lane P != authorized Q) and a correct-lane re-run
+  was refused CHAIN-TERMINAL; the attempt's bytes were moved (not deleted)
+  to state/epoch2/_operator-errors/PQ-C-T0-lane-P-attempt/ with a NOTE.md.
+- Early experimental observation (pre-promotion): fam05 candidate artifacts
+  and downstream solves consistently fail container execution (rc 1) across
+  A(P), C(P-attempt), C(Q), B(P) — a family-level pattern worth watching;
+  all recorded as outcomes, none retried.

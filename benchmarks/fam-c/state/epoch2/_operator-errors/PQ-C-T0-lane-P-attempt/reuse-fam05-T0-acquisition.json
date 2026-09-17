@@ -1,0 +1,18 @@
+{
+ "task_id": "fam05-T0",
+ "lane": "Q",
+ "arm": "acquisition",
+ "reuse_policy": "PREREG-frozen: single locked capability per (family, producer lane); consumer loads by locked hash",
+ "capability_available": false,
+ "capability_candidate_ids": [],
+ "capability_selected": false,
+ "selected_capability_id": null,
+ "selected_capability_hash": null,
+ "capability_loaded": false,
+ "capability_invoked": false,
+ "capability_output_consumed": false,
+ "capability_materially_contributed": false,
+ "contribution_evidence": null,
+ "reuse_rejected": false,
+ "reuse_rejection_reason": null
+}

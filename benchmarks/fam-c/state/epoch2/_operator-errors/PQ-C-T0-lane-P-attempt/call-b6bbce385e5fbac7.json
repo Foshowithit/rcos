@@ -1,0 +1,20 @@
+{
+ "call_id": "b6bbce385e5fbac7",
+ "tag": "H1-P-fam05-T0-acquisition",
+ "endpoint": "https://opencode.ai/zen/go/v1",
+ "model_requested": "union-alpha",
+ "wall_s": 82.81,
+ "timestamp": "2026-09-17T06:46:54Z",
+ "request_body_sha256": "ecf4f8e9106b54cdd3fe7bc2e537ed08c8c25a9458e208b669a1a6821edf9430",
+ "request_body_file": "call-b6bbce385e5fbac7.request.json",
+ "request_body_file_sha256": "ecf4f8e9106b54cdd3fe7bc2e537ed08c8c25a9458e208b669a1a6821edf9430",
+ "usage_raw": {
+  "input_tokens": 624,
+  "output_tokens": 933,
+  "cache_read_input_tokens": 0
+ },
+ "usage_raw_sha256": "7633da65956f92ad34457b86403d47432c7e962467e274e913f2a84e30f58c00",
+ "normalizer_id": "opencode-go-union-alpha-v2",
+ "normalizer_version": "usage-norm-v1",
+ "normalizer_rule": "primary_work = input_tokens_uncached + output_tokens; cached tokens retained separately, never zeroed, never mixed into uncached"
+}

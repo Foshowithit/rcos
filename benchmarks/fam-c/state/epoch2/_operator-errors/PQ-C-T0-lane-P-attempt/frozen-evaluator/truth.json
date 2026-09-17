@@ -1,0 +1,52 @@
+{
+ "T0": {
+  "ok": [
+   "alpha.txt",
+   "beta.txt"
+  ],
+  "bad": [],
+  "unverified": []
+ },
+ "T1": {
+  "ok": [
+   "b.txt"
+  ],
+  "bad": [
+   {
+    "path": "a.txt",
+    "reason_includes": "sha"
+   }
+  ]
+ },
+ "T2": {
+  "ok": [
+   "c.txt",
+   "d.txt",
+   "e.txt",
+   "f.txt"
+  ],
+  "bad": [],
+  "unverified": []
+ },
+ "T3": {
+  "ok": [
+   "sub/n1.txt",
+   "top.txt"
+  ],
+  "bad": [
+   {
+    "path": "sub/n2.txt",
+    "reason_includes": "size"
+   }
+  ],
+  "unverified": []
+ },
+ "T4": {
+  "ok": [],
+  "bad": [],
+  "unverified": [
+   "s3://bucket/alpha.txt",
+   "s3://bucket/beta.txt"
+  ]
+ }
+}
