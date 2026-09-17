@@ -1,7 +1,7 @@
 {
  "lock": "PROTOCOL-LOCK",
  "epoch": 2,
- "status": "living-lock",
+ "status": "FINAL",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "EPOCH-2 lineage (fresh locks + new finalization). Minted by harness/epoch_transition.py from the epoch-1 closure record; its own append-only amendment lineage (NOT an amendment to the epoch-1 lineage). The epoch-1 PROTOCOL-LOCK.json stays frozen as the historical record of the closed epoch. Forward amendments to a governed file are appended here (human-written reason), exactly as before \u2014 on this new base.",
  "governed": {
@@ -27,5 +27,8 @@
   "epoch1_finalization_commit": "1e146279077b8b442e8c0542887349156aa4571f",
   "reason": "third-party ruling EPOCH-2 PROTOCOL (EPOCH-1-CLOSURE.md): fresh locks + new lineage; owner finalizes later"
  },
- "created_at": "2026-09-17T05:36:58Z"
+ "created_at": "2026-09-17T05:36:58Z",
+ "finalized_at": "2026-09-17T06:42:09Z",
+ "finalization_commit": "53e72ef4cec5ec7ecc9628c348a36635c02bd2d4",
+ "finalized_amendment_count": 0
 }

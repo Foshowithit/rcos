@@ -578,11 +578,23 @@ def progress_valid(cell, status):
     failed acquisition advance the prefix (the epoch-1 deadlock repair)."""
     if status == "COMPLETE":
         return True
+    # EPOCH-3: a model cell carrying a VALIDATED MODEL-OUTPUT-INVALID
+    # terminal is progress-valid — model cells only (never a governance
+    # cell), and only through the strict validator of _terminal_state().
+    if status == MODEL_OUTPUT_INVALID_STATUS and \
+            cell.get("kind") in MODEL_RUN_KINDS:
+        return True
     event = cell.get("event")
     if event == "PROMOTION":
         return status == "NOT-PROMOTED"
     if event == "CAPABILITY_LOCK":
         return status == "NOT-LOCKED"
+    if event == "T1" and cell.get("universe") in CAPABILITY_UNIVERSES:
+        # EPOCH-3 (§3): the T1 of a universe whose T0 carries a validated
+        # MODEL-OUTPUT-INVALID terminal is NOT-EVALUABLE (no candidate ever
+        # existed). The status is produced ONLY by the strict terminal
+        # validator path in _local_state(), never assumed from presence.
+        return status == "NOT-EVALUABLE"
     if event in DOWNSTREAM_EVENTS and \
             cell.get("universe") in CAPABILITY_UNIVERSES:
         return status == "NOT-EVALUABLE"
@@ -689,17 +701,50 @@ def _local_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
             fam_c_dir, cell["block"], cell["family"], cell["universe"],
             _exp=_exp)
         if _failed:
+            # EPOCH-3: the failed-acquisition cause names the branch — the
+            # T1 candidate-validation failure, or the MODEL-OUTPUT-INVALID
+            # terminal of T0/T1 (whose downstream algebra is identical).
+            if _cause.startswith("T0 MODEL-OUTPUT-INVALID") or \
+                    _cause.startswith("T1 MODEL-OUTPUT-INVALID"):
+                _why = (f"carries a validated MODEL-OUTPUT-INVALID "
+                        f"acquisition terminal ({_cause})")
+            else:
+                _why = (f"T1 cell is COMPLETE but its candidate validation "
+                        f"failed ({_cause})")
             return {"cell_id": cell["cell_id"], "status": "NOT-EVALUABLE",
                     "reasons": [
                         f"ACQUISITION-FAILED-DENY: universe "
                         f"{cell['block']}/{cell['family']}/"
-                        f"{cell['universe']} T1 cell is COMPLETE but its "
-                        f"candidate validation failed ({_cause}); "
+                        f"{cell['universe']} {_why}; "
                         f"downstream {cell['event']}/"
                         f"{cell['universe']} is NOT-EVALUABLE with "
                         f"reason acquisition-failed (no retry: the "
-                        f"failed validation is an experimental outcome, "
+                        f"failed acquisition is an experimental outcome, "
                         f"not an infrastructure-invalid run)"]}
+    # EPOCH-3 (§3): the T1 of a universe whose T0 cell carries a VALIDATED
+    # MODEL-OUTPUT-INVALID terminal is NOT-EVALUABLE — no candidate ever
+    # existed (no synthesized arrival, no partial arrival), so T1 cannot be
+    # run at all. Checked before the kind dispatch and before any per-cell
+    # artifact read; the strict validator of the T0 terminal is the same one
+    # the prefix walk uses.
+    if kind in MODEL_CALL_KINDS and event == "T1" and \
+            cell.get("universe") in CAPABILITY_UNIVERSES:
+        _tev = acquisition_failure_terminal(fam_c_dir, cell["block"],
+                                            cell["family"],
+                                            cell["universe"], _exp)
+        if _tev is not None and _tev["failure_event"] == "T0":
+            return {"cell_id": cell["cell_id"], "status": "NOT-EVALUABLE",
+                    "reasons": [
+                        f"ACQUISITION-FAILED-DENY: universe "
+                        f"{cell['block']}/{cell['family']}/"
+                        f"{cell['universe']} T0 cell carries the validated "
+                        f"MODEL-OUTPUT-INVALID terminal "
+                        f"{_tev['acquisition_evidence']['terminal_sha256'][:12]} "
+                        f"(candidate absent: no arrival, no synthesized "
+                        f"candidate); T1 is NOT-EVALUABLE with reason "
+                        f"acquisition-failed (no retry: a malformed model "
+                        f"output is an experimental outcome)"],
+                    "terminal_class": MODEL_OUTPUT_INVALID_CLASS}
     # A11.6 defense in depth (TOCTOU): the runner derives paths through
     # derive_paths(), but a namespace parent could be replaced by a symlink
     # AFTER derivation. Every reader of cell state re-verifies the same
@@ -858,6 +903,12 @@ def _model_run_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
         return {"cell_id": cell["cell_id"], "status": "INCOMPLETE",
                 "reasons": [f"run dir absent/not a real directory at the "
                             f"derived path {d}"]}
+    # EPOCH-3: the pre-frozen no-arrival terminal. A cell carrying one is
+    # judged ONLY by the strict terminal validator (never by the manifest
+    # path): a forbidden companion beside a terminal is a defect, not a
+    # manifest.
+    if os.path.lexists(os.path.join(d, MODEL_OUTPUT_INVALID_FILE)):
+        return _terminal_state(fam_c_dir, cell, freeze_commit, _exp)
     mf = os.path.join(d, "H1-RUN-MANIFEST.json")
     if os.path.islink(mf) or not os.path.isfile(mf):
         return {"cell_id": cell["cell_id"], "status": "INCOMPLETE",
@@ -974,38 +1025,54 @@ def _not_promoted_state(fam_c_dir, cell, outcome, freeze_commit=None):
         reasons.append("promotion conflict: a promotion receipt and a "
                        "NOT-PROMOTED outcome both exist for this cell (a "
                        "validated promotion cannot also be NOT-PROMOTED)")
+    # EPOCH-3 (§3.1): an acquisition-failed universe may terminate through
+    # a MODEL-OUTPUT-INVALID acquisition terminal instead of a failed
+    # candidate validation. That record carries the exact evidence union
+    # (failure_event + acquisition_evidence + candidate_sha256); epoch-2
+    # records (no failure_event key) keep the chain-tip shape unchanged.
+    _union = ("failure_event" in outcome) or ("acquisition_evidence" in outcome)
     for key, want in (("event", "PROMOTION"),
                       ("cell_id", cell["cell_id"]),
                       ("block", cell["block"]),
                       ("family", cell["family"]),
                       ("universe", cell["universe"]),
                       ("outcome", "NOT-PROMOTED"),
-                      ("reason", "candidate-validation-failed"),
+                      ("reason", ACQ_FAILURE_REASON if _union
+                       else "candidate-validation-failed"),
                       ("created_from", "frozen-evidence")):
         if outcome.get(key) != want:
             reasons.append(f"not-promoted outcome {key} "
                            f"{outcome.get(key)!r} != {want!r}")
+    if _union:
+        reasons.extend(_acquisition_evidence_reasons(fam_c_dir, outcome,
+                                                     cell))
+        if outcome.get("acquisition_chain_tips"):
+            reasons.append("not-promoted outcome carries acquisition_chain_"
+                           "tips beside a MODEL-OUTPUT-INVALID failure_event "
+                           "(a terminal branch has no chain to bind; a null "
+                           "tip is never equivalent to a chain)")
     tips, runs = {}, {}
-    for ev in ("T0", "T1"):
-        acq = _cell_for_event(fam_c_dir, cell, ev)
-        if acq is None:
-            reasons.append(f"no {ev} cell in the order for "
-                           f"{cell['block']}/{cell['family']}/"
-                           f"{cell['universe']}")
-            continue
-        st = _local_state(fam_c_dir, acq, freeze_commit)
-        if st["status"] != "COMPLETE":
-            reasons.append(f"not-promoted rule: {ev} acquisition cell "
-                           f"{acq['cell_id']} not validated COMPLETE "
-                           f"({st['status']}: {st['reasons'][:1]})")
-            continue
-        runs[ev] = run_dir(fam_c_dir, acq)
-        try:
-            tips[ev] = _chain_tip(os.path.join(runs[ev],
-                                               "EVIDENCE-CHAIN.jsonl"))
-        except (ValueError, OSError, json.JSONDecodeError) as e:
-            reasons.append(f"not-promoted rule: {ev} chain tip unreadable: "
-                           f"{e}")
+    if not _union:
+        for ev in ("T0", "T1"):
+            acq = _cell_for_event(fam_c_dir, cell, ev)
+            if acq is None:
+                reasons.append(f"no {ev} cell in the order for "
+                               f"{cell['block']}/{cell['family']}/"
+                               f"{cell['universe']}")
+                continue
+            st = _local_state(fam_c_dir, acq, freeze_commit)
+            if st["status"] != "COMPLETE":
+                reasons.append(f"not-promoted rule: {ev} acquisition cell "
+                               f"{acq['cell_id']} not validated COMPLETE "
+                               f"({st['status']}: {st['reasons'][:1]})")
+                continue
+            runs[ev] = run_dir(fam_c_dir, acq)
+            try:
+                tips[ev] = _chain_tip(os.path.join(runs[ev],
+                                                   "EVIDENCE-CHAIN.jsonl"))
+            except (ValueError, OSError, json.JSONDecodeError) as e:
+                reasons.append(f"not-promoted rule: {ev} chain tip unreadable: "
+                               f"{e}")
     for ev in ("T0", "T1"):
         if ev in tips and outcome.get(ev.lower() + "_tip") != tips[ev]:
             reasons.append(f"not-promoted outcome {ev.lower()}_tip "
@@ -1072,15 +1139,21 @@ def _not_promoted_state(fam_c_dir, cell, outcome, freeze_commit=None):
         return _result(cell, reasons, True)
     cause = _failed_acquisition_cause(fam_c_dir, cell["block"],
                                       cell["family"], cell["universe"])
+    if cause.startswith("T0 MODEL-OUTPUT-INVALID") or \
+            cause.startswith("T1 MODEL-OUTPUT-INVALID"):
+        _why = (f"carries a validated MODEL-OUTPUT-INVALID acquisition "
+                f"terminal ({cause})")
+    else:
+        _why = (f"T1 cell is COMPLETE but its candidate validation failed "
+                f"({cause})")
     return {"cell_id": cell["cell_id"], "status": "NOT-PROMOTED",
             "reasons": [f"NOT-PROMOTED: universe {cell['block']}/"
-                        f"{cell['family']}/{cell['universe']} T1 cell is "
-                        f"COMPLETE but its candidate validation failed "
-                        f"({cause}); no CAPABILITY_LOCK may exist for it, "
+                        f"{cell['family']}/{cell['universe']} {_why}; no "
+                        f"CAPABILITY_LOCK may exist for it, "
                         f"every downstream cell of that universe (T2/T3/"
                         f"T4) is NOT-EVALUABLE with reason "
                         f"acquisition-failed, and there is no retry (the "
-                        f"failed validation is an experimental outcome, "
+                        f"failed acquisition is an experimental outcome, "
                         f"not an infrastructure-invalid run)"]}
 
 
@@ -1742,6 +1815,10 @@ def _not_locked_state(fam_c_dir, cell, outcome, freeze_commit=None):
         if outcome.get(key) != want:
             reasons.append(f"not-locked outcome {key} "
                            f"{outcome.get(key)!r} != {want!r}")
+    # EPOCH-3 (§3.1): the lock terminal binds the SAME acquisition evidence
+    # union as the promotion outcome; an epoch-2 record (no failure_event)
+    # keeps the chain-tip shape unchanged.
+    _union = ("failure_event" in outcome) or ("acquisition_evidence" in outcome)
     prom = _cell_for_event(fam_c_dir, cell, "PROMOTION")
     tips = {}
     if prom is None:
@@ -1755,6 +1832,13 @@ def _not_locked_state(fam_c_dir, cell, outcome, freeze_commit=None):
                            f"{prom['cell_id']} is not validated "
                            f"NOT-PROMOTED ({pst['status']}: "
                            f"{pst['reasons'][:1]})")
+        elif _union:
+            if outcome.get("acquisition_chain_tips"):
+                reasons.append("not-locked outcome carries "
+                               "acquisition_chain_tips beside a "
+                               "MODEL-OUTPUT-INVALID failure_event (a "
+                               "terminal branch has no chain to bind; a null "
+                               "tip is never equivalent to a chain)")
         else:
             for ev in ("T0", "T1"):
                 acq = _cell_for_event(fam_c_dir, cell, ev)
@@ -1808,6 +1892,17 @@ def _not_locked_state(fam_c_dir, cell, outcome, freeze_commit=None):
                     f"{str(outcome.get('promotion_outcome_sha256'))[:12]} "
                     f"!= the recorded PROMOTION-OUTCOME.json sha256 "
                     f"{got_sha[:12]}")
+            if _union:
+                for key in ("failure_event", "candidate_sha256",
+                            "acquisition_evidence"):
+                    if outcome.get(key) != _oc.get(key):
+                        reasons.append(
+                            f"not-locked outcome {key} does not equal the "
+                            f"recorded PROMOTION-OUTCOME.json {key} (the "
+                            f"lock terminal binds the SAME §3.1 acquisition "
+                            f"evidence union)")
+                reasons.extend(_acquisition_evidence_reasons(fam_c_dir,
+                                                             outcome, cell))
     capdir = capability_dir(fam_c_dir, cell["block"], cell["universe"],
                             cell["family"])
     if os.path.exists(os.path.join(capdir, "CAPABILITY_LOCK.json")):
@@ -1937,6 +2032,15 @@ def _failed_acquisition_cause(fam_c_dir, block, family, universe):
     if isinstance(oc, dict) and isinstance(oc.get("reason"), str) \
             and oc["reason"].strip():
         return oc["reason"]
+    # EPOCH-3: no candidate-validation event exists on a terminal branch —
+    # name the terminal failure event instead of the chain vocabulary.
+    _tev = acquisition_failure_terminal(fam_c_dir, block, family, universe)
+    if _tev is not None:
+        if _tev["failure_event"] == "T0":
+            return ("T0 MODEL-OUTPUT-INVALID (no candidate exists; "
+                    "T1 NOT-EVALUABLE)")
+        return ("T1 MODEL-OUTPUT-INVALID (the real T0 candidate exists but "
+                "was never validly validated)")
     return "candidate-validation-failed"
 
 
@@ -1975,6 +2079,20 @@ def _acquisition_failed_inner(fam_c_dir, block, family, universe, _exp=None):
     t1 = expected_event(exp, block, family, "T1", universe)
     if t0 is None or t1 is None:
         return False, "candidate-validation-failed"
+    # EPOCH-3 terminal disjuncts (§3): a validated MODEL-OUTPUT-INVALID
+    # terminal on the T0 cell (no candidate ever existed) or on the T1 cell
+    # (T0 COMPLETE, the real candidate was never validly validated) fails
+    # the acquisition exactly like a failed T1 candidate validation — the
+    # universe still yields NOT-EVALUABLE downstream and the runner's
+    # pre-call ACQUISITION-FAILED-DENY still fires.
+    _tev = acquisition_failure_terminal(fam_c_dir, block, family, universe,
+                                       exp)
+    if _tev is not None:
+        if _tev["failure_event"] == "T0":
+            return True, ("T0 MODEL-OUTPUT-INVALID (no candidate exists; "
+                          "T1 NOT-EVALUABLE)")
+        return True, ("T1 MODEL-OUTPUT-INVALID (the real T0 candidate "
+                      "exists but was never validly validated)")
     try:
         cp = os.path.join(run_dir(fam_c_dir, t1), "EVIDENCE-CHAIN.jsonl")
         if os.path.islink(cp) or not os.path.isfile(cp):
@@ -2084,6 +2202,875 @@ def candidate_input_lineage_reasons(t1_run_dir, pay):
 
 
 # ---------------------------------------------------------------------------
+# EPOCH-3 (EPOCH-3-PROTOCOL-SPEC.md, frozen at 28cdf2a2…): the
+# MODEL-OUTPUT-INVALID terminal, its STRICT validator (including the
+# deterministic replay of the preserved response through the frozen parse
+# gate), the attempt ledger (the enumeration authority for the two
+# lane-reliability statistics) and the §3.1 governance evidence union.
+#
+# The terminal is the ONE lawful ordered-path representation of "provider
+# call exists + response bytes returned + contract denial + no arrival".
+# Progress status is not experimental correctness: a COMPLETE-FAILURE
+# terminal is progress-valid but its experimental task outcome is FAIL /
+# non-SHIP, and it authorizes nothing (no promotion, no lock, no
+# consumption, no retry, no verdict).
+# ---------------------------------------------------------------------------
+
+MODEL_OUTPUT_INVALID_FILE = "MODEL-OUTPUT-INVALID.json"
+MODEL_OUTPUT_INVALID_SCHEMA = "famc-model-output-invalid-v1"
+MODEL_OUTPUT_INVALID_STATUS = "COMPLETE-FAILURE"
+MODEL_OUTPUT_INVALID_CLASS = "MODEL-OUTPUT-INVALID"
+MODEL_OUTPUT_INVALID_CREATED_BY = "benchmarks/fam-c/harness-run/run_arm_h1.py"
+ATTEMPT_LEDGER_FILE = "ATTEMPT-LEDGER.jsonl"
+ATTEMPT_LEDGER_SCHEMA = "famc-attempt-ledger-v1"
+ATTEMPT_NO_SAMPLE = "NO-MODEL-SAMPLE-INFRASTRUCTURE"
+ATTEMPT_ADMISSIBLE = "ADMISSIBLE"
+ACQ_FAILURE_REASON = "acquisition-failed"
+# The eligible contract_error set: exactly the named contract errors raised
+# by extract()/_validate_arrival() at the parse gate. CONTRACT-DECISION-DENY
+# raised LATER by execute_arrival() (arm illegality) is NOT eligible.
+ELIGIBLE_CONTRACT_PREFIXES = ("CONTRACT-PARSE-DENY",
+                              "CONTRACT-DECISION-DENY")
+PARSER_AUTHORITY = [
+    "benchmarks/fam-c/harness-run/run_arm_h1.py:extract",
+    "benchmarks/fam-c/harness-run/run_arm_h1.py:_validate_arrival"]
+# Forbidden companions (§1): a lawful terminal coexists with none of these.
+TERMINAL_FORBIDDEN_COMPANIONS = (
+    "arrival.json", "H1-RUN-MANIFEST.json", "EVIDENCE-CHAIN.jsonl",
+    "OUTPUT.json", "adapter.py", "candidate.py",
+    "CANDIDATE-INPUT-MANIFEST.json", "CANDIDATE-OUTPUT.json",
+    "frozen-evaluator", "A13-SEAL.json", "A13-CAUSAL-RECEIPT.json",
+    "A13-GRADING.json", "A13-GRADING-PLAN.json", "A13-JOURNAL.json")
+# cell-identity surface: terminal field -> expansion cell key (order_sha256
+# is compared against the expansion's own order hash).
+_TERMINAL_IDENTITY_FIELDS = (
+    ("cell_id", "cell_id"), ("cell_index", "index"), ("block", "block"),
+    ("family", "family"), ("task", "task"), ("cell_event", "event"),
+    ("cell_kind", "kind"), ("cell_universe", "universe"),
+    ("cell_letter", "letter"), ("lane", "lane"), ("arm", "arm"),
+    ("capability_id", "capability_id"))
+_TERMINAL_AUTHORITY_BINDINGS = (
+    "protocol_lock_sha256", "execution_lock_sha256",
+    "execution_harness_manifest_sha256", "epoch3_protocol_spec_sha256")
+_HEX_DIGITS = frozenset("0123456789abcdef")
+
+
+def _is_hex(value, n):
+    """64/16-lowercase-hex shape check WITHOUT a module-level shape
+    predicate (the atomic/token shape authority lives in one place;
+    D8.1 static rule)."""
+    return (isinstance(value, str) and len(value) == n
+            and all(ch in _HEX_DIGITS for ch in value))
+_PARSER_CACHE = {}
+
+
+def eligible_contract_error(message):
+    """True iff `message` is one of the ELIGIBLE named contract errors
+    (§1): a CONTRACT-PARSE-DENY, or the CONTRACT-DECISION-DENY raised by
+    _validate_arrival() for an unknown decision value."""
+    return (isinstance(message, str)
+            and message.startswith(ELIGIBLE_CONTRACT_PREFIXES))
+
+
+def _runner_module(fam_c_dir):
+    """The FROZEN parse gate (harness-run/run_arm_h1.py) loaded from the
+    tree under validation, so the replay judges the preserved response with
+    exactly the bytes the run used. Fail closed (RuntimeError)."""
+    path = os.path.join(os.path.abspath(fam_c_dir), "harness-run",
+                        "run_arm_h1.py")
+    key = os.path.realpath(path)
+    mod = _PARSER_CACHE.get(key)
+    if mod is not None:
+        return mod
+    if not os.path.isfile(path):
+        raise RuntimeError(f"PARSER-UNAVAILABLE: {path} missing (the "
+                           f"terminal replay requires the frozen parse gate)")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_famc_run_arm_h1_replay_gate", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"PARSER-UNAVAILABLE: cannot load {path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    _PARSER_CACHE[key] = mod
+    return mod
+
+
+def replay_parse_gate(fam_c_dir, raw_text):
+    """Replay preserved response TEXT through the frozen extract().
+
+    Returns {"arrived": bool, "arrival": obj|None, "parse_mode": str|None,
+    "error": <message>|None, "eligible": bool}. A11b.2 is deterministic: a
+    lawful terminal's replay must raise the SAME eligible named error; an
+    arrival (or a different error) makes the terminal INADMISSIBLE."""
+    extract = getattr(_runner_module(fam_c_dir), "extract", None)
+    if not callable(extract):
+        raise RuntimeError("PARSER-UNAVAILABLE: extract() not found in the "
+                           "frozen parse gate")
+    try:
+        arrival, parse_mode = extract(raw_text)
+    except ValueError as e:
+        msg = str(e)
+        return {"arrived": False, "arrival": None, "parse_mode": None,
+                "error": msg, "eligible": eligible_contract_error(msg)}
+    except Exception as e:                                  # noqa: BLE001
+        return {"arrived": False, "arrival": None, "parse_mode": None,
+                "error": f"{type(e).__name__}: {e}", "eligible": False}
+    return {"arrived": True, "arrival": arrival, "parse_mode": parse_mode,
+            "error": None, "eligible": False}
+
+
+def _active_lock_files(fam_c_dir):
+    """(execution, protocol) lock FILE NAMES of the ACTIVE epoch."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import epoch as _E
+    return _E.active_lock_names(fam_c_dir)
+
+
+def terminal_bindings(fam_c_dir):
+    """The execution authority a lawful terminal is minted under: the
+    ACTIVE epoch's execution + protocol lock bytes, the execution lock's
+    recorded harness manifest, and the frozen epoch-3 spec bytes. The spec
+    hash comes from the ACTIVE epoch-3 transition citation when epoch 3 is
+    active (never from a live re-read of mutable bytes alone), and the
+    on-disk spec must still hash to it."""
+    ex_name, pr_name = _active_lock_files(fam_c_dir)
+    out = {}
+    for key, name in (("protocol_lock_sha256", pr_name),
+                      ("execution_lock_sha256", ex_name)):
+        try:
+            out[key] = _sha256_file(os.path.join(fam_c_dir, name))
+        except OSError:
+            out[key] = None
+    try:
+        out["execution_harness_manifest_sha256"] = _read_json(
+            os.path.join(fam_c_dir, ex_name)).get("harness_manifest_sha256")
+    except (OSError, ValueError):
+        out["execution_harness_manifest_sha256"] = None
+    want = None
+    try:
+        _tr = _read_json(os.path.join(fam_c_dir, "EPOCH-3-TRANSITION.json"))
+        if isinstance(_tr, dict):
+            want = _tr.get("epoch3_protocol_spec_sha256")
+    except (OSError, ValueError):
+        want = None
+    got = None
+    try:
+        got = _sha256_file(os.path.join(fam_c_dir, "EPOCH-3-PROTOCOL-SPEC.md"))
+    except OSError:
+        got = None
+    out["epoch3_protocol_spec_sha256"] = got if (want is not None
+                                                 and want == got) else None
+    return out
+
+
+def frozen_t0_candidate_sha256(fam_c_dir, t0_cell):
+    """sha256 of the REAL frozen T0 candidate (arrival.json
+    execution_payload.solver_py), or None when the T0 arrival carries no
+    candidate string."""
+    try:
+        arrival = _read_json(os.path.join(run_dir(fam_c_dir, t0_cell),
+                                          "arrival.json"))
+        s = (arrival.get("execution_payload") or {}).get("solver_py")
+    except (OSError, ValueError, AttributeError):
+        return None
+    if not isinstance(s, str) or not s.strip():
+        return None
+    return hashlib.sha256(s.encode()).hexdigest()
+
+
+def attempt_ledger_rows(run_dir_):
+    """Parse one cell's ATTEMPT-LEDGER.jsonl. Returns (rows, findings);
+    each row must be a JSON object."""
+    p = os.path.join(run_dir_, ATTEMPT_LEDGER_FILE)
+    if os.path.islink(p) or not os.path.isfile(p):
+        return None, [f"attempt ledger absent at {p}"]
+    rows, findings = [], []
+    try:
+        with open(p) as f:
+            raw = f.read()
+    except OSError as e:
+        return None, [f"attempt ledger unreadable: {e}"]
+    for i, line in enumerate(raw.splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            obj = json.loads(line)
+        except ValueError as e:
+            findings.append(f"attempt ledger row {i} unparsable: {e}")
+            continue
+        if not isinstance(obj, dict):
+            findings.append(f"attempt ledger row {i} is not a JSON object")
+            continue
+        rows.append(obj)
+    return rows, findings
+
+
+def attempt_ledger_reasons(fam_c_dir, cell, terminal_obj=None,
+                          terminal_pending=False):
+    """§4 ledger rules, fail closed. The ledger is the ENUMERATION
+    AUTHORITY: one row per authorized provider invocation, in call order.
+
+      * every row carries schema + a 64-hex request_body_sha256;
+      * response_text_sha256 / response_bytes / usage_receipt_sha256 /
+        identity_record_sha256 may be null ONLY for the named
+        no-model-sample infrastructure outcome;
+      * present hashes MUST cross-check the actual files on disk;
+      * a lawful MODEL-OUTPUT-INVALID terminal corresponds to exactly one
+        authorized ledger row, and vice versa.
+
+    `terminal_pending` is the WRITER's pre-create self-check: the ledger row
+    is already durable and the terminal is about to be created by the same
+    call, so the "denial row without a terminal" direction is skipped here
+    and re-asserted by the full validation immediately after the atomic
+    create (a post-create failure leaves the terminal INADMISSIBLE and
+    blocks the walk — fail closed, never silently accepted)."""
+    d = run_dir(fam_c_dir, cell)
+    rows, findings = attempt_ledger_rows(d)
+    out = list(findings)
+    if rows is None:
+        return out
+    if not rows:
+        return out + [f"attempt ledger at {d} enumerates no provider "
+                      f"invocation (the ledger is the enumeration "
+                      f"authority; an empty ledger implies no call)"]
+    want_idx = 0
+    for i, row in enumerate(rows, 1):
+        pre = f"attempt ledger row {i}"
+        if row.get("schema") != ATTEMPT_LEDGER_SCHEMA:
+            out.append(f"{pre}: schema {row.get('schema')!r} != "
+                       f"{ATTEMPT_LEDGER_SCHEMA!r}")
+        ai = row.get("attempt_index")
+        if ai != want_idx + 1:
+            out.append(f"{pre}: attempt_index {ai!r} != {want_idx + 1} "
+                       f"(rows enumerate provider invocations in call "
+                       f"order, one per invocation)")
+        want_idx += 1
+        call_id = row.get("provider_call_id")
+        if not isinstance(call_id, str) or not call_id:
+            out.append(f"{pre}: provider_call_id missing/empty")
+        rb = row.get("request_body_sha256")
+        if not _is_hex(rb, 64):
+            out.append(f"{pre}: request_body_sha256 {rb!r} is not 64-hex "
+                       f"(required on EVERY row)")
+        outcome = row.get("outcome")
+        no_sample = (outcome == ATTEMPT_NO_SAMPLE)
+        rsha, rbytes = row.get("response_text_sha256"), row.get("response_bytes")
+        urc, ids = row.get("usage_receipt_sha256"), row.get("identity_record_sha256")
+        nulls = [k for k, v in (("response_text_sha256", rsha),
+                                ("response_bytes", rbytes),
+                                ("usage_receipt_sha256", urc),
+                                ("identity_record_sha256", ids))
+                 if v is None]
+        if nulls and not no_sample:
+            out.append(f"{pre}: {', '.join(nulls)} null without the named "
+                       f"no-sample infrastructure outcome {ATTEMPT_NO_SAMPLE!r} "
+                       f"(got outcome {outcome!r}); null response/usage/"
+                       f"identity fields are lawful ONLY for a true "
+                       f"no-model-sample infrastructure failure")
+        if no_sample and len(nulls) != 4:
+            out.append(f"{pre}: outcome {ATTEMPT_NO_SAMPLE!r} requires ALL "
+                       f"of response_text_sha256/response_bytes/"
+                       f"usage_receipt_sha256/identity_record_sha256 null")
+        if not isinstance(call_id, str) or not call_id:
+            continue
+        receipt = os.path.join(d, f"call-{call_id}.json")
+        req = os.path.join(d, f"call-{call_id}.request.json")
+        nu = os.path.join(d, f"call-{call_id}.normalized.json")
+        idp = os.path.join(d, "identity.json")
+        # request_body_sha256 is required on EVERY row and must cross-check
+        # the persisted request bytes (present on every path, including a
+        # true no-sample infrastructure invocation).
+        if isinstance(rb, str):
+            if os.path.islink(req) or not os.path.isfile(req):
+                out.append(f"{pre}: no persisted request body "
+                           f"{os.path.basename(req)} (every row's "
+                           f"request_body_sha256 must cross-check the bytes "
+                           f"on disk)")
+            else:
+                try:
+                    got_req = _sha256_file(req)
+                except OSError as e:
+                    out.append(f"{pre}: request body unreadable: {e}")
+                else:
+                    if rb != got_req:
+                        out.append(f"{pre}: request_body_sha256 {rb[:12]} != "
+                                   f"the persisted "
+                                   f"{os.path.basename(req)} sha256 "
+                                   f"{got_req[:12]}")
+        if not no_sample:
+            rawp = os.path.join(d, f"raw-{call_id}.txt")
+            try:
+                raw_bytes = open(rawp, "rb").read()
+            except OSError as e:
+                out.append(f"{pre}: preserved response {os.path.basename(rawp)} "
+                           f"missing/unreadable: {e} (per-attempt response "
+                           f"preservation is required on every path)")
+            else:
+                got = hashlib.sha256(raw_bytes).hexdigest()
+                if rsha != got:
+                    out.append(f"{pre}: response_text_sha256 {str(rsha)[:12]} "
+                               f"!= sha256 of {os.path.basename(rawp)} "
+                               f"{got[:12]}")
+                if rbytes != len(raw_bytes):
+                    out.append(f"{pre}: response_bytes {rbytes!r} != the "
+                               f"preserved response length {len(raw_bytes)}")
+            for key, path in (("usage_receipt_sha256", receipt),
+                              ("identity_record_sha256", idp)):
+                val = row.get(key)
+                try:
+                    got = _sha256_file(path)
+                except OSError:
+                    continue    # the terminal validator names missing files
+                if val != got:
+                    out.append(f"{pre}: {key} {str(val)[:12]} != sha256 of "
+                               f"{os.path.basename(path)} {got[:12]}")
+        try:
+            rc = _read_json(receipt)
+        except (OSError, ValueError):
+            rc = None
+        if isinstance(rc, dict):
+            if rc.get("request_body_sha256") != rb:
+                out.append(f"{pre}: request_body_sha256 {str(rb)[:12]} != the "
+                           f"receipt's recorded "
+                           f"{str(rc.get('request_body_sha256'))[:12]} "
+                           f"(read back from the receipt, never recomputed)")
+            if rc.get("call_id") != call_id:
+                out.append(f"{pre}: provider_call_id {call_id!r} != the "
+                           f"receipt's call_id {rc.get('call_id')!r}")
+        if row.get("authorized_estimand_attempt") is not True:
+            out.append(f"{pre}: authorized_estimand_attempt "
+                       f"{row.get('authorized_estimand_attempt')!r} != True "
+                       f"(N=1: every epoch-3 ledger row is the authorized "
+                       f"first sample; there is no lawful diagnostic "
+                       f"repeat)")
+    # terminal <-> row correspondence (both directions)
+    tp = os.path.join(d, MODEL_OUTPUT_INVALID_FILE)
+    has_terminal = os.path.lexists(tp)
+    terminal_rows = [r for r in rows
+                     if eligible_contract_error(r.get("outcome"))]
+    if has_terminal:
+        obj = terminal_obj
+        if obj is None:
+            try:
+                obj = _read_json(tp)
+            except (OSError, ValueError):
+                obj = None
+        if len(rows) != 1 or len(terminal_rows) != 1:
+            out.append(f"a lawful {MODEL_OUTPUT_INVALID_FILE} corresponds to "
+                       f"exactly ONE authorized ledger row; the ledger "
+                       f"enumerates {len(rows)} row(s) and "
+                       f"{len(terminal_rows)} contract-denial row(s)")
+        elif isinstance(obj, dict):
+            row = terminal_rows[0]
+            if row.get("provider_call_id") != obj.get("provider_call_id"):
+                out.append("the terminal's provider_call_id != the ledger "
+                           "row's provider_call_id")
+            if row.get("outcome") != obj.get("contract_error"):
+                out.append(f"ledger outcome {row.get('outcome')!r} != the "
+                           f"terminal's contract_error "
+                           f"{obj.get('contract_error')!r}")
+            if row.get("response_text_sha256") != obj.get("response_text_sha256"):
+                out.append("ledger response_text_sha256 != the terminal's "
+                           "response_text_sha256")
+    elif not terminal_pending:
+        for r in terminal_rows:
+            out.append(f"a ledger row records the contract denial "
+                       f"{r.get('outcome')!r} but no "
+                       f"{MODEL_OUTPUT_INVALID_FILE} exists (the terminal and "
+                       f"the ledger row are two halves of one record)")
+    return out
+
+
+def validate_model_output_invalid(fam_c_dir, cell, freeze_commit=None,
+                                  _exp=None):
+    """STRICT §1 validator of ONE MODEL-OUTPUT-INVALID terminal. Returns
+    findings (empty = lawful). Fail closed: every hash is re-derived from
+    the bytes on disk, the cell identity is the production surface, the
+    execution-authority bindings must match the ACTIVE authority, no
+    forbidden companion may exist, and the preserved response is replayed
+    through the frozen extract() — which must raise the SAME eligible named
+    error recorded in contract_error."""
+    d = run_dir(fam_c_dir, cell)
+    tp = os.path.join(d, MODEL_OUTPUT_INVALID_FILE)
+    if os.path.islink(tp):
+        return [f"{MODEL_OUTPUT_INVALID_FILE} is a symlink ({tp}); refused"]
+    if not os.path.isfile(tp):
+        return [f"no {MODEL_OUTPUT_INVALID_FILE} at {tp}"]
+    try:
+        obj = _read_json(tp)
+    except (OSError, ValueError) as e:
+        return [f"{MODEL_OUTPUT_INVALID_FILE} unreadable: {e}"]
+    return model_output_invalid_reasons(fam_c_dir, cell, obj, d, _exp=_exp)
+
+
+def model_output_invalid_reasons(fam_c_dir, cell, obj, d, _exp=None,
+                                 terminal_pending=False):
+    """The finding set behind validate_model_output_invalid(), given an
+    already-parsed terminal object (split out so a fresh write can be
+    self-checked before it becomes durable)."""
+    out = []
+    if not isinstance(obj, dict):
+        return [f"{MODEL_OUTPUT_INVALID_FILE} is not a JSON object"]
+    for key, want in (("schema", MODEL_OUTPUT_INVALID_SCHEMA),
+                      ("epoch", 3),
+                      ("terminal_status", MODEL_OUTPUT_INVALID_STATUS),
+                      ("experimental_outcome", True),
+                      ("experimental_task_outcome", "FAIL"),
+                      ("cell_event", cell["event"]),
+                      ("parser_authority", PARSER_AUTHORITY),
+                      ("contract_rule", "A11b.2"),
+                      ("authorized_estimand_attempt", True),
+                      ("attempt_index", 1),
+                      ("created_by", MODEL_OUTPUT_INVALID_CREATED_BY)):
+        if obj.get(key) != want:
+            out.append(f"terminal {key} {obj.get(key)!r} != {want!r}")
+    try:
+        exp = _exp if _exp is not None else load_expansion(fam_c_dir)
+        order_sha = exp["order_sha256"]
+    except (ValueError, KeyError, OSError) as e:
+        out.append(f"order expansion unreadable: {e}")
+        order_sha = None
+    for key, src in _TERMINAL_IDENTITY_FIELDS:
+        want = cell.get(src)
+        if obj.get(key) != want:
+            out.append(f"terminal {key} {obj.get(key)!r} != the authorized "
+                       f"cell's {src} {want!r}")
+    if order_sha is not None and obj.get("order_sha256") != order_sha:
+        out.append(f"terminal order_sha256 {str(obj.get('order_sha256'))[:12]} "
+                   f"!= the frozen order hash {order_sha[:12]}")
+    cid = obj.get("cell_id")
+    if not _is_hex(cid, 16):
+        out.append(f"terminal cell_id {cid!r} is not the frozen "
+                   f"ORDER-EXPANSION 16-hex cell id")
+    # no machine-local paths in the machine schema
+    for k, v in obj.items():
+        _win_abs = (isinstance(v, str) and len(v) > 2 and v[0].isalpha()
+                    and v[1] == ":"
+                    and (v[2] == "/" or v[2] == "\\"))
+        if isinstance(v, str) and (v.startswith("/") or _win_abs):
+            out.append(f"terminal field {k} carries a machine-local path "
+                       f"({v[:40]!r}); the portable terminal schema carries "
+                       f"no local filesystem paths")
+    # forbidden companions
+    for name in TERMINAL_FORBIDDEN_COMPANIONS:
+        if os.path.lexists(os.path.join(d, name)):
+            out.append(f"forbidden companion {name} beside "
+                       f"{MODEL_OUTPUT_INVALID_FILE} (a lawful terminal "
+                       f"coexists with no arrival, no manifest, no chain, "
+                       f"no candidate/adapter artifact and no reuse ledger)")
+    try:
+        for name in sorted(os.listdir(d)):
+            if name.startswith("reuse") and name.endswith(".json"):
+                out.append(f"forbidden companion {name} beside "
+                           f"{MODEL_OUTPUT_INVALID_FILE} (reuse ledger)")
+    except OSError:
+        pass
+    call_id = obj.get("provider_call_id")
+    if not isinstance(call_id, str) or not call_id:
+        out.append("terminal provider_call_id missing/empty; the call "
+                   "receipt call-<id>.json must exist in the same run dir")
+        return out
+    receipt = os.path.join(d, f"call-{call_id}.json")
+    req = os.path.join(d, f"call-{call_id}.request.json")
+    nu = os.path.join(d, f"call-{call_id}.normalized.json")
+    rawp = os.path.join(d, f"raw-{call_id}.txt")
+    idp = os.path.join(d, "identity.json")
+    for label, p in (("call receipt", receipt),
+                     ("request body", req),
+                     ("normalized usage", nu),
+                     ("preserved response", rawp),
+                     ("identity record", idp)):
+        if os.path.islink(p):
+            out.append(f"terminal {label} is a symlink ({p}); refused")
+        elif not os.path.isfile(p):
+            out.append(f"terminal {label} missing at {p}")
+    try:
+        rc = _read_json(receipt)
+    except (OSError, ValueError) as e:
+        rc = None
+        out.append(f"call receipt unparsable: {e}")
+    if isinstance(rc, dict):
+        if rc.get("call_id") != call_id:
+            out.append(f"call receipt call_id {rc.get('call_id')!r} != the "
+                       f"terminal's provider_call_id {call_id!r}")
+        if rc.get("request_body_sha256") != obj.get("request_body_sha256"):
+            out.append(f"terminal request_body_sha256 "
+                       f"{str(obj.get('request_body_sha256'))[:12]} != the "
+                       f"receipt's recorded "
+                       f"{str(rc.get('request_body_sha256'))[:12]} (read back "
+                       f"from the receipt, never recomputed)")
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from usage import verify_request_binding, verify_normalized_usage
+        verify_request_binding(receipt, idp)
+        verify_normalized_usage(nu)
+    except (ValueError, OSError, ImportError) as e:
+        out.append(f"request/adapter/usage/identity binding invalid: {e}")
+    raw_bytes = None
+    if os.path.isfile(rawp) and not os.path.islink(rawp):
+        try:
+            raw_bytes = open(rawp, "rb").read()
+        except OSError as e:
+            out.append(f"preserved response unreadable: {e}")
+    if raw_bytes is not None:
+        got = hashlib.sha256(raw_bytes).hexdigest()
+        if obj.get("response_text_sha256") != got:
+            out.append(f"terminal response_text_sha256 "
+                       f"{str(obj.get('response_text_sha256'))[:12]} != the "
+                       f"preserved raw-{call_id}.txt sha256 {got[:12]}")
+        if obj.get("response_bytes") != len(raw_bytes):
+            out.append(f"terminal response_bytes {obj.get('response_bytes')!r} "
+                       f"!= the preserved response length "
+                       f"{len(raw_bytes)}")
+    for key, p in (("usage_receipt_sha256", receipt),
+                   ("normalized_usage_sha256", nu),
+                   ("identity_record_sha256", idp)):
+        val = obj.get(key)
+        if not _is_hex(val, 64):
+            out.append(f"terminal {key} {val!r} is not 64-hex"
+                       + (" (identity is REQUIRED and non-null on a lawful "
+                          "terminal: a sample whose provider/lane identity "
+                          "cannot be established is inadmissible/missing "
+                          "evidence, never MODEL-OUTPUT-INVALID)"
+                          if key == "identity_record_sha256" else ""))
+            continue
+        try:
+            got = _sha256_file(p)
+        except OSError:
+            continue
+        if val != got:
+            out.append(f"terminal {key} {val[:12]} != sha256 of "
+                       f"{os.path.basename(p)} {got[:12]}")
+    act = terminal_bindings(fam_c_dir)
+    for key in _TERMINAL_AUTHORITY_BINDINGS:
+        if obj.get(key) != act.get(key):
+            out.append(f"terminal {key} {str(obj.get(key))[:12]} != the "
+                       f"ACTIVE authority {str(act.get(key))[:12]} "
+                       f"(lock/manifest/spec bindings must match at "
+                       f"validation time)")
+    err = obj.get("contract_error")
+    if not eligible_contract_error(err):
+        out.append(f"terminal contract_error {err!r} is not an eligible "
+                   f"named contract error ({ELIGIBLE_CONTRACT_PREFIXES}); "
+                   f"errors raised only after a lawful arrival exists are "
+                   f"ordinary recorded outcomes, not this terminal")
+    if raw_bytes is not None and eligible_contract_error(err):
+        try:
+            text = raw_bytes.decode("utf-8")
+        except UnicodeDecodeError as e:
+            text = None
+            out.append(f"preserved response is not UTF-8 text: {e}")
+        if text is not None:
+            try:
+                rep = replay_parse_gate(fam_c_dir, text)
+            except RuntimeError as e:
+                out.append(f"deterministic replay unavailable: {e}")
+            else:
+                if rep["arrived"]:
+                    out.append("deterministic replay of the preserved "
+                               "response produced an ARRIVAL through the "
+                               "frozen extract(): A11b.2 is deterministic, "
+                               "so this terminal is INADMISSIBLE")
+                elif rep["error"] != err:
+                    out.append(f"deterministic replay raised "
+                               f"{str(rep['error'])[:80]!r} != the recorded "
+                               f"contract_error {str(err)[:80]!r} "
+                               f"(a different error means the recorded "
+                               f"denial is not re-derivable)")
+    out += attempt_ledger_reasons(fam_c_dir, cell, terminal_obj=obj,
+                                  terminal_pending=terminal_pending)
+    return out
+
+
+def _terminal_state(fam_c_dir, cell, freeze_commit=None, _exp=None):
+    """Cell-state result for a run dir carrying a MODEL-OUTPUT-INVALID
+    terminal: COMPLETE-FAILURE when the strict validator is green (a
+    recorded experimental outcome, progress-valid, authorizing nothing),
+    INADMISSIBLE on any defect (the walk blocks; no advance)."""
+    d = run_dir(fam_c_dir, cell)
+    tp = os.path.join(d, MODEL_OUTPUT_INVALID_FILE)
+    try:
+        sha = _sha256_file(tp)
+    except OSError as e:
+        return _result(cell, [f"terminal unreadable: {e}"], True)
+    reasons = validate_model_output_invalid(fam_c_dir, cell, freeze_commit,
+                                            _exp)
+    if reasons:
+        return _result(cell, reasons, True)
+    return {"cell_id": cell["cell_id"],
+            "status": MODEL_OUTPUT_INVALID_STATUS,
+            "terminal_class": MODEL_OUTPUT_INVALID_CLASS,
+            "terminal_record_sha256": sha,
+            "reasons": [
+                f"{MODEL_OUTPUT_INVALID_CLASS}: the authorized first sample "
+                f"of {cell['block']}/{cell['family']}/{cell['event']}/"
+                f"{cell['universe']} returned model-generated response text "
+                f"that the frozen A11b.2 contract refused; the cell "
+                f"completed as a recorded experimental FAILURE "
+                f"(experimental_task_outcome FAIL / non-SHIP) — no arrival, "
+                f"no verdict, no promotion, no lock, no retry"]}
+
+
+def acquisition_failure_terminal(fam_c_dir, block, family, universe,
+                                 _exp=None):
+    """§3.1 — the acquisition-failure evidence union for a universe whose
+    T0 or T1 cell carries a VALIDATED MODEL-OUTPUT-INVALID terminal.
+    Returns {"failure_event", "acquisition_evidence", "candidate_sha256"}
+    or None (no terminal, or the terminal does not validate). Both
+    acquisition branches are mechanized:
+      T0 terminal -> no candidate ever existed (candidate_sha256 null);
+      T1 terminal -> the REAL T0 candidate exists but was never validly
+                     validated (no candidate-validation event exists)."""
+    try:
+        exp = _exp if _exp is not None else load_expansion(fam_c_dir)
+    except (ValueError, OSError):
+        return None
+    t0 = expected_event(exp, block, family, "T0", universe)
+    t1 = expected_event(exp, block, family, "T1", universe)
+    if t0 is None or t1 is None:
+        return None
+    for cell, fe in ((t0, "T0"), (t1, "T1")):
+        tp = os.path.join(run_dir(fam_c_dir, cell), MODEL_OUTPUT_INVALID_FILE)
+        if not os.path.lexists(tp):
+            continue
+        if validate_model_output_invalid(fam_c_dir, cell, _exp=exp):
+            return None
+        try:
+            sha = _sha256_file(tp)
+        except OSError:
+            return None
+        if fe == "T0":
+            # The T1 of a T0-terminal universe must NEVER have run: with no
+            # candidate there is nothing for T1 to see. Read the T1 run dir
+            # DIRECTLY (never through _local_state, which consults this
+            # predicate for its own NOT-EVALUABLE terminal — that would
+            # recurse); any T1 artifact means the cell ran past the
+            # terminal, which is invalid and yields no union.
+            t1d = run_dir(fam_c_dir, t1)
+            for art in ("arrival.json", "H1-RUN-MANIFEST.json",
+                        MODEL_OUTPUT_INVALID_FILE, "EVIDENCE-CHAIN.jsonl"):
+                if os.path.lexists(os.path.join(t1d, art)):
+                    return None
+            if os.path.isdir(t1d):
+                for _n in os.listdir(t1d):
+                    if _n.startswith("call-") or _n.startswith("raw"):
+                        return None
+            return {"failure_event": "T0",
+                    "acquisition_evidence": {
+                        "kind": MODEL_OUTPUT_INVALID_CLASS,
+                        "terminal_sha256": sha},
+                    "candidate_sha256": None}
+        if _local_state(fam_c_dir, t0, None, exp)["status"] != "COMPLETE":
+            return None
+        cand = frozen_t0_candidate_sha256(fam_c_dir, t0)
+        if cand is None:
+            return None
+        return {"failure_event": "T1",
+                "acquisition_evidence": {
+                    "kind": MODEL_OUTPUT_INVALID_CLASS,
+                    "terminal_sha256": sha},
+                "candidate_sha256": cand}
+    return None
+
+
+def _acquisition_evidence_reasons(fam_c_dir, outcome, cell, _exp=None):
+    """§3.1 — re-derive the governance evidence union from disk and return
+    findings (empty = lawful). A null chain tip is NEVER equivalent to an
+    existing chain: the terminal sha256 is re-derived from the validated
+    terminal bytes, the candidate from the frozen T0 arrival, and a wrong
+    branch shape is refused."""
+    out = []
+    fe = outcome.get("failure_event")
+    if fe not in ("T0", "T1"):
+        return [f"governance record failure_event {fe!r} is not 'T0' or 'T1'"]
+    ev = outcome.get("acquisition_evidence")
+    if not isinstance(ev, dict):
+        return ["governance record carries no acquisition_evidence object "
+                "(the §3.1 evidence union is required for an "
+                "acquisition-failed universe)"]
+    ev = acquisition_failure_terminal(fam_c_dir, cell["block"], cell["family"],
+                                      cell["universe"], _exp)
+    if ev is None:
+        return ["acquisition-failed universe carries no VALIDATED "
+                "MODEL-OUTPUT-INVALID acquisition terminal; the §3.1 "
+                "evidence union cannot be re-derived from disk"]
+    got_ev = outcome.get("acquisition_evidence")
+    if got_ev.get("kind") != MODEL_OUTPUT_INVALID_CLASS:
+        out.append(f"acquisition_evidence kind {got_ev.get('kind')!r} != "
+                   f"{MODEL_OUTPUT_INVALID_CLASS!r}")
+    if outcome.get("failure_event") != ev["failure_event"]:
+        out.append(f"governance record failure_event "
+                   f"{outcome.get('failure_event')!r} != the validated "
+                   f"terminal's {ev['failure_event']!r}")
+    want_sha = ev["acquisition_evidence"]["terminal_sha256"]
+    if got_ev.get("terminal_sha256") != want_sha:
+        out.append(f"acquisition_evidence terminal_sha256 "
+                   f"{str(got_ev.get('terminal_sha256'))[:12]} != the "
+                   f"validated {ev['failure_event']} terminal sha256 "
+                   f"{want_sha[:12]}")
+    if "chain_tip" in got_ev and got_ev.get("chain_tip") is not None:
+        out.append("acquisition_evidence carries a chain_tip beside a "
+                   "MODEL-OUTPUT-INVALID terminal (a null tip is never "
+                   "equivalent to a chain, and a terminal branch has no "
+                   "chain tip)")
+    if outcome.get("candidate_sha256") != ev["candidate_sha256"]:
+        if ev["candidate_sha256"] is None:
+            out.append("governance record candidate_sha256 "
+                       f"{str(outcome.get('candidate_sha256'))[:12]} != null: "
+                       "the T0 terminal branch has NO candidate (no "
+                       "synthesized arrival/candidate exists)")
+        else:
+            out.append(f"governance record candidate_sha256 "
+                       f"{str(outcome.get('candidate_sha256'))[:12]} != the "
+                       f"real frozen T0 candidate "
+                       f"{ev['candidate_sha256'][:12]}")
+    return out
+
+
+def terminal_evidence_row(fam_c_dir, cell, freeze_commit=None):
+    """§4.1 — the PREREG §24 evidence row of a terminal cell (fail closed:
+    an invalid terminal yields no row). A terminal is a NON-SHIP
+    correctness failure, not missing evidence: ship False, checker fields
+    null, run_manifest_hash null, evidence_hash = terminal_record_sha256,
+    model_calls 1, retries 0, terminal_class MODEL-OUTPUT-INVALID;
+    capability_available is DERIVED from the frozen cell / validated lock,
+    while selection/load/invocation/consumption/material_contribution are
+    False because no parseable decision existed."""
+    reasons = validate_model_output_invalid(fam_c_dir, cell, freeze_commit)
+    if reasons:
+        raise ValueError("TERMINAL-EVIDENCE-DENY: " + reasons[0])
+    d = run_dir(fam_c_dir, cell)
+    tp = os.path.join(d, MODEL_OUTPUT_INVALID_FILE)
+    obj = _read_json(tp)
+    tsha = _sha256_file(tp)
+    cap_available = False
+    if cell.get("universe") in CAPABILITY_UNIVERSES:
+        capdir = capability_dir(fam_c_dir, cell["block"], cell["universe"],
+                                cell["family"])
+        lockp = os.path.join(capdir, "CAPABILITY_LOCK.json")
+        if os.path.isfile(lockp) and not os.path.islink(lockp):
+            cap_available = True
+    usage = None
+    try:
+        usage = _read_json(os.path.join(
+            d, f"call-{obj['provider_call_id']}.normalized.json"))
+    except (OSError, ValueError, KeyError):
+        usage = None
+    row = {"cell_id": cell["cell_id"], "cell_index": cell["index"],
+           "block": cell["block"], "family": cell["family"],
+           "task": cell["task"], "lane": cell["lane"], "arm": cell["arm"],
+           "capability_id": cell["capability_id"],
+           "ship": False, "hidden_tests_passed": None,
+           "checker_verdict": None, "checker_returncode": None,
+           "run_manifest_hash": None,
+           "terminal_class": MODEL_OUTPUT_INVALID_CLASS,
+           "terminal_record_sha256": tsha,
+           "evidence_hash": tsha,
+           "model_calls": 1, "retries": 0,
+           "experimental_task_outcome": "FAIL",
+           "contract_error": obj.get("contract_error"),
+           "request_body_sha256": obj.get("request_body_sha256"),
+           "response_text_sha256": obj.get("response_text_sha256"),
+           "response_bytes": obj.get("response_bytes"),
+           "identity_record_sha256": obj.get("identity_record_sha256"),
+           "usage": usage.get("usage") if isinstance(usage, dict) else None,
+           "normalized_usage_sha256": obj.get("normalized_usage_sha256"),
+           "capability_available": cap_available,
+           "capability_selected": False, "capability_loaded": False,
+           "capability_invoked": False, "capability_consumed": False,
+           "material_contribution": False,
+           "authorized_estimand_attempt": True, "attempt_index": 1,
+           "per_attempt_outcome": obj.get("contract_error")}
+    return row
+
+
+def terminal_gate_consequences(cell):
+    """§4.1 gate consequences of a terminal cell: a T2/T3 terminal is a
+    non-SHIP correctness failure and can NEVER create an efficiency win by
+    failing cheaply; a treatment T4 terminal is NEVER a correct specificity
+    rejection."""
+    downstream = cell.get("event") in DOWNSTREAM_EVENTS
+    return {"ship": False,
+            "correctness": "FAIL",
+            "efficiency_win": False,
+            "specificity_rejection": False,
+            "reason": ("a model-output failure is an experimental outcome, "
+                       "not a harness-validation pass"
+                       if downstream else
+                       "an acquisition failure is a recorded terminal "
+                       "outcome, not a measurement")}
+
+
+def contract_admissibility_statistics(fam_c_dir, expansion=None):
+    """§4 — the two lane-reliability statistics, reported SEPARATELY, never
+    collapsed, with the required denominator decomposition.
+
+      first_attempt_contract_admissibility
+        = admissible first authorized samples / all authorized first samples
+      all_provider_call_contract_admissibility
+        = admissible model responses / all provider calls actually made
+
+    Both are enumerated from the per-cell attempt ledgers — the ENUMERATION
+    AUTHORITY (never from receipts, which a no-sample invocation does not
+    have). `ADMISSIBLE` means the frozen A11b.2 contract returned an
+    arrival; an eligible CONTRACT-* error is inadmissible. The
+    decomposition separates CONTRACT DENIALS from INFRASTRUCTURE /
+    NO-SAMPLE events so an outage is never rhetorically presented as a
+    model JSON-contract failure."""
+    exp = expansion if expansion is not None else load_expansion(fam_c_dir)
+    first_num = first_den = all_num = all_den = 0
+    contract_denials = no_sample = 0
+    for cell in exp["cells"]:
+        if cell.get("kind") not in MODEL_RUN_KINDS:
+            continue
+        rows, _findings = attempt_ledger_rows(run_dir(fam_c_dir, cell))
+        if not rows:
+            continue
+        all_den += len(rows)
+        for r in rows:
+            outcome = r.get("outcome")
+            if outcome == ATTEMPT_ADMISSIBLE:
+                all_num += 1
+            elif eligible_contract_error(outcome):
+                contract_denials += 1
+            elif outcome == ATTEMPT_NO_SAMPLE:
+                no_sample += 1
+        first = rows[0]
+        if first.get("authorized_estimand_attempt") is True:
+            first_den += 1
+            if first.get("outcome") == ATTEMPT_ADMISSIBLE:
+                first_num += 1
+
+    def _ratio(num, den):
+        return {"numerator": num, "denominator": den,
+                "value": (num / den) if den else None}
+
+    return {
+        "first_attempt_contract_admissibility":
+            _ratio(first_num, first_den),
+        "all_provider_call_contract_admissibility":
+            _ratio(all_num, all_den),
+        "denominator_decomposition": {
+            "contract_denials": contract_denials,
+            "infrastructure_no_sample": no_sample,
+            "admissible": all_num,
+            "other": all_den - all_num - contract_denials - no_sample},
+        "note": ("the two statistics are reported separately and are never "
+                 "collapsed into one number; a no-sample infrastructure "
+                 "event is never presented as a model JSON-contract "
+                 "failure")}
+
+
+def terminal_exit_code():
+    """§4.1 — runner exit code for a successfully recorded terminal: 0 (the
+    cell completed as a recorded experimental outcome, exactly as a
+    committed failed candidate validation exits 0 today). Non-zero stays
+    reserved for infrastructure / refusal paths."""
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # A11.5 — production governance-event writers. The harness records a
 # PROMOTION and a CAPABILITY_LOCK through these writers (once each, fail
 # closed), so fixtures exercise the real machinery instead of hand-written
@@ -2158,29 +3145,64 @@ def emit_promotion_receipt(fam_c_dir, cell, t0_tip, t1_tip,
 
 
 def emit_promotion_outcome(fam_c_dir, cell, t0_tip, t1_tip,
-                           candidate_sha256):
+                           candidate_sha256, failure_event=None,
+                           acquisition_evidence=None):
     """Record the TERMINAL failed-acquisition outcome of (block, universe,
-    family) (A12d D1-B3): the universe's T1 cell is COMPLETE but its
-    candidate-validation event records validated=false, so promotion
-    completes as RECORDED NOT-PROMOTED — not an exception, not a deadlock,
-    and never a lock. Writes PROMOTION-OUTCOME.json once in the promotion
-    run dir (fail closed on repromotion or on a conflicting receipt).
-    `t0_tip`/`t1_tip` are the REAL chain-link tips of the two validated
-    acquisition runs; `candidate_sha256` is the frozen T0 candidate the
-    failed validation tested. Returns the outcome path."""
-    for tag, tip in (("T0", t0_tip), ("T1", t1_tip)):
-        if not isinstance(tip, str) or len(tip) != 64:
-            raise ValueError(f"PROMOTION-DENY {tag} chain tip must be a "
-                             f"64-hex link_hash, got {tip!r}")
-    if not (isinstance(candidate_sha256, str)
-            and len(candidate_sha256) == 64):
-        raise ValueError("PROMOTION-DENY candidate sha256 must be 64-hex, "
-                         f"got {candidate_sha256!r}")
-    try:
-        int(candidate_sha256, 16)
-    except ValueError:
-        raise ValueError("PROMOTION-DENY candidate sha256 must be 64-hex, "
-                         f"got {candidate_sha256!r}") from None
+    family) (A12d D1-B3): the universe's acquisition validly failed, so
+    promotion completes as RECORDED NOT-PROMOTED — not an exception, not a
+    deadlock, and never a lock. Writes PROMOTION-OUTCOME.json once in the
+    promotion run dir (fail closed on repromotion or on a conflicting
+    receipt).
+
+    Two lawful shapes:
+      * epoch-2 chain shape: `t0_tip`/`t1_tip` are the REAL chain-link tips
+        of the two validated acquisition runs and `candidate_sha256` is the
+        frozen T0 candidate the failed validation tested;
+      * epoch-3 §3.1 terminal shape (`failure_event` T0/T1 +
+        `acquisition_evidence`): the acquisition terminated through a
+        validated MODEL-OUTPUT-INVALID terminal. The evidence union is
+        re-derived from disk BEFORE the record is written (fail closed);
+        `candidate_sha256` must be null for a T0 terminal (no candidate ever
+        existed) and the real frozen T0 candidate for a T1 terminal.
+    Returns the outcome path."""
+    _union = (failure_event is not None) or (acquisition_evidence is not None)
+    if _union:
+        if failure_event not in ("T0", "T1") or \
+                not isinstance(acquisition_evidence, dict):
+            raise ValueError("PROMOTION-DENY an epoch-3 failed-acquisition "
+                             "outcome requires failure_event T0|T1 AND an "
+                             "acquisition_evidence object")
+        if t0_tip is not None or t1_tip is not None:
+            raise ValueError("PROMOTION-DENY an epoch-3 terminal-branch "
+                             "outcome binds no chain tips (a terminal "
+                             "branch has no chain; a null tip is never "
+                             "equivalent to a chain)")
+        probe = {"event": "PROMOTION", "cell_id": cell["cell_id"],
+                 "block": cell["block"], "family": cell["family"],
+                 "universe": cell["universe"], "outcome": "NOT-PROMOTED",
+                 "reason": ACQ_FAILURE_REASON,
+                 "failure_event": failure_event,
+                 "acquisition_evidence": acquisition_evidence,
+                 "candidate_sha256": candidate_sha256}
+        _findings = _acquisition_evidence_reasons(fam_c_dir, probe, cell)
+        if _findings:
+            raise ValueError("PROMOTION-DENY the §3.1 acquisition evidence "
+                             "union does not re-derive from disk: "
+                             + _findings[0])
+    else:
+        for tag, tip in (("T0", t0_tip), ("T1", t1_tip)):
+            if not isinstance(tip, str) or len(tip) != 64:
+                raise ValueError(f"PROMOTION-DENY {tag} chain tip must be a "
+                                 f"64-hex link_hash, got {tip!r}")
+        if not (isinstance(candidate_sha256, str)
+                and len(candidate_sha256) == 64):
+            raise ValueError("PROMOTION-DENY candidate sha256 must be 64-hex, "
+                             f"got {candidate_sha256!r}")
+        try:
+            int(candidate_sha256, 16)
+        except ValueError:
+            raise ValueError("PROMOTION-DENY candidate sha256 must be 64-hex, "
+                             f"got {candidate_sha256!r}") from None
     want = capability_id(cell["block"], cell["universe"], cell["family"])
     if cell["capability_id"] != want:
         raise ValueError(f"PROMOTION-DENY cell capability_id "
@@ -2224,10 +3246,16 @@ def emit_promotion_outcome(fam_c_dir, cell, t0_tip, t1_tip,
     outcome = {"event": "PROMOTION", "cell_id": cell["cell_id"],
                "block": cell["block"], "family": cell["family"],
                "universe": cell["universe"], "outcome": "NOT-PROMOTED",
-               "reason": "candidate-validation-failed",
-               "t0_tip": t0_tip, "t1_tip": t1_tip,
-               "candidate_sha256": candidate_sha256,
-               "created_from": "frozen-evidence"}
+               "reason": ACQ_FAILURE_REASON if _union
+               else "candidate-validation-failed",
+               "created_from": "frozen-evidence",
+               "candidate_sha256": candidate_sha256}
+    if _union:
+        outcome["failure_event"] = failure_event
+        outcome["acquisition_evidence"] = acquisition_evidence
+    else:
+        outcome["t0_tip"] = t0_tip
+        outcome["t1_tip"] = t1_tip
     with open(op, "w") as f:
         json.dump(outcome, f, indent=1)
     return op
@@ -2310,27 +3338,41 @@ def emit_capability_lock_outcome(fam_c_dir, cell, freeze_commit=None):
     except (OSError, ValueError) as e:
         raise PermissionError(f"LOCK-DENY recorded promotion outcome "
                               f"unreadable at {op}: {e}")
+    # EPOCH-3 (§3.1): a promotion outcome recorded under the terminal
+    # evidence union (failure_event + acquisition_evidence) has no chain to
+    # bind; the lock terminal then binds the SAME union, re-derived from
+    # disk, instead of chain tips.
+    _union = ("failure_event" in _oc) or ("acquisition_evidence" in _oc)
     tips = {}
-    for ev in ("T0", "T1"):
-        acq = expected_event(exp, cell["block"], cell["family"], ev,
-                             cell["universe"])
-        if acq is None:
-            raise PermissionError(f"LOCK-DENY no {ev} cell in the order for "
-                                  f"{cell['block']}/{cell['family']}/"
-                                  f"{cell['universe']}")
-        try:
-            tips[ev] = _chain_tip(os.path.join(run_dir(fam_c_dir, acq),
-                                               "EVIDENCE-CHAIN.jsonl"))
-        except (ValueError, OSError, json.JSONDecodeError) as e:
-            raise PermissionError(f"LOCK-DENY {ev} chain tip unreadable: "
-                                  f"{e}")
-    for ev in ("T0", "T1"):
-        if _oc.get(ev.lower() + "_tip") != tips[ev]:
+    if _union:
+        _u = _acquisition_evidence_reasons(fam_c_dir, _oc, cell, exp)
+        if _u:
             raise PermissionError(
-                f"LOCK-DENY promotion outcome {ev.lower()}_tip "
-                f"{str(_oc.get(ev.lower() + '_tip'))[:12]} != the validated "
-                f"{ev} chain tip {tips[ev][:12]} (the outcome being bound "
-                f"no longer matches the committed chains)")
+                "LOCK-DENY the recorded promotion outcome's §3.1 "
+                "acquisition evidence union does not re-derive from disk: "
+                + _u[0])
+    else:
+        for ev in ("T0", "T1"):
+            acq = expected_event(exp, cell["block"], cell["family"], ev,
+                                 cell["universe"])
+            if acq is None:
+                raise PermissionError(f"LOCK-DENY no {ev} cell in the order "
+                                      f"for {cell['block']}/"
+                                      f"{cell['family']}/"
+                                      f"{cell['universe']}")
+            try:
+                tips[ev] = _chain_tip(os.path.join(run_dir(fam_c_dir, acq),
+                                                   "EVIDENCE-CHAIN.jsonl"))
+            except (ValueError, OSError, json.JSONDecodeError) as e:
+                raise PermissionError(f"LOCK-DENY {ev} chain tip unreadable: "
+                                      f"{e}")
+        for ev in ("T0", "T1"):
+            if _oc.get(ev.lower() + "_tip") != tips[ev]:
+                raise PermissionError(
+                    f"LOCK-DENY promotion outcome {ev.lower()}_tip "
+                    f"{str(_oc.get(ev.lower() + '_tip'))[:12]} != the "
+                    f"validated {ev} chain tip {tips[ev][:12]} (the outcome "
+                    f"being bound no longer matches the committed chains)")
     d = ensure_namespace(fam_c_dir, cell["block"], cell["universe"],
                          cell["family"], tail=("runs", cell["cell_id"]))
     for stray in ("H1-RUN-MANIFEST.json", PROMOTION_RECEIPT_FILE,
@@ -2352,8 +3394,13 @@ def emit_capability_lock_outcome(fam_c_dir, cell, freeze_commit=None):
                "reason": LOCK_OUTCOME_REASON,
                "created_from": "frozen-evidence",
                "promotion_cell_id": prom["cell_id"],
-               "promotion_outcome_sha256": _oc_sha,
-               "acquisition_chain_tips": dict(tips)}
+               "promotion_outcome_sha256": _oc_sha}
+    if _union:
+        outcome["failure_event"] = _oc.get("failure_event")
+        outcome["acquisition_evidence"] = _oc.get("acquisition_evidence")
+        outcome["candidate_sha256"] = _oc.get("candidate_sha256")
+    else:
+        outcome["acquisition_chain_tips"] = dict(tips)
     with open(op, "w") as f:
         json.dump(outcome, f, indent=1)
     return op

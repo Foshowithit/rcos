@@ -51,6 +51,47 @@ EPOCH1_CLOSURE_FILE = "EPOCH-1-CLOSURE.md"
 EPOCH1_EXECUTION_LOCK_FILE = "EXECUTION-LOCK.json"
 EPOCH1_PROTOCOL_LOCK_FILE = "PROTOCOL-LOCK.json"
 
+# ---------------------------------------------------------------------------
+# EPOCH-3 (EPOCH-3-PROTOCOL-SPEC.md §6, frozen at 28cdf2a2…): the third
+# epoch exists only as an explicit on-disk lineage in the same mechanical
+# form as epoch 2 — a transition record citing the frozen epoch-2 boundary
+# facts, fresh locks on their own append-only lineage minted OPEN, and the
+# state namespace state/epoch3/. Epoch 3 RESTARTS the frozen 240-event order
+# from event 0 (PQ/fam05/T0/A); no epoch-2 (or epoch-1) artifact is ever
+# written to, and epoch-2 cells populate no epoch-3 prefix position.
+# ---------------------------------------------------------------------------
+EPOCH3_ID = "epoch3"
+EPOCH3_NUMBER = 3
+EPOCH3_FROM_EPOCH = 2
+EPOCH3_STATE_SUBDIR = "epoch3"
+EPOCH3_STATE_PREFIX = "state/epoch3"
+EPOCH3_TRANSITION_FILE = "EPOCH-3-TRANSITION.json"
+EPOCH3_EXECUTION_LOCK_FILE = "EXECUTION-LOCK-EPOCH3.json"
+EPOCH3_PROTOCOL_LOCK_FILE = "PROTOCOL-LOCK-EPOCH3.json"
+EPOCH2_STOP_RECORD_FILE = "EPOCH-2-STOP-RECORD.md"
+EPOCH3_SPEC_FILE = "EPOCH-3-PROTOCOL-SPEC.md"
+
+# The frozen epoch-2 boundary facts the epoch-3 transition must cite
+# (EPOCH-2-STOP-RECORD.md + EPOCH-3-PROTOCOL-SPEC.md §6: the corrected stop
+# record, the epoch-2 FINAL lock hashes, the epoch-2 transition hash, the
+# epoch-2 finalization commit, the exact frozen ORDER-EXPANSION pin, and the
+# frozen epoch-3 spec sha with its freeze commit). A record citing other
+# bytes activates nothing.
+EPOCH2_STOP_RECORD_SHA256 = (
+    "4e0e84ec6c4f13baebd319b40e11ce1beb6258110146fb1d6066afed74e70f4c")
+EPOCH2_EXECUTION_LOCK_SHA256 = (
+    "e662463e50fbb7d08115063595a4392437ccac54e6d2dd989a730ecafe619a80")
+EPOCH2_PROTOCOL_LOCK_SHA256 = (
+    "978d5e3e8d6f8797343830d565583804ae58a426b114331e74b2f4ebe1f74b00")
+EPOCH2_TRANSITION_SHA256 = (
+    "047aef2fcfef76803cb0999edcd17027aa2997b91a7face8ad9a83012136bb6b")
+EPOCH2_FINALIZATION_COMMIT = "53e72ef4cec5ec7ecc9628c348a36635c02bd2d4"
+EPOCH3_SPEC_SHA256 = (
+    "28cdf2a232f74ad44d2ca5de278352c152a976be3c85084c18aea8acab99c226")
+EPOCH3_FREEZE_COMMIT = "03af3cddc51bffa3c568ae0de36d4205805fd638"
+ORDER_EXPANSION_SHA256 = (
+    "449be793cf764204b8326a56914dd19c90f16371600db9d97faf60ccbe43f47a")
+
 # The epoch-1 closure facts (EPOCH-1-CLOSURE.md, ruling 2026-09-17). The
 # transition record must cite these verbatim; a record naming other bytes
 # is not a transition FROM the closed epoch and never activates epoch 2.
@@ -128,21 +169,105 @@ def is_epoch2(fam_c_dir):
     return transition_record(fam_c_dir) is not None
 
 
+def transition_path3(fam_c_dir):
+    return os.path.join(fam_c_dir, EPOCH3_TRANSITION_FILE)
+
+
+def is_epoch3(fam_c_dir):
+    """True iff the tree carries a STRUCTURALLY VALID epoch-3 transition
+    record (see transition_record3()) AND the epoch-2 boundary it cites is
+    itself validly present and FINAL. Epoch 2 (or epoch 1) otherwise."""
+    return transition_record3(fam_c_dir) is not None
+
+
+def transition_record3(fam_c_dir):
+    """The ACTIVE epoch-3 transition record, or None.
+
+    STRUCTURAL activation (read on every path derivation): the record must
+    name epoch 3 + the epoch-3 state prefix + the two fresh epoch-3 lock
+    files, cite the FROZEN epoch-2 boundary facts verbatim (the epoch-2
+    transition sha256, both epoch-2 FINAL lock hashes, the epoch-2
+    finalization commit), cite the corrected stop record's ACTUAL bytes,
+    cite the frozen epoch-3 spec bytes AND the freeze commit, and cite the
+    exact frozen ORDER-EXPANSION.json pin — and the on-disk bytes of the
+    stop record / spec / order expansion must still hash to those
+    citations (fail closed: the boundary is anchored to frozen documents,
+    never to a later edit). Malformed/absent => None (epoch 2 or 1)."""
+    try:
+        obj = _read_json(transition_path3(fam_c_dir))
+    except (ValueError, OSError):
+        return None
+    if not isinstance(obj, dict):
+        return None
+    for key, want in (("to_epoch", EPOCH3_NUMBER),
+                      ("from_epoch", EPOCH3_FROM_EPOCH),
+                      ("epoch_id", EPOCH3_ID),
+                      ("state_prefix", EPOCH3_STATE_PREFIX),
+                      ("execution_lock", EPOCH3_EXECUTION_LOCK_FILE),
+                      ("protocol_lock", EPOCH3_PROTOCOL_LOCK_FILE),
+                      ("epoch2_transition_record", TRANSITION_FILE),
+                      ("epoch2_transition_sha256", EPOCH2_TRANSITION_SHA256),
+                      ("epoch2_execution_lock_sha256",
+                       EPOCH2_EXECUTION_LOCK_SHA256),
+                      ("epoch2_protocol_lock_sha256",
+                       EPOCH2_PROTOCOL_LOCK_SHA256),
+                      ("epoch2_finalization_commit",
+                       EPOCH2_FINALIZATION_COMMIT),
+                      ("epoch2_stop_record", EPOCH2_STOP_RECORD_FILE),
+                      ("epoch2_stop_record_sha256",
+                       EPOCH2_STOP_RECORD_SHA256),
+                      ("epoch3_protocol_spec", EPOCH3_SPEC_FILE),
+                      ("epoch3_protocol_spec_sha256", EPOCH3_SPEC_SHA256),
+                      ("epoch3_freeze_commit", EPOCH3_FREEZE_COMMIT),
+                      ("order_expansion_sha256", ORDER_EXPANSION_SHA256)):
+        if obj.get(key) != want:
+            return None
+    for name, want in ((EPOCH2_STOP_RECORD_FILE, EPOCH2_STOP_RECORD_SHA256),
+                       (EPOCH3_SPEC_FILE, EPOCH3_SPEC_SHA256),
+                       ("ORDER-EXPANSION.json", ORDER_EXPANSION_SHA256)):
+        try:
+            with open(os.path.join(fam_c_dir, name), "rb") as f:
+                if hashlib.sha256(f.read()).hexdigest() != want:
+                    return None
+        except OSError:
+            return None
+    # the epoch-2 boundary the epoch-3 record builds on must itself hold
+    if not is_epoch2(fam_c_dir):
+        return None
+    return obj
+
+
 def active_epoch(fam_c_dir):
+    if is_epoch3(fam_c_dir):
+        return EPOCH3_NUMBER
     return EPOCH_NUMBER if is_epoch2(fam_c_dir) else FROM_EPOCH
 
 
 def state_root(fam_c_dir):
-    """The ACTIVE epoch's persistent state root: state/epoch2 under epoch 2
-    (epoch-1 state/ is untouched and never scanned by epoch-2 walks),
-    state/ under epoch 1."""
+    """The ACTIVE epoch's persistent state root: state/epoch3 under epoch 3,
+    state/epoch2 under epoch 2 (epoch-1 state/ is untouched and never
+    scanned by later-epoch walks), state/ under epoch 1."""
+    if is_epoch3(fam_c_dir):
+        return os.path.join(fam_c_dir, "state", EPOCH3_STATE_SUBDIR)
     if is_epoch2(fam_c_dir):
         return os.path.join(fam_c_dir, "state", STATE_SUBDIR)
     return os.path.join(fam_c_dir, "state")
 
 
+def state_roots(fam_c_dir):
+    """EVERY epoch state root (epoch 1, epoch 2, epoch 3). Runtime state is
+    evidence, never a frozen instance input: preflight's V1 walk prunes all
+    of them, so a third epoch can never turn the preserved epoch-1/epoch-2
+    evidence trees into 'extra file not in freeze manifest' findings."""
+    return [os.path.join(fam_c_dir, "state"),
+            os.path.join(fam_c_dir, "state", STATE_SUBDIR),
+            os.path.join(fam_c_dir, "state", EPOCH3_STATE_SUBDIR)]
+
+
 def active_lock_names(fam_c_dir):
     """(execution, protocol) lock file names of the ACTIVE epoch."""
+    if is_epoch3(fam_c_dir):
+        return (EPOCH3_EXECUTION_LOCK_FILE, EPOCH3_PROTOCOL_LOCK_FILE)
     if is_epoch2(fam_c_dir):
         return (EXECUTION_LOCK_FILE, PROTOCOL_LOCK_FILE)
     return (EPOCH1_EXECUTION_LOCK_FILE, EPOCH1_PROTOCOL_LOCK_FILE)
@@ -306,6 +431,153 @@ def validate_epoch2_lock_binding(fam_c_dir, lock_name, prefix):
         out.append(f"{prefix}: epoch-2 lock {lock_name} records no "
                    f"freeze_commit (the instance freeze is shared across "
                    f"epochs)")
+    return out
+
+
+def validate_epoch2_historical_lock(fam_c_dir, name, want_sha, prefix):
+    """An epoch-2 FINAL lock in the EPOCH-3 world is a HISTORICAL record:
+    its bytes must still hash to the epoch-2-recorded sha256 and it must
+    still record status FINAL. It is never the live authority (the epoch-3
+    locks are). Epoch 3 must not delete, move, or rewrite it. Returns
+    findings (empty = green)."""
+    out = []
+    p = os.path.join(fam_c_dir, name)
+    if not os.path.isfile(p):
+        return [f"{prefix}: epoch-2 historical lock {name} missing at the "
+                f"recorded path (the epoch-3 transition pins its bytes; "
+                f"epoch 3 must not delete or move it)"]
+    try:
+        with open(p, "rb") as f:
+            live = hashlib.sha256(f.read()).hexdigest()
+        with open(p) as f:
+            obj = json.load(f)
+    except (OSError, ValueError) as e:
+        return [f"{prefix}: epoch-2 historical lock {name} unreadable: {e}"]
+    if live != want_sha:
+        out.append(f"{prefix}: epoch-2 historical lock {name} bytes "
+                   f"{live[:12]} != the epoch-2-recorded sha256 "
+                   f"{want_sha[:12]} (epoch 2 is immutable at its recorded "
+                   f"FINAL bytes)")
+    if not isinstance(obj, dict) or obj.get("status") != "FINAL":
+        st = obj.get("status") if isinstance(obj, dict) else None
+        out.append(f"{prefix}: epoch-2 historical lock {name} status "
+                   f"{st!r} != 'FINAL' (the epoch-2 terminal state is part "
+                   f"of the historical bytes)")
+    return out
+
+
+def validate_record3(fam_c_dir):
+    """The EPOCH-3 BOUNDARY audit (protocol authority, V2): the epoch-3
+    transition record exists, satisfies the structural activation contract
+    (citations of the frozen epoch-2 boundary facts, the corrected stop
+    record, the frozen spec + freeze commit, the exact ORDER-EXPANSION
+    pin), carries a non-empty genesis base map, and the epoch-2 boundary it
+    builds on still verifies. Returns findings (empty = green)."""
+    out = []
+    rec = transition_record3(fam_c_dir)
+    if rec is None:
+        return ["EPOCH-3-TRANSITION: no structurally valid "
+                f"{EPOCH3_TRANSITION_FILE} under {fam_c_dir} (epoch 3 is "
+                "not active)"]
+    p = transition_path3(fam_c_dir)
+    try:
+        with open(p, "rb") as f:
+            hashlib.sha256(f.read()).hexdigest()
+    except OSError as e:
+        return [f"EPOCH-3-TRANSITION: record unreadable: {e}"]
+    if not isinstance(rec.get("genesis"), dict) or not rec.get("genesis"):
+        out.append("EPOCH-3-TRANSITION: the record carries no genesis base "
+                   "map (the transition-time governed bytes); the epoch-3 "
+                   "protocol lock has no verifiable base")
+    if not _HEX64.match(str(rec.get("epoch2_stop_record_sha256") or "")):
+        out.append("EPOCH-3-TRANSITION: epoch2_stop_record_sha256 is not "
+                   "64-lowercase-hex")
+    # The epoch-2 boundary it cites must still hold on disk, byte for byte.
+    out += validate_transition(fam_c_dir)
+    if not out:
+        out += validate_epoch3_lock_binding(fam_c_dir,
+                                           EPOCH3_EXECUTION_LOCK_FILE,
+                                           "EPOCH-3-TRANSITION")
+        out += validate_epoch3_lock_binding(fam_c_dir,
+                                           EPOCH3_PROTOCOL_LOCK_FILE,
+                                           "EPOCH-3-TRANSITION")
+    return out
+
+
+def validate_epoch3_lock_binding(fam_c_dir, lock_name, prefix):
+    """One epoch-3 lock's transition binding: `epoch: 3`, a `transition`
+    block citing the epoch-3 record (name + sha256 of its bytes) and the
+    epoch-2 boundary facts, a non-terminal amendment lineage (an
+    append-only list starting empty at the transition), and the shared
+    instance freeze. Returns findings (empty = green)."""
+    out = []
+    rec = transition_record3(fam_c_dir)
+    if rec is None:
+        return [f"{prefix}: {lock_name} cites a transition record that is "
+                f"not validly present (epoch 3 is not active)"]
+    try:
+        with open(transition_path3(fam_c_dir), "rb") as f:
+            rec_sha = hashlib.sha256(f.read()).hexdigest()
+    except OSError as e:
+        return [f"{prefix}: epoch-3 transition record unreadable: {e}"]
+    p = os.path.join(fam_c_dir, lock_name)
+    if not os.path.isfile(p):
+        return [f"{prefix}: epoch-3 lock {lock_name} missing (the "
+                f"transition record names it; mint it via "
+                f"harness/epoch_transition.py)"]
+    try:
+        with open(p) as f:
+            lock = json.load(f)
+    except (OSError, ValueError) as e:
+        return [f"{prefix}: epoch-3 lock {lock_name} unparsable: {e}"]
+    if not isinstance(lock, dict):
+        return [f"{prefix}: epoch-3 lock {lock_name} is not a JSON object"]
+    if lock.get("epoch") != EPOCH3_NUMBER:
+        out.append(f"{prefix}: epoch-3 lock {lock_name} does not carry "
+                   f"epoch: {EPOCH3_NUMBER} (got {lock.get('epoch')!r})")
+    tr = lock.get("transition")
+    if not isinstance(tr, dict):
+        out.append(f"{prefix}: epoch-3 lock {lock_name} carries no "
+                   f"transition citation block")
+    else:
+        for key, want in (("record", EPOCH3_TRANSITION_FILE),
+                          ("record_sha256", rec_sha),
+                          ("from_epoch", EPOCH3_FROM_EPOCH),
+                          ("epoch2_transition_record", TRANSITION_FILE),
+                          ("epoch2_transition_sha256",
+                           EPOCH2_TRANSITION_SHA256),
+                          ("epoch2_execution_lock_sha256",
+                           EPOCH2_EXECUTION_LOCK_SHA256),
+                          ("epoch2_protocol_lock_sha256",
+                           EPOCH2_PROTOCOL_LOCK_SHA256),
+                          ("epoch2_finalization_commit",
+                           EPOCH2_FINALIZATION_COMMIT)):
+            if tr.get(key) != want:
+                out.append(f"{prefix}: epoch-3 lock {lock_name} "
+                           f"transition.{key} {tr.get(key)!r} != {want!r}")
+    am = lock.get("amendments")
+    if not isinstance(am, list):
+        out.append(f"{prefix}: epoch-3 lock {lock_name} amendments is not "
+                   f"a list (the new lineage is an append-only list)")
+    if lock.get("freeze_commit") is None:
+        out.append(f"{prefix}: epoch-3 lock {lock_name} records no "
+                   f"freeze_commit (the instance freeze is shared across "
+                   f"epochs)")
+    return out
+
+
+def validate_transition3(fam_c_dir):
+    """Full epoch-3 transition audit: the record + the epoch-2 boundary it
+    cites (transition record, both epoch-2 lock bindings, both epoch-1
+    historical locks) + both epoch-2 FINAL locks as historical records +
+    both fresh epoch-3 lock bindings. Returns findings (empty = green)."""
+    out = validate_record3(fam_c_dir)
+    out += validate_epoch2_historical_lock(
+        fam_c_dir, EXECUTION_LOCK_FILE, EPOCH2_EXECUTION_LOCK_SHA256,
+        "EPOCH-3-TRANSITION")
+    out += validate_epoch2_historical_lock(
+        fam_c_dir, PROTOCOL_LOCK_FILE, EPOCH2_PROTOCOL_LOCK_SHA256,
+        "EPOCH-3-TRANSITION")
     return out
 
 

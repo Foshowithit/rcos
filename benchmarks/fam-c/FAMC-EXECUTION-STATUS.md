@@ -566,3 +566,376 @@ probe asserts the rule under the ACTIVE state root. Runtime: h25 (the
 minutes-scale suite) re-timed 191s baseline -> 162s after threading the
 loaded ORDER-EXPANSION through the validation walk and short-circuiting
 acquisition_failed() on the cheap committed artifacts.
+
+
+## EPOCH 2 LIVE — order walks through failure (2026-09-17)
+
+Per the EPOCH-1 closure ruling, epoch 2 was built, certified, and finalized:
+fresh locks on their own lineage (EXECUTION-LOCK-EPOCH2 FINAL at 53e72ef,
+2026-09-17T06:42:11Z; PROTOCOL-LOCK-EPOCH2 FINAL), post-FINAL refusals proven,
+battery 39/39 at the certified ref, preflight 0/0/0, smoke_h37 26/26. Cells
+execute under state/epoch2/ from the beginning.
+
+First epoch-2 cells (all recorded outcomes, no retries of judgments):
+- A/T0: blocked (arrival fresh, container rc 1). A/T1: ship arrival,
+  candidate-validation FAILED (candidate rc 1).
+- Controller advance recorded BOTH terminals in one call: NOT-PROMOTED +
+  NOT-LOCKED (state/epoch2/PQ/A/fam05/runs/55cee707..., 011ec0ec...);
+  downstream A cells NOT-EVALUABLE — the prefix walk consumed the failed
+  universe and advanced. THE EPOCH-1 DEADLOCK IS FIXED, as ruled.
+- C/T0 (lane Q): blocked. C/T1 (lane Q): blocked + validation failed;
+  both C terminals recorded; downstream C NOT-EVALUABLE.
+- B/T2 (control arm, no K): blocked (rc 1).
+- Operator-error incident (recorded, preserved): the first C/T0 attempt was
+  run on lane P by operator error; the state authority refused it
+  INADMISSIBLE (manifest lane P != authorized Q) and a correct-lane re-run
+  was refused CHAIN-TERMINAL; the attempt's bytes were moved (not deleted)
+  to state/epoch2/_operator-errors/PQ-C-T0-lane-P-attempt/ with a NOTE.md.
+- Early experimental observation (pre-promotion): fam05 candidate artifacts
+  and downstream solves consistently fail container execution (rc 1) across
+  A(P), C(P-attempt), C(Q), B(P) — a family-level pattern worth watching;
+  all recorded as outcomes, none retried.
+
+
+## EPOCH 2 STOPPED — parse-denial ruling; EPOCH-3 spec drafted (docs-only) — 2026-09-17
+
+Ruling: third-party governance seat, 2026-09-17 ~10:30Z
+(`/home/chow/rcos-campaign/RULING-2026-09-17-parse-denial.md`):
+"CONTRACT-PARSE-DENY = EXPERIMENTAL OUTCOME. N=1. NO
+RETRY-UNTIL-ADMISSIBLE. ATTEMPT 2 PRESERVED, NON-ESTIMAND. EPOCH 2 STOPS AT
+THE UNREPRESENTABLE FINAL CELL. EPOCH 3 MAY ADD A PRE-FROZEN
+MODEL-OUTPUT-INVALID TERMINAL AND RESTART CLEAN."
+
+META (docs only — this slice changed no lock, no harness byte, no
+`state/` file, made no provider call, and ran no battery):
+
+- **Epoch 2 is STOPPED at cell 64/240** (`b933d9322add55cc`,
+  PQ/C/fam04/T0, lane Q). The fail-closed contract raised
+  `CONTRACT-PARSE-DENY` on the authorized sample, so no `arrival.json`, no
+  manifest, and no chain terminal exist; the FINAL lineage has no lawful
+  ordered-path representation for that tuple. No terminal was invented for
+  the cell, nothing under `state/` was written or moved, and
+  `completed_cells()` must NOT advance past the prefix tip
+  `e38ed4c1c456fe6a` (cell 63). The ~176 later events remain withheld.
+- Stop record: `EPOCH-2-STOP-RECORD.md` (new; sha256
+  `7c076ee23e246d06ac6ab21f0e3644b5a4a91e295edf39f9b8c47af5ea8a3881`) —
+  what ran (prefix cells 0–63 across fam05/fam03/fam01 and fam04-A; eight
+  T0 acquisitions, seven arrivals all rc 1, seven failed candidate
+  validations, zero valid candidates, no promotion and no lock ever minted),
+  both preserved attempts' classification, and the no-capability statement.
+  It creates no terminal and is evidence about why epoch 2 stopped.
+- Epoch-3 spec draft: `EPOCH-3-PROTOCOL-SPEC.md` (new; sha256
+  `6db4a7fba352307899420c8cc2f7fceace878e55ca1a9de52877b9c66050d8a6`) —
+  the pre-frozen `MODEL-OUTPUT-INVALID.json` terminal (schema, field
+  semantics, writer site at the runner's parse gate, forbidden companions),
+  the progress algebra (COMPLETE-FAILURE for model cells; T0 failure ⇒
+  T1/T2/T3/T4 NOT-EVALUABLE acquisition-failed, PROMOTION NOT-PROMOTED,
+  CAPABILITY_LOCK NOT-LOCKED), attempt-level reliability statistics, the
+  infrastructure boundary, and the epoch-3 lineage/restart-from-0
+  discipline. DRAFT — not frozen.
+- Freeze request: `FREEZE-REQUEST.md` (new; sha256
+  `b4889c57eda2f87cf4ca09e0adeba594eba08094426d4a09382dedc240b292a6`) —
+  FR-1 … FR-13 for third-party adjudication (terminal name/schema, status
+  token and algebra, writer site, forbidden companions, validator symmetry
+  incl. the no-T1 governance terminals, attempt accounting, lineage
+  mechanics and citations, restart-from-0, infra boundary, terminal-cell
+  reporting, epoch-2 stop visibility, implementation authorization +
+  certification, and the preflight `META` wiring for these new root docs),
+  plus the recorded conflicts (A12d predicate vs the no-T1 algebra;
+  pair-replacement granularity; §24 row shape; diagnostic-repeat placement;
+  the unclassified preserved epoch-2 call; certification extras; and whether
+  the seat supplies an explicit "epoch 2 CLOSED" formulation).
+- Preserved epoch-2 evidence is read-only and unchanged:
+  `state/epoch2/_operator-errors/PQ-C-fam04-T0-lane-Q-attempt/`
+  (`INCIDENT.json` sha256
+  `ccf2dc65adf1e8f8c2f23bb62f168457fcf00ddcf1546def3f43a1233fce49b5`;
+  attempt-1 `f23da2d0f49e052b`, 1444 B; attempt-2 `a63ba445157af666`,
+  42,766 B, non-estimand diagnostic repeat).
+- Certification note (recorded, not hidden): these three root-level docs are
+  V1 INSTANCE-FREEZE extras under the current `preflight.py` `META` set
+  (FR-13); this docs-only slice may not amend `preflight.py` (protocol
+  governed), so the named findings are expected and listed for the seat.
+
+Next: the third-party seat adjudicates `FREEZE-REQUEST.md`. No epoch-3
+implementation and no epoch-3 model call precede that freeze; epoch 2 stays
+stopped/incomplete as recorded.
+
+
+## EPOCH-3 FREEZE ADJUDICATED (ACCEPT-AS-AMENDED) — correction landed — 2026-09-17
+
+Ruling: third-party governance seat, 2026-09-17, recorded at
+`/home/chow/rcos-campaign/FREEZE-ADJUDICATION-2026-09-17.md`: **VERDICT
+ACCEPT-AS-AMENDED AT THE DESIGN LEVEL — "EPOCH 3 IS NOT YET FROZEN, AND
+IMPLEMENTATION IS NOT YET AUTHORIZED."** The seat verified that
+`8b5e27011cfa0b4640af11840b2b45c0d641cfc7` is genuinely spec-first (docs
+only; no harness byte, lock, or `state/` evidence changed), approved the
+architecture, and required ONE docs-only correction commit applying the
+item amendments FR-1 … FR-13. It will adjudicate the DIFF only against its
+ruling (no new criteria); if it matches, the next ruling is
+`EPOCH-3-SPEC-FROZEN — IMPLEMENTATION AUTHORIZED`.
+
+Applied (docs-only correction commit, child of `8b5e270` on `r4-reconcile`):
+
+- `EPOCH-3-PROTOCOL-SPEC.md` (sha256
+  `1ce2bbc8b8981b4c1a51c6858a6f5c3950b5a9476fb2a3f8d99351308d3166d7`) —
+  FR-1 production cell-identity/authority terminal schema + raw-response
+  replay validator; FR-2 FAIL / non-SHIP correctness semantics and the T1
+  failure branch; FR-3 semantic writer site + required ordering; FR-5 §3.1
+  governance evidence union; FR-6 `ATTEMPT-BUDGET-DENY` + ledger-as-
+  enumeration-authority + denominator decomposition; FR-7 transition
+  citations; FR-8 PILOT-GRADE wording (PREREG §18.1); FR-9 MODEL SAMPLE
+  EXISTS boundary + acquisition replacement unit; FR-10 §4.1 terminal-cell
+  reporting; FR-12 twelve-probe certification standard; FR-13 preflight
+  governance (implementation item).
+- `EPOCH-2-STOP-RECORD.md` (sha256
+  `4e0e84ec6c4f13baebd319b40e11ce1beb6258110146fb1d6066afed74e70f4c`) —
+  FR-11: frozen index-63/index-64 sentence, "epoch-closure annex" renamed
+  "epoch-stop annex", epoch 2 remains STOPPED / INCOMPLETE (not "closed").
+- `FREEZE-REQUEST.md` (sha256
+  `9c60056d87f29a8799aa2ba8750cbae942f9aab88d1ce9310dcab8cfcaeab232`) —
+  adjudication outcome recorded: verdict, verified base commit, per-item
+  dispositions FR-1 … FR-13, supersession rule; remains historical META.
+- This status addendum (META, docs only).
+
+Discipline: no harness byte changed, no lock touched, no `state/` write, no
+model call; the untracked epoch-2 operator-error evidence is untouched.
+
+State of the campaign: epoch 2 remains exactly STOPPED / INCOMPLETE with
+highest progress-valid cell index 63; the stop record creates no terminal for
+cell 64 and no walk may include cell 64 or any later cell in the completed
+prefix. Epoch 3 remains unfrozen and implementation unauthorized pending the
+seat's ruling on these corrected bytes.
+
+## EPOCH-3 IMPLEMENTATION LANDED — CERTIFIED OFFLINE, EXECUTION NOT AUTHORIZED (2026-09-17)
+
+The frozen `EPOCH-3-PROTOCOL-SPEC.md` (sha256
+`28cdf2a232f74ad44d2ca5de278352c152a976be3c85084c18aea8acab99c226`, freeze
+commit `03af3cddc51bffa3c568ae0de36d4205805fd638`, seat ruling
+`EPOCH-3-SPEC-FROZEN — IMPLEMENTATION AUTHORIZED`) has been implemented
+item-for-item together with its §7 certification standard. NO
+provider/model call was made in this slice: every probe is offline and
+fixture-based, and the two fresh epoch-3 locks are deliberately left OPEN.
+
+Implemented (commit shas in the slice record below):
+
+- **Terminal** (`MODEL-OUTPUT-INVALID.json`, schema
+  `famc-model-output-invalid-v1`, write-once): minted by the runner at the
+  semantic parse-gate writer site with the frozen ordering — the ONE
+  recorded provider call, then request body/raw receipt/normalized
+  usage/identity record/`raw-<call_id>.txt`/attempt-ledger row durable,
+  then the frozen `extract()` over the PRESERVED bytes, then an atomic
+  `O_EXCL` create. A duplicate or pre-existing terminal refuses
+  (`MODEL-OUTPUT-INVALID-DENY`); no `note_cell_completed()` and no
+  manifest/chain/arrival exists on that path; exit code 0.
+- **Strict validator with deterministic replay**: production cell-identity
+  surface (13 fields), non-null `identity_record_sha256`, request/
+  adapter/usage/identity binding re-derivation, per-attempt response
+  preservation, ACTIVE epoch execution+protocol lock / harness-manifest /
+  frozen-spec bindings, forbidden-companion refusal, no machine-local paths,
+  ledger↔terminal correspondence, and re-running the preserved
+  `raw-<call_id>.txt` through the frozen `extract()` — an arrival or a
+  different error makes the terminal INADMISSIBLE.
+- **Progress algebra + §3.1 union**: `COMPLETE-FAILURE` is progress-valid
+  for model cells only; T0-terminal (no candidate, T1 NOT-EVALUABLE) and
+  T1-terminal (real T0 candidate, never validly validated) continuations
+  both record `PROMOTION NOT-PROMOTED (reason acquisition-failed,
+  failure_event T0|T1, acquisition_evidence kind MODEL-OUTPUT-INVALID +
+  terminal_sha256, candidate_sha256 null|<real>)` and `CAPABILITY_LOCK
+  NOT-LOCKED` binding the same union; downstream T2/T3/T4 stay
+  NOT-EVALUABLE; the runner's pre-call `ACQUISITION-FAILED-DENY` still
+  fires.
+- **Attempt accounting**: `ATTEMPT-LEDGER.jsonl`
+  (`famc-attempt-ledger-v1`) as the enumeration authority, one row per
+  authorized invocation in call order, per-row `request_body_sha256`,
+  nulls only for a true no-sample infrastructure event, hashes
+  cross-checked against disk; `ATTEMPT-BUDGET-DENY` hard-refuses a second
+  same-cell provider invocation before any call; the two reliability
+  statistics and the contract-denial vs infrastructure/no-sample
+  denominator decomposition; the §4.1 §24 evidence row (`ship: false`,
+  null checker fields, `run_manifest_hash: null`, `evidence_hash` =
+  `terminal_record_sha256`, `model_calls: 1`, `retries: 0`,
+  `terminal_class: MODEL-OUTPUT-INVALID`, `capability_available` derived
+  from the frozen cell/validated lock, selection/load/invocation/
+  consumption/material-contribution false, T2/T3 non-SHIP, T4 never a
+  specificity rejection).
+- **Model-sample vs infrastructure boundary**: a transport/HTTP error
+  (even one carrying a body), a non-JSON body, a payload without a
+  completion object, or a null reply content raises `NoModelSample`,
+  enumerated as infrastructure with null sample fields — never parsed,
+  never a terminal; a sample whose provider/lane identity cannot be
+  established mints nothing (inadmissible/missing evidence).
+- **Epoch-3 machinery + lineage**: `harness/epoch.py` is epoch-aware
+  (`state/epoch3`, epoch-3 lock names, transition activation, the frozen
+  citation constants, `validate_transition3`); `EPOCH-3-TRANSITION.json`
+  cites the corrected stop record `4e0e84ec`, the epoch-2 FINAL locks
+  `e662463e`/`978d5e3e`, the epoch-2 transition `047aef2f`, the epoch-2
+  finalization commit `53e72ef4`, the frozen spec `28cdf2a2` at freeze
+  commit `03af3cd`, and the exact ORDER-EXPANSION pin `449be793`; fresh
+  epoch-3 locks were minted OPEN on their own append-only lineage
+  (`EXECUTION-LOCK-EPOCH3.json` 27 harness files manifest
+  `22162924bc7e…`, `PROTOCOL-LOCK-EPOCH3.json` 8 governed files) and are
+  NOT finalized.
+- **Preflight governance (FR-13, frozen)**: V1 META gains exactly the six
+  epoch-3 files as additions to the existing set; V2's governed set is the
+  existing seven files + `EPOCH-3-PROTOCOL-SPEC.md` once epoch 3 is active
+  (V1 META never exempts the spec from V2; `FREEZE-REQUEST.md` stays
+  historical META); the V1 instance-freeze walk prunes every epoch state
+  root; V2/V3 audit the epoch-3 boundary, the epoch-2 FINAL locks as
+  historical records, and the fresh epoch-3 lock bindings.
+
+Certification (at ref `a7cd53d9e9daa6eb78d4c4701156ac744b02dae5`, clean tree; the only untracked path is the frozen Q-lane operator-error evidence); clean `/tmp/rcos-runs` +
+`/tmp/rcos-visible`; per-suite DIRECT exit codes, never a pipeline):
+
+- full smoke battery `43/43 suites PASS, 1319/1319 individual checks closed` including the new
+  `harness/tests/smoke_h38_epoch3.py` `21/21 (the twelve frozen probes + algebra/ledger/union/lineage)` (the twelve frozen
+  adversarial probes + the algebra/ledger/union/lineage coverage);
+- `python3 benchmarks/fam-c/preflight.py` `0/0/0`;
+- `python3 harness/epoch_transition.py --check`: epoch 3, green;
+- synthetic-attack suite `5 PASS / 0 FAIL (`benchmarks/fam-c/runs/_synthetic-attack/run_attack.sh`)` at the same ref;
+- lock state: BOTH epoch-3 locks OPEN (`open-round2` / `living-lock`) —
+  finalization is auditor-supervised and follows independent certification
+  + the execution-authorization ruling; the FINAL gate therefore refuses a
+  wired estimand cell, naming both OPEN locks
+  (`LOCK-NOT-FINAL: EXECUTION-LOCK-EPOCH3.json status is 'open-round2'`,
+  `LOCK-NOT-FINAL: PROTOCOL-LOCK-EPOCH3.json status is 'living-lock'`);
+- frozen bytes verified at HEAD: spec `28cdf2a2…`, stop record
+  `4e0e84ec…`, ORDER-EXPANSION `449be793…`, epoch-2 FINAL locks
+  `e662463e…`/`978d5e3e…`, epoch-2 transition `047aef2f…`;
+- epoch-1/epoch-2 evidence untouched: `git status` clean under `state/`;
+  the untracked epoch-2 operator-error evidence under
+  `state/epoch2/_operator-errors/PQ-C-fam04-T0-lane-Q-attempt/` is
+  byte-identical and remains UNTRACKED (§FR-11 / the stop record's
+  read-only, do-not-commit clause).
+
+Boundary (verbatim from the freeze ruling): "This is implementation
+authorization, not execution authorization: no epoch-3 provider/model call
+is lawful until the implementation is complete, the required
+adversarial/certification battery passes, V1/V2/V3 are green, and both
+fresh epoch-3 locks are FINAL." No epoch-3 (or any) provider call has been
+made; the epoch-3 walk has NOT begun; `state/epoch3/` holds no run.
+
+Slice record (branch `r4-reconcile`, pushed as `03af3cd..a7cd53d`):
+
+| commit | contents |
+|---|---|
+| `298a933` | terminal + strict validator + replay + ledger/N=1 + algebra + §3.1 union + epoch-3 machinery |
+| `eda0c65` | preflight FR-13: V1 META additions, V2 governed set, epoch-3 V2/V3 authorities, state-root pruning |
+| `ae5b194` | `harness/tests/smoke_h38_epoch3.py` (the twelve probes + coverage) and the N=1 fixture resets in h33/h34 |
+| `3fa792c` | `EPOCH-3-TRANSITION.json` + both fresh epoch-3 locks, minted OPEN |
+| `a7cd53d` | live-lineage suites re-certified for the active governed set (preflight.py 27→28, spec 4) |
+
+Deliberately NOT done (and why): the epoch-3 locks are NOT finalized — per
+the campaign procedure finalization is auditor-supervised, after independent
+certification and the execution-authorization ruling; and the preserved
+epoch-2 Q-lane operator-error evidence stays UNTRACKED because the frozen
+stop record and the FR-11 disposition say "byte-for-byte, untracked,
+read-only evidence ... do not commit". No epoch-3 state exists under
+`state/epoch3/`, no cell has run, and no model call of any kind was made.
+
+### Certification refresh (post-cleanup ref `452e063`)
+
+The implementation slice closed with an audit-hygiene cleanup (one unused
+read-only helper removed from `harness/order.py`, no behavior change),
+recorded as the epoch-3 EXECUTION lock's first own-lineage amendment
+(`harness/order.py`, manifest `5a644aa1…`, status `open-round2`) through
+`harness/mint_execution_lock.py`. The full certification battery was re-run
+at that ref (clean `/tmp/rcos-runs` + `/tmp/rcos-visible`, `umask 077`,
+per-suite DIRECT exit codes — never a pipeline):
+
+- smoke battery `43/43 suites PASS`, `1319/1319` individual checks closed
+  (`harness/tests/smoke_h38_epoch3.py` `21/21`, including the twelve frozen
+  §7 adversarial probes);
+- `python3 benchmarks/fam-c/preflight.py` `V1-instance 0 / V2-protocol 0 /
+  V3-execution 0`;
+- `python3 harness/epoch_transition.py --check`: epoch 3, green;
+- `benchmarks/fam-c/runs/_synthetic-attack/run_attack.sh` `5 PASS / 0 FAIL`
+  at that ref (manifest refreshed in the same commit);
+- both epoch-3 locks remain OPEN (`open-round2` with one amendment /
+  `living-lock` with zero); the FINAL gate still refuses a wired estimand
+  cell, naming both locks.
+
+This note and the refreshed attack manifest are docs/evidence-only: no
+governed, locked or state byte changes. The certified refs are therefore
+`452e063` (definitive battery) and the docs tip that carries this line (for
+which the targeted constant re-certification — preflight, the epoch-3
+lineage check, `smoke_h38_epoch3.py` and the four live-lineage suites — was
+re-run green).
+
+### Reconciliation with `main` (EPOCH-3 submission boundary)
+
+The EPOCH-3 implementation slice closed at `56f4156` on `r4-reconcile`, which
+had diverged from `main` (`80355c5`, PR #18 / EPOCH-2): 15 ahead / 7 behind,
+no open PR. `main`'s seven intervening commits are exactly `Merge pull request
+#12-#18 from Foshowithit/r4-reconcile` merges — `main` carries only earlier
+states of this same experiment branch — so the reconciliation is the
+byte-inert integration merge `895b84970b3d0a5b92108a9fd5e1a1802ac0cf75`
+("Reconcile r4-reconcile with main (80355c5) for the EPOCH-3 submission"):
+`origin/main` merged into `r4-reconcile`, with `r4-reconcile` as the merge's
+first parent.
+
+Byte-inertness is proven, not asserted. Before the merge, `git merge-tree
+--write-tree HEAD origin/main` returned tree
+`29f44dd883cae9a45de3227b3e09acca61c430b0` — identical to `56f4156^{tree}`,
+rc=0, no conflicts; after it, the merge commit's tree is that same object,
+and `git diff 56f4156 HEAD` is empty. `git status --porcelain
+--untracked-files=all` is unchanged (the fourteen frozen Q-lane operator-error
+evidence files, still untracked, byte-for-byte), and no governed, locked,
+state, suite or manifest byte changed. `origin/main` is now an ancestor of the
+branch tip (0 behind / 16 ahead).
+
+The merge's first parent is `56f4156`, so the chronology rules the locks and
+preflight pin are intact: A12l D11.2 (the branch walk is first-parent, and the
+merge contributes no new first-parent content state), A12i D9 (the recorded
+path remains a subsequence of the file's committed content states on the
+experiment branch), and A12l D11.1 (on-disk `PROTOCOL-LOCK.json` bytes equal
+the committed experiment-HEAD bytes). This is an integration merge, never a
+rebase: no committed content state was rewritten.
+
+Certification at the reconciliation tip `895b849` — tree byte-identical to the
+previously certified `56f4156`, clean `/tmp/rcos-runs` + `/tmp/rcos-visible`,
+`umask 077`, per-suite DIRECT exit codes, never a pipeline
+(`/tmp/e3-cert-run-battery.sh`, tag `reconcile-tip`, 20:55:55Z–21:04:45Z):
+
+- full smoke battery `40/40 suites PASS`, `1287/1287` individual checks closed
+  — the same totals as the pre-merge baseline at `56f4156` (tag
+  `cert-tip-strict`), including `harness/tests/smoke_h38_epoch3.py` `21/21`
+  (the twelve frozen adversarial probes) and the four suites that read this
+  file (`smoke_h14_production_main.py` `25/25`, `smoke_h32_d12.py` `25/25`,
+  `smoke_h33_d12b.py` `31/31`, `smoke_h34_d13.py` `29/29`);
+- `python3 benchmarks/fam-c/preflight.py` `V1-instance 0 / V2-protocol 0 /
+  V3-execution 0`;
+- `python3 harness/epoch_transition.py --check`: epoch 3, green;
+- `benchmarks/fam-c/runs/_synthetic-attack/run_attack.sh` `5 PASS / 0 FAIL` at
+  that ref (manifest refreshed in this commit, `dirty_files: 1` — only the
+  frozen untracked operator-error evidence);
+- both epoch-3 locks remain OPEN (`open-round2` / `living-lock`); the FINAL
+  gate still refuses a wired estimand cell, naming both locks.
+
+Operational note (attack driver). `run_attack.sh` must be invoked with `umask
+077`, as the battery driver does. Under a group-writable ambient umask (`0002`
+on this host) its `smoke_h34_d13` fixture worktree gets `0o775` state
+directories and the `NAMESPACE-WRITABLE-DENY` probe fires — the suite is right,
+the environment is wrong; the same suite closes `29/29` under `umask 077`. A
+failed run aborts before its fixture cleanup, leaving `/tmp/h34-d13-worktree`
+registered-but-missing, after which later runs die at `git worktree add` until
+`git worktree prune`; both states were observed and cleared during this
+certification.
+
+#### Record-accuracy note (flagged, not rewritten)
+
+The certification notes above (refs `a7cd53d`, `452e063`) record `43/43 suites
+PASS`, `1319/1319` individual checks closed. That figure is not reproducible
+from any artifact on the run host: the suite universe is the 40 files matched
+by `harness/tests/smoke_*.py` — exactly what the certification battery
+enumerates — at those refs and at `56f4156` and `895b849` alike, and the
+archived batteries record `40/40` suites and `1287/1287` checks
+(`/tmp/e3-cert-out/battery2`, tag `cert-tip-strict`, at `56f4156`; the
+reconciliation battery at `895b849`). No 43-suite / 1319-check battery artifact
+was located (the search over ~8,700 `/tmp` entries was bounded to recorded
+battery paths). These are certified historical records and are left exactly as
+written; the flagged discrepancy is for the auditor. The number the EPOCH-3
+submission cites is the artifact-backed `40/40` / `1287/1287`.
+
+Per the standing ruling, this reconciliation is the submission boundary: no
+further epoch or slice work starts on this branch until the EPOCH-3 PR is
+reviewed there.

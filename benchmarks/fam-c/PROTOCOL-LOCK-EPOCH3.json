@@ -1,0 +1,33 @@
+{
+ "lock": "PROTOCOL-LOCK",
+ "epoch": 3,
+ "status": "living-lock",
+ "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
+ "note": "EPOCH-3 lineage (fresh locks + new finalization). Minted by harness/epoch_transition.py from the frozen epoch-2 boundary; its own append-only amendment lineage (NOT an amendment to the epoch-2 or epoch-1 lineages). The governed set is the frozen FR-13 rule: the existing seven governed files PLUS EPOCH-3-PROTOCOL-SPEC.md (being V1 META never exempts the spec from V2). Forward amendments to a governed file are appended here (human-written reason), exactly as before \u2014 on this new base.",
+ "governed": {
+  "PREREG.md": "708ad2acd9b408c139d5068aebd7cda19e7f8aaab15476b852c3e2e352091192",
+  "ORDER.md": "4510076a0550788806cb86683279613cd961a6a0bb336c933fad7fae8833f469",
+  "LANES.md": "fc1059c41702c5780928e1d3fce7eaa87e9727d2465af76cfbc28269d0179032",
+  "HARNESS-READINESS.md": "34ce046ae9b16d2f3632e429b767e092df02bb8f158198387652f91e57e7c60c",
+  "preflight.py": "d6651841077eb4794e1c65d4cca94e102366052d8fece0ac08918a8ec240a9c9",
+  "T4-SEMANTIC-IDS.json": "f9feaedcef50f2940328692f9d9c5aa3865f0e7dc2f8870ffa4c3529af096d57",
+  "T4-CONFORMANCE.json": "a7e044a126b615521254b2b8494603970806213f82bfb7cc59ab604196bc9654",
+  "EPOCH-3-PROTOCOL-SPEC.md": "28cdf2a232f74ad44d2ca5de278352c152a976be3c85084c18aea8acab99c226"
+ },
+ "amendments": [],
+ "protocol_artifacts": {
+  "ORDER-EXPANSION.json": "449be793cf764204b8326a56914dd19c90f16371600db9d97faf60ccbe43f47a"
+ },
+ "transition": {
+  "record": "EPOCH-3-TRANSITION.json",
+  "record_sha256": "a3668d710bf51612fa9a45c08d908c195b4ee09b83a4ba4bb71d973b7cf9dfd5",
+  "from_epoch": 2,
+  "epoch2_transition_record": "EPOCH-2-TRANSITION.json",
+  "epoch2_transition_sha256": "047aef2fcfef76803cb0999edcd17027aa2997b91a7face8ad9a83012136bb6b",
+  "epoch2_execution_lock_sha256": "e662463e50fbb7d08115063595a4392437ccac54e6d2dd989a730ecafe619a80",
+  "epoch2_protocol_lock_sha256": "978d5e3e8d6f8797343830d565583804ae58a426b114331e74b2f4ebe1f74b00",
+  "epoch2_finalization_commit": "53e72ef4cec5ec7ecc9628c348a36635c02bd2d4",
+  "reason": "EPOCH-3-PROTOCOL-SPEC.md (frozen at 03af3cd): MODEL-OUTPUT-INVALID terminal + attempt accounting + event-0 restart; epoch 2 stays STOPPED/INCOMPLETE, preserved"
+ },
+ "created_at": "2026-09-17T10:57:01Z"
+}

@@ -42,6 +42,11 @@ import epoch as _EPOCH_H31  # noqa: E402  (active-epoch lock resolution)
 
 RESULTS = []
 FREEZE = json.load(open(os.path.join(FAMC, "FREEZE.json")))["freeze_commit"]
+
+# EPOCH-3 re-certification (2026-09-17): the ACTIVE governed set is the
+# seven plus EPOCH-3-PROTOCOL-SPEC.md, and preflight.py gained ONE more
+# content state (the FR-13 preflight governance amendment commit).
+_GOVSET = PF.protocol_governed(FAMC)
 TOP = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=FAMC,
                      capture_output=True, text=True).stdout.strip()
 REPO = TOP
@@ -545,7 +550,7 @@ def _plain_seq(fn):
 
 
 _BAD, _LENS = [], {}
-for _fn in PF.PROTOCOL_GOVERNED:
+for _fn in _GOVSET:
     _live = PF._branch_seq_shas(TOP, f"benchmarks/fam-c/{_fn}")
     _LENS[_fn] = len(_live)
     if _live != _plain_seq(_fn):
@@ -560,9 +565,10 @@ check("D11.2-LIVE first-parent sequences equal the old walk for all "
 # Re-certified at EPOCH-2 (r4-reconcile EPOCH-2 slice): preflight.py + 1
 # commit (epoch-2 acceptance / META) -> 27.
 check("D11.2-LIVE live sequence lengths match the certified D11 "
-      "facts (PREREG 29, preflight 27, rest 5/6/12/1/7)",
+      "facts (PREREG 29, preflight 28, spec 4, rest 5/6/12/1/7)",
       _LENS == {"PREREG.md": 29, "ORDER.md": 5, "LANES.md": 6,
-                "HARNESS-READINESS.md": 13, "preflight.py": 27,
+                "HARNESS-READINESS.md": 13, "preflight.py": 28,
+          "EPOCH-3-PROTOCOL-SPEC.md": 4,
                 "T4-SEMANTIC-IDS.json": 1, "T4-CONFORMANCE.json": 7},
       str(_LENS))
 

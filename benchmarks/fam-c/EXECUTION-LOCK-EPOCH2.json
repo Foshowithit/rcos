@@ -1,7 +1,7 @@
 {
  "lock": "EXECUTION-LOCK",
  "epoch": 2,
- "status": "open-round2",
+ "status": "FINAL",
  "freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
  "note": "EPOCH-2 lineage (fresh locks + new finalization). Minted by harness/epoch_transition.py from the epoch-1 closure record; its own append-only amendment lineage (NOT an amendment to the epoch-1 lineage). The epoch-1 EXECUTION-LOCK.json stays frozen as the historical record of the closed epoch. Re-mint on every harness change via harness/mint_execution_lock.py --slice ... --reason ...; finalize only by owner authorization.",
  "harness_manifest_sha256": "778c5e9829c29967bfc7df3a1e3de209d0e4df0320b6d69d3afe8e912623b3be",
@@ -152,6 +152,14 @@
    "reason": "EPOCH-2 slice: order.acquisition_failed cheap-first short-circuit (re-mint after harness change)",
    "slice": "epoch2-slice",
    "status_after": "open-round2"
+  },
+  {
+   "from_manifest": "778c5e9829c29967bfc7df3a1e3de209d0e4df0320b6d69d3afe8e912623b3be",
+   "to_manifest": "778c5e9829c29967bfc7df3a1e3de209d0e4df0320b6d69d3afe8e912623b3be",
+   "files": {},
+   "reason": "EPOCH-1 closure ruling executed (EPOCH-2 PROTOCOL): epoch-2 lineage certified (battery 39/39 at 53e72ef; smoke_h37 26/26; preflight 0/0/0); owner-authorized finalization per the ruling; cells execute from the beginning under this lineage.",
+   "slice": "EPOCH2-FINAL",
+   "status_after": "FINAL"
   }
  ],
  "transition": {
@@ -164,5 +172,7 @@
   "epoch1_finalization_commit": "1e146279077b8b442e8c0542887349156aa4571f",
   "reason": "third-party ruling EPOCH-2 PROTOCOL (EPOCH-1-CLOSURE.md): fresh locks + new lineage; owner finalizes later"
  },
- "created_at": "2026-09-17T05:36:58Z"
+ "created_at": "2026-09-17T05:36:58Z",
+ "finalized_at": "2026-09-17T06:42:11Z",
+ "finalization_commit": "53e72ef4cec5ec7ecc9628c348a36635c02bd2d4"
 }

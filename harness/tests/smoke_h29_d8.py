@@ -340,6 +340,11 @@ check("D8.1 STATIC the shared module performs no I/O and defines no "
 
 # --- D8.2 live chain: node removed, edge direct, V2 green -----------------
 LIVE_LOCK = json.load(open(os.path.join(FAMC, "PROTOCOL-LOCK.json")))
+
+# EPOCH-3 (EPOCH-3-PROTOCOL-SPEC.md §7, FR-13 frozen): the ACTIVE V2
+# governed set is the existing seven files PLUS EPOCH-3-PROTOCOL-SPEC.md
+# once epoch 3 is active; live-lineage probes judge THAT authority.
+_GOVSET = PF.protocol_governed(FAMC)
 _TOP = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=FAMC,
                       capture_output=True, text=True).stdout.strip()
 
@@ -357,7 +362,7 @@ def _chain_inputs():
     for a in LIVE_LOCK["amendments"]:
         by_file.setdefault(a.get("file"), []).append(dict(a))
     frozen, disk = {}, {}
-    for fn in PF.PROTOCOL_GOVERNED:
+    for fn in _GOVSET:
         raw = _git_bytes(f"{FREEZE}:benchmarks/fam-c/{fn}")
         frozen[fn] = (hashlib.sha256(raw).hexdigest()
                       if raw is not None else None)
@@ -409,9 +414,9 @@ check("D8.2 corrected lock on the real repo: V2 green",
 _tips, _tip_find = PF.active_protocol_tips(FAMC, FREEZE)
 check("D8.2 validator tips computed for every governed file",
       _tip_find == []
-      and sorted(_tips) == sorted(PF.PROTOCOL_GOVERNED),
+      and sorted(_tips) == sorted(_GOVSET),
       f"tips={sorted(_tips)} finds={str(_tip_find[:1])[:160]}")
-_tip_bad = [fn for fn in PF.PROTOCOL_GOVERNED if _tips.get(fn) != _DISK[fn]]
+_tip_bad = [fn for fn in _GOVSET if _tips.get(fn) != _DISK[fn]]
 check("D8.2 every governed file: disk sha256 == the validator's "
       "unique tip",
       _tip_bad == [], str(_tip_bad))
@@ -530,6 +535,9 @@ def _v2_repo(tag, freeze_files, post_files=None, lock_mut=None):
         _git(repo, "add", "-A")
         _git(repo, "commit", "-qm", "post " + name)
     governed, shas = {}, {}
+    # The hermetic repo is epoch-1-shaped (no transition record, its lock
+    # lives at PROTOCOL-LOCK.json), so its governed map is the FROZEN seven
+    # — the epoch-3 addition applies to the active lineage, not here.
     for name in PF.PROTOCOL_GOVERNED:
         p = os.path.join(famc, name)
         if os.path.exists(p):
@@ -548,7 +556,7 @@ def _v2_repo(tag, freeze_files, post_files=None, lock_mut=None):
 
 def _live_bytes():
     return {fn: open(os.path.join(FAMC, fn), "rb").read()
-            for fn in PF.PROTOCOL_GOVERNED}
+            for fn in _GOVSET}
 
 
 _famc0, _fc0 = _v2_repo("v2base", _live_bytes())

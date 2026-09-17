@@ -1,0 +1,168 @@
+{
+ "lane": "Q",
+ "family": "fam05",
+ "task": "T0",
+ "arm": "acquisition",
+ "parse_mode": "json-envelope",
+ "lane_receipt": "/tmp/r4-branch-wt/benchmarks/fam-c/state/epoch2/PQ/C/fam05/runs/3122872f1ac60568/call-da341b03e1c65ff6.json",
+ "sandbox": {
+  "sandbox": "rcos-c9c0c43fd10f47a6965415dc1a134b81",
+  "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+  "task_snapshot": {
+   "file|MANIFEST": "791e6b14431c2dc8e4a4cb751d4048da36d59c1681d160000e27a370a426482e",
+   "file|alpha.txt": "84d89877f0d4041efb6bf91a16f0248f2fd573e6af05c19f96bedb9f882f7882",
+   "file|beta.txt": "4e76ad8354461437c04ef9b9b242540b6406d782ff2c3fb28afdab5b423f88fe",
+   "file|prompt.md": "fc20b8c75cca204ec0f140e3ef2426946ae73d8996ce6e04bb2c0267f2643451"
+  },
+  "mounts": [
+   {
+    "host": "/tmp/rcos-runs/famc-f5a4da690720",
+    "container": "/work",
+    "mode": "rw"
+   },
+   {
+    "host": "/tmp/rcos-runs/.stage-rcos-c9c0c43fd10f47a6965415dc1a134b81",
+    "container": "/task",
+    "mode": "ro"
+   }
+  ]
+ },
+ "task_snapshot": {
+  "file|MANIFEST": "791e6b14431c2dc8e4a4cb751d4048da36d59c1681d160000e27a370a426482e",
+  "file|alpha.txt": "84d89877f0d4041efb6bf91a16f0248f2fd573e6af05c19f96bedb9f882f7882",
+  "file|beta.txt": "4e76ad8354461437c04ef9b9b242540b6406d782ff2c3fb28afdab5b423f88fe",
+  "file|prompt.md": "fc20b8c75cca204ec0f140e3ef2426946ae73d8996ce6e04bb2c0267f2643451"
+ },
+ "containment": {
+  "binding_schema": "rcos-containment-binding-v1",
+  "backend": "DockerSandbox",
+  "backend_qualname": "dockersandbox.DockerSandbox",
+  "production_class": "dockersandbox.DockerSandbox",
+  "production_class_resolved": true,
+  "production_class_error": null,
+  "class_identity_exact": true,
+  "security_bearing": true,
+  "classification": "security-bearing container backend",
+  "pinned_image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+  "image": "python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea",
+  "image_is_pinned": true,
+  "launches": 2,
+  "launch_roles": [
+   "snapshot-verify",
+   "engine"
+  ],
+  "daemon_container_ids": [
+   "cb9b58452ca0fc2546a6c0ef260ff248bfa0fbf5029fd934e008a52341283c6c",
+   "77a71ad13f6ed4a1debebf13efb4815a20507583298c264a507508be76edb39a"
+  ],
+  "daemon_container_id_count": 2,
+  "container_id_evidence": true,
+  "containment_flags_missing": [],
+  "containment_flags_present": true,
+  "security_spec_names_docker": true,
+  "security_spec_evidence": "CLAIM-GRADE-BACKEND markers=['DockerSandbox'] sha256=bdc30189d912d806ed866ab77aeca167e6e2d294ec5b305dea406001bc2ca27d",
+  "docker_probe": {
+   "ok": true,
+   "version": "29.7.2",
+   "error": null
+  },
+  "fallback_taken": false,
+  "manifest_key": "containment",
+  "note": "run_arm_h1.main arrival jail: literal DockerSandbox construction (production class), never the jail_factory seam"
+ },
+ "container_returncode": 1,
+ "checker_returncode": null,
+ "checker_output": "missing output",
+ "verdict": "blocked",
+ "output_sha256": null,
+ "a13_receipt_file": null,
+ "a13_receipt_sha256": null,
+ "a13_causal_contribution_proven": null,
+ "a13_leg_verdicts": null,
+ "a13_seal_file": null,
+ "a13_seal_sha256": null,
+ "a13_seal_content_sha256": null,
+ "a13_seal_file_sha256": null,
+ "a13_grading_file": null,
+ "a13_journal_file": null,
+ "a13_omitted_reason": null,
+ "graded_output_sha256": null,
+ "graded_output_path": null,
+ "checker_sha256": "864bb3b4ea47f60aa632e9a1bac3cc8239268aa9ad77872403c99c7ae88f28d6",
+ "truth_sha256": "eff38709011bc237f5ef5d949457faa5367548cc4bb85aa66f76d77ad55ffa6e",
+ "expected_checker_sha256": "864bb3b4ea47f60aa632e9a1bac3cc8239268aa9ad77872403c99c7ae88f28d6",
+ "expected_truth_sha256": "eff38709011bc237f5ef5d949457faa5367548cc4bb85aa66f76d77ad55ffa6e",
+ "evaluator_freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
+ "evaluator_source": "frozen-materialized",
+ "executed_checker_path": "/tmp/r4-branch-wt/benchmarks/fam-c/state/epoch2/PQ/C/fam05/runs/3122872f1ac60568/frozen-evaluator/check.py",
+ "wired": true,
+ "frozen_commit": "d1292434a261f44ad910c556e18624cef1676f37",
+ "block": "PQ",
+ "cell_id": "3122872f1ac60568",
+ "cell_index": 4,
+ "cell_letter": "C",
+ "cell_universe": "C",
+ "cell_event": "T0",
+ "cell_kind": "acquisition-solve",
+ "capability_id": "fam05-PQ-C-K",
+ "cell_lane_key": "P->Q + K",
+ "acquisition_event": "T0",
+ "acquisition_universe": "C",
+ "prompt_has_capability_block": false,
+ "acquisition_prompt_has_capability_block": false,
+ "order_sha256": "4510076a0550788806cb86683279613cd961a6a0bb336c933fad7fae8833f469",
+ "instance_freeze_commit": "d1292434a261f44ad910c556e18624cef1676f37",
+ "expected_visible_manifest": {
+  "file|MANIFEST": "791e6b14431c2dc8e4a4cb751d4048da36d59c1681d160000e27a370a426482e",
+  "file|alpha.txt": "84d89877f0d4041efb6bf91a16f0248f2fd573e6af05c19f96bedb9f882f7882",
+  "file|beta.txt": "4e76ad8354461437c04ef9b9b242540b6406d782ff2c3fb28afdab5b423f88fe",
+  "file|prompt.md": "fc20b8c75cca204ec0f140e3ef2426946ae73d8996ce6e04bb2c0267f2643451"
+ },
+ "expected_visible_manifest_sha256": "571d2d193b2e114049b7e1e4b784129f78cc19ca6133279b1f316cec427aacb8",
+ "expected_task_snapshot_sha256": "571d2d193b2e114049b7e1e4b784129f78cc19ca6133279b1f316cec427aacb8",
+ "expected_visible_paths": [
+  "MANIFEST",
+  "alpha.txt",
+  "beta.txt",
+  "prompt.md"
+ ],
+ "expected_visible_paths_sha256": "9459d49c52c0d8ea4dbf525c247d6fbdae55f552bbd28397e671b93290586d15",
+ "instance_freeze_tree": "cffbd6c797690816fdcfb6186dcf658c60c6b9c3",
+ "execution_harness_commit": "59c07c8cccffa155ace9c2da214a55f4c2ec04e7",
+ "execution_harness_manifest_sha256": "76a4ec2d77fb52551b2ad52513e94d2f14f4ed0112b889f1f43f6bdf26501eba",
+ "dev_mode": false,
+ "usage_receipts": [
+  "call-da341b03e1c65ff6.json"
+ ],
+ "context_task_snapshot_hash": "571d2d193b2e114049b7e1e4b784129f78cc19ca6133279b1f316cec427aacb8",
+ "context_task_snapshot_source": "sealed staged visible root",
+ "envelope_sha256": "446a2c8bb705780c07b88606256591c74c8821a6b2983bc9b864b478bc3f057c",
+ "prompt_sha256": "a460f4f2aa4d60c95b492b69766de56c152cada41a3d6ed18a730f901b6b3f9c",
+ "arm_symmetry_findings": [],
+ "visible_root_copied": [
+  "MANIFEST",
+  "alpha.txt",
+  "beta.txt",
+  "prompt.md"
+ ],
+ "visible_root_refused": [
+  "VISIBLE.md"
+ ],
+ "usage_normalized": [
+  "call-da341b03e1c65ff6.normalized.json"
+ ],
+ "identity_file": "identity.json",
+ "identity_prereg_family": "Kenari-Agnes",
+ "response_text_sha256": "e06c722bda2243b06e336d7a835633776f0d2edb547fcfe1e2a8385aa41a94e8",
+ "arrival_sha256": "3c92be35fb3ccf9012957ee5cff1e8e9edcc70b57892517171d92aa94551c41b",
+ "arrival_file": "arrival.json",
+ "execution_payload_sha256": "cd78c5c061e7812e8aaf10e682132185a59e90950412a9d92e6029e407958004",
+ "solver_py_sha256": "b30573520376751a5afc62f8c575262ccc4c8beb80b9688d869f5f1cafcdf47f",
+ "chain": "EVIDENCE-CHAIN.jsonl",
+ "reuse_record": "reuse-fam05-T0-acquisition.json",
+ "capability": null,
+ "capability_lock": null,
+ "capability_snapshot": null,
+ "engine_jail": null,
+ "task_verdict": null
+}

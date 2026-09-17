@@ -403,6 +403,25 @@ def _wrun():
     return WORDER.run_dir(_WBASE, _WCELL)
 
 
+def _reset_attempts(d=None):
+    """EPOCH-3 N=1 accounting (ATTEMPT-BUDGET-DENY): a second provider
+    invocation for the same execution cell is refused before any call, and
+    the call artifacts + attempt-ledger row are durable per invocation.
+    These ATTACK scenarios each drive ONE synthetic invocation of the same
+    authorized cell (stubbed transport, no provider), so the cell's attempt
+    evidence is cleared between scenarios; the refusals under test are
+    unrelated to the attempt budget. NOT a weakening of the live rule: the
+    production runner still hard-refuses the second same-cell call."""
+    d = d or _wrun()
+    if not os.path.isdir(d):
+        return
+    for name in sorted(os.listdir(d)):
+        if name.startswith("call-") or name.startswith("raw-") \
+                or name in ("ATTEMPT-LEDGER.jsonl",
+                            "MODEL-OUTPUT-INVALID.json"):
+            os.unlink(os.path.join(d, name))
+
+
 # --- D12b-ATTACK (a): post-verify check.py rewrite -> pre-model refuse --
 _calls_a = install_counting_transport(WUSAGE, ARRIVAL_WRONG)
 _real_verify = WRA.verify_instance_frozen
@@ -436,6 +455,7 @@ check("D12b-ATTACK(a) victim checker bytes restored",
       open(_WCHECKER, "rb").read() == _WCHECKER_ORIG)
 
 # --- D12b-ATTACK (b): rewrite AFTER the pre-model check -> point-of-use -
+_reset_attempts()
 _calls_b = install_counting_transport(WUSAGE, ARRIVAL_WRONG)
 _real_call = WRA.call
 
@@ -465,6 +485,7 @@ check("D12b-ATTACK(b) the model WAS called once (refusal is at grading, "
       "not pre-model)", len(_calls_b) == 1, f"calls={len(_calls_b)}")
 
 # --- D12b-ATTACK (c): post-model truth.json rewrite -> refuse ----------
+_reset_attempts()
 _calls_c = install_counting_transport(WUSAGE, ARRIVAL_WRONG)
 
 
@@ -491,6 +512,7 @@ check("D12b-ATTACK(c) victim truth bytes restored",
       open(_WTRUTH, "rb").read() == _WTRUTH_ORIG)
 
 # --- D12b-CONTROL: pristine tree, wrong report -> honest "fix" ---------
+_reset_attempts()
 _calls_d = install_counting_transport(WUSAGE, ARRIVAL_WRONG)
 _rc = WRA.main("P", "fam05", "T0", "acquisition", _wrun(), None,
                dict(_WOPTS))

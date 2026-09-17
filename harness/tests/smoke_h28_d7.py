@@ -244,6 +244,11 @@ for _label, _pre, _needle in (
 
 # --- D7.2: hermetic inputs mirroring the real V2 chain path -------------
 LIVE_LOCK = json.load(open(os.path.join(FAMC, "PROTOCOL-LOCK.json")))
+
+# EPOCH-3 (EPOCH-3-PROTOCOL-SPEC.md §7, FR-13 frozen): the ACTIVE V2
+# governed set is the existing seven files PLUS EPOCH-3-PROTOCOL-SPEC.md
+# once epoch 3 is active; live-lineage probes judge THAT authority.
+_GOVSET = PF.protocol_governed(FAMC)
 _TOP = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=FAMC,
                       capture_output=True, text=True).stdout.strip()
 
@@ -264,7 +269,7 @@ def _chain_inputs():
     for a in LIVE_LOCK["amendments"]:
         by_file.setdefault(a.get("file"), []).append(dict(a))
     frozen, disk = {}, {}
-    for fn in PF.PROTOCOL_GOVERNED:
+    for fn in _GOVSET:
         raw = _git_bytes(f"{FREEZE}:benchmarks/fam-c/{fn}")
         frozen[fn] = (hashlib.sha256(raw).hexdigest()
                       if raw is not None else None)
@@ -291,7 +296,7 @@ check("D7.2-1 corrected lock on the real repo: V2 green",
 _tips, _tip_find = PF.active_protocol_tips(FAMC, FREEZE)
 check("D7.2-1 validator tips computed for every governed file",
       _tip_find == []
-      and sorted(_tips) == sorted(PF.PROTOCOL_GOVERNED),
+      and sorted(_tips) == sorted(_GOVSET),
       f"tips={sorted(_tips)} finds={str(_tip_find[:1])[:120]}")
 
 # --- D7.2: the three corrected edges state old->new ----------------------
@@ -374,7 +379,7 @@ check("D7.2-3 D6 PREREG from_sha reverted to the baseline: V2 FAILS "
       any("PREREG.md" in f for f in _f3), str(_f3[:1])[:200])
 
 # --- D7.2 item 4: ANY single edge deleted -> V2 FAILS ----------------------
-_all_edges = [(fn, i) for fn in PF.PROTOCOL_GOVERNED
+_all_edges = [(fn, i) for fn in _GOVSET
               for i in range(len(_BY_FILE.get(fn, [])))]
 _bad4 = []
 for _fn, _i in _all_edges:
@@ -398,7 +403,7 @@ check("D7.2-5 one to_sha changed to an off-chain value: V2 FAILS "
       any("PREREG.md" in f for f in _f5), str(_f5[:1])[:200])
 
 # --- D7.2 item 6 (acceptance row 6): disk == validator tip, all files -----
-_tip_bad = [fn for fn in PF.PROTOCOL_GOVERNED if _tips.get(fn) != _DISK[fn]]
+_tip_bad = [fn for fn in _GOVSET if _tips.get(fn) != _DISK[fn]]
 check("D7.2-6 every governed file: disk sha256 == the validator's "
       "unique tip",
       _tip_bad == [], str(_tip_bad))

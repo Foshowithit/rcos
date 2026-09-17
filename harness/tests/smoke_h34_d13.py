@@ -636,6 +636,26 @@ shutil.rmtree(_ov, ignore_errors=True)
 shutil.rmtree(_vv, ignore_errors=True)
 
 # --- D12e-ABA: prepare consumes H, gate sees E -> pre-model refuse ------
+def _reset_attempts(d):
+    """EPOCH-3 N=1 accounting (ATTEMPT-BUDGET-DENY): the call artifacts and
+    the per-invocation attempt-ledger row are durable, and a second
+    provider invocation for the same execution cell is refused before any
+    call is made. Each scenario in this suite drives ONE synthetic
+    invocation of the same authorized cell (stubbed transport, no
+    provider), so the cell's attempt evidence is cleared between scenarios;
+    the refusals under test are unrelated to the attempt budget. NOT a
+    weakening of the live rule: the production runner still hard-refuses
+    the second same-cell call."""
+    if not os.path.isdir(d):
+        return
+    for name in sorted(os.listdir(d)):
+        if name.startswith("call-") or name.startswith("raw-") \
+                or name in ("ATTEMPT-LEDGER.jsonl",
+                            "MODEL-OUTPUT-INVALID.json"):
+            os.unlink(os.path.join(d, name))
+
+
+_reset_attempts(_t0_rundir())
 _calls_e = install_counting_transport(WUSAGE, T0_ARRIVAL)
 _real_prep = WRA.prepare_arm
 
@@ -674,6 +694,7 @@ O_BAD_ARR = json.dumps(
                            'import json,sys;open(sys.argv[2],"w").write(%r)\n'
                            % O_BAD},
      "notes": "h34 bad solver"})
+_reset_attempts(_t0_rundir())
 _calls_o = install_counting_transport(WUSAGE, O_BAD_ARR)
 _real_sub2 = subprocess.run
 
@@ -718,6 +739,7 @@ def _copy_all_hook(src, dst, *a, **k):
     return r
 
 
+_reset_attempts(_t0_rundir())
 _calls_i = install_counting_transport(WUSAGE, O_BAD_ARR)
 shutil.copy2 = _copy_all_hook
 try:
@@ -733,6 +755,7 @@ check("D13c-(i) no verdict recorded on the rewritten run",
           os.path.join(_t0_rundir(), "H1-RUN-MANIFEST.json")))
 
 # --- D13-P0-2b + T0 ship control (S0 + C0): honest ship, sealed --------
+_reset_attempts(_t0_rundir())
 _calls_s = install_counting_transport(WUSAGE, T0_ARRIVAL)
 _rc_s = WRA.main("P", "fam05", "T0", "acquisition", _t0_rundir(), None,
                  dict(_WOPTS_T0))
@@ -806,6 +829,7 @@ check("D13-P0-3d pristine contract still promotes (deny admits "
 # --- D13-P0-3a: solver swap -> T1 cannot start ---------------------------
 _t0_arr["execution_payload"]["solver_py"] = S1_SOLVER
 json.dump(_t0_arr, open(_t0_ap, "w"), indent=1)
+_reset_attempts(_t1_rundir())
 _calls_t = install_counting_transport(WUSAGE, T1_ARRIVAL)
 try:
     ok_t, why_t = raises(lambda: WRA.main(
@@ -825,6 +849,7 @@ _t0_arr["execution_payload"]["solver_py"] = SOLVER_T0
 json.dump(_t0_arr, open(_t0_ap, "w"), indent=1)
 
 # --- D13-P0-3b: T1 control on pristine arrival ---------------------------
+_reset_attempts(_t1_rundir())
 _calls_t2 = install_counting_transport(WUSAGE, T1_ARRIVAL)
 _rc_t = WRA.main("P", "fam05", "T1", "acquisition", _t1_rundir(), None,
                  dict(_WOPTS_T1))
@@ -879,6 +904,7 @@ def _copy_outdir_hook(src, dst, *a, **k):
 
 
 shutil.rmtree(_t0_rundir(), ignore_errors=True)
+_reset_attempts(_t0_rundir())
 _calls_w = install_counting_transport(WUSAGE, O_BAD_ARR)
 shutil.copy2 = _copy_outdir_hook
 try:
