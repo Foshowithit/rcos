@@ -1,0 +1,15 @@
+{
+ "cached_tokens": 0,
+ "call_id": "15c6b2950b46847c",
+ "endpoint": "https://kenari.id/v1",
+ "input_tokens_uncached": 20,
+ "model_requested": "agnes-2-0-flash:free",
+ "normalized_sha256": "6b68dd44cf77b2a72b0964b2abd114fee4ae0c232405b5f280d63d78d07eaac9",
+ "normalizer_id": "kenari-openai-chat-v2",
+ "normalizer_rule": "primary_work = input_tokens_uncached + output_tokens; cached tokens retained separately, never zeroed, never mixed into uncached",
+ "normalizer_version": "usage-norm-v1",
+ "output_tokens": 3,
+ "primary_work": 23,
+ "raw_receipt_file": "call-15c6b2950b46847c.json",
+ "raw_receipt_sha256": "aecf05363c7f7c972f57c488625ccce14d70508a85043c637311cf6164e11dc0"
+}

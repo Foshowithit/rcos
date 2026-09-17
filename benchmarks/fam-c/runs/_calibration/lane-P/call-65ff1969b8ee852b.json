@@ -1,0 +1,20 @@
+{
+ "call_id": "65ff1969b8ee852b",
+ "tag": "calibration-P",
+ "endpoint": "https://opencode.ai/zen/go/v1",
+ "model_requested": "union-alpha",
+ "wall_s": 0.0,
+ "timestamp": "2026-09-17T01:20:00Z",
+ "request_body_sha256": "510eedc82900dee5aa0f6a410ffcaead0bb938d4dd311d23e9bb50f12f3be236",
+ "request_body_file": "call-65ff1969b8ee852b.request.json",
+ "request_body_file_sha256": "510eedc82900dee5aa0f6a410ffcaead0bb938d4dd311d23e9bb50f12f3be236",
+ "usage_raw": {
+  "input_tokens": 24,
+  "output_tokens": 4,
+  "cache_read_input_tokens": 0
+ },
+ "usage_raw_sha256": "3e686749bb11b025444839035c9036487ae487e4d38fe5c8c4f325f00a8e0c32",
+ "normalizer_id": "opencode-go-union-alpha-v2",
+ "normalizer_version": "usage-norm-v1",
+ "normalizer_rule": "offline rehearsal fixture"
+}

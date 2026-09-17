@@ -1,0 +1,25 @@
+{
+ "lane": "P",
+ "semantics": "CALIBRATION / NEVER-ESTIMAND",
+ "mode": "live",
+ "receipt": "call-f20df62453c1c5a8.json",
+ "normalized": "call-f20df62453c1c5a8.normalized.json",
+ "primary_work": 31,
+ "input_tokens_uncached": 10,
+ "cached_tokens": 0,
+ "output_tokens": 21,
+ "normalized_sha256": "04a4ba3f6b2c766520b437b7da97accbec114cc955bd8073636daca3f0dadc86",
+ "model_echoed": "union-alpha",
+ "provider_id": "msg_chatcmpl-mu4uohcb6ikuzkya",
+ "identity": "identity.json",
+ "identity_family": "Union",
+ "request_body_sha256": "510eedc82900dee5aa0f6a410ffcaead0bb938d4dd311d23e9bb50f12f3be236",
+ "params": {
+  "temperature": 0,
+  "max_tokens": 256,
+  "top_p": 1
+ },
+ "non_estimand": true,
+ "not_a_cell": true,
+ "note": "CALIBRATION / NEVER-ESTIMAND: not a cell of ORDER.md, no estimand claim, excluded from every ledger"
+}

@@ -1,0 +1,21 @@
+{
+ "endpoint": "https://opencode.ai/zen/go/v1",
+ "model_requested": "union-alpha",
+ "tag": "calibration-P",
+ "timestamp": "2026-09-17T01:27:58Z",
+ "params": {
+  "temperature": 0,
+  "max_tokens": 256,
+  "top_p": 1
+ },
+ "generation_params": {
+  "temperature": 0,
+  "max_tokens": 256,
+  "top_p": 1
+ },
+ "model_echoed_model": "union-alpha",
+ "provider_response_id": "msg_chatcmpl-mu4uohcb6ikuzkya",
+ "request_body_sha256": "510eedc82900dee5aa0f6a410ffcaead0bb938d4dd311d23e9bb50f12f3be236",
+ "messages_sha256": "2625dd153a82bef26cc6a692a044ffad1368c965e49cfb2051fea14c95a801aa",
+ "messages_count": 1
+}
