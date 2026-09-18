@@ -1,0 +1,29 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T062202Z-d3ea90",
+  "eval_id": "preview-server-verify-serve-pin-v1",
+  "capability_id": "preview-server-verify",
+  "started_at": "2026-09-18T06:22:02.349Z",
+  "finished_at": "2026-09-18T06:22:04.322Z",
+  "duration_ms": 1973,
+  "invocation": {
+    "invocation_id": "inv_20260918T062202Z-ca2ee2",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260918T062202Z-ca2ee2",
+    "manifest_sha256": "57b7e8f6c13f1050a21e36c183a0ff76d171a9e61a9187f616c73dbe7ce34c83",
+    "output_sha256": "a2be3bd9b8381271149d9b081ff3db45d7caca39868e202de89c26d72bec9eee",
+    "eligibility_decision_id": "elig_20260918T062202Z-005222",
+    "eligibility_sha256": "267d532e393fe55df5752a761e11c7b23e11d026a51a8758f57ffcd670efafa7"
+  },
+  "eligibility": {
+    "decision_id": "elig_20260918T062202Z-005222",
+    "sha256": "267d532e393fe55df5752a761e11c7b23e11d026a51a8758f57ffcd670efafa7",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "dir": "eligibility/elig_20260918T062202Z-005222"
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "node": "v24.15.0"
+}

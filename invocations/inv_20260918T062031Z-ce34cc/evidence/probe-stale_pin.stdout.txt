@@ -1,0 +1,5 @@
+GET http://127.0.0.1:64810/index.html -> HTTP 200 (535 bytes)
+sha256 served b72c065f0fb58391  docroot-disk b72c065f0fb58391
+sha256 expect 693bbe8d4700a0f7 (pinned at authoring time)
+teardown: port 64810 refuses (closed)
+FAIL STALE_OR_WRONG_BYTES served != expected (split-brain catch)

@@ -1,0 +1,19 @@
+{
+  "docroot": "/Users/adam26/zcode-rcos/runs/20260918T062202Z-d3ea90/work/docroot",
+  "probes": [
+    {
+      "name": "pin_ok",
+      "relpath": "index.html",
+      "expect_sha256": "b72c065f0fb5839115af6e79133269b3daa35f958cc130b05e52be8bf9fff1ae"
+    },
+    {
+      "name": "stale_pin",
+      "relpath": "index.html",
+      "expect_sha256": "693bbe8d4700a0f7e79d42bdb2c692698028855df88beef51f3604d3a1c96766"
+    },
+    {
+      "name": "missing_path",
+      "relpath": "no-such-file.html"
+    }
+  ]
+}

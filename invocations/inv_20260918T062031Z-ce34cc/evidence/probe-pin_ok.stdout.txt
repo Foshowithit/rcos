@@ -1,0 +1,5 @@
+GET http://127.0.0.1:64807/index.html -> HTTP 200 (535 bytes)
+sha256 served b72c065f0fb58391  docroot-disk b72c065f0fb58391
+sha256 expect b72c065f0fb58391 (pinned at authoring time)
+teardown: port 64807 refuses (closed)
+SERVE_VERIFY_PASS

@@ -1,0 +1,24 @@
+{
+  "schema": "rcos-run/1",
+  "eval_id": "preview-server-verify-serve-pin-v1",
+  "capability_id": "preview-server-verify",
+  "eval_sha256": "77c8ab3c2a5d94cf4e3c7fbba49deb9085e4e4cbdf3cca324fe7cf68437f729c",
+  "adapter_argv": null,
+  "fixtures": [
+    {
+      "name": "docroot/index.html",
+      "sha256": "b72c065f0fb5839115af6e79133269b3daa35f958cc130b05e52be8bf9fff1ae",
+      "bytes": 535
+    },
+    {
+      "name": "docroot/stale.html",
+      "sha256": "693bbe8d4700a0f7e79d42bdb2c692698028855df88beef51f3604d3a1c96766",
+      "bytes": 567
+    }
+  ],
+  "created_at": "2026-09-18T06:22:02.349Z",
+  "capability_input": {
+    "path": "capability-input.json",
+    "sha256": "94ec15869787477dd5a9c0d4df06d87cfd4712cb4d07029c415a5f00aaeb402d"
+  }
+}

@@ -1,0 +1,4 @@
+checker sha256 95b075c00ea228ef  capabilities/preview-server-verify/adapter/serve_verify.py
+  pin_ok: exit 0 (passed), http 200, port 64857, 640ms
+  stale_pin: exit 3 (caught), http 200, port 64860, 576ms
+  missing_path: exit 3 (caught), http 404, port 64863, 578ms

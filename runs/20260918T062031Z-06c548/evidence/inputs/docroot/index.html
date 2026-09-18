@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>preview-server-verify fixture — fresh snapshot</title>
+</head>
+<body>
+<h1>Fresh snapshot</h1>
+<p>This file is the fixture the preview-server-verify capability must fetch back
+byte-for-byte. Its sha256 is pinned in the eval's input document at authoring
+time, so a server that answers with these exact bytes passes and a server that
+answers with anything else — a stale copy, a mangled transport — fails.</p>
+<p>fixture: docroot/index.html</p>
+</body>
+</html>

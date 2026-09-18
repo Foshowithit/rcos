@@ -972,10 +972,16 @@
           "task_id": "third artifact: serve+pin-verify receipt-figure-render eval-2 fig-verdicts.png; transport + authoring-time pin + teardown all pass",
           "verdict": "ship",
           "run_id": "psv-figpng"
+        },
+        {
+          "task_id": "priority1-executed-grounding-preview-server-verify",
+          "verdict": "ship",
+          "run_id": "20260918T062202Z-d3ea90",
+          "provenance": "executed"
         }
       ],
       "reuse_count": 0,
-      "last_eval": "2026-09-17",
+      "last_eval": "2026-09-18",
       "lineage": "local-preview-port-split-brain (09-17: two servers split one port by address family, stale snapshot answered IPv4) + render --out silent-fail 09-17",
       "retirement": {
         "armed_at": "2026-09-17",

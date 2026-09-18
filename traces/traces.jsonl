@@ -102,3 +102,4 @@
 {"schema":"rcos-trace/1","ts":"2026-09-18T06:17:12.405Z","capability":"creative-study-loop","task_id":"study-round27-loop","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
 {"schema":"rcos-trace/1","ts":"2026-09-18T06:21:38.324Z","capability":"video-forensics-receipt","task_id":"study-round27","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
 {"schema":"rcos-trace/1","ts":"2026-09-18T06:21:38.360Z","capability":"creative-study-loop","task_id":"study-round27-loop","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
+{"schema":"rcos-trace/1","ts":"2026-09-18T06:22:04.324Z","capability":"preview-server-verify","task_id":"priority1-executed-grounding-preview-server-verify","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}

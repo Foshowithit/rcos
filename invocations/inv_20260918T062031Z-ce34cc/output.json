@@ -1,0 +1,78 @@
+{
+  "schema": "preview-server-verify-observation/1",
+  "docroot": "/Users/adam26/zcode-rcos/runs/20260918T062031Z-06c548/work/docroot",
+  "checker": {
+    "path": "capabilities/preview-server-verify/adapter/serve_verify.py",
+    "sha256": "95b075c00ea228ef9ba16c4d4aeae0e97362d99f447d30638afb0e12c720a4dc",
+    "documented_exit_codes": [
+      0,
+      3,
+      4
+    ]
+  },
+  "probes": [
+    {
+      "name": "pin_ok",
+      "relpath": "index.html",
+      "expect_sha256": "b72c065f0fb5839115af6e79133269b3daa35f958cc130b05e52be8bf9fff1ae",
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 603,
+      "observed": {
+        "bound_port": 64807,
+        "http_status": 200,
+        "served_bytes": 535,
+        "served_sha256_prefix": "b72c065f0fb58391",
+        "disk_sha256_prefix": "b72c065f0fb58391",
+        "expect_sha256_prefix": "b72c065f0fb58391",
+        "teardown_port": 64807,
+        "pass_marker": true
+      },
+      "stdout": "GET http://127.0.0.1:64807/index.html -> HTTP 200 (535 bytes)\nsha256 served b72c065f0fb58391  docroot-disk b72c065f0fb58391\nsha256 expect b72c065f0fb58391 (pinned at authoring time)\nteardown: port 64807 refuses (closed)\nSERVE_VERIFY_PASS\n",
+      "stderr": ""
+    },
+    {
+      "name": "stale_pin",
+      "relpath": "index.html",
+      "expect_sha256": "693bbe8d4700a0f7e79d42bdb2c692698028855df88beef51f3604d3a1c96766",
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 580,
+      "observed": {
+        "bound_port": 64810,
+        "http_status": 200,
+        "served_bytes": 535,
+        "served_sha256_prefix": "b72c065f0fb58391",
+        "disk_sha256_prefix": "b72c065f0fb58391",
+        "expect_sha256_prefix": "693bbe8d4700a0f7",
+        "teardown_port": 64810,
+        "pass_marker": false
+      },
+      "stdout": "GET http://127.0.0.1:64810/index.html -> HTTP 200 (535 bytes)\nsha256 served b72c065f0fb58391  docroot-disk b72c065f0fb58391\nsha256 expect 693bbe8d4700a0f7 (pinned at authoring time)\nteardown: port 64810 refuses (closed)\nFAIL STALE_OR_WRONG_BYTES served != expected (split-brain catch)\n",
+      "stderr": ""
+    },
+    {
+      "name": "missing_path",
+      "relpath": "no-such-file.html",
+      "expect_sha256": null,
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 577,
+      "observed": {
+        "bound_port": 64814,
+        "http_status": 404,
+        "served_bytes": null,
+        "served_sha256_prefix": "e3b0c44298fc1c14",
+        "disk_sha256_prefix": "e3b0c44298fc1c14",
+        "expect_sha256_prefix": null,
+        "teardown_port": 64814,
+        "pass_marker": false
+      },
+      "stdout": "GET http://127.0.0.1:64814/no-such-file.html -> HTTP 404\nsha256 served e3b0c44298fc1c14  docroot-disk e3b0c44298fc1c14\nteardown: port 64814 refuses (closed)\nFAIL STATUS 404 != 200\n",
+      "stderr": ""
+    }
+  ]
+}

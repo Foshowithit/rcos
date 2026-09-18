@@ -1,0 +1,17 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T062202Z-d3ea90",
+  "adapter": {
+    "status": "ok",
+    "reason": null,
+    "argv": [
+      "/Users/adam26/zcode-rcos/capabilities/preview-server-verify/adapter/run.js"
+    ],
+    "exit_code": 0,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "duration_ms": 1826
+  },
+  "produced": []
+}

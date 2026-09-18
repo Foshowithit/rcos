@@ -1,0 +1,104 @@
+{
+  "schema": "rcos-capability-contract/1",
+  "input": {
+    "type": "object",
+    "required": ["docroot", "probes"],
+    "additionalProperties": false,
+    "properties": {
+      "docroot": {
+        "type": "string",
+        "minLength": 1
+      },
+      "probes": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["name", "relpath"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]*$",
+              "maxLength": 64
+            },
+            "relpath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "expect_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["schema", "docroot", "checker", "probes"],
+    "additionalProperties": false,
+    "properties": {
+      "schema": {
+        "type": "string",
+        "enum": ["preview-server-verify-observation/1"]
+      },
+      "docroot": {
+        "type": "string"
+      },
+      "checker": {
+        "type": "object",
+        "required": ["path", "sha256", "documented_exit_codes"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "documented_exit_codes": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "integer" }
+          }
+        }
+      },
+      "probes": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["name", "relpath", "expect_sha256", "exit_status", "outcome", "observed", "stdout", "stderr"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "relpath": { "type": "string" },
+            "expect_sha256": { "type": ["string", "null"] },
+            "exit_status": { "type": ["integer", "null"] },
+            "signal": { "type": ["string", "null"] },
+            "outcome": {
+              "type": "string",
+              "enum": ["passed", "caught", "could_not_start", "errored", "timed_out"]
+            },
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "observed": {
+              "type": "object",
+              "required": ["bound_port", "http_status", "served_bytes", "served_sha256_prefix", "disk_sha256_prefix", "expect_sha256_prefix", "teardown_port", "pass_marker"],
+              "additionalProperties": false,
+              "properties": {
+                "bound_port": { "type": ["integer", "null"] },
+                "http_status": { "type": ["integer", "null"] },
+                "served_bytes": { "type": ["integer", "null"] },
+                "served_sha256_prefix": { "type": ["string", "null"] },
+                "disk_sha256_prefix": { "type": ["string", "null"] },
+                "expect_sha256_prefix": { "type": ["string", "null"] },
+                "teardown_port": { "type": ["integer", "null"] },
+                "pass_marker": { "type": "boolean" }
+              }
+            },
+            "stdout": { "type": "string" },
+            "stderr": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

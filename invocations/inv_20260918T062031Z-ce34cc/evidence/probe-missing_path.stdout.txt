@@ -1,0 +1,4 @@
+GET http://127.0.0.1:64814/no-such-file.html -> HTTP 404
+sha256 served e3b0c44298fc1c14  docroot-disk e3b0c44298fc1c14
+teardown: port 64814 refuses (closed)
+FAIL STATUS 404 != 200

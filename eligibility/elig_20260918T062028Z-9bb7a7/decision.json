@@ -1,0 +1,51 @@
+{
+  "schema": "rcos-eligibility/1",
+  "decision_id": "elig_20260918T062028Z-9bb7a7",
+  "scope": "execute",
+  "capability_id": "preview-server-verify",
+  "capability_version": "0.1.0",
+  "caller_context": {
+    "purpose": "normal",
+    "explicit_capability_id": "preview-server-verify",
+    "scope": "execute",
+    "forensic_reason": null,
+    "allow_candidate": false,
+    "allow_retired": false,
+    "require_executed_provenance": true,
+    "require_current_ship": true
+  },
+  "observed_state": {
+    "status": "promoted",
+    "executable": true,
+    "adapter": {
+      "declared": true,
+      "type": "command",
+      "type_supported": true,
+      "declaration_errors": [],
+      "entrypoint": "capabilities/preview-server-verify/adapter/run.js",
+      "entrypoint_present": true,
+      "entrypoint_executable": true,
+      "contract_declared": true,
+      "contract_usable": true,
+      "contract_errors": []
+    },
+    "provenance": "asserted",
+    "latest_eval_verdict": null,
+    "latest_eval_at": null,
+    "eval_fresh": "unknown",
+    "evals_total": 4,
+    "evals_executed": 0
+  },
+  "eligible": false,
+  "reasons": [
+    "provenance_asserted",
+    "no_ship_eval"
+  ],
+  "decided_at": "2026-09-18T06:20:28.709Z",
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T06:20:28.710Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "aa8879f197990fa5d075698b121489753decab5d3618d987cfccf872c3dd1c9f"
+  }
+}

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>preview-server-verify fixture — superseded snapshot</title>
+</head>
+<body>
+<h1>Superseded snapshot</h1>
+<p>This is the OLD copy. The eval pins THIS file's sha256 while asking the
+server for index.html, which is the 09-17 split-brain in one line: a check that
+compares served bytes against the docroot on disk cannot see it, because both
+sides are stale and agree. The only check that catches it is a pin recorded
+before the server started.</p>
+<p>fixture: docroot/stale.html</p>
+</body>
+</html>

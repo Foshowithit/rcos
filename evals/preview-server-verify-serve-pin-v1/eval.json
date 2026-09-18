@@ -1,0 +1,56 @@
+{
+  "schema": "rcos-eval/2",
+  "eval_id": "preview-server-verify-serve-pin-v1",
+  "capability_id": "preview-server-verify",
+  "description": "The serve+pin check can fail: a loopback server answers with the exact bytes pinned before it started, a stale pin is caught, a missing path is caught, and the port is closed after teardown. The pins live in this document, not in the capability, so agreement between the two cannot be manufactured by the thing under test.",
+  "notes": [
+    "rcos-eval/2: this package declares NO adapter of its own. It names the registered",
+    "capability and the input document, and the run reaches the capability through the",
+    "invocation kernel — `rcos run preview-server-verify --input ...` takes the identical",
+    "path. The thing being evaluated is the thing reuse will call.",
+    "",
+    "This replaces NOTHING. The four eval entries already on the registry entry are",
+    "historical assertions and stay byte-for-byte as they were written; the receipt this",
+    "run produces is a new record that links backward to them by naming the same checker",
+    "(capabilities/preview-server-verify/adapter/serve_verify.py sha256 recorded in the",
+    "observation), not a correction of their text.",
+    "",
+    "The stale_pin probe is the 09-17 attack (local-preview-port-split-brain) turned into",
+    "a gate that can fail: the pin belongs to fixture docroot/stale.html while the request",
+    "is for index.html, which is exactly the case where served bytes and docroot-disk",
+    "bytes AGREE and both are wrong. Only an authoring-time pin catches it.",
+    "",
+    "The checker's docstring documents exit 4 = 'could not start server', but the frozen",
+    "script has no try/except around the bind, so a bind failure would surface as an",
+    "uncaught traceback (exit 1) instead. That is recorded as-is; the artifact named by",
+    "the historical run_ids is not edited to match its own documentation."
+  ],
+  "capability_mode": "eval",
+  "capability_input": {
+    "docroot": "{work}/docroot",
+    "probes": [
+      {
+        "name": "pin_ok",
+        "relpath": "index.html",
+        "expect_sha256": "b72c065f0fb5839115af6e79133269b3daa35f958cc130b05e52be8bf9fff1ae"
+      },
+      {
+        "name": "stale_pin",
+        "relpath": "index.html",
+        "expect_sha256": "693bbe8d4700a0f7e79d42bdb2c692698028855df88beef51f3604d3a1c96766"
+      },
+      {
+        "name": "missing_path",
+        "relpath": "no-such-file.html"
+      }
+    ]
+  },
+  "fixtures": ["docroot/index.html", "docroot/stale.html"],
+  "gates": [
+    { "id": "serves", "type": "deterministic", "argv": ["node", "./gates/check.js", "serves"], "required": true },
+    { "id": "bytes_match_pin_recomputed", "type": "deterministic", "argv": ["node", "./gates/check.js", "bytes_match_pin_recomputed"], "required": true },
+    { "id": "stale_pin_caught", "type": "deterministic", "argv": ["node", "./gates/check.js", "stale_pin_caught"], "required": true },
+    { "id": "missing_path_caught", "type": "deterministic", "argv": ["node", "./gates/check.js", "missing_path_caught"], "required": true },
+    { "id": "port_released", "type": "deterministic", "argv": ["node", "./gates/check.js", "port_released"], "required": true }
+  ]
+}
