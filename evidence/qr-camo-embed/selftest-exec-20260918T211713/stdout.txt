@@ -1,0 +1,42 @@
+C0  honest relocation
+  ok   C0 ship_frame_reproduced exit 0
+  ok   C0 pale_cover_reproduced exit 0
+  ok   C0 stress_ladder_holds exit 0
+  ok   C0 variant_url_decodes exit 0
+  ok   C0 payload_overflow_bites exit 0
+  ok   C0 dark_cover_halo_lifts exit 0
+  ok   C0 pale_cover_signature exit 0
+  ok   C0 muse_receipts_sealed exit 0
+  ok   C0 cv2_weaker_than_zxing exit 0
+  ok   C0 orientation_fix_bites exit 0
+  ok   C0 determinism_repeat exit 0
+  ok   C0 interpreter_declared exit 0
+  ok   C0 frozen_source_pinned exit 0
+  ok   C0 artifact_identity_pinned exit 0
+C1  oracle fixture swap
+  ok   C1 ship_frame_reproduced refuses
+C2  observation stdout tamper
+  ok   C2 preflight contradiction
+C3  produced header byte flip
+  ok   C3 ship_frame_reproduced refuses
+C4  recorded URL tamper
+  ok   C4 preflight contradiction
+C5  muse receipt swap
+  ok   C5 muse_receipts_sealed refuses
+C6  prefix fixture swap
+  ok   C6 orientation_fix_bites refuses
+C7  run-work cover swap
+  ok   C7 preflight contradiction
+C8  self-consistent URL forgery
+  ok   C8 overflow gate isolated (still passes)
+  ok   C8 artifact_identity_pinned refuses
+C9  interpreter downgrade
+  ok   C9 interpreter_declared FAILs (not blocked)
+C9b interpreter unreachable
+  ok   C9b interpreter_declared FAILs
+C10 helper tamper
+  ok   C10 frozen_source_pinned refuses
+C11 unknown gate id
+  ok   C11 exit 4 blocked
+
+SELFTEST CLEAN — every mutation was caught by the gate built for it; honest relocation stays green.

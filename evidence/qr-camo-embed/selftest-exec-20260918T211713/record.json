@@ -1,0 +1,19 @@
+{
+  "schema": "qr-camo-selftest-exec/1",
+  "what": "fresh captured execution of evals/qr-camo-embed-grounding-v1/gates/selftest.js against the committed evidence tree; record requested by GPT seal re-check 2026-09-18",
+  "command": "node evals/qr-camo-embed-grounding-v1/gates/selftest.js",
+  "cwd": "/Users/adam26/zcode-rcos",
+  "commit_sha": "30b25ac0df805dc89823fd4526cef595c71d5fd3",
+  "selftest_sha256": "3697f4744df8d1a3f51522725da0b25369496b5c0f0ae366cf7c36499e86353d",
+  "executed_at": "2026-09-18T21:17:13Z",
+  "exit_code": 0,
+  "stdout_file": "stdout.txt",
+  "stderr_file": "stderr.txt",
+  "stdout_sha256": "401ea55560a499bdbda6d500fc9923074f96052b4bd05e66f105ffadb1260711",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "referenced_base_run_id": "20260918T204426Z-ff1c90",
+  "referenced_base_invocation_id": "inv_20260918T204426Z-208c54",
+  "result": "SELFTEST CLEAN - every mutation was caught by the gate built for it; honest relocation stays green.",
+  "controls": { "honest_green": 14, "mutation_controls_refused": 12 },
+  "notes": "selftest cleans its sandboxes when green by design; per GPT instruction the temporary sandboxes are intentionally not preserved, only this execution record. The run tested the bytes of commit 30b25ac; this child adds evidence files only."
+}
