@@ -1,0 +1,35 @@
+{
+  "task": "study-round25",
+  "capability": "video-forensics-receipt",
+  "verdict": "ship",
+  "date": "2026-09-18",
+  "round": "R25 creative-study (Mac cell, cron)",
+  "gates": [
+    {
+      "gate": "fetch_clean",
+      "result": "pass",
+      "evidence": "3/3 Dell fetches clean: pl-lamborghini-revuelto (sitXeGjm4Mc, Lamborghini official 136s), pl-nikon-zf (qCLj1Xm_4Ao, Nikon Europe official 122s), pl-sony-xm5 (v6EjmbMgv80, Sony official 128s); pl-apple-visionpro blocked (no official-channel source in search lane) and moved on per never-block rule"
+    },
+    {
+      "gate": "sheet_read_sighted",
+      "result": "pass",
+      "evidence": "3/3 contact sheets Read (.media/sheets/pl-{lamborghini-revuelto,nikon-zf,sony-xm5}_sheet.jpg); frames match named sources: Revuelto storm-myth narrative w/ car ~49s + kinetic headline t~79.7s; Nikon lifestyle POV w/ product at t~58.6/115.8s + yellow end tile t~121.7; Sony noisy-world cold open + spec-caption ladder + double end-card"
+    },
+    {
+      "gate": "label_integrity_muse",
+      "result": "pass",
+      "evidence": "3/3 PASS via opencode muse-spark-1.3-contributor-free on sheets: all three identified brand+product correctly as genuine professional product films"
+    },
+    {
+      "gate": "deterministic_receipts",
+      "result": "pass",
+      "evidence": "python3 rig/verify_receipts.py -> checked 99 receipts - ALL DETERMINISTIC GATES PASS (93 reference + 6 own)"
+    },
+    {
+      "gate": "playbook_fold_in_cited",
+      "result": "pass",
+      "evidence": "class-P section widened to n=12 with studies/pl-*.json citations; R24 empty-opener-band claim amended honestly (Revuelto first_cut 1.8s populates 0.7-2.1s) in the R22->R23->R24->R25 supersedes-not-deletes chain; Nikon cps 0.498 + median-shot 1.46 records; Revuelto stillness 0.030 + motion 0.0912 floors"
+    }
+  ],
+  "notes": "No rig defects, no bad receipts; the opener-rule amendment is a documented finding, not a defect. Third-party media stayed on the Dell (~/tmp/creative-study); only sheets (gitignored) + receipts + playbook text entered the workspace."
+}

@@ -1,0 +1,35 @@
+{
+  "task": "study-round25-loop",
+  "capability": "creative-study-loop",
+  "verdict": "ship",
+  "date": "2026-09-18",
+  "round": "R25 creative-study (Mac cell, cron)",
+  "gates": [
+    {
+      "gate": "queue_expansion_clause",
+      "result": "pass",
+      "evidence": "every class at/beyond target -> expansion clause used: 4 concrete class-P rows added to QUEUE.md (3 measured, 1 blocked row documented with reasons); all search-verified official-channel on the Dell lane before queuing"
+    },
+    {
+      "gate": "playbook_updated",
+      "result": "pass",
+      "evidence": "PLAYBOOK class-P header -> (rounds 22-25); reference set n=12; all 11 envelope rows re-derived from the twelve receipts (medians recomputed: cps 0.242, medshot 2.14, first-cut 3.38, stillness 0.116, luma 0.291, LUFS -15.1, LRA 7.8); 3 new lens bullets; rule 1 amended (bimodal tendency), rule 2 -> 12 canvases, rule 4 sharpened (loud band spans 2022-2026), rule 5 -> 11/12 measured; R25 round-log entry added"
+    },
+    {
+      "gate": "queue_statuses_current",
+      "result": "pass",
+      "evidence": "3 new rows ✅ receipt; pl-apple-visionpro ⛔ blocked with reason; Round-25 verdict line appended; R25 one-liner prepended to QUEUE.md round log"
+    },
+    {
+      "gate": "round_budget",
+      "result": "pass",
+      "evidence": "round stayed within the ~30-minute bound: 3 fetches sequential on the Dell, no retries loops, blocked source handled note-and-move-on"
+    },
+    {
+      "gate": "no_keys_no_paid_lanes",
+      "result": "pass",
+      "evidence": "free lanes only (Dell yt-dlp fetch, muse-spark-1.3-contributor-free); no key bytes in any file; third-party media confined to Dell scratch"
+    }
+  ],
+  "notes": "Loop ran end-to-end clean; verdict ship. Serves fapcoin v3 (hero-object reveal), bearing-film #2 spec cards, Shop OS demo grammar."
+}
