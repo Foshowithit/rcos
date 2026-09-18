@@ -127,3 +127,5 @@
 {"schema":"rcos-trace/1","ts":"2026-09-18T20:05:06.509Z","capability":"creative-study-loop","task_id":"study-round36-loop","verdict":"fix","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
 {"schema":"rcos-trace/1","ts":"2026-09-18T20:26:05.879Z","capability":"video-forensics-receipt","task_id":"study-round37","verdict":"fix","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
 {"schema":"rcos-trace/1","ts":"2026-09-18T20:26:05.909Z","capability":"creative-study-loop","task_id":"study-round37-loop","verdict":"fix","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
+{"schema":"rcos-trace/1","ts":"2026-09-18T20:45:45.990Z","capability":"video-forensics-receipt","task_id":"study-round38","verdict":"fix","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
+{"schema":"rcos-trace/1","ts":"2026-09-18T20:45:46.021Z","capability":"creative-study-loop","task_id":"study-round38-loop","verdict":"fix","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
