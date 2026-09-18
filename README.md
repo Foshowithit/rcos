@@ -18,6 +18,10 @@ Design: `docs/2026-09-14-zcode-rcos-design.md` (copy of the approved spec).
 - `bin/rcos run <capability-id> --input <file.json> [--mode normal|eval|forensic] [--forensic <reason>]` (execute a registered capability through its declared adapter; eligibility is asked and recorded automatically first; exit 0 = completed, 2 = rejected, 3 = failed, 4 = blocked)
 - `bin/rcos eligibility <capability-id> [--purpose normal|eval|forensic] [--scope execute|compete] [--forensic <reason>] [--json]` (ask whether a capability may compete or execute in this context, and record the decision; exit 0 = eligible, 4 = not eligible)
 - `bin/rcos eligibility-verify --decision <id>` (re-check a decision's integrity, schema and canonical reason order)
+- `bin/rcos select --input <selector-input.json> --decision <id> [--decision <id> ...] [--selector explicit@1] [--json]` (choose among capabilities already proven eligible to *compete*, and record the choice; exit 0 = selected, 3 = failed, 4 = abstained/ambiguous/no candidates)
+- `bin/rcos selections [--json]`
+- `bin/rcos selection-verify --selection <id>` (re-check the artifact's integrity and every candidate it pins)
+- `bin/rcos run <capability-id> ... [--selection <id>]` (pin the election this run came through — provenance only, never authority)
 - `bin/rcos invocations [--json]`
 - `bin/rcos invocation-verify --invocation <id>` (re-hash every artifact the manifest lists)
 - `bin/rcos propose --id <id> --name <name> --kind <kind> [--version x.y.z] [--lineage <text>]`
@@ -97,3 +101,25 @@ Design: `docs/2026-09-14-zcode-rcos-design.md` (copy of the approved spec).
     deliberately not invented: `eval_fresh` is `unknown` until a duration is
     chosen, and `eval_stale` fires only from a state that states staleness
     explicitly.
+11. **Selection chooses; it never authorises.** The selection bus is a pluggable
+    interface, and the only selector installed in this build is `explicit@1`:
+    it compares the one capability id the caller named against the ballot and
+    nothing else. Its input is opaque to the core — the selection module's own
+    vocabulary contains no task text, keywords, intent, similarity, embedding,
+    score, rank or model call, and none exists anywhere in the build. The ballot
+    is a set of already-verified `scope=compete` decisions, hash-pinned as an
+    ordered candidate list; the core validates membership in that set, never the
+    quality of the choice, because whether the choice was *good* is a selector
+    question for later evals. Five statuses are structurally distinct —
+    `selected`, `abstained`, `ambiguous`, `no_candidates`, `failed` — and only
+    `selected` may proceed toward execution; a selector may return only the first
+    three. The artifact is write-once `rcos-selection/1` under
+    `selections/<selection-id>/`. Selection is never authority: the winner must
+    come back for a **fresh** `scope=execute` decision (a `MAY_COMPETE` decision
+    means "may stand for election", not "may run"), the kernel still refuses
+    without its own execute decision, and a selection may only be *attached* to
+    an invocation as provenance, where verification re-hashes it and fails if it
+    chose a different capability. Attaching one is optional — a direct
+    `rcos run <id>` needs no election. And selection is not reuse: it moves no
+    `reuse_count` and appends no trace, because selected is not invoked and
+    invoked is not reused.
