@@ -1,0 +1,35 @@
+{
+  "task": "study-round26-loop",
+  "capability": "creative-study-loop",
+  "verdict": "ship",
+  "date": "2026-09-18",
+  "round": "R26 creative-study (Mac cell, cron)",
+  "gates": [
+    {
+      "gate": "new_class_clause",
+      "result": "pass",
+      "evidence": "all classes at/beyond target and class P widened 3 rounds straight -> new-class path chosen by the live-production rule (Shop OS demo grammar + fapcoin web demos had no reference lane; P = physical reveals, E = chalk-talk); 5 concrete class-U rows added to QUEUE.md (4 measured, 1 held spare); all search-verified official-channel on the Dell lane before queuing"
+    },
+    {
+      "gate": "playbook_updated",
+      "result": "pass",
+      "evidence": "new class-U section (n=4) with envelope table + 4 lens bullets + detector note (judge UI demos by in-frame density, never cut density) + end-card conformance + limits; R26 round-log entry added"
+    },
+    {
+      "gate": "queue_statuses_current",
+      "result": "pass",
+      "evidence": "4 new rows ✅ receipt with per-row observation annotations; R26 verdict line appended; R26 one-liner prepended to QUEUE.md round log"
+    },
+    {
+      "gate": "round_budget",
+      "result": "pass",
+      "evidence": "round stayed within the ~30-minute bound: 4 sequential Dell fetches first-try, Notion dense-montage workaround (documented R15/R18 recipe), blocked-lane precedent not needed this round"
+    },
+    {
+      "gate": "no_keys_no_paid_lanes",
+      "result": "pass",
+      "evidence": "free lanes only (Dell yt-dlp fetch, muse-spark-1.3-contributor-free); no key bytes in any file; third-party media confined to Dell scratch"
+    }
+  ],
+  "notes": "Loop ran end-to-end clean; verdict ship. Class U exists for Shop OS demo grammar first, fapcoin web demos second: four lanes, pick by intent (host-led for trust, typing-build for mechanism, montage for launch heat)."
+}

@@ -1,0 +1,35 @@
+{
+  "task": "study-round26",
+  "capability": "video-forensics-receipt",
+  "verdict": "ship",
+  "date": "2026-09-18",
+  "round": "R26 creative-study (Mac cell, cron)",
+  "gates": [
+    {
+      "gate": "fetch_clean",
+      "result": "pass",
+      "evidence": "4/4 Dell fetches clean, first try, no blocks: ui-linear-intro (9Q5BoiIFBiY, Linear official 241s), ui-whats-figma (Cx2dkpBxst8, Figma official 95s), ui-whats-notion (3HLMH9t1Q-g, Notion official 87s), ui-arc-1point0 (n5Vwrj1gEWs, The Browser Company official 34s); prefix ui- registered in rig/summarize.py CLASSES as U; ui-notion-agents held as spare"
+    },
+    {
+      "gate": "sheet_read_sighted",
+      "result": "pass",
+      "evidence": "4/4 sheets Read (.media/sheets/ui-{linear-intro,whats-figma,arc-1point0}_sheet.jpg + ui-whats-notion_dense.jpg after stock sheet under-sampled to 1 tile); frames match named sources: Linear host/UI alternation, Figma confetti+type-card humor, Notion typing-build on white canvas, Arc vintage-TV archive montage; Notion dense montage clears the R18 static-post suspicion (typing cursor, real UI narrative, 1280x720)"
+    },
+    {
+      "gate": "label_integrity_muse",
+      "result": "pass",
+      "evidence": "4/4 identity PASS via opencode muse-spark-1.3-contributor-free (Linear, Figma, Notion, Arc all named correctly); Arc flagged brand-spot-not-demo = recorded as a lane split, not a bad label"
+    },
+    {
+      "gate": "deterministic_receipts",
+      "result": "pass",
+      "evidence": "python3 rig/verify_receipts.py -> checked 103 receipts - ALL DETERMINISTIC GATES PASS (97 reference + 6 own)"
+    },
+    {
+      "gate": "playbook_fold_in_cited",
+      "result": "pass",
+      "evidence": "new class-U section (rounds 26, n=4) with studies/ui-*.json citations; four grammar lanes; LRA 2.2-5.0 tightest band; Notion 43.5s median = corpus longest median shot; end-card constant 3/3; cross-class finding 2 counts corrected to 97 reference / 103 receipts"
+    }
+  ],
+  "notes": "No rig defects, no bad receipts; clean round. Third-party media stayed on the Dell (~/tmp/creative-study); only sheets (gitignored) + receipts + playbook text entered the workspace."
+}
