@@ -654,6 +654,12 @@
           "verdict": "ship",
           "run_id": "study-round27",
           "provenance": "asserted"
+        },
+        {
+          "task_id": "study-round27",
+          "verdict": "ship",
+          "run_id": "study-round27",
+          "provenance": "asserted"
         }
       ],
       "reuse_count": 0,
@@ -826,6 +832,12 @@
           "verdict": "ship",
           "run_id": "study-round27-loop",
           "provenance": "asserted"
+        },
+        {
+          "task_id": "study-round27-loop",
+          "verdict": "ship",
+          "run_id": "study-round27-loop",
+          "provenance": "asserted"
         }
       ],
       "reuse_count": 0,
@@ -976,6 +988,12 @@
           "n": 20,
           "threshold": null
         }
+      },
+      "adapter": {
+        "type": "command",
+        "entrypoint": "capabilities/preview-server-verify/adapter/run.js",
+        "timeout_seconds": 120,
+        "contract": "capabilities/preview-server-verify/contract.json"
       }
     },
     {
