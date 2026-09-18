@@ -1,5 +1,11 @@
 # Promotion pipeline (eval-readiness queue)
 
+> **Completed 2026-09-17.** All 7 capabilities below were promoted with 2+
+> shipped evals on distinct task ids, so this queue is now history, not a
+> to-do list — read status from the registry (`bin/rcos query`) rather than
+> from the `evals: 0` counts below, which are the counts at queue-writing
+> time. Kept as the record of each capability's gates.
+
 Ordered by expected frequency of the triggering work. All 7 candidates sit at 0 evals; each needs 2 shipped evals with lineage to promote.
 
 ## 1. filmstrip-verify — gates: six-frames, distinct-motion, audio-bed, no-slideshow — evals: 0
