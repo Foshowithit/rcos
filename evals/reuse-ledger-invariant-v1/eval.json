@@ -1,0 +1,14 @@
+{
+  "schema": "rcos-eval/1",
+  "eval_id": "reuse-ledger-invariant-v1",
+  "capability_id": "reuse-ledger",
+  "description": "The reuse ledger cannot move without a trace line: sync refuses a cache it cannot verify, a reuse appends the trace before the registry moves, and a failed append leaves the registry byte-identical.",
+  "adapter": { "argv": ["node", "./adapter/run.js"], "timeout_s": 120 },
+  "fixtures": ["seed-registry.json"],
+  "gates": [
+    { "id": "sync_refuses_without_trace_log", "type": "deterministic", "argv": ["node", "./gates/check.js", "sync_refuses_without_trace_log"], "required": true },
+    { "id": "trace_append_moves_count", "type": "deterministic", "argv": ["node", "./gates/check.js", "trace_append_moves_count"], "required": true },
+    { "id": "append_failure_leaves_registry_untouched", "type": "deterministic", "argv": ["node", "./gates/check.js", "append_failure_leaves_registry_untouched"], "required": true },
+    { "id": "sync_reconverges_read_only", "type": "deterministic", "argv": ["node", "./gates/check.js", "sync_reconverges_read_only"], "required": true }
+  ]
+}

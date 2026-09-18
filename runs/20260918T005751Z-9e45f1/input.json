@@ -1,0 +1,23 @@
+{
+  "schema": "rcos-run/1",
+  "eval_id": "agents-md-compactor-v1",
+  "capability_id": "agents-md-compactor",
+  "eval_sha256": "8931cb31a6e45a2d6c45fed1992b657067363ebd7ed8161a377a26f48aba55b7",
+  "adapter_argv": [
+    "node",
+    "/Users/adam26/zcode-rcos/evals/agents-md-compactor-v1/adapter/run.js"
+  ],
+  "fixtures": [
+    {
+      "name": "AGENTS-fixture.md",
+      "sha256": "4a768f2d0b286ec6af9b8118bf54b8f387f75bb7944b912f1ec115c61529aa35",
+      "bytes": 1610
+    },
+    {
+      "name": "compact_agents_md.py",
+      "sha256": "0955ad78cd4808dae85c5b74818839c2f1e1f5f4f4dfccdd0fa5a7cce85cc1e9",
+      "bytes": 6665
+    }
+  ],
+  "created_at": "2026-09-18T00:57:51.798Z"
+}

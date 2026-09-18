@@ -1,0 +1,102 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T005751Z-9e45f1",
+  "gates": [
+    {
+      "id": "semantic-survival",
+      "type": "deterministic",
+      "required": true,
+      "status": "fail",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/agents-md-compactor-v1/gates/check.js",
+        "semantic-survival"
+      ],
+      "exit_code": 3,
+      "signal": null,
+      "stdout": "FAIL semantic-survival: 3 violation(s): entry 2: source carries a bold headline and the digest dropped it — \"- 09-17 AAAAAAAAAAAAAAAAAAAAAAAA BBBBBBBBBBBBBBBBBBBBBBBB CCCCCCCCCCCCCCCCCCCCCC\" | entry 4: digest keeps only 26 characters of content | entry 6: digest keeps only 29 characters of content\n",
+      "stderr": "",
+      "duration_ms": 22
+    },
+    {
+      "id": "range-and-order",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/agents-md-compactor-v1/gates/check.js",
+        "range-and-order"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS range-and-order: head region byte-identical, 2 heading(s) and 1 policy line(s) verbatim, order preserved\n",
+      "stderr": "",
+      "duration_ms": 23
+    },
+    {
+      "id": "idempotence",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/agents-md-compactor-v1/gates/check.js",
+        "idempotence"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS idempotence: second pass over the digested file is byte-identical (1279 bytes)\n",
+      "stderr": "",
+      "duration_ms": 21
+    },
+    {
+      "id": "digest-construction",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/agents-md-compactor-v1/gates/check.js",
+        "digest-construction"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS digest-construction: 7 digests bounded, ellipsis-marked when shortened, no dangling markers\n",
+      "stderr": "",
+      "duration_ms": 21
+    },
+    {
+      "id": "backup-before-write",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/agents-md-compactor-v1/gates/check.js",
+        "backup-before-write"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS backup-before-write: backups match pre-run bytes for both passes; without an archive dir the file was left untouched (exit 1)\n",
+      "stderr": "",
+      "duration_ms": 22
+    },
+    {
+      "id": "frozen-tool",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/agents-md-compactor-v1/gates/check.js",
+        "frozen-tool"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS frozen-tool: tool under test is the frozen fixture: 0955ad78cd48 (6665 bytes)\n",
+      "stderr": "",
+      "duration_ms": 21
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "run": "eval-runner-2",
+  "capability": null,
+  "subject": "zcode-rcos: the RCOS eval runner (GPT round-4 ruling, step 2). Eval definitions live at evals/<eval-id>/ (eval.json + fixtures + adapter + gates); each execution is an immutable runs/<run-id>/ directory whose verdict is derived by the runner from adapter outcome + gate results and nothing else; every artifact is hashed into a receipt written last, and eval-verify re-hashes it and fails on both tampering and unlisted files.",
+  "date": "2026-09-17",
+  "task": "rcos-eval-runner",
+  "verdict": "ship",
+  "verdict_basis": "Before this step a verdict was an assertion: a human or an agent wrote a RECEIPT.json by hand, and the registry believed it. Nothing distinguished 'I ran this and it passed' from 'I believe it would pass', and nothing could detect an edited receipt afterwards. The runner makes the verdict a mechanical derivation. deriveVerdict(adapterResult, gateResults) is the single writer of a verdict; adapters return evidence, gates return pass/fail, neither can write a verdict. The three outcomes come from exit codes rather than opinion: all required gates pass -> ship; a required gate fails while the execution itself was valid -> fix; the evaluation cannot establish a result because a prerequisite is unavailable -> blocked (adapter exit 4, any other non-zero adapter exit, or a crashing gate). The runner's own CLI exit mirrors that (0/3/4), so the verdict is usable from a shell. A run directory is written once and refused thereafter, the receipt is written last and never hashes itself, and eval-verify re-hashes every listed artifact AND flags files present in the run directory but absent from the receipt. Both failure branches were exercised against a real run, not just asserted: mutating one gate status in checks.json produced MISMATCH with both hashes and exit 3, and planting evidence/planted.txt produced 'not listed in receipt' with exit 3. Provenance is now explicit rather than assumed: an eval entry is 'executed' only when a runner run produced it, 'asserted' otherwise and by default, nothing was backfilled, and audit emits a WARNING naming the count of promoted capabilities that rest entirely on asserted evals (20/20 today - honest, since nothing was submitted). The step was dogfooded on two real evals rather than a toy: the kernel invariant from step 1 returns ship with all 4 required gates passing, and the compactor eval returns fix with 1 of 6 gates failing on a genuine, independently reproduced defect (an entry carrying a bold headline is digested to a label-only line with the headline amputated, violating the tool's own documented policy). The live registry was byte-identical before and after both runs (sha256 69379f43...), because neither eval names a registered capability and --submit refuses unknown capabilities before spending a run. Full suite 40/40 green. Nothing was pushed and nothing was merged; local commits only, and the repo has no remote.",
+  "gates": [
+    {
+      "id": "runner-owns-verdict",
+      "status": "pass",
+      "evidence": "deriveVerdict(adapterResult, gateResults) is the only assignment to a verdict in lib/evalrunner.js. Adapters write evidence only; gate scripts write pass/fail only; neither has a verdict field to write into. Covered by the test 'deriveVerdict: adapter outcome and gate results fully determine the verdict' across the full matrix."
+    },
+    {
+      "id": "verdict-from-exit-codes",
+      "status": "pass",
+      "evidence": "Live: eval-run exited 0 for the ship run and 3 for the fix run, matching the verdicts it printed. Test 'eval-run: fix and blocked verdicts come from exit codes, and exit codes mirror them' covers 0/3/4 including the blocked case (adapter exit 4) and a crashing gate being blocked, not fix."
+    },
+    {
+      "id": "schema-anti-vacuity",
+      "status": "pass",
+      "evidence": "Eval-spec validation refuses a definition in which no gate is required ('an eval where nothing must pass cannot ship'), so a package cannot be defined that is incapable of failing. Test 'validateEvalSpec refuses packages that could ship without passing anything'."
+    },
+    {
+      "id": "run-immutability",
+      "status": "pass",
+      "evidence": "A run id that already exists is refused rather than rewritten; the receipt is written last and does not list or hash itself. Test 'eval-run: a run directory is immutable, sealed, and refuses to be rewritten'."
+    },
+    {
+      "id": "receipt-verification-can-fail",
+      "status": "pass",
+      "evidence": "Against the real run 20260918T005751Z-9e45f1 in a throwaway home: flipping semantic-survival to 'pass' in checks.json gave 'MISMATCH checks.json: sha256 mismatch (expected 0960202244a734e8..., got 121b99fec65aa9f0...)' and 'FAILED verification', exit 3; planting evidence/planted.txt gave 'MISMATCH evidence/planted.txt: not listed in receipt', exit 3. Both branches of the verifier are therefore falsifiable, not decorative."
+    },
+    {
+      "id": "provenance-honest",
+      "status": "pass",
+      "evidence": "provenance is validated as executed|asserted when present and defaults to asserted. eval-run --submit records executed; manual eval-submit records asserted. No existing eval entry was backfilled or relabelled. Audit warns while promoted capabilities rest entirely on asserted evals and the warning clears once a runner-backed eval is submitted. Tests: 'eval-run --submit: the run is the evidence, provenance is executed, reuse does NOT move' and 'provenance: manual eval-submit is asserted; audit warns while promoted caps are asserted-only'."
+    },
+    {
+      "id": "eval-run-does-not-move-reuse",
+      "status": "pass",
+      "evidence": "eval-run --submit appends a trace with source: null, so the step-1 invariant (reuse_count is derived from traces where source == 'reuse') leaves the count unmoved: an eval run is not automatically a reuse. The CLI prints the fact at submit time. Selection telemetry therefore has to travel in trace fields, not through the reuse cache."
+    },
+    {
+      "id": "live-registry-untouched",
+      "status": "pass",
+      "evidence": "registry/capability-registry.json sha256 69379f4354ef115d9ce5f4cfe390bb38418809b8faaefe5d291a1dda71e088c0 before both real runs and identical after. Both adapters sandbox themselves inside the run's own work/ directory (reuse-ledger-invariant-v1 builds work/sandbox-home; agents-md-compactor-v1 operates on copies of its fixtures), and --submit refuses a capability that is not in the registry before the run is spent."
+    },
+    {
+      "id": "suite-green",
+      "status": "pass",
+      "evidence": "npm test: tests 40, pass 40, fail 0, exit 0 (2.07s). Includes the previously-unexercised 'artifact present but not listed in the receipt' branch and the ghost-capability control case (exit 2, no run directory, package still runs fine without --submit)."
+    },
+    {
+      "id": "dogfood-1-ship",
+      "status": "pass",
+      "evidence": "run 20260918T005751Z-068475: 'ship - all 4 required gates pass' (sync_refuses_without_trace_log, trace_append_moves_count, append_failure_leaves_registry_untouched, sync_reconverges_read_only), exit 0, 12 artifacts hash-clean on eval-verify. This is step 1's invariant re-proved by the runner instead of by hand."
+    },
+    {
+      "id": "dogfood-2-fix",
+      "status": "pass",
+      "evidence": "run 20260918T005751Z-9e45f1: 'fix - 1 of 6 required gates fail: semantic-survival', exit 3, 22 artifacts hash-clean on eval-verify. The failure is the amputation: entry 2's digest drops '**THE HEADLINE THAT MUST SURVIVE THE COMPACTION**' and keeps only 209 chars of label; entries 4 and 6 keep 26 and 29 characters of content. The other five gates pass honestly - range/order preserved, two passes byte-identical (idempotent today), digests bounded and ellipsis-marked, backups match pre-run bytes for both passes, and the tool under test is the frozen fixture at 0955ad78cd48 (6665 bytes). Gates encode the tool's OWN documented policy (docstring lines 4-22), not the behaviour observed while writing the package."
+    }
+  ],
+  "dogfood_runs": [
+    {
+      "run_id": "20260918T005751Z-068475",
+      "eval_id": "reuse-ledger-invariant-v1",
+      "capability_id": "reuse-ledger",
+      "verdict": "ship",
+      "required_gates": 4,
+      "failed_gates": 0,
+      "artifacts": 12,
+      "receipt_sha256": "26bd1e933f9022eb46b30d15a790c346cbc867e5e3b4ebd95813c43dfeda7686",
+      "submitted": false,
+      "submitted_reason": "capability 'reuse-ledger' is not in the registry; --submit would refuse, by design. The eval proves a kernel invariant, not a registered capability."
+    },
+    {
+      "run_id": "20260918T005751Z-9e45f1",
+      "eval_id": "agents-md-compactor-v1",
+      "capability_id": "agents-md-compactor",
+      "verdict": "fix",
+      "required_gates": 6,
+      "failed_gates": 1,
+      "failed_gate_ids": ["semantic-survival"],
+      "artifacts": 22,
+      "receipt_sha256": "2b2f2838aa79e056a59bdd1ed0708e0978f052008d1164d9a00c78eac9c8d552",
+      "submitted": false,
+      "submitted_reason": "capability 'agents-md-compactor' is not in the registry; --submit would refuse, by design. This is the fixture GPT named as the first nontrivial one."
+    }
+  ],
+  "deltas": {
+    "new_files": [
+      "lib/evalrunner.js (431 lines): loadEvalPackage, validateEvalSpec, deriveVerdict, makeRunId/isRunId, runEval, verifyRun, listEvalPackages, listRuns",
+      "tests/evalrunner.test.js (278 lines, 10 tests)",
+      "evals/reuse-ledger-invariant-v1/ (eval.json, adapter/run.js, gates/check.js, fixtures/seed-registry.json)",
+      "evals/agents-md-compactor-v1/ (eval.json, adapter/run.js, gates/check.js, fixtures/AGENTS-fixture.md, fixtures/compact_agents_md.py)",
+      "runs/20260918T005751Z-068475/ and runs/20260918T005751Z-9e45f1/ (the executed evidence itself, now tracked)"
+    ],
+    "modified_files": [
+      "bin/rcos: new commands evals, runs, eval-run (--eval, --task, --submit), eval-verify (--run); exit codes 0/3/4 mirror the verdict",
+      "lib/validate.js: optional provenance field restricted to executed|asserted",
+      "lib/registry.js: submitEval records provenance (default asserted); audit warns on promoted capabilities resting entirely on asserted evals"
+    ],
+    "behavior_changed": [
+      "A verdict can no longer be written by hand into the registry without being labelled asserted.",
+      "A run directory can no longer be rewritten after the fact.",
+      "An edited or planted artifact inside a run is now detectable.",
+      "An eval package in which nothing must pass can no longer be defined.",
+      "A new optional field appears on eval entries (provenance). The frozen trace schema was NOT touched."
+    ],
+    "frozen_schema_untouched": "traces/ trace schema unchanged, per the ruling. Selection telemetry, when it arrives, goes into trace fields/events, not into the reuse cache."
+  },
+  "artifacts": {
+    "bin/rcos": "a033559d4f5bb03f3c5d3efe054426fceb9e291301a222357c8a53b708b8366b",
+    "lib/evalrunner.js": "ab40ea9076d3fe7ac3f483dad7d5af90184381c1b7f26ae44f4fa58f0b1cd873",
+    "lib/validate.js": "cb516ce786c758ac3c11237cb77ae3a12a2fc681a287dec188fd2088e84c4478",
+    "lib/registry.js": "803746902832464cfa8995f747d6b32236b29dbad0d5c8623e6b8b32f05ea5cc",
+    "tests/evalrunner.test.js": "3732421feadbe7f5ddf983da82336084df2f5cbbfab5fd3cc02446b7834e43e0",
+    "evals/reuse-ledger-invariant-v1/eval.json": "bfa1351cacb2976cc277f831b20464b854e9e23ec8811fbb5dcd901c9d193610",
+    "evals/agents-md-compactor-v1/eval.json": "8931cb31a6e45a2d6c45fed1992b657067363ebd7ed8161a377a26f48aba55b7",
+    "evals/agents-md-compactor-v1/adapter/run.js": "959194a2b2ac6be4ceb94b6e9e15caea4cc2579f35a99b3b0e2da76e97737a5c",
+    "evals/agents-md-compactor-v1/gates/check.js": "fa213ef55dc04b0d0c90cd7f56636aecf64ae7243e2586f94ab70bb12feda156",
+    "evals/agents-md-compactor-v1/fixtures/compact_agents_md.py": "0955ad78cd4808dae85c5b74818839c2f1e1f5f4f4dfccdd0fa5a7cce85cc1e9",
+    "registry/capability-registry.json (before and after, unchanged)": "69379f4354ef115d9ce5f4cfe390bb38418809b8faaefe5d291a1dda71e088c0"
+  },
+  "test_output": {
+    "command": "npm test",
+    "tests": 40,
+    "pass": 40,
+    "fail": 0,
+    "exit": 0
+  },
+  "audit_after": "WARN 20/20 promoted capabilities rest entirely on asserted evals - no runner-backed run yet. audit clean. This warning is the honest state: nothing was submitted, so every promoted capability's evidence is still an assertion. It is a warning and not an error by design, and it will clear capability by capability as real runs are submitted.",
+  "base_commit": "5e3c6db",
+  "pushed": false,
+  "merged": false,
+  "router_conflict": "RESOLVED by GPT round 4, in Adam's favour. The 09-05 HARD RULE stands: deterministic SEMANTIC routing stays banned. The concept is split in two layers - a deterministic ELIGIBILITY filter ('can this capability legally and technically compete for this task?') is allowed and is step 4; selection over the eligible set stays pluggable and is step 5. The planner receives an eligible projection, never the raw registry. No router work was done in this step and none is authorised by it.",
+  "not_done": [
+    "Nothing was submitted to the registry, so no capability's evidence moved from asserted to executed.",
+    "The compactor itself was NOT fixed. The runner exists now, so the defect is recorded as a falsifiable fix verdict rather than a story; fixing it is a separate decision.",
+    "Steps 3-13 of the locked sequence were not started: executable capability adapter path, deterministic eligibility engine, pluggable selection interface, truth/evidence envelope, authority/action wrapper, cross-vertical reuse proof, PartSnap truth reset, authoritative-data wedge, RO Preflight, photo observation, catalogue resolution, objective-level workflows.",
+    "The AMBIGUOUS: prefix convention is unchanged and stays until Core 1.0 is operational."
+  ],
+  "next_per_ruling": "Step 3: the executable capability adapter path. The planner gets intelligence; the eligibility layer gets correctness."
+}

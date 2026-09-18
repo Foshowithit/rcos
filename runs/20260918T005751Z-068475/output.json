@@ -1,0 +1,34 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T005751Z-068475",
+  "adapter": {
+    "status": "ok",
+    "reason": null,
+    "argv": [
+      "node",
+      "/Users/adam26/zcode-rcos/evals/reuse-ledger-invariant-v1/adapter/run.js"
+    ],
+    "exit_code": 0,
+    "signal": null,
+    "stdout": "sandbox home: /Users/adam26/zcode-rcos/runs/20260918T005751Z-068475/work/sandbox-home\n  sync_without_trace_log: exit 2, reuse_count 0\n  reuse_log_first: exit 0, reuse_count 1\n  reuse_log_append_blocked: exit 2, reuse_count 1\n  sync_reconverges: exit 0, reuse_count 1\n",
+    "stderr": "",
+    "duration_ms": 140
+  },
+  "produced": [
+    {
+      "path": "ledger-after.json",
+      "sha256": "1f33924112681567850e8428c402da6d58a3f414259b46052a7a249968ef72dd",
+      "bytes": 2101
+    },
+    {
+      "path": "sandbox-home/registry/capability-registry.json",
+      "sha256": "e7ad0240842f19ffd095f3828c9cc56868b23c7c7f2367fd896799e2ac6aba12",
+      "bytes": 1087
+    },
+    {
+      "path": "sandbox-home/traces/traces.jsonl",
+      "sha256": "7a8c5504e2437d23866df7a57b120f7b63587ebe67eebd829d1b16a4868980a2",
+      "bytes": 204
+    }
+  ]
+}

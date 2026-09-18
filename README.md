@@ -11,6 +11,10 @@ Design: `docs/2026-09-14-zcode-rcos-design.md` (copy of the approved spec).
 ## Commands
 
 - `bin/rcos query [--status S] [--kind K] [--json]`
+- `bin/rcos evals [--json]` (list eval packages; a package is a dir with an `eval.json`)
+- `bin/rcos runs [--json]` (list executed runs and their verdicts)
+- `bin/rcos eval-run --eval <eval-id> [--task <task>] [--submit]` (execute a package; exit 0 = ship, 3 = fix, 4 = blocked)
+- `bin/rcos eval-verify --run <run-id>` (re-hash a run's receipt and its artifacts)
 - `bin/rcos propose --id <id> --name <name> --kind <kind> [--version x.y.z] [--lineage <text>]`
 - `bin/rcos eval-submit --id <id> --task <task> --verdict ship|fix|blocked --run <run> [--date YYYY-MM-DD]`
 - `bin/rcos promote --id <id>` (x2-ship gate enforced)
@@ -38,3 +42,26 @@ Design: `docs/2026-09-14-zcode-rcos-design.md` (copy of the approved spec).
    armed policy is `rcos-retire/1` with thresholds deliberately `null` until
    pilot data calibrates them.
 5. Every mutation via the CLI, then a git commit.
+6. The **runner owns the verdict**. `deriveVerdict(adapterResult, gateResults)`
+   is the only thing that writes one: adapters return evidence, gates return
+   pass/fail, and neither can write a verdict. All required gates pass → `ship`;
+   a required gate fails while the execution itself was valid → `fix`; the
+   evaluation cannot establish a result because a prerequisite is unavailable
+   → `blocked` (adapter exit 4, any other non-zero adapter exit, or a gate that
+   crashes — a crashed gate is `blocked`, not `fix`). `eval-run`'s own exit code
+   mirrors the verdict: 0, 3, 4.
+7. A run directory is **written once**. An existing run id is refused, never
+   rewritten. The receipt is written last, hashes every other artifact, and does
+   not hash itself. `eval-verify` re-hashes all of it and fails on both a
+   mismatch and a file present in the run but absent from the receipt — so an
+   edited or planted artifact is detectable after the fact.
+8. An eval entry's `provenance` is `executed` only when a runner run produced
+   it, `asserted` otherwise — and absent means `asserted`, so every eval
+   recorded before the runner is honestly labelled. Nothing is backfilled.
+   `audit` warns (never errors) while promoted capabilities rest entirely on
+   asserted evals. An eval run is **not** a reuse: `eval-run --submit` appends a
+   trace with `source: null`, so `reuse_count` does not move.
+9. `--submit` requires the capability to already exist in the registry, and that
+   is checked *before* the run is spent. A kernel-invariant eval that names no
+   registered capability still runs and still writes its evidence to `runs/` —
+   it just cannot be submitted.

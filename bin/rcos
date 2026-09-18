@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const R = require('../lib/registry');
 const T = require('../lib/traces');
+const ER = require('../lib/evalrunner');
 const { isValidDate } = require('../lib/validate');
 const { renderDashboard } = require('../lib/render');
 
@@ -16,6 +17,10 @@ const USAGE = [
   '  propose --id <id> --name <name> --kind <kind> [--version x.y.z] [--lineage <text>]',
   '  eval-submit --id <id> --task <task> --verdict ship|fix|blocked --run <run> [--date YYYY-MM-DD]',
   '              [--context <text>] [--source reuse|synthesize] [--seconds <n>]',
+  '  evals [--json]',
+  '  eval-run --eval <eval-id> [--submit --task <task>] [--context <text>] [--date YYYY-MM-DD]',
+  '  eval-verify --run <run-id> [--json]',
+  '  runs [--json]',
   '  traces [--capability <id>] [--json]',
   '  backfill-traces',
   '  promote --id <id>',
@@ -96,6 +101,87 @@ function main() {
         R.syncDerivedReuse(reg, T.loadTraces(home));
         R.saveRegistry(home, reg);
         console.log('recorded ' + args.verdict + ' for \'' + args.id + '\' on ' + args.task + ' (+trace)');
+        break;
+      }
+      // Eval DEFINITIONS (evals/<id>/eval.json) and their EXECUTED runs
+      // (runs/<run-id>/) are different trees on purpose: definitions are edited
+      // and versioned, runs are immutable evidence.
+      case 'evals': {
+        const rows = ER.listEvalPackages(home);
+        if (args.json) { console.log(JSON.stringify(rows, null, 2)); break; }
+        if (rows.length === 0) { console.log('no eval packages under ' + ER.evalsDir(home) + ' — add evals/<eval-id>/eval.json'); break; }
+        for (const p of rows) {
+          if (p.error) { console.log('INVALID\t' + p.id + '\t' + p.error.split('\n')[0]); continue; }
+          console.log([p.id, p.capability_id, p.gates + ' gates', p.fixtures + ' fixtures'].join('\t'));
+        }
+        break;
+      }
+      case 'runs': {
+        const rows = ER.listRuns(home);
+        if (args.json) { console.log(JSON.stringify(rows, null, 2)); break; }
+        if (rows.length === 0) { console.log('no runs yet — `rcos eval-run --eval <eval-id>` creates one'); break; }
+        for (const r of rows) {
+          if (r.error) { console.log('BROKEN\t' + r.run_id + '\t' + r.error); continue; }
+          console.log([r.run_id, r.verdict, r.eval_id, r.capability_id, r.created_at].join('\t'));
+        }
+        break;
+      }
+      // Executes a declared evaluation and lets the RUNNER derive the verdict
+      // from gate exit codes (0 pass / 3 fail / 4 blocked). Nothing on the
+      // command line may assert a verdict — that is the whole point.
+      case 'eval-run': {
+        need(args, 'eval');
+        if (args.submit) {
+          need(args, 'task');
+          if (args.date && !isValidDate(args.date)) { console.error('bad --date, want YYYY-MM-DD'); process.exit(1); }
+          const pkg = ER.loadEvalPackage(home, args.eval);
+          R.findCapability(R.loadRegistry(home), pkg.spec.capability_id); // fail before running, not after
+        }
+        const res = ER.runEval(home, args.eval, {});
+        console.log('run ' + res.run_id + ': ' + res.verdict + ' — ' + res.basis);
+        for (const g of res.gates) {
+          console.log('  ' + (g.status === 'pass' ? 'ok  ' : g.status === 'fail' ? 'FAIL' : g.status.toUpperCase()) +
+            ' ' + g.id + (g.required ? '' : ' (optional)'));
+        }
+        console.log('receipt: ' + path.join(res.run_dir, 'receipt.json'));
+        if (args.submit) {
+          const reg = R.loadRegistry(home);
+          const id = res.receipt.capability_id;
+          R.submitEval(reg, id, {
+            task_id: args.task, verdict: res.verdict, run_id: res.run_id,
+            provenance: 'executed', date: args.date
+          });
+          // trace first (file) before the registry save, same invariant as
+          // eval-submit. source stays null: an eval run is not automatically a
+          // reuse — whether the capability was invoked is a different fact, and
+          // reuse_count must not move on selection or evaluation alone.
+          T.appendTrace(home, {
+            capability: id, task_id: args.task, verdict: res.verdict,
+            context: args.context === true ? undefined : args.context,
+            source: null, seconds: null, date: args.date || undefined
+          });
+          R.syncDerivedReuse(reg, T.loadTraces(home));
+          R.saveRegistry(home, reg);
+          console.log('submitted ' + res.verdict + ' for \'' + id + '\' on ' + args.task +
+            ' (provenance executed, run ' + res.run_id + '; +trace source=null — reuse_count unchanged)');
+        }
+        process.exitCode = res.verdict === 'ship' ? 0 : res.verdict === 'fix' ? 3 : 4;
+        break;
+      }
+      // Re-hashes every artifact the receipt names. This is the check that CAN
+      // fail: an edited run directory stops verifying.
+      case 'eval-verify': {
+        need(args, 'run');
+        const res = ER.verifyRun(home, args.run);
+        if (args.json) { console.log(JSON.stringify(res, null, 2)); break; }
+        for (const m of res.mismatches) {
+          console.log('MISMATCH ' + m.path + ': ' + m.problem +
+            (m.actual ? ' (expected ' + m.expected + ', got ' + m.actual + ')' : ''));
+        }
+        console.log(res.ok
+          ? 'run ' + args.run + ' verified: ' + res.receipt.artifacts.length + ' artifact(s) hash-clean, verdict ' + res.receipt.verdict
+          : 'run ' + args.run + ' FAILED verification');
+        if (!res.ok) process.exitCode = 3;
         break;
       }
       case 'traces': {

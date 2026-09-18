@@ -1,0 +1,25 @@
+{
+  "schema": "rcos-eval/1",
+  "eval_id": "agents-md-compactor-v1",
+  "capability_id": "agents-md-compactor",
+  "title": "compact_agents_md.py compacts a memory file without losing meaning",
+  "notes": [
+    "The tool under test is a frozen copy of ~/.agents/tools/compact_agents_md.py taken",
+    "2026-09-17 (sha256 0955ad78cd4808dae85c5b74818839c2f1e1f5f4f4dfccdd0fa5a7cce85cc1e9).",
+    "The gates encode the tool's OWN stated policy (docstring lines 4-22), not the",
+    "behaviour observed when the package was written: an entry that carries a bold",
+    "headline must keep it through compaction, the region before '## Changelog' and",
+    "the '- \u26a0 *' policy line are never rewritten, compaction is idempotent, and a",
+    "dated backup is written before the file is touched."
+  ],
+  "adapter": { "argv": ["node", "./adapter/run.js"], "timeout_s": 120 },
+  "fixtures": ["AGENTS-fixture.md", "compact_agents_md.py"],
+  "gates": [
+    { "id": "semantic-survival", "type": "deterministic", "argv": ["node", "./gates/check.js", "semantic-survival"], "required": true },
+    { "id": "range-and-order", "type": "deterministic", "argv": ["node", "./gates/check.js", "range-and-order"], "required": true },
+    { "id": "idempotence", "type": "deterministic", "argv": ["node", "./gates/check.js", "idempotence"], "required": true },
+    { "id": "digest-construction", "type": "deterministic", "argv": ["node", "./gates/check.js", "digest-construction"], "required": true },
+    { "id": "backup-before-write", "type": "deterministic", "argv": ["node", "./gates/check.js", "backup-before-write"], "required": true },
+    { "id": "frozen-tool", "type": "deterministic", "argv": ["node", "./gates/check.js", "frozen-tool"], "required": true }
+  ]
+}

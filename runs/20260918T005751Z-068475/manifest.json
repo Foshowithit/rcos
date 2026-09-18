@@ -1,0 +1,11 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T005751Z-068475",
+  "eval_id": "reuse-ledger-invariant-v1",
+  "capability_id": "reuse-ledger",
+  "started_at": "2026-09-18T00:57:51.535Z",
+  "finished_at": "2026-09-18T00:57:51.771Z",
+  "duration_ms": 236,
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "node": "v24.15.0"
+}

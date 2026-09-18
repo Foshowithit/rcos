@@ -1,0 +1,54 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T005751Z-9e45f1",
+  "adapter": {
+    "status": "ok",
+    "reason": null,
+    "argv": [
+      "node",
+      "/Users/adam26/zcode-rcos/evals/agents-md-compactor-v1/adapter/run.js"
+    ],
+    "exit_code": 0,
+    "signal": null,
+    "stdout": "pass1 exit=0 mutated=true backup=pass1/archive/AGENTS-20260917-2057-pre-compact.md\npass2 exit=0 mutated=false\nnoarchive exit=1 mutated=false\n",
+    "stderr": "",
+    "duration_ms": 139
+  },
+  "produced": [
+    {
+      "path": "ledger.json",
+      "sha256": "3c0f1f531e4c42559fb98e7883bcdb2fc855041833deac302992bbf31ae62e78",
+      "bytes": 11491
+    },
+    {
+      "path": "noarchive/AGENTS.md",
+      "sha256": "4a768f2d0b286ec6af9b8118bf54b8f387f75bb7944b912f1ec115c61529aa35",
+      "bytes": 1610
+    },
+    {
+      "path": "pass1/AGENTS.md",
+      "sha256": "b8f99cecb97ab009700d569cfa29ca74ac112183282a3651dd77ee89f6f3e951",
+      "bytes": 1299
+    },
+    {
+      "path": "pass1/archive/AGENTS-20260917-2057-pre-compact.md",
+      "sha256": "4a768f2d0b286ec6af9b8118bf54b8f387f75bb7944b912f1ec115c61529aa35",
+      "bytes": 1610
+    },
+    {
+      "path": "pass2/AGENTS.md",
+      "sha256": "b8f99cecb97ab009700d569cfa29ca74ac112183282a3651dd77ee89f6f3e951",
+      "bytes": 1299
+    },
+    {
+      "path": "pass2/archive/AGENTS-20260917-2057-pre-compact.md",
+      "sha256": "b8f99cecb97ab009700d569cfa29ca74ac112183282a3651dd77ee89f6f3e951",
+      "bytes": 1299
+    },
+    {
+      "path": "tool.py",
+      "sha256": "0955ad78cd4808dae85c5b74818839c2f1e1f5f4f4dfccdd0fa5a7cce85cc1e9",
+      "bytes": 6665
+    }
+  ]
+}
