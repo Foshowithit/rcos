@@ -114,6 +114,31 @@ fs.copyFileSync(regPath, path.join(evidenceDir, 'registry-after.json'));
 if (fs.existsSync(tracesPath)) fs.copyFileSync(tracesPath, path.join(evidenceDir, 'traces.jsonl'));
 fs.writeFileSync(path.join(evidenceDir, 'steps.json'), JSON.stringify(steps, null, 2) + '\n');
 
+// The one claim this adapter makes about its own run, as an emission file the
+// kernel classifies: the probe completed, and the registry it ended with. The
+// invocation id is derived from the evidence dir's own path, not an env var —
+// if the two ever disagree, the kernel skips the claim and says why.
+fs.writeFileSync(path.join(evidenceDir, 'probe.emission.json'), JSON.stringify({
+  fields: {
+    subject: 'reuse-ledger-probe/' + input.probe_capability,
+    predicate: 'probe_completed',
+    value: {
+      probe_capability: input.probe_capability,
+      steps: steps.length,
+      final_registry_sha256: sha(regPath),
+      final_reuse_count: probeEntry().reuse_count
+    },
+      truth_class: 'observation',
+      source: { kind: 'action', ref: 'probe executed inside this invocation' },
+      observed_at: new Date().toISOString()
+  },
+  producer: {
+    capability_id: process.env.RCOS_CAPABILITY_ID,
+    capability_version: process.env.RCOS_CAPABILITY_VERSION,
+    invocation_id: path.basename(path.dirname(evidenceDir))
+  }
+}, null, 2) + '\n');
+
 console.log('sandbox home: ' + home);
 for (const s of steps) console.log('  ' + s.name + ': exit ' + s.result.status + ', reuse_count ' + s.stored_after);
 process.exit(0);

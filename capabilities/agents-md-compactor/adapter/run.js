@@ -158,6 +158,32 @@ const observation = { schema: 'compactor-observation/1', tool, fixture, pass1, p
 fs.writeFileSync(outputFile, JSON.stringify(observation, null, 2) + '\n');
 copyEvidence(outputFile, 'observations.json');
 
+// The one claim this adapter makes about its own run, as an emission file the
+// kernel classifies: the three passes ran, with these exits and these input
+// hashes. The invocation id comes from the evidence dir's own path — if it
+// disagrees with the run the kernel is sealing, the claim is skipped, not run.
+fs.writeFileSync(path.join(evidenceDir, 'compaction.emission.json'), JSON.stringify({
+  fields: {
+    subject: 'agents-md-compactor/' + path.basename(fixturePath),
+    predicate: 'fixture_observed',
+    value: {
+      tool_sha256: tool.sha256,
+      fixture_sha256: fixture.sha256,
+      pass1: { exit: pass1.exit, mutated: pass1.mutated },
+      pass2: { exit: pass2.exit, mutated: pass2.mutated },
+      noarchive: { exit: noArchive.exit, mutated: noArchive.output !== noArchive.input }
+    },
+      truth_class: 'observation',
+      source: { kind: 'action', ref: 'three passes executed inside this invocation' },
+      observed_at: new Date().toISOString()
+  },
+  producer: {
+    capability_id: process.env.RCOS_CAPABILITY_ID,
+    capability_version: process.env.RCOS_CAPABILITY_VERSION,
+    invocation_id: path.basename(path.dirname(evidenceDir))
+  }
+}, null, 2) + '\n');
+
 console.log('tool ' + tool.sha256.slice(0, 12) + ' (' + tool.bytes + ' bytes) from ' + tool.source);
 console.log('pass1 exit=' + pass1.exit + ' mutated=' + pass1.mutated + ' backup=' + (pass1.backup ? pass1.backup.path : 'none'));
 console.log('pass2 exit=' + pass2.exit + ' mutated=' + pass2.mutated);

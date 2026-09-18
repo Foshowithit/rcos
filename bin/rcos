@@ -10,6 +10,7 @@ const ER = require('../lib/evalrunner');
 const I = require('../lib/invocation');
 const E = require('../lib/eligibility');
 const S = require('../lib/selection');
+const EV = require('../lib/evidence');
 const { isValidDate } = require('../lib/validate');
 const { renderDashboard } = require('../lib/render');
 
@@ -35,6 +36,14 @@ const USAGE = [
   '      (chooses among capabilities already proven eligible to compete; grants nothing)',
   '  selections [--json]',
   '  selection-verify --selection <id> [--json]',
+  '  evidence --input <fields.json> [--json]',
+  '      (records one claim: subject, predicate, value, truth_class, source{kind,ref}, observed_at;',
+  '       a derived claim is truth_class inference and carries derived.inputs)',
+  '  evidences [--json]',
+  '  evidence-verify --evidence <id> [--json]',
+  '  bundle --evidence <id> [--evidence <id> ...] [--purpose <text>] [--json]',
+  '  bundles [--json]',
+  '  bundle-verify --bundle <id> [--json]',
   '  invocations [--json]',
   '  invocation-verify --invocation <id> [--json]',
   '  traces [--capability <id>] [--json]',
@@ -59,7 +68,11 @@ function homeDir() {
 
 // A few flags are lists rather than values: a candidate set is a set, and
 // `--decision a --decision b` must not silently collapse to the last one.
-const REPEATABLE_FLAGS = ['decision'];
+// `--evidence` is repeatable for the same reason: a bundle pins a set, and
+// `--evidence a --evidence b` must keep both. Single-value uses of a
+// repeatable flag (evidence-verify) read the first entry, as eligibility-verify
+// already does with --decision.
+const REPEATABLE_FLAGS = ['decision', 'evidence'];
 
 function parseArgs(argv) {
   const args = {};
@@ -511,6 +524,112 @@ function main() {
         else {
           for (const p of res.problems) console.log('PROBLEM ' + p);
           console.log(res.ok ? 'selection ' + args.selection + ' verified (' + res.checked + ' check(s))' : 'selection verification FAILED');
+        }
+        if (!res.ok) process.exit(3);
+        break;
+      }
+      // The evidence envelope on its own. A record says what was claimed, by
+      // whom, on what basis — nothing more. It is not an authorization, not an
+      // eval verdict, and not a resolution of anything: two records that
+      // contradict each other coexist without complaint, and the command that
+      // decides between them does not exist yet. A bundle pins a set of
+      // records; it ranks nothing inside it.
+      case 'evidence': {
+        need(args, 'input');
+        let fields;
+        try {
+          fields = JSON.parse(fs.readFileSync(args.input, 'utf8'));
+        } catch (e) {
+          console.error('rcos: --input is not readable JSON: ' + e.message);
+          process.exit(2);
+        }
+        // No producer pin here, deliberately. A producer block means "this
+        // claim came out of that run", and the only path with the run's own
+        // participation is the emission path: the adapter writes the file, the
+        // kernel seals the id into the manifest. A flag that let anyone type a
+        // producer id would mint records claiming a run's provenance while the
+        // run's manifest never corroborates them — the two-way link, broken in
+        // one direction. Direct records carry producer: null.
+        const res = EV.createEvidence(home, fields);
+        if (!res.ok) { console.error('rcos: ' + res.error); process.exit(2); }
+        if (args.json) console.log(JSON.stringify(res.evidence, null, 2));
+        else {
+          console.log('TRUTH_CLASS: ' + res.evidence.truth_class);
+          console.log('SOURCE: ' + res.evidence.source.kind + ':' + res.evidence.source.ref);
+          console.log('subject: ' + res.evidence.subject);
+          console.log('predicate: ' + res.evidence.predicate);
+          if (res.evidence.derived.inputs.length > 0) console.log('INPUTS: ' + res.evidence.derived.inputs.join(', '));
+          console.log('evidence: ' + res.evidence_id + '\t' + res.dir);
+          console.log('NOTE: this records what was claimed, by whom, on what basis — it decides nothing.');
+        }
+        break;
+      }
+      case 'evidences': {
+        const rows = EV.listEvidence(home);
+        if (args.json) { console.log(JSON.stringify(rows, null, 2)); break; }
+        if (rows.length === 0) { console.log('no evidence yet — `rcos evidence --input <fields.json>` records one'); break; }
+        for (const r of rows) {
+          console.log([
+            r.evidence_id,
+            r.truth_class === null ? '-' : r.truth_class,
+            r.source ? r.source.kind + ':' + r.source.ref : '-',
+            r.subject === null ? '-' : r.subject,
+            r.predicate === null ? '-' : r.predicate,
+            r.inputs === null ? '-' : String(r.inputs),
+            r.producer_invocation_id === null ? '-' : r.producer_invocation_id,
+            r.observed_at === null ? '-' : r.observed_at
+          ].join('\t'));
+        }
+        break;
+      }
+      case 'evidence-verify': {
+        const evidenceIds = needList(args, 'evidence');
+        const res = EV.verifyEvidence(home, evidenceIds[0]);
+        if (args.json) console.log(JSON.stringify({ ok: res.ok, problems: res.problems, checked: res.checked }, null, 2));
+        else {
+          for (const p of res.problems) console.log('PROBLEM ' + p);
+          console.log(res.ok ? 'evidence ' + evidenceIds[0] + ' verified (' + res.checked + ' check(s))' : 'evidence verification FAILED');
+        }
+        if (!res.ok) process.exit(3);
+        break;
+      }
+      case 'bundle': {
+        const evidenceIds = needList(args, 'evidence');
+        const purpose = args.purpose === undefined || args.purpose === true ? null : String(args.purpose);
+        const res = EV.createBundle(home, evidenceIds, { purpose });
+        if (!res.ok) { console.error('rcos: ' + res.error); process.exit(2); }
+        if (args.json) console.log(JSON.stringify(res.bundle, null, 2));
+        else {
+          console.log('MEMBERS: ' + res.members.length);
+          console.log('evidence_set_sha256: ' + res.bundle.evidence_set_sha256);
+          console.log('purpose: ' + (res.bundle.purpose === null ? '(none)' : res.bundle.purpose));
+          console.log('bundle: ' + res.bundle_id + '\t' + res.dir);
+          console.log('NOTE: a bundle pins a set of records — it ranks nothing and resolves no disagreement.');
+        }
+        break;
+      }
+      case 'bundles': {
+        const rows = EV.listBundles(home);
+        if (args.json) { console.log(JSON.stringify(rows, null, 2)); break; }
+        if (rows.length === 0) { console.log('no bundles yet — `rcos bundle --evidence <id> [--evidence <id> ...]` pins one'); break; }
+        for (const r of rows) {
+          console.log([
+            r.bundle_id,
+            r.members === null ? '-' : String(r.members.length),
+            r.purpose === null ? '-' : r.purpose,
+            r.consumed_by_invocation_id === null ? '-' : r.consumed_by_invocation_id,
+            r.created_at === null ? '-' : r.created_at
+          ].join('\t'));
+        }
+        break;
+      }
+      case 'bundle-verify': {
+        need(args, 'bundle');
+        const res = EV.verifyBundle(home, args.bundle);
+        if (args.json) console.log(JSON.stringify({ ok: res.ok, problems: res.problems, checked: res.checked }, null, 2));
+        else {
+          for (const p of res.problems) console.log('PROBLEM ' + p);
+          console.log(res.ok ? 'bundle ' + args.bundle + ' verified (' + res.checked + ' check(s))' : 'bundle verification FAILED');
         }
         if (!res.ok) process.exit(3);
         break;
