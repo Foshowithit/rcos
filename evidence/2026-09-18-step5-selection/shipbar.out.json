@@ -1,0 +1,835 @@
+{
+  "home": "/Users/adam26/zcode-rcos",
+  "checked_at": "2026-09-18T05:13:34.616Z",
+  "items": {
+    "1_consumes_only_verified_compete_decisions": {
+      "verdict": "PASS",
+      "control": {
+        "status": "selected",
+        "candidates": [
+          "agents-md-compactor",
+          "reuse-ledger"
+        ]
+      },
+      "control_candidate_pins": [
+        {
+          "capability_id": "agents-md-compactor",
+          "capability_version": "0.1.0",
+          "eligibility_decision_id": "elig_20260918T051334Z-d28211",
+          "eligibility_sha256": "d53e028cfdc931237e7c2acb4cb3990c14291eccbb349b6c9756d330f7fa5a19"
+        },
+        {
+          "capability_id": "reuse-ledger",
+          "capability_version": "0.1.0",
+          "eligibility_decision_id": "elig_20260918T051334Z-f6466a",
+          "eligibility_sha256": "7916df12822de1a2e3e8b4fb900a7e94b3a1648d4a4288ece476d7ac8cb92b48"
+        }
+      ],
+      "refusals": {
+        "scope=execute decision offered as a candidate": "candidate eligibility decision elig_20260918T051334Z-fb2822 has scope 'execute' — a candidate must be a scope=compete decision, because competing is the only question selection is allowed to ask",
+        "compete decision that says no (filmstrip-verify, reasons: not_executable)": "candidate eligibility decision elig_20260918T051334Z-2b6d46 does not permit competition: not_executable",
+        "decision id that names no artifact": "no such eligibility decision artifact: elig_20260918T000000Z-000000",
+        "string that is not a decision id": "candidate eligibility decision id is not a decision id: not-a-decision-id",
+        "decision whose bytes were edited after it was written": "candidate eligibility decision elig_20260918T051334Z-d28211 does not verify: decision integrity mismatch — the decision was edited after it was written; ineligible decision carries no reason"
+      },
+      "tampered_bytes_restored": true
+    },
+    "2_never_recomputes_eligibility": {
+      "verdict": "PASS",
+      "decision_producing_functions_called_by_selection_module": [],
+      "the_recorded_decision": {
+        "decision_id": "elig_20260918T051335Z-4145d7",
+        "scope": "compete",
+        "purpose": "eval",
+        "eligible_as_recorded": true,
+        "artifact_still_verifies": true
+      },
+      "a_fresh_question_asked_differently_answers_differently": {
+        "context": "purpose=normal, scope=compete — a caller who is not allowed to elect a candidate",
+        "eligible": false,
+        "reasons": [
+          "candidate_not_allowed",
+          "provenance_asserted",
+          "no_ship_eval"
+        ]
+      },
+      "selection_followed_the_recorded_verdict_not_a_recomputation": "selected",
+      "selection_verifies": true,
+      "the_opposite_decision_is_refused_as_a_candidate": {
+        "decision_id": "elig_20260918T051335Z-2651ea",
+        "error": "candidate eligibility decision elig_20260918T051335Z-2651ea does not permit competition: candidate_not_allowed, provenance_asserted, no_ship_eval"
+      },
+      "why_this_is_the_proof": "a selection carries no caller context and no purpose, so it has no way to ask the eligibility question again — it can only consume the answer it was handed",
+      "what_verification_does_read": "the registry, to confirm the decision names a capability that exists at the recorded version — a reference check, never a verdict"
+    },
+    "3_schema_immutable_integrity_verifiable": {
+      "verdict": "PASS",
+      "schema_constant": "rcos-selection/1",
+      "control_verifies": {
+        "ok": true,
+        "decisions_and_selection_rechecked": 3
+      },
+      "edits_caught": [
+        {
+          "edit": "status_basis edited",
+          "verified": false,
+          "first_problem": "selection integrity mismatch — the selection was edited after it was written"
+        },
+        {
+          "edit": "status flipped",
+          "verified": false,
+          "first_problem": "selection integrity mismatch — the selection was edited after it was written"
+        },
+        {
+          "edit": "a candidate sha replaced",
+          "verified": false,
+          "first_problem": "selection integrity mismatch — the selection was edited after it was written"
+        },
+        {
+          "edit": "a whole candidate removed",
+          "verified": false,
+          "first_problem": "selection integrity mismatch — the selection was edited after it was written"
+        },
+        {
+          "edit": "integrity value itself edited",
+          "verified": false,
+          "first_problem": "selection integrity mismatch — the selection was edited after it was written"
+        }
+      ],
+      "bytes_restored_after_each_edit": true,
+      "write_once": {
+        "threw": true,
+        "error": "selection sel_20260918T051335Z-bbf550 already exists — selections are write-once and never rewritten"
+      }
+    },
+    "4_candidate_set_exact_and_hash_pinned": {
+      "verdict": "PASS",
+      "candidate_set_sha256": "16b2fe27bbf5e5717b701c2d5aca8e8669dc09ba93b9b98d40a7543507f70ef9",
+      "recomputed_independently_from_the_artifact": "16b2fe27bbf5e5717b701c2d5aca8e8669dc09ba93b9b98d40a7543507f70ef9",
+      "pins_per_candidate": [
+        {
+          "capability_id": "agents-md-compactor",
+          "capability_version": "0.1.0",
+          "eligibility_decision_id": "elig_20260918T051335Z-a8d2dd",
+          "eligibility_sha256": "52af4b601950f3ede5cd0485a70c5b0854e3130b9f60a205f43345abf1498ee7"
+        },
+        {
+          "capability_id": "reuse-ledger",
+          "capability_version": "0.1.0",
+          "eligibility_decision_id": "elig_20260918T051335Z-dee887",
+          "eligibility_sha256": "5583498def70be7587e2da02b7f8192253a3f80e82872fe86a689e3a59e8483c"
+        }
+      ],
+      "exactness": "candidates.length === the number of decisions supplied, one entry per decision, in the order supplied",
+      "the_third_candidate": {
+        "capability_id": "filmstrip-verify",
+        "decision_id": "elig_20260918T051335Z-576c84",
+        "how": "the probe home widened the cast — the live registry has exactly two runnable candidates, so a three-candidate set cannot be built from it"
+      },
+      "adding_a_third_candidate_changes_the_hash": {
+        "status": "selected",
+        "sha256": "695885f6f195c34638c582b6bd65324b75cbaf1c3bd7f2b426ef997167866139",
+        "changed": true
+      },
+      "duplicate_refusal": "candidate set names 'agents-md-compactor' more than once — a candidate set is a set, and two pinned decisions for one capability is an ambiguity the protocol will not guess its way out of",
+      "candidate_sha_edit_caught": [
+        "selection integrity mismatch — the selection was edited after it was written",
+        "candidate_set_sha256 does not match the recorded candidate set",
+        "candidate 'agents-md-compactor': eligibility_sha256 does not match the decision artifact it names"
+      ],
+      "candidate_version_lie_caught": [
+        "selection integrity mismatch — the selection was edited after it was written",
+        "candidate_set_sha256 does not match the recorded candidate set",
+        "candidate 'reuse-ledger': decision names version 0.1.0, selection pins 9.9.9"
+      ],
+      "bytes_restored": true
+    },
+    "5_membership_not_semantic_quality": {
+      "verdict": "PASS",
+      "a_selector_that_ignores_its_input_entirely": {
+        "status": "selected",
+        "selected": "reuse-ledger",
+        "basis": "I picked the last one. No reason."
+      },
+      "a_selector_that_states_a_claim_the_core_cannot_check": {
+        "status": "selected",
+        "selected": "agents-md-compactor",
+        "basis_recorded_verbatim": "agents-md-compactor is clearly the best match for this task",
+        "still_verifies": true
+      },
+      "judgement_vocabulary_in_the_shipped_core": [],
+      "what_the_core_did_check": "that the named capability is one of the candidates — nothing else",
+      "what_it_did_not_check": [
+        "whether the choice was smart",
+        "whether the task semantically matched",
+        "whether another candidate was better",
+        "whether the rationale is true"
+      ]
+    },
+    "6_only_explicit_1": {
+      "verdict": "PASS",
+      "installed_selectors": [
+        "explicit"
+      ],
+      "shipped_selector": {
+        "id": "explicit",
+        "version": "1",
+        "members": [
+          "id",
+          "version",
+          "validateInput",
+          "select"
+        ]
+      },
+      "named_but_not_installed_refusals": {
+        "model-selector": "no selector 'model-selector' is installed — this build ships exactly one: explicit (a selector has to exist as code before it can be named in an artifact)",
+        "planner": "no selector 'planner' is installed — this build ships exactly one: explicit (a selector has to exist as code before it can be named in an artifact)",
+        "single_candidate": "no selector 'single_candidate' is installed — this build ships exactly one: explicit (a selector has to exist as code before it can be named in an artifact)",
+        "explicit@2": "selector 'explicit' is version 1, not '2'"
+      },
+      "future_selector_names_present_as_code": [],
+      "future_selector_names_present_only_in_comments": [
+        "planner"
+      ],
+      "note": "the empty slots are named in prose and implemented nowhere — that is the healthy state GPT asked for"
+    },
+    "7_replaceable_selector_interface": {
+      "verdict": "PASS",
+      "interface_the_core_calls": [
+        "id",
+        "version",
+        "validateInput(input) -> string[]",
+        "select({candidates, selector_input}) -> {status, selected_capability_id, reason}"
+      ],
+      "shipped_selector_members": [
+        "id",
+        "version",
+        "validateInput",
+        "select"
+      ],
+      "injected_selector_recorded_in_the_artifact": {
+        "id": "probe-abstain",
+        "version": "3"
+      },
+      "injected_selector_status": "abstained",
+      "injected_selector_input_rule_enforced_by_the_selector": "selector probe-abstain@3 rejected its input: probe-abstain needs {ok: true}",
+      "artifact_verifies": true,
+      "core_edited_to_do_this": false
+    },
+    "8_selector_input_opaque_to_core": {
+      "verdict": "PASS",
+      "exotic_input_stored_verbatim": {
+        "frobnicate": 7,
+        "nested": {
+          "a": [
+            1,
+            2,
+            {
+              "deep": true
+            }
+          ]
+        },
+        "a key with spaces": "and: punctuation",
+        "unicode": "né—ü"
+      },
+      "input_sha256": "90939fb49cb9c4f111357274c9db559d32ee46d1a6aa795708dbbd7bce3fd86f",
+      "recomputed_from_the_input_alone": "90939fb49cb9c4f111357274c9db559d32ee46d1a6aa795708dbbd7bce3fd86f",
+      "artifact_verifies": true,
+      "universal_vocabulary_keys_in_the_core": [],
+      "the_only_closed_vocabulary_is_the_selectors_own": {
+        "selector": "explicit@1",
+        "accepts_exactly": [
+          "capability_id"
+        ],
+        "refusals": {
+          "unknown_key": [
+            "selector input.task_text: unknown field — explicit@1 accepts exactly one key, capability_id"
+          ],
+          "missing_key": [
+            "selector input.capability_id: a non-empty string is required"
+          ],
+          "wrong_type": [
+            "selector input.capability_id: a non-empty string is required"
+          ]
+        }
+      },
+      "note": "the core has no opinion about what a selector asks for; explicit@1 is the strict one, and it enforces that itself"
+    },
+    "9_five_statuses_structurally_distinct": {
+      "verdict": "PASS",
+      "canonical_order": [
+        "selected",
+        "abstained",
+        "ambiguous",
+        "no_candidates",
+        "failed"
+      ],
+      "selector_may_return": [
+        "selected",
+        "abstained",
+        "ambiguous"
+      ],
+      "produced": {
+        "selected": {
+          "basis": "requested 'agents-md-compactor' is in the eligible candidate set",
+          "selected": "agents-md-compactor"
+        },
+        "abstained": {
+          "basis": "declined",
+          "selected": null
+        },
+        "ambiguous": {
+          "basis": "two look alike",
+          "selected": null
+        },
+        "no_candidates": {
+          "basis": "the candidate set is empty — no scope=compete eligible decision was supplied, so no selector was convened",
+          "selected": null
+        },
+        "failed": {
+          "basis": "selector p-throws@1 threw: kaboom",
+          "selected": null
+        }
+      },
+      "only_selected_names_a_capability": [
+        "agents-md-compactor",
+        null,
+        null,
+        null,
+        null
+      ],
+      "a_selector_may_not_produce_core_statuses": {
+        "no_candidates": "selector returned status 'no_candidates', which is not one of selected|abstained|ambiguous (no_candidates and failed are the core's to report, not a selector's)",
+        "failed": "selector returned status 'failed', which is not one of selected|abstained|ambiguous (no_candidates and failed are the core's to report, not a selector's)"
+      },
+      "membership_is_still_enforced": {
+        "stray_name": "selector said 'selected' but named 'a-capability-nobody-offered', which is not a capability in the candidate set",
+        "abstention_that_names_one": "selector said 'abstained' but also named a capability — an abstention or an ambiguity selects nothing"
+      },
+      "every_status_verifies_and_exit_codes": {
+        "selected": {
+          "verify_exit": 0,
+          "selection_status": "selected"
+        },
+        "abstained": {
+          "verify_exit": 0,
+          "selection_status": "abstained"
+        },
+        "ambiguous": {
+          "verify_exit": 0,
+          "selection_status": "ambiguous"
+        },
+        "no_candidates": {
+          "verify_exit": 0,
+          "selection_status": "no_candidates"
+        },
+        "failed": {
+          "verify_exit": 0,
+          "selection_status": "failed"
+        }
+      }
+    },
+    "10_selection_grants_no_authority": {
+      "verdict": "PASS",
+      "refusals": {
+        "a compete decision offered as the authorizing decision": {
+          "sealed": true,
+          "refused_as": "blocked",
+          "error": null,
+          "basis": "eligibility decision elig_20260918T051337Z-ff457e does not authorize this invocation: eligibility decision was asked at scope 'compete' — only a scope=execute decision authorizes execution, and a scope=compete decision means \"may stand for election\", not \"may run\""
+        },
+        "a valid selection and no decision at all": {
+          "sealed": false,
+          "refused_as": "error",
+          "error": "invocation requires an eligibility decision — construct a caller context and run the eligibility engine first (rcos run and eval-run do this for you), then pass its decision id",
+          "basis": null
+        },
+        "a selection that chose a different capability": {
+          "sealed": true,
+          "refused_as": "blocked",
+          "error": null,
+          "basis": "selection sel_20260918T051337Z-ba90ae does not authorize this invocation: selection chose 'reuse-ledger', not 'agents-md-compactor'"
+        },
+        "a selection that abstained": {
+          "sealed": true,
+          "refused_as": "blocked",
+          "error": null,
+          "basis": "selection sel_20260918T051337Z-b7b400 does not authorize this invocation: selection status is 'abstained' — only a selection that named a capability can be attached to an invocation; selection chose 'null', not 'reuse-ledger'"
+        },
+        "a selection id that names no artifact": {
+          "sealed": true,
+          "refused_as": "blocked",
+          "error": null,
+          "basis": "selection sel_20260918T000000Z-000000 does not authorize this invocation: no such selection artifact: sel_20260918T000000Z-000000"
+        },
+        "a selection whose bytes were edited after it was written": {
+          "sealed": true,
+          "refused_as": "blocked",
+          "error": null,
+          "basis": "selection sel_20260918T051337Z-ba90ae does not authorize this invocation: selection integrity mismatch — the selection was edited after it was written"
+        }
+      },
+      "refusal_shapes": {
+        "a compete decision offered as the authorizing decision": "blocked",
+        "a valid selection and no decision at all": "error",
+        "a selection that chose a different capability": "blocked",
+        "a selection that abstained": "blocked",
+        "a selection id that names no artifact": "blocked",
+        "a selection whose bytes were edited after it was written": "blocked"
+      },
+      "control_with_a_real_execute_decision_and_the_same_selection": {
+        "sealed": true,
+        "status": "completed"
+      },
+      "the_shape_of_a_refusal": "sealed and status=blocked, never an error — the attempt is recorded as a blocked invocation so the audit trail shows what was tried",
+      "the_three_meanings": {
+        "selection": "WHICH",
+        "eligibility": "MAY",
+        "kernel": "CAN EXECUTE SAFELY"
+      }
+    },
+    "11_winner_gets_a_fresh_execute_decision": {
+      "verdict": "PASS",
+      "dogfood_invocations_that_came_through_a_selection": [
+        {
+          "invocation_id": "inv_20260918T041803Z-2ca0d3",
+          "capability_id": "reuse-ledger",
+          "mode": "eval",
+          "status": "completed",
+          "selection_id": "sel_20260918T041756Z-75466d",
+          "selection_status": "selected",
+          "selection_winner": "reuse-ledger",
+          "selection_decided_at": "2026-09-18T04:17:56.704Z",
+          "competing_decisions": [
+            {
+              "capability_id": "reuse-ledger",
+              "decision_id": "elig_20260918T041754Z-16a202",
+              "scope": "compete"
+            },
+            {
+              "capability_id": "agents-md-compactor",
+              "decision_id": "elig_20260918T041754Z-a9c6d0",
+              "scope": "compete"
+            }
+          ],
+          "execute_decision_id": "elig_20260918T041803Z-fb9c84",
+          "execute_decision_scope": "execute",
+          "execute_decision_purpose": "eval",
+          "execute_decision_capability_id": "reuse-ledger",
+          "execute_decision_created_at": "2026-09-18T04:18:03.786Z",
+          "execute_decision_is_fresh": true,
+          "execute_decision_after_the_selection": true
+        },
+        {
+          "invocation_id": "inv_20260918T043148Z-d5b980",
+          "capability_id": "agents-md-compactor",
+          "mode": "eval",
+          "status": "completed",
+          "selection_id": "sel_20260918T043119Z-cdd68f",
+          "selection_status": "selected",
+          "selection_winner": "agents-md-compactor",
+          "selection_decided_at": "2026-09-18T04:31:19.348Z",
+          "competing_decisions": [
+            {
+              "capability_id": "agents-md-compactor",
+              "decision_id": "elig_20260918T043116Z-391d8b",
+              "scope": "compete"
+            },
+            {
+              "capability_id": "reuse-ledger",
+              "decision_id": "elig_20260918T043116Z-788403",
+              "scope": "compete"
+            }
+          ],
+          "execute_decision_id": "elig_20260918T043148Z-4741e6",
+          "execute_decision_scope": "execute",
+          "execute_decision_purpose": "eval",
+          "execute_decision_capability_id": "agents-md-compactor",
+          "execute_decision_created_at": "2026-09-18T04:31:48.784Z",
+          "execute_decision_is_fresh": true,
+          "execute_decision_after_the_selection": true
+        }
+      ],
+      "live_asymmetry_between_the_two_questions": {
+        "agents-md-compactor": {
+          "may_compete_at_purpose_eval": true,
+          "may_execute_at_purpose_normal": false,
+          "execute_refusal_reasons": [
+            "candidate_not_allowed",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        "reuse-ledger": {
+          "may_compete_at_purpose_eval": true,
+          "may_execute_at_purpose_normal": false,
+          "execute_refusal_reasons": [
+            "candidate_not_allowed",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        }
+      },
+      "why_this_matters": "a MAY_COMPETE decision must never authorize execution — measured live, the same capability is compete-eligible and normal-mode execute-ineligible in the same instant"
+    },
+    "12_kernel_still_requires_execute_eligibility": {
+      "verdict": "PASS",
+      "an_ineligible_execute_decision": {
+        "eligible": false,
+        "reasons": [
+          "candidate_not_allowed",
+          "provenance_asserted",
+          "no_ship_eval"
+        ],
+        "kernel_sealed_it_as": "blocked",
+        "basis": "eligibility decision elig_20260918T051342Z-aabb4f does not authorize this invocation: eligibility decision does not permit execution: candidate_not_allowed, provenance_asserted, no_ship_eval; eligibility decision was made for purpose 'normal', which does not authorize a eval-mode invocation"
+      },
+      "a_compete_decision_that_says_yes": {
+        "eligible": true,
+        "kernel_sealed_it_as": "blocked",
+        "basis": "eligibility decision elig_20260918T051342Z-4ab0f7 does not authorize this invocation: eligibility decision was asked at scope 'compete' — only a scope=execute decision authorizes execution, and a scope=compete decision means \"may stand for election\", not \"may run\""
+      },
+      "an_eligible_execute_decision": {
+        "sealed": true,
+        "status": "completed"
+      },
+      "note": "the kernel asks its own question from its own decision artifact and never inherits an answer from the selection — and a compete decision is refused even when it says eligible, because eligibility is per-scope"
+    },
+    "13_provenance_pinned_into_invocation": {
+      "verdict": "PASS",
+      "invocation_id": "inv_20260918T043148Z-d5b980",
+      "pinned": {
+        "selection_id": "sel_20260918T043119Z-cdd68f",
+        "selection_sha256": "11f76976fb8aa48ee97fc3fd5d8d555f3adc8c94af1655702d9a5e1dc38b5ea5",
+        "block": {
+          "selector": {
+            "id": "explicit",
+            "version": "1"
+          },
+          "status": "selected",
+          "selected_capability_id": "agents-md-compactor",
+          "candidates": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "path": "selections/sel_20260918T043119Z-cdd68f/selection.json"
+        }
+      },
+      "artifacts_re_hashed_when_verifying": 11,
+      "verify_ok": true,
+      "tampering_with_the_pinned_selection_breaks_verification": {
+        "ok": false,
+        "problems": [
+          "selection changed since the invocation was written: sel_20260918T043119Z-cdd68f",
+          "selection sel_20260918T043119Z-cdd68f: selection integrity mismatch — the selection was edited after it was written"
+        ]
+      },
+      "restored_verifies_again": true,
+      "probe_home_removed": true
+    },
+    "14_direct_run_needs_no_selection": {
+      "verdict": "PASS",
+      "direct_invocation": {
+        "status": "completed",
+        "selection_id": null,
+        "selection_block": null
+      },
+      "direct_cli_run": {
+        "exit": 0,
+        "printed_selection_line": false
+      },
+      "note": "selection is provenance a caller may attach, never a step a caller must perform"
+    },
+    "15_selection_moves_no_reuse_and_no_trace": {
+      "verdict": "PASS",
+      "live_selections_created_during_this_check": {
+        "selected": {
+          "id": "sel_20260918T051344Z-8a4fb1",
+          "status": "selected",
+          "winner": "reuse-ledger"
+        },
+        "abstained": {
+          "id": "sel_20260918T051344Z-f5da83",
+          "status": "abstained",
+          "basis": "requested 'a-capability-that-does-not-exist' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]"
+        },
+        "no_candidates": {
+          "id": "sel_20260918T051344Z-530fba",
+          "status": "no_candidates"
+        }
+      },
+      "trace_and_reuse_identifiers_in_the_selection_module": [],
+      "what_the_selection_module_does_write": "exactly one file: selections/<selection_id>/selection.json, written once and never rewritten",
+      "registry_sha256": {
+        "before": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+        "after": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+        "identical": true
+      },
+      "traces_sha256": {
+        "before": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+        "after": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+        "identical": true
+      },
+      "trace_lines": {
+        "before": 98,
+        "after": 98
+      },
+      "reuse_counts_moved": [],
+      "note": "selection is not reuse: selected is not invoked, and invoked is not successfully reused"
+    },
+    "16_no_semantic_routing_ranking_model_or_planner": {
+      "verdict": "PASS",
+      "vocabulary_searched": [
+        "similarity",
+        "cosine",
+        "embedding",
+        "tfidf",
+        "keyword",
+        "rank",
+        "score",
+        "heuristic",
+        "predict",
+        "learn",
+        "weight",
+        "llm",
+        "openai",
+        "anthropic",
+        "gpt",
+        "prompt",
+        "planner",
+        "intent",
+        "task_text",
+        "semantic",
+        "route",
+        "router",
+        "classify",
+        "nearest"
+      ],
+      "hits_in_lib_selection_code": [],
+      "hits_in_the_cli_select_surface": [],
+      "how_a_choice_is_actually_made": "explicit@1 compares one string the caller supplied against the candidate capability ids. There is no other way for a capability to be chosen in this build.",
+      "installed_selectors": [
+        "explicit"
+      ],
+      "deferred_and_absent": [
+        "LLM router",
+        "learned router",
+        "ranking",
+        "similarity",
+        "task interpretation",
+        "cost-aware selection",
+        "latency-aware selection",
+        "workflow planner",
+        "fallback selector",
+        "automatic retries"
+      ]
+    },
+    "17_step1_to_4_still_green": {
+      "verdict": "PASS",
+      "suite": {
+        "exit": 0,
+        "tests": 87,
+        "pass": 87,
+        "fail": 0,
+        "skipped": 0
+      },
+      "suite_counters_as_printed": [
+        "ℹ tests 87",
+        "ℹ pass 87",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0"
+      ],
+      "test_files": [
+        "capabilities.test.js",
+        "cli.test.js",
+        "eligibility.test.js",
+        "evalrunner.test.js",
+        "invocation.test.js",
+        "registry.test.js",
+        "render.test.js",
+        "seed.test.js",
+        "selection.test.js",
+        "traces.test.js",
+        "validate.test.js"
+      ],
+      "step4_verifier_rerun_from_a_copy": {
+        "exit": 0,
+        "all_pass": true,
+        "items": 15
+      },
+      "step4_recorded_verdicts": {
+        "1_pure_deterministic": "PASS",
+        "2_zero_adapter_execution": "PASS",
+        "4_schema_rcos_eligibility_1": "PASS",
+        "5_integrity_and_write_once": "PASS",
+        "6_reason_codes": "PASS",
+        "7_multiple_failures_reported": "PASS",
+        "8_kernel_has_no_policy": "PASS",
+        "9_decision_required": "PASS",
+        "11_three_caller_contexts": "PASS",
+        "12_forbidden_inputs_inert": "PASS",
+        "3_zero_registry_mutation": "PASS",
+        "14_registry_byte_stable": "PASS",
+        "15_suite_green": "PASS",
+        "13_reuse_eval_invariants": "PASS",
+        "10_execution_safety_stays_in_kernel": "PASS"
+      },
+      "step4_rerun_verdicts": {
+        "1_pure_deterministic": "PASS",
+        "2_zero_adapter_execution": "PASS",
+        "4_schema_rcos_eligibility_1": "PASS",
+        "5_integrity_and_write_once": "PASS",
+        "6_reason_codes": "PASS",
+        "7_multiple_failures_reported": "PASS",
+        "8_kernel_has_no_policy": "PASS",
+        "9_decision_required": "PASS",
+        "11_three_caller_contexts": "PASS",
+        "12_forbidden_inputs_inert": "PASS",
+        "3_zero_registry_mutation": "PASS",
+        "14_registry_byte_stable": "PASS",
+        "15_suite_green": "PASS",
+        "13_reuse_eval_invariants": "PASS",
+        "10_execution_safety_stays_in_kernel": "PASS"
+      },
+      "every_item_verdict_unchanged": true,
+      "step4_evidence_of_record_untouched": "84037b4a6c604bb44ea11f70b4b41e238ba7dcd103544c4be37229e3c59ab2f8",
+      "rerun_home_removed": true
+    },
+    "18_registry_unchanged": {
+      "verdict": "PASS",
+      "unchanged_across_this_harness": true,
+      "registry_sha256_before_this_harness": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+      "registry_sha256_after_this_harness": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+      "traces_sha256_before_this_harness": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+      "traces_sha256_after_this_harness": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+      "uncommitted_registry_or_trace_changes": "(none)",
+      "this_steps_own_commit": "6c34ee2",
+      "this_steps_own_commit_paths": [
+        "README.md",
+        "bin/rcos",
+        "lib/invocation.js",
+        "lib/selection.js",
+        "tests/selection.test.js"
+      ],
+      "this_steps_own_commit_touched_registry_or_traces": [],
+      "registry_sha256_at_step5_start": "0fe4c4cde218071465c486fde2941263743874cbf998ddd6b78665e120b1adc0",
+      "registry_moved_after_the_step5_start": true,
+      "registry_sha256_at_the_step4_commit": "0379300de3fd72ca99ce82cc1f82aabafc196fb7946b6b966503ec538cd003a3",
+      "divergence_from_step4": true,
+      "window_provenance_not_a_gate": {
+        "note": "every commit in 5647877..HEAD that touched registry/ or traces/, attributed — recorded so a reader can see who moved the data; deliberately not part of the verdict",
+        "commits": [
+          {
+            "sha": "dc07607",
+            "date": "2026-09-18",
+            "subject": "registry+traces: study-round25 / study-round25-loop eval submissions (R25)",
+            "by_study_loop": true
+          },
+          {
+            "sha": "b969ee6",
+            "date": "2026-09-18",
+            "subject": "evals(study-round24): machine-written registry+traces for ship x2",
+            "by_study_loop": true
+          },
+          {
+            "sha": "60f564e",
+            "date": "2026-09-17",
+            "subject": "evals(study-round23): machine-written registry+traces for ship x2",
+            "by_study_loop": true
+          }
+        ],
+        "every_one_is_a_study_loop_commit": true
+      }
+    }
+  },
+  "before": {
+    "registry_sha256": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+    "traces_sha256": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+    "trace_lines": 98,
+    "reuse_counts": {
+      "filmstrip-verify": 0,
+      "muse-image-lane": 1,
+      "dell-gpu-dispatch": 1,
+      "browser-verify-artifacts": 0,
+      "qr-camo-embed": 4,
+      "chalk-capture-recipe": 1,
+      "hog-qa-suite": 2,
+      "operator-ui-contract-test": 0,
+      "webgl-film-capture": 0,
+      "shadow-play-staging": 0,
+      "character-forge": 0,
+      "local-talking-heads": 0,
+      "video-forensics-receipt": 0,
+      "creative-study-loop": 0,
+      "hunyuan3d-mlx-local": 0,
+      "face-in-scene-shot": 0,
+      "preview-server-verify": 0,
+      "audio-offline-verify": 0,
+      "x-media-package": 0,
+      "receipt-figure-render": 0,
+      "reuse-ledger": 0,
+      "agents-md-compactor": 0
+    }
+  },
+  "after": {
+    "registry_sha256": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+    "traces_sha256": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+    "trace_lines": 98,
+    "reuse_counts": {
+      "filmstrip-verify": 0,
+      "muse-image-lane": 1,
+      "dell-gpu-dispatch": 1,
+      "browser-verify-artifacts": 0,
+      "qr-camo-embed": 4,
+      "chalk-capture-recipe": 1,
+      "hog-qa-suite": 2,
+      "operator-ui-contract-test": 0,
+      "webgl-film-capture": 0,
+      "shadow-play-staging": 0,
+      "character-forge": 0,
+      "local-talking-heads": 0,
+      "video-forensics-receipt": 0,
+      "creative-study-loop": 0,
+      "hunyuan3d-mlx-local": 0,
+      "face-in-scene-shot": 0,
+      "preview-server-verify": 0,
+      "audio-offline-verify": 0,
+      "x-media-package": 0,
+      "receipt-figure-render": 0,
+      "reuse-ledger": 0,
+      "agents-md-compactor": 0
+    }
+  },
+  "live_dogfood": {
+    "selected": "sel_20260918T051344Z-8a4fb1",
+    "abstained": "sel_20260918T051344Z-f5da83",
+    "no_candidates": "sel_20260918T051344Z-530fba",
+    "compete_decisions_minted": [
+      "elig_20260918T051344Z-8a4f03",
+      "elig_20260918T051344Z-64327b"
+    ]
+  },
+  "summary": {
+    "1_consumes_only_verified_compete_decisions": "PASS",
+    "2_never_recomputes_eligibility": "PASS",
+    "3_schema_immutable_integrity_verifiable": "PASS",
+    "4_candidate_set_exact_and_hash_pinned": "PASS",
+    "5_membership_not_semantic_quality": "PASS",
+    "6_only_explicit_1": "PASS",
+    "7_replaceable_selector_interface": "PASS",
+    "8_selector_input_opaque_to_core": "PASS",
+    "9_five_statuses_structurally_distinct": "PASS",
+    "10_selection_grants_no_authority": "PASS",
+    "11_winner_gets_a_fresh_execute_decision": "PASS",
+    "12_kernel_still_requires_execute_eligibility": "PASS",
+    "13_provenance_pinned_into_invocation": "PASS",
+    "14_direct_run_needs_no_selection": "PASS",
+    "15_selection_moves_no_reuse_and_no_trace": "PASS",
+    "16_no_semantic_routing_ranking_model_or_planner": "PASS",
+    "17_step1_to_4_still_green": "PASS",
+    "18_registry_unchanged": "PASS"
+  },
+  "all_pass": true
+}

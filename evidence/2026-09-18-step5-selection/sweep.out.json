@@ -1,0 +1,1094 @@
+{
+  "home": "/Users/adam26/zcode-rcos",
+  "probe_home": "/var/folders/yh/y7m8gnnx5x3g4l9mvpmh2z180000gn/T/step5-sweep-bjfqvZ",
+  "registry_capabilities": 22,
+  "selectors_installed": [
+    "explicit"
+  ],
+  "purposes": {
+    "normal": {
+      "scope": "compete",
+      "eligible_count": 0,
+      "total": 22,
+      "eligible": [],
+      "histogram": {
+        "not_executable + provenance_asserted + no_ship_eval": 20,
+        "candidate_not_allowed + provenance_asserted + no_ship_eval": 2
+      },
+      "rows": [
+        {
+          "id": "filmstrip-verify",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "muse-image-lane",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "dell-gpu-dispatch",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "browser-verify-artifacts",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "qr-camo-embed",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "chalk-capture-recipe",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "hog-qa-suite",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "operator-ui-contract-test",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "webgl-film-capture",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "shadow-play-staging",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "character-forge",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "local-talking-heads",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "video-forensics-receipt",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "creative-study-loop",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "hunyuan3d-mlx-local",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "face-in-scene-shot",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "preview-server-verify",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "audio-offline-verify",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "x-media-package",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "receipt-figure-render",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "reuse-ledger",
+          "status": "candidate",
+          "executable": true,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "candidate_not_allowed",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "agents-md-compactor",
+          "status": "candidate",
+          "executable": true,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "candidate_not_allowed",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        }
+      ]
+    },
+    "eval": {
+      "scope": "compete",
+      "eligible_count": 2,
+      "total": 22,
+      "eligible": [
+        "agents-md-compactor",
+        "reuse-ledger"
+      ],
+      "histogram": {
+        "not_executable": 20,
+        "(eligible)": 2
+      },
+      "rows": [
+        {
+          "id": "filmstrip-verify",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "muse-image-lane",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "dell-gpu-dispatch",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "browser-verify-artifacts",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "qr-camo-embed",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "chalk-capture-recipe",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "hog-qa-suite",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "operator-ui-contract-test",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "webgl-film-capture",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "shadow-play-staging",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "character-forge",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "local-talking-heads",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "video-forensics-receipt",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "creative-study-loop",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "hunyuan3d-mlx-local",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "face-in-scene-shot",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "preview-server-verify",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "audio-offline-verify",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "x-media-package",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "receipt-figure-render",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "reuse-ledger",
+          "status": "candidate",
+          "executable": true,
+          "provenance": "asserted",
+          "may_compete": true,
+          "reasons": []
+        },
+        {
+          "id": "agents-md-compactor",
+          "status": "candidate",
+          "executable": true,
+          "provenance": "asserted",
+          "may_compete": true,
+          "reasons": []
+        }
+      ]
+    },
+    "forensic": {
+      "scope": "compete",
+      "eligible_count": 2,
+      "total": 22,
+      "eligible": [
+        "agents-md-compactor",
+        "reuse-ledger"
+      ],
+      "histogram": {
+        "not_executable": 20,
+        "(eligible)": 2
+      },
+      "rows": [
+        {
+          "id": "filmstrip-verify",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "muse-image-lane",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "dell-gpu-dispatch",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "browser-verify-artifacts",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "qr-camo-embed",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "chalk-capture-recipe",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "hog-qa-suite",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "operator-ui-contract-test",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "webgl-film-capture",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "shadow-play-staging",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "character-forge",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "local-talking-heads",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "video-forensics-receipt",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "creative-study-loop",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "hunyuan3d-mlx-local",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "face-in-scene-shot",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "preview-server-verify",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "audio-offline-verify",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "x-media-package",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "receipt-figure-render",
+          "status": "promoted",
+          "executable": false,
+          "provenance": "asserted",
+          "may_compete": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "reuse-ledger",
+          "status": "candidate",
+          "executable": true,
+          "provenance": "asserted",
+          "may_compete": true,
+          "reasons": []
+        },
+        {
+          "id": "agents-md-compactor",
+          "status": "candidate",
+          "executable": true,
+          "provenance": "asserted",
+          "may_compete": true,
+          "reasons": []
+        }
+      ]
+    }
+  },
+  "funnel": {
+    "rung_1_in_the_registry": 22,
+    "rung_2_executable": 2,
+    "rung_3_may_compete_at_purpose_eval": 2,
+    "rung_4_on_the_ballot": 2,
+    "rung_5_explicitly_selectable": 2,
+    "rung_6_execute_eligible_at_purpose_eval": 2,
+    "rung_6_execute_eligible_at_purpose_normal": 0,
+    "where_the_funnel_narrows": "the executability ladder (declared adapter, supported type, usable contract, present entrypoint) — not the selection bus"
+  },
+  "selector_refusals": {
+    "empty_ballot": {
+      "status": "no_candidates",
+      "basis": "the candidate set is empty — no scope=compete eligible decision was supplied, so no selector was convened"
+    },
+    "a_name_that_is_not_on_the_ballot": {
+      "status": "abstained",
+      "basis": "requested 'no-such-capability-anywhere' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]"
+    },
+    "an_unknown_input_key": {
+      "status": "refused (not a status: a malformed input never reaches the core)",
+      "basis": "selector explicit@1 rejected its input: selector input.similarity: unknown field — explicit@1 accepts exactly one key, capability_id"
+    }
+  },
+  "statuses_reachable_in_this_sweep": [
+    "abstained",
+    "no_candidates",
+    "selected"
+  ],
+  "live_home_untouched": {
+    "registry_sha256": {
+      "before": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+      "after": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+      "identical": true
+    },
+    "traces_sha256": {
+      "before": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+      "after": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+      "identical": true
+    },
+    "reuse_counts_moved": [],
+    "selections_created_in_the_live_home": 0,
+    "invocations_created_in_the_live_home": 0
+  },
+  "selection_sweep": {
+    "selector": "explicit@1",
+    "ballot_purpose": "eval",
+    "candidate_decision_ids": {
+      "agents-md-compactor": "elig_20260918T051355Z-ea6ac5",
+      "reuse-ledger": "elig_20260918T051355Z-32757b"
+    },
+    "offered": 22,
+    "histogram": {
+      "abstained": 20,
+      "selected": 2
+    },
+    "rows": [
+      {
+        "id": "filmstrip-verify",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'filmstrip-verify' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-d6b041",
+        "verifies": true
+      },
+      {
+        "id": "muse-image-lane",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'muse-image-lane' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-9340a1",
+        "verifies": true
+      },
+      {
+        "id": "dell-gpu-dispatch",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'dell-gpu-dispatch' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-de06a1",
+        "verifies": true
+      },
+      {
+        "id": "browser-verify-artifacts",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'browser-verify-artifacts' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-985de4",
+        "verifies": true
+      },
+      {
+        "id": "qr-camo-embed",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'qr-camo-embed' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-ea1387",
+        "verifies": true
+      },
+      {
+        "id": "chalk-capture-recipe",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'chalk-capture-recipe' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-de20e5",
+        "verifies": true
+      },
+      {
+        "id": "hog-qa-suite",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'hog-qa-suite' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-a42ee6",
+        "verifies": true
+      },
+      {
+        "id": "operator-ui-contract-test",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'operator-ui-contract-test' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-196055",
+        "verifies": true
+      },
+      {
+        "id": "webgl-film-capture",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'webgl-film-capture' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-5dcb9f",
+        "verifies": true
+      },
+      {
+        "id": "shadow-play-staging",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'shadow-play-staging' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-1c3eb0",
+        "verifies": true
+      },
+      {
+        "id": "character-forge",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'character-forge' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-027974",
+        "verifies": true
+      },
+      {
+        "id": "local-talking-heads",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'local-talking-heads' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-bde087",
+        "verifies": true
+      },
+      {
+        "id": "video-forensics-receipt",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'video-forensics-receipt' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-b5e445",
+        "verifies": true
+      },
+      {
+        "id": "creative-study-loop",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'creative-study-loop' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-993372",
+        "verifies": true
+      },
+      {
+        "id": "hunyuan3d-mlx-local",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'hunyuan3d-mlx-local' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-d3dc49",
+        "verifies": true
+      },
+      {
+        "id": "face-in-scene-shot",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'face-in-scene-shot' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-18e8d0",
+        "verifies": true
+      },
+      {
+        "id": "preview-server-verify",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'preview-server-verify' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-962418",
+        "verifies": true
+      },
+      {
+        "id": "audio-offline-verify",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'audio-offline-verify' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-aaedd0",
+        "verifies": true
+      },
+      {
+        "id": "x-media-package",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'x-media-package' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-0e2016",
+        "verifies": true
+      },
+      {
+        "id": "receipt-figure-render",
+        "status": "promoted",
+        "on_the_ballot": false,
+        "selection_status": "abstained",
+        "selected_capability_id": null,
+        "status_basis": "requested 'receipt-figure-render' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]",
+        "selection_id": "sel_20260918T051355Z-4f673e",
+        "verifies": true
+      },
+      {
+        "id": "reuse-ledger",
+        "status": "candidate",
+        "on_the_ballot": true,
+        "selection_status": "selected",
+        "selected_capability_id": "reuse-ledger",
+        "status_basis": "requested 'reuse-ledger' is in the eligible candidate set",
+        "selection_id": "sel_20260918T051355Z-568759",
+        "verifies": true
+      },
+      {
+        "id": "agents-md-compactor",
+        "status": "candidate",
+        "on_the_ballot": true,
+        "selection_status": "selected",
+        "selected_capability_id": "agents-md-compactor",
+        "status_basis": "requested 'agents-md-compactor' is in the eligible candidate set",
+        "selection_id": "sel_20260918T051355Z-1ca6c3",
+        "verifies": true
+      }
+    ]
+  },
+  "execute_sweep": {
+    "rows": [
+      {
+        "id": "reuse-ledger",
+        "purpose": "normal",
+        "execute_decision_id": "elig_20260918T051355Z-dc4ee6",
+        "may_execute": false,
+        "reasons": [
+          "candidate_not_allowed",
+          "provenance_asserted",
+          "no_ship_eval"
+        ],
+        "scope": "execute",
+        "fresh": true
+      },
+      {
+        "id": "reuse-ledger",
+        "purpose": "eval",
+        "execute_decision_id": "elig_20260918T051355Z-2ccd60",
+        "may_execute": true,
+        "reasons": [],
+        "scope": "execute",
+        "fresh": true
+      },
+      {
+        "id": "reuse-ledger",
+        "purpose": "forensic",
+        "execute_decision_id": "elig_20260918T051355Z-3408da",
+        "may_execute": true,
+        "reasons": [],
+        "scope": "execute",
+        "fresh": true
+      },
+      {
+        "id": "agents-md-compactor",
+        "purpose": "normal",
+        "execute_decision_id": "elig_20260918T051355Z-52f6ff",
+        "may_execute": false,
+        "reasons": [
+          "candidate_not_allowed",
+          "provenance_asserted",
+          "no_ship_eval"
+        ],
+        "scope": "execute",
+        "fresh": true
+      },
+      {
+        "id": "agents-md-compactor",
+        "purpose": "eval",
+        "execute_decision_id": "elig_20260918T051355Z-2039f7",
+        "may_execute": true,
+        "reasons": [],
+        "scope": "execute",
+        "fresh": true
+      },
+      {
+        "id": "agents-md-compactor",
+        "purpose": "forensic",
+        "execute_decision_id": "elig_20260918T051355Z-a823d1",
+        "may_execute": true,
+        "reasons": [],
+        "scope": "execute",
+        "fresh": true
+      }
+    ],
+    "every_execute_decision_is_a_new_artifact": true
+  }
+}

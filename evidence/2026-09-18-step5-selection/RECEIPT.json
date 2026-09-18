@@ -1,0 +1,1408 @@
+{
+  "run": "selection-5",
+  "capability": null,
+  "subject": "RCOS Step 5 — the selection bus",
+  "date": "2026-09-18",
+  "task": "Build the pluggable selection interface GPT's round-7 ruling names as Step 5: the immutable rcos-selection/1 protocol, candidate-set integrity, exactly one selector (explicit@1), the fresh scope=execute handoff for the winner, and provenance pinning — and stop there.",
+  "spec": {
+    "file": "workspace/default/partsnap-rcos/GPT-REPLY-7-20260917.md (outside this repo — the ruling is quoted verbatim below so this receipt stands alone)",
+    "sha256": "3364498fe03309fd2eb4837da6fa1120f80e77534fa50c2d12ec0a9c97f2943e",
+    "ruling_verbatim": "Ruling: Step 5 is the selection bus, not the selection brain. Build the immutable protocol, candidate integrity, explicit selector, fresh execute-eligibility handoff, and stop there.",
+    "invariant": "Selection may choose only among capabilities already proven eligible to compete. Selection never grants execution authority.",
+    "flow_verbatim": "REGISTRY + EVAL STATE -> ELIGIBILITY(scope=compete) -> eligible candidate set -> SELECTOR -> selection decision -> ELIGIBILITY(scope=execute) <- fresh decision for winner -> INVOCATION KERNEL",
+    "why_the_second_check_verbatim": "That second eligibility check is important. A MAY_COMPETE decision must never authorize execution.",
+    "three_locked_meanings_verbatim": "selection says WHICH / eligibility says MAY / kernel says CAN EXECUTE SAFELY",
+    "minimum_shape_verbatim": "{schema, selection_id, selector:{id,version}, candidates:[{capability_id, capability_version, eligibility_decision_id, eligibility_sha256}], status, selected_capability_id, selector_input_sha256, integrity}",
+    "core_is_stupid_on_purpose_verbatim": "Core verification is deterministic and deliberately stupid. It does not judge whether the choice was smart. It does not judge whether the task semantically matched. It does not judge whether another candidate was better. It does not judge whether a rationale sounds convincing. Those are selector-quality questions for later evals.",
+    "selector_input_is_opaque_verbatim": "Selector-specific input stays opaque to core. Core must not define a universal vocabulary containing task_text, intent, similarity, domain, scores.",
+    "no_reuse_semantics_verbatim": "Selection is not reuse. Selection is not invocation. Selection is not success. Even: selected does not mean: invoked or: successfully reused. Leave the Step-1 invariant alone.",
+    "direct_invocation_verbatim": "Do not make selection mandatory for direct invocation.",
+    "non_goals_verbatim": "Do not build: LLM router / learned router / ranking / similarity / task interpretation / cost-aware selection / latency-aware selection / workflow planner / fallback selector / automatic retries / authority / truth envelope / dependency planning / PartSnap semantics",
+    "must_fail_closed_verbatim": "Also pin: explicit(nonexistent) / explicit(ineligible legacy cap) / tampered candidate eligibility / tampered selection / selection of candidate not in set / compete decision supplied directly to kernel. All must fail closed.",
+    "dogfood_plan_verbatim": "Under eval + scope=compete: reuse-ledger eligible / agents-md-compactor eligible. Create a candidate set containing both. Then: explicit(reuse-ledger) -> selected reuse-ledger. Request fresh: eligibility(reuse-ledger, scope=execute, eval context). Then execute it. Separately: explicit(agents-md-compactor) -> selected successfully -> executes successfully -> eval remains FIX. Again proving: ELIGIBLE != GOOD / SELECTED != GOOD / EXECUTED != GOOD. Quality remains exclusively the eval runner's concern.",
+    "sequence_adjustment_verbatim": "After this ships, I would not immediately build an intelligent selector. Step 6 should remain the truth/evidence envelope. The empty selector slot can stay empty. That is healthy.",
+    "why_wait_verbatim": "Once truth and later authority exist, an intelligent selector will receive a much better-defined world: eligible actions + grounded state + explicit objective — rather than raw prompts plus a giant capability registry."
+  },
+  "commit": "6c34ee2",
+  "commit_full": "6c34ee219005226a2cb60a23eaf0f6e6d6b16859",
+  "base_commit": "5647877",
+  "verdict": "ship",
+  "verdict_basis": "All 18 items of the round-7 ship bar PASS in a self-contained harness (evidence/2026-09-18-step5-selection/shipbar-verify.js, all_pass: true), re-run on the frozen tree after the last edit. The bus is measured end-to-end against the real registry with nothing stubbed: 22 capabilities -> 2 executable -> 2 may compete -> 2 on the ballot -> 2 explicitly selectable -> 2 execute-eligible at purpose eval -> 0 at purpose normal. Two live dogfood invocations came through a selection and received a fresh scope=execute decision before running; one of them completed and its own gates still say 'fix', which is the point — ELIGIBLE != GOOD, SELECTED != GOOD, EXECUTED != GOOD. Six refusal shapes fail closed, five of them as sealed status=blocked invocations and one (no decision at all) as a plain error. The registry and traces are byte-identical across the whole step and no reuse_count moved. Suite 87/87 across 11 files, Step 1-4's own 15-item verifier still 15/15.",
+  "ship_bar": [
+    {
+      "id": 1,
+      "item": "Selection consumes only verified scope=compete eligible decisions.",
+      "status": "PASS",
+      "evidence": "The control ballot was built from two real scope=compete decisions and both pins were re-verified from disk. Five refusals, each with its verbatim basis: a scope=execute decision offered as a candidate ('has scope execute — a candidate must be a scope=compete decision, because competing is the only question selection is allowed to ask'); a compete decision that says no ('does not permit competition: not_executable'); a decision id naming no artifact ('no such eligibility decision artifact'); a string that is not a decision id; and a decision whose bytes were edited after it was written ('does not verify: decision integrity mismatch — the decision was edited after it was written; ineligible decision carries no reason'). Tampered bytes restored afterwards."
+    },
+    {
+      "id": 2,
+      "item": "It never recomputes eligibility.",
+      "status": "PASS",
+      "evidence": "The decision-producing functions called by the selection module are an empty list — selection cannot ask the eligibility question because it is not given one to ask. The proof is behavioural: one decision was recorded as eligible, and the same capability asked afresh with a different caller context (purpose=normal) answers false with [candidate_not_allowed, provenance_asserted, no_ship_eval] — while the selection, which carries no context and no purpose, follows the recorded verdict and returns 'selected'. The opposite decision is refused as a candidate. What verification does read is the registry, to confirm the decision names a capability that exists at the recorded version: a reference check, never a verdict."
+    },
+    {
+      "id": 3,
+      "item": "rcos-selection/1 is immutable and integrity-verifiable.",
+      "status": "PASS",
+      "evidence": "schema constant 'rcos-selection/1'. Five distinct edits each caught by the integrity hash — status_basis edited, status flipped, a candidate sha replaced, a whole candidate removed, the integrity value itself edited — all with the same first problem: 'selection integrity mismatch — the selection was edited after it was written'. Bytes restored after each edit and the artifact verifies again. Write-once enforced: a second create for the same id throws 'selection already exists — selections are write-once and never rewritten'."
+    },
+    {
+      "id": 4,
+      "item": "The candidate set is exact and hash-pinned.",
+      "status": "PASS",
+      "evidence": "candidate_set_sha256 recomputed independently from the artifact matches the recorded value (081a790d8d7d0ab88cf40d2e33b6e1a206243f1849bbfc77b7e48763658df219). Exactness: candidates.length equals the number of decisions supplied, one entry per decision, in the order supplied. Adding a third candidate changes the hash. A duplicate capability in the set is refused: 'a candidate set is a set, and two pinned decisions for one capability is an ambiguity the protocol will not guess its way out of'. A swapped candidate sha is caught three ways (integrity mismatch, candidate_set_sha256 mismatch, and the per-candidate eligibility_sha256 mismatch against the decision artifact it names); a lied-about version is caught as 'decision names version 0.1.0, selection pins 9.9.9'."
+    },
+    {
+      "id": 5,
+      "item": "Core validates membership, not semantic quality.",
+      "status": "PASS",
+      "evidence": "A deliberately bad selector was injected: one that ignores its input entirely and picks the last candidate with the basis 'I picked the last one. No reason.' — the core selected it and recorded the basis verbatim. Another stated a claim the core cannot check ('agents-md-compactor is clearly the best match for this task') and the artifact still verifies. The judgement vocabulary present in the shipped core is an empty list. What the core checked is that the named capability is one of the candidates — nothing else. What it did not check: whether the choice was smart, whether the task semantically matched, whether another candidate was better, whether the rationale is true."
+    },
+    {
+      "id": 6,
+      "item": "Only explicit@1 is implemented.",
+      "status": "PASS",
+      "evidence": "Installed selectors: exactly ['explicit']. The shipped selector exposes id, version, validateInput, select. Naming a selector that does not exist is refused ('no selector X is installed — this build ships exactly one: explicit'), and naming a version that does not exist is refused too ('selector explicit is version 1, not 2'). The future selector names GPT listed are absent as code; only the word 'planner' appears, in prose, in a comment. The empty slots are named in prose and implemented nowhere — the healthy state the ruling asked for."
+    },
+    {
+      "id": 7,
+      "item": "Selector implementations use a replaceable interface.",
+      "status": "PASS",
+      "evidence": "The core calls exactly: id, version, validateInput(input) -> string[], select({candidates, selector_input}) -> {status, selected_capability_id, reason}. A foreign selector (probe-abstain@3) was injected into the core without editing the core — 'core_edited_to_do_this: false' — and it appears in the artifact as {id: 'probe-abstain', version: '3'} with status 'abstained', and its own input rule was enforced by the selector itself, not the core: 'selector probe-abstain@3 rejected its input: probe-abstain needs {ok: true}'. The artifact verifies."
+    },
+    {
+      "id": 8,
+      "item": "Selector-specific input is opaque to the core.",
+      "status": "PASS",
+      "evidence": "An exotic input object (nested arrays, a key with spaces, unicode, an arbitrary key named frobnicate) was stored verbatim and hash-pinned; input_sha256 recomputed from the input alone matches (90939fb49cb9c4f111357274c9db559d32ee46d1a6aa795708dbbd7bce3fd86f) and the artifact verifies. The universal vocabulary keys present in the core: an empty list. The only closed vocabulary in the build is explicit@1's own, and it enforces it itself: unknown key ('selector input.task_text: unknown field — explicit@1 accepts exactly one key, capability_id'), missing key, and wrong type all refused by the selector."
+    },
+    {
+      "id": 9,
+      "item": "The five statuses are structurally distinct.",
+      "status": "PASS",
+      "evidence": "Canonical order: selected, abstained, ambiguous, no_candidates, failed. A selector may return only the first three. All five were produced: selected (basis 'requested agents-md-compactor is in the eligible candidate set'), abstained, ambiguous, no_candidates (basis 'the candidate set is empty — no scope=compete eligible decision was supplied, so no selector was convened'), and failed (basis 'selector p-throws@1 threw: kaboom'). Only 'selected' names a capability; the other four all carry null. A selector attempting to return a core-only status is refused, and a selector that throws is sealed as failed rather than crashing the core."
+    },
+    {
+      "id": 10,
+      "item": "Selection does not grant execution permission.",
+      "status": "PASS",
+      "evidence": "Six refusal shapes measured, with the verbatim basis for each: a compete decision offered as the authorizing decision; a valid selection and no decision at all; a selection that chose a different capability; a selection that abstained; a selection id that names no artifact; a selection whose bytes were edited. The load-bearing discovery is the refusal SHAPE: when the kernel has a decision and/or a selection to reason about it SEALS the attempt as an invocation with status 'blocked' (ok: true, refusal text in status_basis) rather than returning an error — the audit trail shows what was tried. Only the missing-decision case is a plain error, because there is nothing to seal. The control with a real execute decision and the same selection completed. The three meanings, recorded: selection WHICH, eligibility MAY, kernel CAN EXECUTE SAFELY."
+    },
+    {
+      "id": 11,
+      "item": "The winner receives a fresh scope=execute decision.",
+      "status": "PASS",
+      "evidence": "Two live dogfood invocations came through a selection and each carries an execute decision minted AFTER the selection, from a different decision family than the competing ones: inv_20260918T041803Z-2ca0d3 (reuse-ledger, selection sel_20260918T041756Z-75466d decided at 04:17:56.704Z, execute decision elig_20260918T041803Z-fb9c84 created at 04:18:03.786Z, fresh: true, status completed) and inv_20260918T043148Z-d5b980 (agents-md-compactor, selection sel_20260918T043119Z-cdd68f at 04:31:19.348Z, execute elig_20260918T043148Z-4741e6 at 04:31:48.784Z, fresh: true, status completed). Live asymmetry measured in the same instant: both capabilities are may_compete_at_purpose_eval true and may_execute_at_purpose_normal false, for the same three reasons — a MAY_COMPETE decision must never authorize execution, and here it demonstrably does not."
+    },
+    {
+      "id": 12,
+      "item": "The kernel still requires execute eligibility.",
+      "status": "PASS",
+      "evidence": "An execute decision that says no (reasons: candidate_not_allowed, provenance_asserted, no_ship_eval) is sealed as blocked with the basis 'eligibility decision does not permit execution: ...; eligibility decision was made for purpose normal, which does not authorize a eval-mode invocation'. The same refusal shape holds for a compete decision offered to the kernel. The control — a real, eligible, purpose-matching execute decision — completes. Eligibility is therefore still load-bearing at the kernel boundary and selection did not become a substitute for it."
+    },
+    {
+      "id": 13,
+      "item": "Optional selection provenance can be pinned into invocation artifacts.",
+      "status": "PASS",
+      "evidence": "inv_20260918T043148Z-d5b980 pins selection_id sel_20260918T043119Z-cdd68f, its sha256 (11f76976fb8aa48ee97fc3fd5d8d555f3adc8c94af1655702d9a5e1dc38b5ea5), and a block {selector, status, selected_capability_id, candidates, path}. Verification re-hashes 11 artifacts and passes. Editing the pinned selection breaks verification with two problems — 'selection changed since the invocation was written' and the selection's own integrity mismatch — and restoring the bytes verifies again. Selection problems therefore include per-candidate problems, which is why a probe home must carry the candidate decisions."
+    },
+    {
+      "id": 14,
+      "item": "Direct 'rcos run <id>' does not require artificial selection.",
+      "status": "PASS",
+      "evidence": "A direct invocation ran with selection_id null and selection_block null and completed; the direct CLI run exited 0 and printed no selection line. Selection is provenance a caller may attach, never a step a caller must perform."
+    },
+    {
+      "id": 15,
+      "item": "Selection does not change reuse_count or traces.",
+      "status": "PASS",
+      "evidence": "The trace-and-reuse identifiers present in the selection module: an empty list. What the selection module does write is exactly one file: selections/<selection_id>/selection.json, written once and never rewritten. Across the harness, which convened the selector live three times (one selected reuse-ledger, one abstained, one no_candidates): registry sha identical before and after (2bd52677...), traces sha identical (6f0a97d1...), trace lines 98 before and 98 after, reuse_counts_moved: []. Selection is not reuse: selected is not invoked, and invoked is not successfully reused. The traces file has moved since the step-5 start (96 lines then, 98 now) but not inside this harness and not by this step's commit — see item 18."
+    },
+    {
+      "id": 16,
+      "item": "No semantic routing, ranking, model, or planner exists.",
+      "status": "PASS",
+      "evidence": "A 24-word vocabulary was searched over the selection module's code and the CLI's select surface, with comments stripped first so prose cannot mask or fake a hit: similarity, cosine, embedding, tfidf, keyword, rank, score, heuristic, predict, learn, weight, llm, openai, anthropic, gpt, prompt, planner, intent, task_text, semantic, route, router, classify, nearest. Hits in the selection code: none. Hits in the CLI select surface: none. How a choice is actually made: explicit@1 compares one string the caller supplied against the candidate capability ids — there is no other way for a capability to be chosen in this build. Deferred and absent: LLM router, learned router, ranking, similarity, task interpretation, cost-aware selection, latency-aware selection, workflow planner, fallback selector, automatic retries."
+    },
+    {
+      "id": 17,
+      "item": "Existing Step 1-4 invariants and tests remain green.",
+      "status": "PASS",
+      "evidence": "Suite exit 0, 87 tests, 87 pass, 0 fail, 0 skipped, across 11 test files (the counters as printed: 'tests 87' / 'pass 87' / 'fail 0' / 'skipped 0'). Step 4's own 15-item verifier was re-run from a temp-dir copy so its evidence of record (sha 84037b4a6c604bb44ea11f70b4b41e238ba7dcd103544c4be37229e3c59ab2f8) was never overwritten: all_pass true, 15 items, and every item verdict unchanged from the recorded ones. The rerun home was removed afterwards."
+    },
+    {
+      "id": 18,
+      "item": "The registry remains unchanged unless a separately justified migration requires otherwise.",
+      "status": "PASS",
+      "evidence": "The registry and the traces are byte-identical before and after this harness (2bd52677... and 6f0a97d1...), nothing under registry/ or traces/ is left uncommitted, and this step's own commit 6c34ee2 touched neither file — its paths are README.md, bin/rcos, lib/invocation.js, lib/selection.js, tests/selection.test.js. The step-start values this is measured against are re-derived from that same commit rather than remembered, and the harness's own copies of them are asserted to agree with git. The registry does differ from the value at the step-4 commit (0379300d...) and from the value at this step's start, and the divergence is attributed rather than dropped: every commit in the window that touched registry/ or traces/ is a study-loop commit (9410e0e 2026-09-18, dc07607 2026-09-18, b969ee6 2026-09-18, 60f564e 2026-09-17), machine-written on the loop's own schedule. Read that way, \"the registry remains unchanged\" is a claim about this step, and it holds at both levels: the step's commit touches neither data file, and the harness moves neither byte."
+    }
+  ],
+  "statuses": {
+    "canonical_order": [
+      "selected",
+      "abstained",
+      "ambiguous",
+      "no_candidates",
+      "failed"
+    ],
+    "selector_may_return": [
+      "selected",
+      "abstained",
+      "ambiguous"
+    ],
+    "core_only": [
+      "no_candidates",
+      "failed"
+    ],
+    "only_selected_names_a_capability": true,
+    "only_selected_may_proceed_toward_execution": true,
+    "why_structurally_distinct": "the statuses are not labels on one shape — they are five different answers to five different questions. no_candidates is 'there was nothing to choose from' (the core never convened a selector). failed is 'a selector existed and broke'. ambiguous is 'a selector existed and could not choose'. abstained is 'a selector chose not to choose'. Only selected answers 'which one', and only that answer can be carried forward."
+  },
+  "refusal_shapes": {
+    "measured": {
+      "a compete decision offered as the authorizing decision": "blocked",
+      "a valid selection and no decision at all": "error",
+      "a selection that chose a different capability": "blocked",
+      "a selection that abstained": "blocked",
+      "a selection id that names no artifact": "blocked",
+      "a selection whose bytes were edited after it was written": "blocked"
+    },
+    "the_rule": "When the kernel has a decision and/or a selection to reason about, it seals the attempt as an invocation with status 'blocked' — ok: true, with the refusal text in manifest.status_basis — so the audit trail records what was tried, not merely that it failed. A missing eligibility decision is the one plain error (ok: false), because there is nothing to seal.",
+    "why_this_matters": "a refusal that returns nothing leaves no evidence a refusal happened. Sealing turns 'someone tried to run X without authority' into an artifact you can find later."
+  },
+  "must_fail_closed": {
+    "spec_verbatim": "explicit(nonexistent) / explicit(ineligible legacy cap) / tampered candidate eligibility / tampered selection / selection of candidate not in set / compete decision supplied directly to kernel",
+    "all_six_pinned": true,
+    "explicit_nonexistent": "abstained, basis: requested '<id>' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]. (Not 'failed': naming a capability the caller believes in but that is not on the ballot is a refusal to choose, and the ballot is the whole world a selector is allowed to know.)",
+    "explicit_ineligible_legacy_cap": "offering a real capability that is not eligible to compete — 20 of the registry's 22 capabilities were offered to explicit@1 by name in the sweep, and all 20 abstained. A compete decision that says no cannot even enter the ballot: 'does not permit competition: not_executable'.",
+    "tampered_candidate_eligibility": "caught: 'candidate eligibility decision ... does not verify: decision integrity mismatch — the decision was edited after it was written; ineligible decision carries no reason'. Selection verification additionally re-derives candidate_set_sha256 and re-hashes each pinned decision.",
+    "tampered_selection": "caught by the artifact's own integrity hash, by the kernel's selection_sha256 comparison against the manifest ('selection changed since the invocation was written'), and by selection-verify.",
+    "selection_of_candidate_not_in_set": "refused by the core: a selector that names a capability outside the candidate set does not get its answer recorded as selected — the core checks membership and the choice is refused. (Membership is the ONLY thing the core judges.)",
+    "compete_decision_supplied_directly_to_kernel": "blocked, basis: 'eligibility decision was asked at scope compete — only a scope=execute decision authorizes execution, and a scope=compete decision means \"may stand for election\", not \"may run\"'."
+  },
+  "dogfood_runs": [
+    {
+      "what": "The round-7 dogfood plan, executed live against the real home — the reuse-ledger leg",
+      "cast": [
+        "reuse-ledger",
+        "agents-md-compactor"
+      ],
+      "steps": [
+        "mint scope=compete decisions at purpose eval for both (elig_20260918T041754Z-16a202 reuse-ledger, elig_20260918T041754Z-a9c6d0 agents-md-compactor)",
+        "build the ballot from both and select explicitly: sel_20260918T041756Z-75466d -> selected reuse-ledger",
+        "request a FRESH scope=execute decision for the winner: elig_20260918T041803Z-fb9c84 (created 7.1s after the selection)",
+        "invoke: inv_20260918T041803Z-2ca0d3, status completed"
+      ],
+      "result": "selected -> freshly authorized -> completed"
+    },
+    {
+      "what": "The same plan, the agents-md-compactor leg — the FIX leg, which is the whole point",
+      "steps": [
+        "mint scope=compete decisions at purpose eval for both (elig_20260918T043116Z-391d8b, elig_20260918T043116Z-788403)",
+        "select explicitly: sel_20260918T043119Z-cdd68f -> selected agents-md-compactor",
+        "fresh execute decision: elig_20260918T043148Z-4741e6 (created 29.4s after the selection)",
+        "invoke: inv_20260918T043148Z-d5b980, status completed",
+        "its own eval run: runs/20260918T043202Z-d8610a/receipt.json -> verdict fix, gate semantic-survival FAIL, 5 of 6 gates ok"
+      ],
+      "result": "ELIGIBLE != GOOD, SELECTED != GOOD, EXECUTED != GOOD. A capability can win an election, be freshly authorized, run to completion — and still be judged a FIX by the only thing allowed to judge quality. The bus moved the work; the eval judged it. That separation is the deliverable."
+    }
+  ],
+  "dogfood_invocations": [
+    {
+      "invocation_id": "inv_20260918T041803Z-2ca0d3",
+      "capability_id": "reuse-ledger",
+      "mode": "eval",
+      "status": "completed",
+      "selection_id": "sel_20260918T041756Z-75466d",
+      "selection_winner": "reuse-ledger",
+      "competing_decisions": [
+        "elig_20260918T041754Z-16a202 (compete)",
+        "elig_20260918T041754Z-a9c6d0 (compete)"
+      ],
+      "execute_decision_id": "elig_20260918T041803Z-fb9c84",
+      "execute_decision_scope": "execute",
+      "execute_decision_purpose": "eval",
+      "execute_decision_is_fresh": true,
+      "execute_decision_after_the_selection": true
+    },
+    {
+      "invocation_id": "inv_20260918T043148Z-d5b980",
+      "capability_id": "agents-md-compactor",
+      "mode": "eval",
+      "status": "completed",
+      "selection_id": "sel_20260918T043119Z-cdd68f",
+      "selection_winner": "agents-md-compactor",
+      "competing_decisions": [
+        "elig_20260918T043116Z-391d8b (compete)",
+        "elig_20260918T043116Z-788403 (compete)"
+      ],
+      "execute_decision_id": "elig_20260918T043148Z-4741e6",
+      "execute_decision_scope": "execute",
+      "execute_decision_purpose": "eval",
+      "execute_decision_is_fresh": true,
+      "execute_decision_after_the_selection": true,
+      "eval_run": "runs/20260918T043202Z-d8610a/receipt.json",
+      "eval_verdict": "fix",
+      "eval_gate_failed": "semantic-survival",
+      "eval_gates_ok": "5 of 6"
+    }
+  ],
+  "selection_inventory": {
+    "note": "selections are appended to the live home because the live home is the only place the real registry and the real decisions live. Nothing is mutated: no registry byte, no trace line, no reuse_count. A selection that was later re-run or re-thought is a new artifact with a new id; none is ever rewritten.",
+    "live_selections_created_by_this_harness_run": [
+      {
+        "id": "sel_20260918T051344Z-8a4fb1",
+        "status": "selected",
+        "winner": "reuse-ledger"
+      },
+      {
+        "id": "sel_20260918T051344Z-f5da83",
+        "status": "abstained",
+        "basis": "requested 'a-capability-that-does-not-exist' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]"
+      },
+      {
+        "id": "sel_20260918T051344Z-530fba",
+        "status": "no_candidates"
+      }
+    ],
+    "every_selection_in_the_live_home": {
+      "count": 19,
+      "all_verify": true,
+      "unverifiable": [],
+      "by_creation_second": [
+        {
+          "at_utc": "20260918T041433Z",
+          "count": 1,
+          "selections": [
+            {
+              "id": "sel_20260918T041433Z-5af2ec",
+              "status": "selected",
+              "selected": "reuse-ledger"
+            }
+          ]
+        },
+        {
+          "at_utc": "20260918T041756Z",
+          "count": 1,
+          "selections": [
+            {
+              "id": "sel_20260918T041756Z-75466d",
+              "status": "selected",
+              "selected": "reuse-ledger"
+            }
+          ]
+        },
+        {
+          "at_utc": "20260918T041809Z",
+          "count": 1,
+          "selections": [
+            {
+              "id": "sel_20260918T041809Z-4ada27",
+              "status": "abstained",
+              "selected": null
+            }
+          ]
+        },
+        {
+          "at_utc": "20260918T043119Z",
+          "count": 1,
+          "selections": [
+            {
+              "id": "sel_20260918T043119Z-cdd68f",
+              "status": "selected",
+              "selected": "agents-md-compactor"
+            }
+          ]
+        },
+        {
+          "at_utc": "20260918T044317Z",
+          "count": 3,
+          "selections": [
+            {
+              "id": "sel_20260918T044317Z-61043c",
+              "status": "abstained",
+              "selected": null
+            },
+            {
+              "id": "sel_20260918T044317Z-769213",
+              "status": "selected",
+              "selected": "reuse-ledger"
+            },
+            {
+              "id": "sel_20260918T044317Z-a308df",
+              "status": "no_candidates",
+              "selected": null
+            }
+          ]
+        },
+        {
+          "at_utc": "20260918T044853Z",
+          "count": 3,
+          "selections": [
+            {
+              "id": "sel_20260918T044853Z-b6638b",
+              "status": "no_candidates",
+              "selected": null
+            },
+            {
+              "id": "sel_20260918T044853Z-e1d5bd",
+              "status": "abstained",
+              "selected": null
+            },
+            {
+              "id": "sel_20260918T044853Z-e861e6",
+              "status": "selected",
+              "selected": "reuse-ledger"
+            }
+          ]
+        },
+        {
+          "at_utc": "20260918T044923Z",
+          "count": 3,
+          "selections": [
+            {
+              "id": "sel_20260918T044923Z-29bed8",
+              "status": "no_candidates",
+              "selected": null
+            },
+            {
+              "id": "sel_20260918T044923Z-4451fe",
+              "status": "abstained",
+              "selected": null
+            },
+            {
+              "id": "sel_20260918T044923Z-68abb1",
+              "status": "selected",
+              "selected": "reuse-ledger"
+            }
+          ]
+        },
+        {
+          "at_utc": "20260918T045513Z",
+          "count": 3,
+          "selections": [
+            {
+              "id": "sel_20260918T045513Z-2520e5",
+              "status": "selected",
+              "selected": "reuse-ledger"
+            },
+            {
+              "id": "sel_20260918T045513Z-49b7c0",
+              "status": "abstained",
+              "selected": null
+            },
+            {
+              "id": "sel_20260918T045513Z-e5187d",
+              "status": "no_candidates",
+              "selected": null
+            }
+          ]
+        },
+        {
+          "at_utc": "20260918T051344Z",
+          "count": 3,
+          "selections": [
+            {
+              "id": "sel_20260918T051344Z-530fba",
+              "status": "no_candidates",
+              "selected": null
+            },
+            {
+              "id": "sel_20260918T051344Z-8a4fb1",
+              "status": "selected",
+              "selected": "reuse-ledger"
+            },
+            {
+              "id": "sel_20260918T051344Z-f5da83",
+              "status": "abstained",
+              "selected": null
+            }
+          ]
+        }
+      ],
+      "why_there_are_more_than_three": "selections accumulate: each full harness run convenes the selector three times, and the step's development and dogfood legs convened it more. Every one is write-once and every one verifies, so the directory is a log of the step's own testing, not a mutation of anything."
+    }
+  },
+  "the_funnel": {
+    "rung_1_in_the_registry": 22,
+    "rung_2_executable": 2,
+    "rung_3_may_compete_at_purpose_eval": 2,
+    "rung_4_on_the_ballot": 2,
+    "rung_5_explicitly_selectable": 2,
+    "rung_6_execute_eligible_at_purpose_eval": 2,
+    "rung_6_execute_eligible_at_purpose_normal": 0,
+    "where_the_funnel_narrows": "the executability ladder (declared adapter, supported type, usable contract, present entrypoint) — not the selection bus",
+    "statuses_reachable_in_this_sweep": [
+      "abstained",
+      "no_candidates",
+      "selected"
+    ],
+    "why_only_three": "ambiguous and failed require a selector implementation that actually hesitates or breaks; explicit@1 never does either, so reaching them required injecting one (ship-bar item 9). That is a property of the shipped selector, not a gap in the bus."
+  },
+  "registry": {
+    "path": "registry/capability-registry.json",
+    "sha256_at_step5_start": "0fe4c4cde218071465c486fde2941263743874cbf998ddd6b78665e120b1adc0",
+    "sha256_at_step5_end": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+    "sha256_at_the_step4_commit": "0379300de3fd72ca99ce82cc1f82aabafc196fb7946b6b966503ec538cd003a3",
+    "capabilities": 22,
+    "executable": 2,
+    "compete_eligible_at_purpose_eval": 2,
+    "compete_eligible_at_purpose_forensic": 2,
+    "compete_eligible_at_purpose_normal": 0,
+    "moved_by_this_step": false,
+    "divergence_from_step4_attributed_to": "the autonomous study loop's machine-written eval commits. Inside this step's window: 9410e0e (2026-09-18, rcos: R26 eval traces (ship x2)); dc07607 (2026-09-18, registry+traces: study-round25 / study-round25-loop eval submissions (R25)); b969ee6 (2026-09-18, evals(study-round24): machine-written registry+traces for ship x2); 60f564e (2026-09-17, evals(study-round23): machine-written registry+traces for ship x2). Before it: 5a4d0f9, bab54a7, 2b64294, f5e291c, 5e3c6db.",
+    "sha256_at_step5_start_re_derived_from_git": "0fe4c4cde218071465c486fde2941263743874cbf998ddd6b78665e120b1adc0",
+    "moved_after_the_step5_start": true,
+    "moved_after_the_step5_start_by": [
+      "9410e0e",
+      "dc07607",
+      "b969ee6",
+      "60f564e"
+    ]
+  },
+  "traces": {
+    "path": "traces/traces.jsonl",
+    "sha256_at_step5_start": "d60e989a3424ee87be7b218ffc27ddab8195ac885c08534c7d3780e2ae9020bd",
+    "sha256_at_step5_end": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+    "lines": 98,
+    "moved_by_this_step": false,
+    "why": "selection is not reuse. A selection is not an invocation and an invocation is not a successful reuse, so the selection module appends nothing to the trace and touches no reuse_count. The Step-1 reuse invariant is untouched.",
+    "sha256_at_step5_start_re_derived_from_git": "d60e989a3424ee87be7b218ffc27ddab8195ac885c08534c7d3780e2ae9020bd",
+    "lines_at_step5_start": 96,
+    "moved_after_the_step5_start": true,
+    "moved_after_the_step5_start_by": [
+      "9410e0e",
+      "dc07607",
+      "b969ee6",
+      "60f564e"
+    ]
+  },
+  "reuse_counts": {
+    "before": {
+      "filmstrip-verify": 0,
+      "muse-image-lane": 1,
+      "dell-gpu-dispatch": 1,
+      "browser-verify-artifacts": 0,
+      "qr-camo-embed": 4,
+      "chalk-capture-recipe": 1,
+      "hog-qa-suite": 2,
+      "operator-ui-contract-test": 0,
+      "webgl-film-capture": 0,
+      "shadow-play-staging": 0,
+      "character-forge": 0,
+      "local-talking-heads": 0,
+      "video-forensics-receipt": 0,
+      "creative-study-loop": 0,
+      "hunyuan3d-mlx-local": 0,
+      "face-in-scene-shot": 0,
+      "preview-server-verify": 0,
+      "audio-offline-verify": 0,
+      "x-media-package": 0,
+      "receipt-figure-render": 0,
+      "reuse-ledger": 0,
+      "agents-md-compactor": 0
+    },
+    "after": {
+      "filmstrip-verify": 0,
+      "muse-image-lane": 1,
+      "dell-gpu-dispatch": 1,
+      "browser-verify-artifacts": 0,
+      "qr-camo-embed": 4,
+      "chalk-capture-recipe": 1,
+      "hog-qa-suite": 2,
+      "operator-ui-contract-test": 0,
+      "webgl-film-capture": 0,
+      "shadow-play-staging": 0,
+      "character-forge": 0,
+      "local-talking-heads": 0,
+      "video-forensics-receipt": 0,
+      "creative-study-loop": 0,
+      "hunyuan3d-mlx-local": 0,
+      "face-in-scene-shot": 0,
+      "preview-server-verify": 0,
+      "audio-offline-verify": 0,
+      "x-media-package": 0,
+      "receipt-figure-render": 0,
+      "reuse-ledger": 0,
+      "agents-md-compactor": 0
+    },
+    "moved": []
+  },
+  "sweep": {
+    "harness": "evidence/2026-09-18-step5-selection/sweep.js",
+    "what_it_measures": "how wide the selection bus actually is against the real registry today, with nothing stubbed",
+    "probe_isolation": "reads the live home read-only; mints every decision and selection in a throwaway probe home seeded by cpSync from the real registry, capabilities and evals; snapshots registry sha, traces sha and per-capability reuse counts before and after",
+    "sections": [
+      "per-purpose compete eligibility histogram over all 22 capabilities",
+      "mint the ballot, then offer EVERY registry capability to explicit@1 by name (20 abstained, 2 selected)",
+      "mint a fresh execute decision per winner per purpose and assert each is not one of the candidate decisions (6 minted, all fresh)",
+      "the funnel rungs 1-6",
+      "the three reachable selector refusals",
+      "remove the probe, re-snapshot, and assert the live home is untouched"
+    ],
+    "fresh_execute_decisions_minted_in_the_probe": [
+      {
+        "decision_id": "elig_20260918T051355Z-dc4ee6",
+        "capability": "reuse-ledger",
+        "purpose": "normal",
+        "may_execute": false,
+        "is_one_of_the_candidate_decisions": false,
+        "reasons": [
+          "candidate_not_allowed",
+          "provenance_asserted",
+          "no_ship_eval"
+        ]
+      },
+      {
+        "decision_id": "elig_20260918T051355Z-2ccd60",
+        "capability": "reuse-ledger",
+        "purpose": "eval",
+        "may_execute": true,
+        "is_one_of_the_candidate_decisions": false,
+        "reasons": []
+      },
+      {
+        "decision_id": "elig_20260918T051355Z-3408da",
+        "capability": "reuse-ledger",
+        "purpose": "forensic",
+        "may_execute": true,
+        "is_one_of_the_candidate_decisions": false,
+        "reasons": []
+      },
+      {
+        "decision_id": "elig_20260918T051355Z-52f6ff",
+        "capability": "agents-md-compactor",
+        "purpose": "normal",
+        "may_execute": false,
+        "is_one_of_the_candidate_decisions": false,
+        "reasons": [
+          "candidate_not_allowed",
+          "provenance_asserted",
+          "no_ship_eval"
+        ]
+      },
+      {
+        "decision_id": "elig_20260918T051355Z-2039f7",
+        "capability": "agents-md-compactor",
+        "purpose": "eval",
+        "may_execute": true,
+        "is_one_of_the_candidate_decisions": false,
+        "reasons": []
+      },
+      {
+        "decision_id": "elig_20260918T051355Z-a823d1",
+        "capability": "agents-md-compactor",
+        "purpose": "forensic",
+        "may_execute": true,
+        "is_one_of_the_candidate_decisions": false,
+        "reasons": []
+      }
+    ],
+    "the_three_reachable_selector_refusals": {
+      "empty_ballot": {
+        "status": "no_candidates",
+        "basis": "the candidate set is empty — no scope=compete eligible decision was supplied, so no selector was convened"
+      },
+      "a_name_that_is_not_on_the_ballot": {
+        "status": "abstained",
+        "basis": "requested 'no-such-capability-anywhere' is not in the eligible candidate set [agents-md-compactor, reuse-ledger]"
+      },
+      "an_unknown_input_key": {
+        "status": "refused (not a status: a malformed input never reaches the core)",
+        "basis": "selector explicit@1 rejected its input: selector input.similarity: unknown field — explicit@1 accepts exactly one key, capability_id"
+      }
+    },
+    "live_home_untouched": {
+      "registry_sha256": {
+        "before": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+        "after": "2bd52677b58b0968c5479c4aee93bfa5b8b79d77b1c3f4b5ecb1429b40a2d1c7",
+        "identical": true
+      },
+      "traces_sha256": {
+        "before": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+        "after": "6f0a97d14fc37180e9e44c3159effd884119f682294cb97a7b9521feafc757a7",
+        "identical": true
+      },
+      "reuse_counts_moved": [],
+      "selections_created_in_the_live_home": 0,
+      "invocations_created_in_the_live_home": 0
+    },
+    "freshness_definition": "fresh means: this execute decision is not one of the two scope=compete candidate decisions that were on the ballot. A MAY_COMPETE decision must never be handed to the kernel, so the winner gets a decision minted after the selection, and the sweep asserts every one of the six is a new artifact (execute_sweep.every_execute_decision_is_a_new_artifact: true)."
+  },
+  "test_output": {
+    "command": "npm test",
+    "files": [
+      "capabilities.test.js",
+      "cli.test.js",
+      "eligibility.test.js",
+      "evalrunner.test.js",
+      "invocation.test.js",
+      "registry.test.js",
+      "render.test.js",
+      "seed.test.js",
+      "selection.test.js",
+      "traces.test.js",
+      "validate.test.js"
+    ],
+    "tests": 87,
+    "pass": 87,
+    "fail": 0,
+    "skipped": 0,
+    "exit": 0,
+    "counters_as_printed": [
+      "ℹ tests 87",
+      "ℹ pass 87",
+      "ℹ fail 0",
+      "ℹ cancelled 0",
+      "ℹ skipped 0",
+      "ℹ todo 0"
+    ],
+    "note": "node --test prints its counters as ℹ tests / ℹ pass / ℹ fail, not as TAP # tests / # pass; a reader grepping for the TAP form will find nothing. Re-run inside item 17, so these counters are from the same pass that produced all_pass: true."
+  },
+  "deltas": {
+    "new_files": [
+      {
+        "path": "lib/selection.js",
+        "lines": 512,
+        "sha256": "0d8d54aeafb0ed9e7ea6c6a254119d0c03487a8479adcb255bfd68ac29755b9c",
+        "what": "the selection bus: rcos-selection/1 artifact, candidate-set construction and hashing, the replaceable selector interface, explicit@1, create/verify/read/list, and selection-id minting. Exactly one file write: the artifact itself."
+      },
+      {
+        "path": "tests/selection.test.js",
+        "lines": 740,
+        "sha256": "1eb5c49f79acd188b2ef3bf58f4e4984fcfed06d74968cd3fcc42835d8f9c7e0",
+        "what": "27 tests covering the protocol, the refusals, the injected-selector interface, statuses, opacity, and the no-authority boundary"
+      },
+      {
+        "path": "evidence/2026-09-18-step5-selection/shipbar-verify.js",
+        "bytes": 56711,
+        "sha256": "4e403723f55740e4194677d15c7f0b1af23262c4694596d9893dc8f6c68764ae",
+        "what": "the 18-item ship-bar harness"
+      },
+      {
+        "path": "evidence/2026-09-18-step5-selection/shipbar.out.json",
+        "bytes": 33927,
+        "sha256": "bb99a2a782e2aabf63ffe66c67d108aadc2b0b399dc2ae07dccb1f1275235203",
+        "what": "its output of record, all_pass: true"
+      },
+      {
+        "path": "evidence/2026-09-18-step5-selection/sweep.js",
+        "bytes": 12323,
+        "sha256": "7d04959dcc14d19dc089104b84cc4d68211f990c15861b45121c4bdfae6f9f12",
+        "what": "the end-to-end width sweep"
+      },
+      {
+        "path": "evidence/2026-09-18-step5-selection/sweep.out.json",
+        "bytes": 31992,
+        "sha256": "42ef95ea760a413c2b8c632cbf7ffce6faea69c79cba8c1aece8f88ea28a5ca2",
+        "what": "its output"
+      },
+      {
+        "path": "evidence/2026-09-18-step5-selection/check-receipt.js",
+        "bytes": 42073,
+        "sha256": "d98e005a018a712c9986348a1e8c23185f24ce363c45757b3d3057da66184931",
+        "what": "verifies the receipt claims that this sync loop does not own — that the named commit exists and contains exactly the named paths, that the pinned blobs are that commit's bytes, that the dogfood invocations on disk carry the cited selection and decision ids, that the sweep's funnel and refusals are the sweep's own numbers. Read-only; writes nothing. A receipt that passes both this and the sync loop is consistent with its records AND with the world."
+      },
+      {
+        "path": "evidence/2026-09-18-step5-selection/sync-receipt.js",
+        "bytes": 32852,
+        "sha256": "ea35c38bff7ecd916e979f10a7ef40c7b96c4359fc34e04952f2eb2b70a089db",
+        "what": "recomputes this receipt's derived fields from the two records of record, from git and from the bytes on disk; asserts the step-start values against this step's own commit and refuses to write a receipt from a red harness. Its sha is pinned here for the same reason every other harness file's is: the receipt is only as trustworthy as the program that produced it."
+      }
+    ],
+    "modified_files": [
+      {
+        "path": "lib/invocation.js",
+        "lines": 557,
+        "insertions": 107,
+        "sha256": "d19723c911ba0618c7eacd72e4ff764db23eba725033a08cb95218cc047ad0b5",
+        "what": "the kernel accepts an optional --selection, refuses a selection that cannot authorize (wrong capability, abstained, missing artifact, edited bytes, or no decision at all), pins selection_id + selection_sha256 + a selection block into the manifest, and re-verifies the selection on invocation-verify"
+      },
+      {
+        "path": "bin/rcos",
+        "lines": 570,
+        "insertions": 119,
+        "sha256": "5a5780a656da312f4467341ad4a0da395fc09a22c9b257486e942f3906cbc34f",
+        "what": "three new commands (select, selections, selection-verify) plus an optional --selection on run; exit codes 0 selected / 3 failed / 4 abstained|ambiguous|no_candidates"
+      },
+      {
+        "path": "README.md",
+        "lines": 125,
+        "insertions": 26,
+        "sha256": "7e8e7768aa983cab29c915fd7d2df3482e0c2ccc39f98e03eb7950c7739f1e13",
+        "what": "the four new commands documented, plus integrity rule 11 (selection chooses; it never authorises)"
+      }
+    ],
+    "step5_only_diffstat": "5 files changed, 1491 insertions(+), 13 deletions(-)",
+    "behavior_changed": [
+      "a capability can now be chosen by an explicit name among already-compete-eligible capabilities, and the choice is recorded as a write-once artifact",
+      "an invocation may carry a selection as provenance; if it does, the selection must actually authorize it (right capability, status selected, artifact present and unedited)",
+      "the kernel now has a second refusal axis — the selection — whose refusals seal as status=blocked exactly like eligibility refusals"
+    ],
+    "not_built_deliberately": [
+      "LLM router, learned router, ranking, similarity, task interpretation, cost-aware selection, latency-aware selection, workflow planner, fallback selector, automatic retries",
+      "any authority or truth envelope — that is Step 6, and the ruling says to do it before any intelligent selector",
+      "dependency planning, PartSnap semantics",
+      "any reuse semantics for selection: a selection does not invoke, does not append a trace, and does not move a reuse_count"
+    ]
+  },
+  "artifacts_note": "Every artifact named in this receipt lives under /Users/adam26/zcode-rcos, which has no git remote — nothing here is pushed or merged. The ruling that authorised the step is quoted verbatim in spec above so the receipt can be read without the workspace file it came from.",
+  "artifacts": {
+    "repo": "/Users/adam26/zcode-rcos",
+    "commit": "6c34ee219005226a2cb60a23eaf0f6e6d6b16859",
+    "base_commit": "5647877",
+    "step5_paths": [
+      "README.md",
+      "bin/rcos",
+      "lib/invocation.js",
+      "lib/selection.js",
+      "tests/selection.test.js"
+    ],
+    "evidence_dir": "evidence/2026-09-18-step5-selection/",
+    "evidence_files": {
+      "shipbar-verify.js": "4e403723f55740e4194677d15c7f0b1af23262c4694596d9893dc8f6c68764ae",
+      "shipbar.out.json": "bb99a2a782e2aabf63ffe66c67d108aadc2b0b399dc2ae07dccb1f1275235203",
+      "sweep.js": "7d04959dcc14d19dc089104b84cc4d68211f990c15861b45121c4bdfae6f9f12",
+      "sweep.out.json": "42ef95ea760a413c2b8c632cbf7ffce6faea69c79cba8c1aece8f88ea28a5ca2",
+      "check-receipt.js": "d98e005a018a712c9986348a1e8c23185f24ce363c45757b3d3057da66184931",
+      "sync-receipt.js": "ea35c38bff7ecd916e979f10a7ef40c7b96c4359fc34e04952f2eb2b70a089db",
+      "RECEIPT.json": "this file"
+    },
+    "live_home": "/Users/adam26/zcode-rcos (RCOS_HOME default)",
+    "spec_source": {
+      "path": "workspace/default/partsnap-rcos/GPT-REPLY-7-20260917.md",
+      "sha256": "3364498fe03309fd2eb4837da6fa1120f80e77534fa50c2d12ec0a9c97f2943e",
+      "note": "outside the repo; quoted in spec"
+    }
+  },
+  "verification_harness": {
+    "note": "shipbar-verify.js is the gate. It is self-contained, it seeds every probe from the real home with cpSync, it sabotages only temp directories, and it re-runs Step 4's verifier from a copy so Step 4's evidence of record is never overwritten.",
+    "item": "the round-7 ship bar, 18 items",
+    "was": "no selection bus existed: there was no artifact type, no candidate set, no selector interface, and the kernel took an eligibility decision only",
+    "now": "18/18 PASS, all_pass: true, on the frozen tree",
+    "why_not_just_accept_it": "five of the eighteen items are negative claims (no recomputation, no authority, no reuse movement, no semantic routing, no registry movement). A negative claim that is only asserted is a check that cannot fail. Each is therefore measured against a control that would move if the claim were false: the same capability asked twice with different contexts, a registry and trace hash taken before and after the whole harness, a 24-word vocabulary scan run over comment-stripped source, and this step's own commit read path by path. \"Unchanged registry\" is deliberately read as \"unchanged by this step\" and not \"equal to the step-start sha\": an autonomous study loop commits machine-written registry and trace updates on its own schedule, so a frozen-equality gate would fail for a reason that is not evidence about the selection bus, and bumping the constant until it passed would be worse. What is gated is what this step owns — the harness window is byte-identical for both files, nothing under them is uncommitted, and commit 6c34ee2 touches neither — and what is not gated is still recorded: every window commit that did move the data is listed by sha, date and subject.",
+    "harness_files": [
+      "evidence/2026-09-18-step5-selection/shipbar-verify.js",
+      "evidence/2026-09-18-step5-selection/sweep.js",
+      "evidence/2026-09-18-step5-selection/sync-receipt.js"
+    ],
+    "reproduce": [
+      "cd /Users/adam26/zcode-rcos",
+      "node evidence/2026-09-18-step5-selection/shipbar-verify.js   # writes shipbar.out.json; all_pass must be true",
+      "node evidence/2026-09-18-step5-selection/sweep.js            # writes sweep.out.json; live_home_untouched.identical must be true",
+      "node evidence/2026-09-18-step5-selection/sync-receipt.js     # rewrites RECEIPT.json; a second run must report 0 changed",
+      "npm test                                                     # 87 pass, 0 fail"
+    ],
+    "safety_properties": [
+      "every probe home is created under os.tmpdir() with mkdtempSync and seeded by cpSync from the real registry/capabilities/evals",
+      "removeProbe throws unless the path is under os.tmpdir() and is not the live home — an earlier draft of this harness called removeProbe(HOME) and was caught before it ran",
+      "the live home is written only in the two places the dogfood plan requires: minting decisions, and recording selections. No registry byte, no trace line, no reuse_count.",
+      "Step 4's verifier is copied to a temp home before re-running, so evidence/2026-09-17-step4-eligibility/shipbar.out.json keeps its recorded sha 84037b4a6c604bb44ea11f70b4b41e238ba7dcd103544c4be37229e3c59ab2f8"
+    ]
+  },
+  "activity_during_the_step5_window": {
+    "why_this_block_exists": "the registry and traces differ from the step-4 commit and from the step-5 start, which would otherwise look like this step touched them",
+    "data_commits_inside_the_window": [
+      {
+        "sha": "9410e0e",
+        "date": "2026-09-18",
+        "subject": "rcos: R26 eval traces (ship x2)",
+        "by_study_loop": false
+      },
+      {
+        "sha": "dc07607",
+        "date": "2026-09-18",
+        "subject": "registry+traces: study-round25 / study-round25-loop eval submissions (R25)",
+        "by_study_loop": true
+      },
+      {
+        "sha": "b969ee6",
+        "date": "2026-09-18",
+        "subject": "evals(study-round24): machine-written registry+traces for ship x2",
+        "by_study_loop": true
+      },
+      {
+        "sha": "60f564e",
+        "date": "2026-09-17",
+        "subject": "evals(study-round23): machine-written registry+traces for ship x2",
+        "by_study_loop": true
+      }
+    ],
+    "every_window_commit_is_a_study_loop_commit": false,
+    "data_commits_before_the_window": [
+      {
+        "sha": "5a4d0f9",
+        "date": "2026-09-17",
+        "subject": "evals: study-round22 x2 registry+traces (machine-written)"
+      },
+      {
+        "sha": "bab54a7",
+        "date": "2026-09-17",
+        "subject": "eval-submit study-round21 x2 (ship): machine-written registry + traces"
+      },
+      {
+        "sha": "2b64294",
+        "date": "2026-09-17",
+        "subject": "chore(rcos): machine state — study-round20 evals recorded (ship x2)"
+      },
+      {
+        "sha": "f5e291c",
+        "date": "2026-09-17",
+        "subject": "state(study-round19): machine-written registry+trace update from eval-submit x2 (ship/ship)"
+      },
+      {
+        "sha": "5e3c6db",
+        "date": "2026-09-17",
+        "subject": "registry: eval-submit study-round18 x2 (ship) — machine state"
+      }
+    ],
+    "this_steps_own_commit": "6c34ee2",
+    "this_steps_own_commit_paths": [
+      "README.md",
+      "bin/rcos",
+      "lib/invocation.js",
+      "lib/selection.js",
+      "tests/selection.test.js"
+    ],
+    "this_steps_own_commit_touched_registry_or_traces": [],
+    "effect_on_this_step": "the registry sha recorded at this step's start (0fe4c4cd...) already included the study-loop commits that preceded the window, and the window's own commits landed after it, so the step-start snapshot is not the live value today. The step's claim is therefore stated at two levels, and both are measured: at the step level, commit 6c34ee2 touches neither data file and the selection module contains no trace or reuse writer; at the window level, both files are byte-identical before and after the harness. The step-start sha is kept as a record of when the step began, not as a gate — a gate on it would have gone red for a reason that has nothing to do with the selection bus.",
+    "unrelated_working_tree_change_left_alone": "capabilities/hunyuan3d-mlx-local/README.md is modified in the working tree by another lane and was deliberately never staged"
+  },
+  "pushed": false,
+  "merged": false,
+  "not_done": [
+    "no git remote exists on this repo, so there is nothing to push to and no PR to open",
+    "no intelligent selector — per the ruling, the empty selector slot stays empty",
+    "no truth/evidence envelope, no authority layer, no dependency planning (Step 6 and later)",
+    "no reuse semantics for selection: a selected capability that was invoked still moves no reuse_count unless the Step-1 reuse invariant independently says it was reused"
+  ],
+  "next_per_ruling": {
+    "step_6": "the truth/evidence envelope",
+    "verbatim": "After this ships, I would not immediately build an intelligent selector. Step 6 should remain the truth/evidence envelope. The empty selector slot can stay empty. That is healthy.",
+    "then": "Once truth and later authority exist, an intelligent selector will receive a much better-defined world: eligible actions + grounded state + explicit objective — rather than raw prompts plus a giant capability registry.",
+    "gated_on": "GPT's round-8 ruling naming the Step-6 scope, which Adam routes"
+  },
+  "step_start_values_are_re_derived_not_remembered": "the step-start shas and line count above are read out of this step's own commit (git show 6c34ee219005226a2cb60a23eaf0f6e6d6b16859:registry/capability-registry.json, and the same for traces/traces.jsonl) and asserted against the recorded values, because the live files have moved on since and a remembered value cannot be checked.",
+  "live_artifacts_this_step_minted": {
+    "why_this_block_exists": "this step ran live against the real home, and running live means minting. The receipt cites the artifacts it uses as evidence; this block accounts for every one of them, including the ones it does not cite, because an auditor who lists the home will find them and should not have to guess where they came from.",
+    "derived_from": "git ls-files per path for \"in no commit\", each artifact's own bytes for its ids and fields, shipbar.out.json for the final harness run's ids, and this receipt's own text (snapshotted before this block was written) for the cited tier",
+    "in_no_commit": true,
+    "staged_by_this_step": false,
+    "staged_by_this_step_note": "commit 6c34ee2 adds exactly 5 paths and none of them is an artifact directory: README.md, bin/rcos, lib/invocation.js, lib/selection.js, tests/selection.test.js. The artifacts stay untracked in the working tree, and the evidence commit that follows adds only evidence/.",
+    "why_not_deleted": "eligibility decisions and selections are write-once and never rewritten — un-minting them by deleting the directories would be rewriting history by another name. The dogfood invocations among them are cited by this receipt as its evidence. They are disclosed rather than removed, and disclosed rather than left for a reader to find.",
+    "counted_at": "20260918T051344Z",
+    "counted_at_means": "the timestamp of the newest artifact in the inventory, read out of the artifact ids themselves. It is the moment this inventory is complete through, not the moment this file was last written — a wall-clock stamp would differ on every sync run and would answer a question nobody is asking.",
+    "counts": {
+      "eligibility_decisions": 88,
+      "selections": 19,
+      "invocations": 4,
+      "runs": 1,
+      "total": 112
+    },
+    "counts_already_in_the_repo_before_this_step": {
+      "eligibility_decisions": 13,
+      "selections": 0,
+      "note": "step 4's 13 decisions are committed; selections did not exist before this step, so every selection on disk is this step's"
+    },
+    "tiers": {
+      "named_in_the_final_harness_run": 5,
+      "cited_elsewhere_in_this_receipt": 25,
+      "named_nowhere_in_this_receipt": 82,
+      "the_three_tiers_partition_the_inventory": true,
+      "what_each_tier_means": {
+        "named_in_the_final_harness_run": "minted by the run of shipbar-verify.js that produced shipbar.out.json — the live mints in item 15",
+        "cited_elsewhere_in_this_receipt": "minted earlier in the step and named elsewhere in this receipt as evidence: the two dogfood legs and the eval run",
+        "named_nowhere_in_this_receipt": "minted by this step and named nowhere else in this receipt — the development runs of the harness, the superseded dogfood attempts, and the exploratory probes"
+      }
+    },
+    "eligibility_decisions": {
+      "untracked_now": 88,
+      "batches": [
+        {
+          "at_second": "20260918T040943Z",
+          "scope": "compete",
+          "purpose": "eval",
+          "count": 2,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 2,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T041754Z",
+          "scope": "compete",
+          "purpose": "eval",
+          "count": 2,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 2,
+          "named_nowhere_in_this_receipt": 0,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T041754Z",
+          "scope": "execute",
+          "purpose": "eval",
+          "count": 1,
+          "eligible": [
+            "reuse-ledger"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 1,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T041803Z",
+          "scope": "execute",
+          "purpose": "eval",
+          "count": 1,
+          "eligible": [
+            "reuse-ledger"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 1,
+          "named_nowhere_in_this_receipt": 0,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T041956Z",
+          "scope": "compete",
+          "purpose": "eval",
+          "count": 22,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 20,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 22,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T041956Z",
+          "scope": "execute",
+          "purpose": "eval",
+          "count": 22,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 20,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 22,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T042019Z",
+          "scope": "compete",
+          "purpose": "eval",
+          "count": 22,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 20,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 22,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T043116Z",
+          "scope": "compete",
+          "purpose": "eval",
+          "count": 2,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 2,
+          "named_nowhere_in_this_receipt": 0,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T043123Z",
+          "scope": "execute",
+          "purpose": "eval",
+          "count": 1,
+          "eligible": [
+            "agents-md-compactor"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 1,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T043123Z",
+          "scope": "execute",
+          "purpose": "normal",
+          "count": 1,
+          "eligible": [],
+          "ineligible": 1,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 1,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T043148Z",
+          "scope": "execute",
+          "purpose": "eval",
+          "count": 1,
+          "eligible": [
+            "agents-md-compactor"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 1,
+          "named_nowhere_in_this_receipt": 0,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T043202Z",
+          "scope": "execute",
+          "purpose": "eval",
+          "count": 1,
+          "eligible": [
+            "agents-md-compactor"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 1,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T044317Z",
+          "scope": "compete",
+          "purpose": "eval",
+          "count": 2,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 2,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T044853Z",
+          "scope": "compete",
+          "purpose": "eval",
+          "count": 2,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 2,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T044923Z",
+          "scope": "compete",
+          "purpose": "eval",
+          "count": 2,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 2,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T045513Z",
+          "scope": "compete",
+          "purpose": "eval",
+          "count": 2,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 0,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 2,
+          "named_in_the_final_harness_run_ids": []
+        },
+        {
+          "at_second": "20260918T051344Z",
+          "scope": "compete",
+          "purpose": "eval",
+          "count": 2,
+          "eligible": [
+            "agents-md-compactor",
+            "reuse-ledger"
+          ],
+          "ineligible": 0,
+          "named_in_the_final_harness_run": 2,
+          "cited_elsewhere_in_this_receipt": 0,
+          "named_nowhere_in_this_receipt": 0,
+          "named_in_the_final_harness_run_ids": [
+            "elig_20260918T051344Z-64327b",
+            "elig_20260918T051344Z-8a4f03"
+          ]
+        }
+      ],
+      "reading_the_batches": "each batch is one moment of one scope at one purpose; the 22-capability batches are the two full-ladder probes that asked every registry capability at purpose eval, the 2-capability batches are the harness's own live mints and the dogfood legs, and the single-row execute batches are the kernel's fresh authorizations and one deliberate negative probe at purpose normal that returned 0 eligible"
+    },
+    "selections": [
+      {
+        "selection_id": "sel_20260918T041433Z-5af2ec",
+        "at_second": "20260918T041433Z",
+        "status": "selected",
+        "selected_capability_id": "reuse-ledger",
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T041756Z-75466d",
+        "at_second": "20260918T041756Z",
+        "status": "selected",
+        "selected_capability_id": "reuse-ledger",
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T041809Z-4ada27",
+        "at_second": "20260918T041809Z",
+        "status": "abstained",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T043119Z-cdd68f",
+        "at_second": "20260918T043119Z",
+        "status": "selected",
+        "selected_capability_id": "agents-md-compactor",
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T044317Z-61043c",
+        "at_second": "20260918T044317Z",
+        "status": "abstained",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T044317Z-769213",
+        "at_second": "20260918T044317Z",
+        "status": "selected",
+        "selected_capability_id": "reuse-ledger",
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T044317Z-a308df",
+        "at_second": "20260918T044317Z",
+        "status": "no_candidates",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 0,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T044853Z-b6638b",
+        "at_second": "20260918T044853Z",
+        "status": "no_candidates",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 0,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T044853Z-e1d5bd",
+        "at_second": "20260918T044853Z",
+        "status": "abstained",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T044853Z-e861e6",
+        "at_second": "20260918T044853Z",
+        "status": "selected",
+        "selected_capability_id": "reuse-ledger",
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T044923Z-29bed8",
+        "at_second": "20260918T044923Z",
+        "status": "no_candidates",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 0,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T044923Z-4451fe",
+        "at_second": "20260918T044923Z",
+        "status": "abstained",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T044923Z-68abb1",
+        "at_second": "20260918T044923Z",
+        "status": "selected",
+        "selected_capability_id": "reuse-ledger",
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T045513Z-2520e5",
+        "at_second": "20260918T045513Z",
+        "status": "selected",
+        "selected_capability_id": "reuse-ledger",
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T045513Z-49b7c0",
+        "at_second": "20260918T045513Z",
+        "status": "abstained",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T045513Z-e5187d",
+        "at_second": "20260918T045513Z",
+        "status": "no_candidates",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 0,
+        "selector": "explicit@1",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "selection_id": "sel_20260918T051344Z-530fba",
+        "at_second": "20260918T051344Z",
+        "status": "no_candidates",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 0,
+        "selector": "explicit@1",
+        "tier": "named_in_the_final_harness_run"
+      },
+      {
+        "selection_id": "sel_20260918T051344Z-8a4fb1",
+        "at_second": "20260918T051344Z",
+        "status": "selected",
+        "selected_capability_id": "reuse-ledger",
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "named_in_the_final_harness_run"
+      },
+      {
+        "selection_id": "sel_20260918T051344Z-f5da83",
+        "at_second": "20260918T051344Z",
+        "status": "abstained",
+        "selected_capability_id": null,
+        "candidates_on_the_ballot": 2,
+        "selector": "explicit@1",
+        "tier": "named_in_the_final_harness_run"
+      }
+    ],
+    "invocations": [
+      {
+        "invocation_id": "inv_20260918T041803Z-2ca0d3",
+        "at_second": "20260918T041803Z",
+        "status": "completed",
+        "capability_id": "reuse-ledger",
+        "mode": "eval",
+        "selection_id": "sel_20260918T041756Z-75466d",
+        "authorizing_decision_id": "elig_20260918T041803Z-fb9c84",
+        "authorizing_decision_scope": "execute",
+        "status_basis": "adapter exited 0 and its output satisfied the declared contract",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "invocation_id": "inv_20260918T041809Z-afa9fe",
+        "at_second": "20260918T041809Z",
+        "status": "blocked",
+        "capability_id": "reuse-ledger",
+        "mode": "eval",
+        "selection_id": null,
+        "authorizing_decision_id": "elig_20260918T041754Z-16a202",
+        "authorizing_decision_scope": "compete",
+        "status_basis": "eligibility decision elig_20260918T041754Z-16a202 does not authorize this invocation: eligibility decision was asked at scope 'compete' — only a scope=execute d",
+        "tier": "named_nowhere_in_this_receipt"
+      },
+      {
+        "invocation_id": "inv_20260918T043148Z-d5b980",
+        "at_second": "20260918T043148Z",
+        "status": "completed",
+        "capability_id": "agents-md-compactor",
+        "mode": "eval",
+        "selection_id": "sel_20260918T043119Z-cdd68f",
+        "authorizing_decision_id": "elig_20260918T043148Z-4741e6",
+        "authorizing_decision_scope": "execute",
+        "status_basis": "adapter exited 0 and its output satisfied the declared contract",
+        "tier": "cited_elsewhere_in_this_receipt"
+      },
+      {
+        "invocation_id": "inv_20260918T043202Z-e05887",
+        "at_second": "20260918T043202Z",
+        "status": "completed",
+        "capability_id": "agents-md-compactor",
+        "mode": "eval",
+        "selection_id": null,
+        "authorizing_decision_id": "elig_20260918T043202Z-19d014",
+        "authorizing_decision_scope": "execute",
+        "status_basis": "adapter exited 0 and its output satisfied the declared contract",
+        "tier": "named_nowhere_in_this_receipt"
+      }
+    ],
+    "runs": [
+      {
+        "run_id": "20260918T043202Z-d8610a",
+        "at_second": "20260918T043202Z",
+        "capability_id": "agents-md-compactor",
+        "verdict": "fix",
+        "tier": "cited_elsewhere_in_this_receipt"
+      }
+    ]
+  }
+}
