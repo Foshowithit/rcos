@@ -642,6 +642,12 @@
           "verdict": "ship",
           "run_id": "study-round25",
           "provenance": "asserted"
+        },
+        {
+          "task_id": "study-round26",
+          "verdict": "ship",
+          "run_id": "study-round26",
+          "provenance": "asserted"
         }
       ],
       "reuse_count": 0,
@@ -801,6 +807,12 @@
           "task_id": "study-round25-loop",
           "verdict": "ship",
           "run_id": "study-round25-loop",
+          "provenance": "asserted"
+        },
+        {
+          "task_id": "study-round26-loop",
+          "verdict": "ship",
+          "run_id": "study-round26-loop",
           "provenance": "asserted"
         }
       ],
