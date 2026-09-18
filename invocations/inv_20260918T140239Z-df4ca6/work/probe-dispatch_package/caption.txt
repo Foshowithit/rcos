@@ -1,0 +1,1 @@
+Deterministic GPU-dispatch comparison shot: reference clip vs Dell-dispatched render, side by side.

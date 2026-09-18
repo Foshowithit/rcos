@@ -111,3 +111,4 @@
 {"schema":"rcos-trace/1","ts":"2026-09-18T10:55:12.960Z","capability":"creative-study-loop","task_id":"study-round29-loop","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
 {"schema":"rcos-trace/1","ts":"2026-09-18T13:23:27.582Z","capability":"video-forensics-receipt","task_id":"study-round30","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
 {"schema":"rcos-trace/1","ts":"2026-09-18T13:23:27.617Z","capability":"creative-study-loop","task_id":"study-round30-loop","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}
+{"schema":"rcos-trace/1","ts":"2026-09-18T14:12:15.724Z","capability":"x-media-package","task_id":"priority3-executed-grounding-x-media-package","verdict":"ship","context":null,"source":null,"seconds":null,"backfilled":false,"date":null}

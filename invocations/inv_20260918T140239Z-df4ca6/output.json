@@ -1,0 +1,840 @@
+{
+  "schema": "x-media-package-observation/1",
+  "checker": {
+    "path": "capabilities/x-media-package/adapter/xcheck.py",
+    "sha256": "641ce9064b696425ee07efc5fb0d16a80d8f9086bc11cd3e9520c641d2ba8191",
+    "documented_exit_codes": [
+      0,
+      3,
+      4
+    ]
+  },
+  "packages": [
+    {
+      "name": "chalk_package",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+      },
+      "run_dir": "probe-chalk_package",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-chalk_package/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-chalk_package/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-chalk_package/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+          "path": "probe-chalk_package/video.mp4",
+          "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+          "bytes": 88081
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+          "path": "probe-chalk_package/caption.txt",
+          "sha256": "afc36fd95d66e072a52c9185320f8647f2c6dd08c9215172fa1e078bb7f8cfe2",
+          "bytes": 152
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt",
+          "path": "probe-chalk_package/alt.txt",
+          "sha256": "20e822f258b703ede87cc832d3df945b0790a11d27189530360a5cc8fe44c3de",
+          "bytes": 112
+        }
+      ],
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 132,
+      "observed": {
+        "video_width": 960,
+        "video_height": 540,
+        "aspect": 1.778,
+        "container_duration_s": 3,
+        "size_mb": 0.1,
+        "caption_chars": 150,
+        "alt_chars": 112,
+        "fail_lines": [],
+        "pass_marker": true,
+        "poster": {
+          "path": "probe-chalk_package/x-poster.jpg",
+          "sha256": "7b73e1ca6f40d98184be71165337b050e64b841f92f1abf57e1655e0e32f290c",
+          "bytes": 22225,
+          "jpeg": true,
+          "width": 960,
+          "height": 540
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 960x540 aspect 1.778  duration 3.0s  size 0.1MB\ncaption 150 chars\nalt-text 112 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-chalk_package/x-poster.jpg (run muse eyes gate on this)\nXCHECK_PASS\n",
+      "stderr": ""
+    },
+    {
+      "name": "dispatch_package",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/rcos-dispatch-eval-2-out.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval2.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval2.txt"
+      },
+      "run_dir": "probe-dispatch_package",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-dispatch_package/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-dispatch_package/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-dispatch_package/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/rcos-dispatch-eval-2-out.mp4",
+          "path": "probe-dispatch_package/video.mp4",
+          "sha256": "a73ae94906f44192414348503fe2452abecd9c9ce2e239db5c80a279ad1d1dfd",
+          "bytes": 10165
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval2.txt",
+          "path": "probe-dispatch_package/caption.txt",
+          "sha256": "7d417d923d317054ab842000ec12cc014a0558cf02198997c34ffb5c3253f9e8",
+          "bytes": 99
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval2.txt",
+          "path": "probe-dispatch_package/alt.txt",
+          "sha256": "3f59a8cc356e60ea744cd48c29812fd008cf77051d45a46f48a70ddd0ba35cfe",
+          "bytes": 99
+        }
+      ],
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 88,
+      "observed": {
+        "video_width": 1280,
+        "video_height": 720,
+        "aspect": 1.778,
+        "container_duration_s": 4,
+        "size_mb": 0,
+        "caption_chars": 99,
+        "alt_chars": 99,
+        "fail_lines": [],
+        "pass_marker": true,
+        "poster": {
+          "path": "probe-dispatch_package/x-poster.jpg",
+          "sha256": "f7aff2b025279283d271b6a7b70ce411e78587301412b9e19af3c3af6d7b8051",
+          "bytes": 10931,
+          "jpeg": true,
+          "width": 1280,
+          "height": 720
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 1280x720 aspect 1.778  duration 4.0s  size 0.0MB\ncaption 99 chars\nalt-text 99 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-dispatch_package/x-poster.jpg (run muse eyes gate on this)\nXCHECK_PASS\n",
+      "stderr": ""
+    },
+    {
+      "name": "slate_package",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/shot-face-v2-r3.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval3.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval3.txt"
+      },
+      "run_dir": "probe-slate_package",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-slate_package/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-slate_package/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-slate_package/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/shot-face-v2-r3.mp4",
+          "path": "probe-slate_package/video.mp4",
+          "sha256": "596896b57a00f07ec6bb6324a16ff3706d81e6400f047b198af647314b296c84",
+          "bytes": 376623
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval3.txt",
+          "path": "probe-slate_package/caption.txt",
+          "sha256": "eb0c807b5f1ce8b92580c70abd8844dee4a0a34d220e308d47132231db6abfc0",
+          "bytes": 148
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval3.txt",
+          "path": "probe-slate_package/alt.txt",
+          "sha256": "bd831332240b37c4bc080b3268257620e6913783aa34d2f423e412dee46ce149",
+          "bytes": 117
+        }
+      ],
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 105,
+      "observed": {
+        "video_width": 1080,
+        "video_height": 1080,
+        "aspect": 1,
+        "container_duration_s": 2,
+        "size_mb": 0.4,
+        "caption_chars": 148,
+        "alt_chars": 117,
+        "fail_lines": [],
+        "pass_marker": true,
+        "poster": {
+          "path": "probe-slate_package/x-poster.jpg",
+          "sha256": "18830a2c25d0cfcbdfa04bce1eb9eef5c8a58edee689dff86cc58f2d16ab9452",
+          "bytes": 57880,
+          "jpeg": true,
+          "width": 1080,
+          "height": 1080
+        },
+        "poster_seek_s": "0.6666666666666666"
+      },
+      "stdout": "video 1080x1080 aspect 1.000  duration 2.0s  size 0.4MB\ncaption 148 chars\nalt-text 117 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-slate_package/x-poster.jpg (run muse eyes gate on this)\nXCHECK_PASS\n",
+      "stderr": ""
+    },
+    {
+      "name": "attack_long_caption",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-attack321.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+      },
+      "run_dir": "probe-attack_long_caption",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-attack_long_caption/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-attack_long_caption/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-attack_long_caption/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+          "path": "probe-attack_long_caption/video.mp4",
+          "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+          "bytes": 88081
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-attack321.txt",
+          "path": "probe-attack_long_caption/caption.txt",
+          "sha256": "dcac91876e30961963a62bb98b22726c7aeef677f8b35d4f0cc4236ddca2e9c9",
+          "bytes": 322
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt",
+          "path": "probe-attack_long_caption/alt.txt",
+          "sha256": "20e822f258b703ede87cc832d3df945b0790a11d27189530360a5cc8fe44c3de",
+          "bytes": 112
+        }
+      ],
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 88,
+      "observed": {
+        "video_width": 960,
+        "video_height": 540,
+        "aspect": 1.778,
+        "container_duration_s": 3,
+        "size_mb": 0.1,
+        "caption_chars": 321,
+        "alt_chars": 112,
+        "fail_lines": [
+          "CAPTION 321 > 280 chars"
+        ],
+        "pass_marker": false,
+        "poster": {
+          "path": "probe-attack_long_caption/x-poster.jpg",
+          "sha256": "7b73e1ca6f40d98184be71165337b050e64b841f92f1abf57e1655e0e32f290c",
+          "bytes": 22225,
+          "jpeg": true,
+          "width": 960,
+          "height": 540
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 960x540 aspect 1.778  duration 3.0s  size 0.1MB\ncaption 321 chars\nalt-text 112 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-attack_long_caption/x-poster.jpg (run muse eyes gate on this)\nFAIL CAPTION 321 > 280 chars\n",
+      "stderr": ""
+    },
+    {
+      "name": "control_caption_280",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-280.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+      },
+      "run_dir": "probe-control_caption_280",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_280/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_280/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_280/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+          "path": "probe-control_caption_280/video.mp4",
+          "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+          "bytes": 88081
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-280.txt",
+          "path": "probe-control_caption_280/caption.txt",
+          "sha256": "deb992ecaaf9e772cfbec1e74c9f9bef7c262c46a67dfea16c15d213be944434",
+          "bytes": 280
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt",
+          "path": "probe-control_caption_280/alt.txt",
+          "sha256": "20e822f258b703ede87cc832d3df945b0790a11d27189530360a5cc8fe44c3de",
+          "bytes": 112
+        }
+      ],
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 86,
+      "observed": {
+        "video_width": 960,
+        "video_height": 540,
+        "aspect": 1.778,
+        "container_duration_s": 3,
+        "size_mb": 0.1,
+        "caption_chars": 280,
+        "alt_chars": 112,
+        "fail_lines": [],
+        "pass_marker": true,
+        "poster": {
+          "path": "probe-control_caption_280/x-poster.jpg",
+          "sha256": "7b73e1ca6f40d98184be71165337b050e64b841f92f1abf57e1655e0e32f290c",
+          "bytes": 22225,
+          "jpeg": true,
+          "width": 960,
+          "height": 540
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 960x540 aspect 1.778  duration 3.0s  size 0.1MB\ncaption 280 chars\nalt-text 112 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_280/x-poster.jpg (run muse eyes gate on this)\nXCHECK_PASS\n",
+      "stderr": ""
+    },
+    {
+      "name": "control_caption_281",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-281.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+      },
+      "run_dir": "probe-control_caption_281",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_281/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_281/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_281/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+          "path": "probe-control_caption_281/video.mp4",
+          "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+          "bytes": 88081
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-281.txt",
+          "path": "probe-control_caption_281/caption.txt",
+          "sha256": "ba561e2f2c776bda5315ab23c34ae46444df8986c966aaa839553e09b20ebf7c",
+          "bytes": 281
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt",
+          "path": "probe-control_caption_281/alt.txt",
+          "sha256": "20e822f258b703ede87cc832d3df945b0790a11d27189530360a5cc8fe44c3de",
+          "bytes": 112
+        }
+      ],
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 86,
+      "observed": {
+        "video_width": 960,
+        "video_height": 540,
+        "aspect": 1.778,
+        "container_duration_s": 3,
+        "size_mb": 0.1,
+        "caption_chars": 281,
+        "alt_chars": 112,
+        "fail_lines": [
+          "CAPTION 281 > 280 chars"
+        ],
+        "pass_marker": false,
+        "poster": {
+          "path": "probe-control_caption_281/x-poster.jpg",
+          "sha256": "7b73e1ca6f40d98184be71165337b050e64b841f92f1abf57e1655e0e32f290c",
+          "bytes": 22225,
+          "jpeg": true,
+          "width": 960,
+          "height": 540
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 960x540 aspect 1.778  duration 3.0s  size 0.1MB\ncaption 281 chars\nalt-text 112 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_281/x-poster.jpg (run muse eyes gate on this)\nFAIL CAPTION 281 > 280 chars\n",
+      "stderr": ""
+    },
+    {
+      "name": "control_caption_empty",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-empty.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+      },
+      "run_dir": "probe-control_caption_empty",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_empty/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_empty/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_empty/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+          "path": "probe-control_caption_empty/video.mp4",
+          "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+          "bytes": 88081
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-empty.txt",
+          "path": "probe-control_caption_empty/caption.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt",
+          "path": "probe-control_caption_empty/alt.txt",
+          "sha256": "20e822f258b703ede87cc832d3df945b0790a11d27189530360a5cc8fe44c3de",
+          "bytes": 112
+        }
+      ],
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 83,
+      "observed": {
+        "video_width": 960,
+        "video_height": 540,
+        "aspect": 1.778,
+        "container_duration_s": 3,
+        "size_mb": 0.1,
+        "caption_chars": 0,
+        "alt_chars": 112,
+        "fail_lines": [
+          "CAPTION_EMPTY"
+        ],
+        "pass_marker": false,
+        "poster": {
+          "path": "probe-control_caption_empty/x-poster.jpg",
+          "sha256": "7b73e1ca6f40d98184be71165337b050e64b841f92f1abf57e1655e0e32f290c",
+          "bytes": 22225,
+          "jpeg": true,
+          "width": 960,
+          "height": 540
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 960x540 aspect 1.778  duration 3.0s  size 0.1MB\ncaption 0 chars\nalt-text 112 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_caption_empty/x-poster.jpg (run muse eyes gate on this)\nFAIL CAPTION_EMPTY\n",
+      "stderr": ""
+    },
+    {
+      "name": "control_alt_empty",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-empty.txt"
+      },
+      "run_dir": "probe-control_alt_empty",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_empty/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_empty/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_empty/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+          "path": "probe-control_alt_empty/video.mp4",
+          "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+          "bytes": 88081
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+          "path": "probe-control_alt_empty/caption.txt",
+          "sha256": "afc36fd95d66e072a52c9185320f8647f2c6dd08c9215172fa1e078bb7f8cfe2",
+          "bytes": 152
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-empty.txt",
+          "path": "probe-control_alt_empty/alt.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        }
+      ],
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 87,
+      "observed": {
+        "video_width": 960,
+        "video_height": 540,
+        "aspect": 1.778,
+        "container_duration_s": 3,
+        "size_mb": 0.1,
+        "caption_chars": 150,
+        "alt_chars": 0,
+        "fail_lines": [
+          "ALT_TEXT_EMPTY (accessibility gate)"
+        ],
+        "pass_marker": false,
+        "poster": {
+          "path": "probe-control_alt_empty/x-poster.jpg",
+          "sha256": "7b73e1ca6f40d98184be71165337b050e64b841f92f1abf57e1655e0e32f290c",
+          "bytes": 22225,
+          "jpeg": true,
+          "width": 960,
+          "height": 540
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 960x540 aspect 1.778  duration 3.0s  size 0.1MB\ncaption 150 chars\nalt-text 0 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_empty/x-poster.jpg (run muse eyes gate on this)\nFAIL ALT_TEXT_EMPTY (accessibility gate)\n",
+      "stderr": ""
+    },
+    {
+      "name": "control_alt_1000",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-1000.txt"
+      },
+      "run_dir": "probe-control_alt_1000",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_1000/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_1000/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_1000/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+          "path": "probe-control_alt_1000/video.mp4",
+          "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+          "bytes": 88081
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+          "path": "probe-control_alt_1000/caption.txt",
+          "sha256": "afc36fd95d66e072a52c9185320f8647f2c6dd08c9215172fa1e078bb7f8cfe2",
+          "bytes": 152
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-1000.txt",
+          "path": "probe-control_alt_1000/alt.txt",
+          "sha256": "058c39df21df5cba37b7907387c81cc908a6dcc1cca74dfeb33d0a43aea98336",
+          "bytes": 1000
+        }
+      ],
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 84,
+      "observed": {
+        "video_width": 960,
+        "video_height": 540,
+        "aspect": 1.778,
+        "container_duration_s": 3,
+        "size_mb": 0.1,
+        "caption_chars": 150,
+        "alt_chars": 1000,
+        "fail_lines": [],
+        "pass_marker": true,
+        "poster": {
+          "path": "probe-control_alt_1000/x-poster.jpg",
+          "sha256": "7b73e1ca6f40d98184be71165337b050e64b841f92f1abf57e1655e0e32f290c",
+          "bytes": 22225,
+          "jpeg": true,
+          "width": 960,
+          "height": 540
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 960x540 aspect 1.778  duration 3.0s  size 0.1MB\ncaption 150 chars\nalt-text 1000 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_1000/x-poster.jpg (run muse eyes gate on this)\nXCHECK_PASS\n",
+      "stderr": ""
+    },
+    {
+      "name": "control_alt_1001",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-1001.txt"
+      },
+      "run_dir": "probe-control_alt_1001",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_1001/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_1001/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_1001/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+          "path": "probe-control_alt_1001/video.mp4",
+          "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+          "bytes": 88081
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+          "path": "probe-control_alt_1001/caption.txt",
+          "sha256": "afc36fd95d66e072a52c9185320f8647f2c6dd08c9215172fa1e078bb7f8cfe2",
+          "bytes": 152
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-1001.txt",
+          "path": "probe-control_alt_1001/alt.txt",
+          "sha256": "0dbf8ae9985870472dd530ac3b42ea4423369c5685f01c8d7da723c44b6ef591",
+          "bytes": 1001
+        }
+      ],
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 84,
+      "observed": {
+        "video_width": 960,
+        "video_height": 540,
+        "aspect": 1.778,
+        "container_duration_s": 3,
+        "size_mb": 0.1,
+        "caption_chars": 150,
+        "alt_chars": 1001,
+        "fail_lines": [
+          "ALT_TEXT 1001 > 1000 chars"
+        ],
+        "pass_marker": false,
+        "poster": {
+          "path": "probe-control_alt_1001/x-poster.jpg",
+          "sha256": "7b73e1ca6f40d98184be71165337b050e64b841f92f1abf57e1655e0e32f290c",
+          "bytes": 22225,
+          "jpeg": true,
+          "width": 960,
+          "height": 540
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 960x540 aspect 1.778  duration 3.0s  size 0.1MB\ncaption 150 chars\nalt-text 1001 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_alt_1001/x-poster.jpg (run muse eyes gate on this)\nFAIL ALT_TEXT 1001 > 1000 chars\n",
+      "stderr": ""
+    },
+    {
+      "name": "control_aspect_portrait",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/portrait-crop-chalk.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+      },
+      "run_dir": "probe-control_aspect_portrait",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_aspect_portrait/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_aspect_portrait/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_aspect_portrait/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/portrait-crop-chalk.mp4",
+          "path": "probe-control_aspect_portrait/video.mp4",
+          "sha256": "475ca8c1dd8127633cd320cdb35737716e3f080bb1956e366ce42884cd57d5ac",
+          "bytes": 10611
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+          "path": "probe-control_aspect_portrait/caption.txt",
+          "sha256": "afc36fd95d66e072a52c9185320f8647f2c6dd08c9215172fa1e078bb7f8cfe2",
+          "bytes": 152
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt",
+          "path": "probe-control_aspect_portrait/alt.txt",
+          "sha256": "20e822f258b703ede87cc832d3df945b0790a11d27189530360a5cc8fe44c3de",
+          "bytes": 112
+        }
+      ],
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 77,
+      "observed": {
+        "video_width": 180,
+        "video_height": 540,
+        "aspect": 0.333,
+        "container_duration_s": 3,
+        "size_mb": 0,
+        "caption_chars": 150,
+        "alt_chars": 112,
+        "fail_lines": [
+          "ASPECT 0.333 outside [0.5, 2.0]"
+        ],
+        "pass_marker": false,
+        "poster": {
+          "path": "probe-control_aspect_portrait/x-poster.jpg",
+          "sha256": "4b2393a2e461b745e841fe258836858165851735136622795c5ab4cfc8ec86f0",
+          "bytes": 3310,
+          "jpeg": true,
+          "width": 180,
+          "height": 540
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 180x540 aspect 0.333  duration 3.0s  size 0.0MB\ncaption 150 chars\nalt-text 112 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_aspect_portrait/x-poster.jpg (run muse eyes gate on this)\nFAIL ASPECT 0.333 outside [0.5, 2.0]\n",
+      "stderr": ""
+    },
+    {
+      "name": "control_duration_141s",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/duration-141s.mp4",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+      },
+      "run_dir": "probe-control_duration_141s",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_duration_141s/video.mp4",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_duration_141s/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_duration_141s/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/duration-141s.mp4",
+          "path": "probe-control_duration_141s/video.mp4",
+          "sha256": "c242f703c4c24b2209a10d8fe4ed7ba04ca99d0d620bb2fe0824c7a1f3f07481",
+          "bytes": 39546
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+          "path": "probe-control_duration_141s/caption.txt",
+          "sha256": "afc36fd95d66e072a52c9185320f8647f2c6dd08c9215172fa1e078bb7f8cfe2",
+          "bytes": 152
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt",
+          "path": "probe-control_duration_141s/alt.txt",
+          "sha256": "20e822f258b703ede87cc832d3df945b0790a11d27189530360a5cc8fe44c3de",
+          "bytes": 112
+        }
+      ],
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 76,
+      "observed": {
+        "video_width": 180,
+        "video_height": 320,
+        "aspect": 0.562,
+        "container_duration_s": 141,
+        "size_mb": 0,
+        "caption_chars": 150,
+        "alt_chars": 112,
+        "fail_lines": [
+          "DURATION 141.0s > 140s organic limit"
+        ],
+        "pass_marker": false,
+        "poster": {
+          "path": "probe-control_duration_141s/x-poster.jpg",
+          "sha256": "000e9e225de531947248538df00b4611ac41c1bd094a9cd8206836bfa822b0c8",
+          "bytes": 580,
+          "jpeg": true,
+          "width": 180,
+          "height": 320
+        },
+        "poster_seek_s": "1.0"
+      },
+      "stdout": "video 180x320 aspect 0.562  duration 141.0s  size 0.0MB\ncaption 150 chars\nalt-text 112 chars\nposter frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_duration_141s/x-poster.jpg (run muse eyes gate on this)\nFAIL DURATION 141.0s > 140s organic limit\n",
+      "stderr": ""
+    },
+    {
+      "name": "control_not_a_video",
+      "source": {
+        "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+        "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+        "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+      },
+      "run_dir": "probe-control_not_a_video",
+      "argv": [
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_not_a_video/video.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_not_a_video/caption.txt",
+        "/Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_not_a_video/alt.txt"
+      ],
+      "copies": [
+        {
+          "role": "video",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+          "path": "probe-control_not_a_video/video.txt",
+          "sha256": "afc36fd95d66e072a52c9185320f8647f2c6dd08c9215172fa1e078bb7f8cfe2",
+          "bytes": 152
+        },
+        {
+          "role": "caption",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+          "path": "probe-control_not_a_video/caption.txt",
+          "sha256": "afc36fd95d66e072a52c9185320f8647f2c6dd08c9215172fa1e078bb7f8cfe2",
+          "bytes": 152
+        },
+        {
+          "role": "alt",
+          "source": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt",
+          "path": "probe-control_not_a_video/alt.txt",
+          "sha256": "20e822f258b703ede87cc832d3df945b0790a11d27189530360a5cc8fe44c3de",
+          "bytes": 112
+        }
+      ],
+      "exit_status": 4,
+      "signal": null,
+      "outcome": "could_not_probe",
+      "duration_ms": 51,
+      "observed": {
+        "video_width": null,
+        "video_height": null,
+        "aspect": null,
+        "container_duration_s": null,
+        "size_mb": null,
+        "caption_chars": null,
+        "alt_chars": null,
+        "fail_lines": [],
+        "pass_marker": false,
+        "poster": null,
+        "poster_seek_s": null
+      },
+      "stdout": "PROBE_FAIL /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_not_a_video/video.txt: Invalid data \n",
+      "stderr": ""
+    }
+  ]
+}

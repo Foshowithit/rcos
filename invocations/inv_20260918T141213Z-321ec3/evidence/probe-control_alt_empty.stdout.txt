@@ -1,0 +1,5 @@
+video 960x540 aspect 1.778  duration 3.0s  size 0.1MB
+caption 150 chars
+alt-text 0 chars
+poster frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T141213Z-321ec3/work/probe-control_alt_empty/x-poster.jpg (run muse eyes gate on this)
+FAIL ALT_TEXT_EMPTY (accessibility gate)

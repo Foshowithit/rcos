@@ -1,0 +1,1 @@
+Split-screen comparison of a reference video clip and an agent-dispatched render of the same scene.

@@ -1114,10 +1114,16 @@
           "task_id": "third package: face-in-scene slate-study mp4 + caption + alt; limits pass, poster muse SHIP",
           "verdict": "ship",
           "run_id": "xpkg-slatestudy"
+        },
+        {
+          "task_id": "priority3-executed-grounding-x-media-package",
+          "verdict": "ship",
+          "run_id": "20260918T141213Z-1974bc",
+          "provenance": "executed"
         }
       ],
       "reuse_count": 0,
-      "last_eval": "2026-09-17",
+      "last_eval": "2026-09-18",
       "lineage": "hog-crankers X demo 09-14 + fapcoin v4 stage-1 masters + model-compare video pipeline",
       "retirement": {
         "armed_at": "2026-09-17",
@@ -1130,6 +1136,12 @@
           "n": 20,
           "threshold": null
         }
+      },
+      "adapter": {
+        "type": "command",
+        "entrypoint": "capabilities/x-media-package/adapter/run.js",
+        "timeout_seconds": 120,
+        "contract": "capabilities/x-media-package/contract.json"
       }
     },
     {

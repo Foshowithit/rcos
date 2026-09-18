@@ -1,0 +1,5 @@
+video 180x320 aspect 0.562  duration 141.0s  size 0.0MB
+caption 150 chars
+alt-text 112 chars
+poster frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_duration_141s/x-poster.jpg (run muse eyes gate on this)
+FAIL DURATION 141.0s > 140s organic limit

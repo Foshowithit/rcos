@@ -1,0 +1,1 @@
+PROBE_FAIL /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_not_a_video/video.txt: Invalid data 

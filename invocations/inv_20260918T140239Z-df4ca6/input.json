@@ -1,0 +1,82 @@
+{
+  "packages": [
+    {
+      "name": "chalk_package",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+    },
+    {
+      "name": "dispatch_package",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/rcos-dispatch-eval-2-out.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval2.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval2.txt"
+    },
+    {
+      "name": "slate_package",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/shot-face-v2-r3.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval3.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval3.txt"
+    },
+    {
+      "name": "attack_long_caption",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-attack321.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+    },
+    {
+      "name": "control_caption_280",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-280.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+    },
+    {
+      "name": "control_caption_281",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-281.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+    },
+    {
+      "name": "control_caption_empty",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-empty.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+    },
+    {
+      "name": "control_alt_empty",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-empty.txt"
+    },
+    {
+      "name": "control_alt_1000",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-1000.txt"
+    },
+    {
+      "name": "control_alt_1001",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/chalk-eval2.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-1001.txt"
+    },
+    {
+      "name": "control_aspect_portrait",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/portrait-crop-chalk.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+    },
+    {
+      "name": "control_duration_141s",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/duration-141s.mp4",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+    },
+    {
+      "name": "control_not_a_video",
+      "video": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+      "caption": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/cap-eval1.txt",
+      "alt": "/Users/adam26/zcode-rcos/runs/20260918T140239Z-abc445/work/alt-eval1.txt"
+    }
+  ]
+}

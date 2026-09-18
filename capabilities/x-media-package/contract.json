@@ -1,0 +1,150 @@
+{
+  "schema": "rcos-capability-contract/1",
+  "input": {
+    "type": "object",
+    "required": ["packages"],
+    "additionalProperties": false,
+    "properties": {
+      "packages": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["name", "video", "caption", "alt"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]*$",
+              "maxLength": 64
+            },
+            "video": {
+              "type": "string",
+              "minLength": 1
+            },
+            "caption": {
+              "type": "string",
+              "minLength": 1
+            },
+            "alt": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["schema", "checker", "packages"],
+    "additionalProperties": false,
+    "properties": {
+      "schema": {
+        "type": "string",
+        "enum": ["x-media-package-observation/1"]
+      },
+      "checker": {
+        "type": "object",
+        "required": ["path", "sha256", "documented_exit_codes"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "documented_exit_codes": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "integer" }
+          }
+        }
+      },
+      "packages": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "object",
+          "required": ["name", "source", "run_dir", "argv", "copies", "exit_status", "outcome", "duration_ms", "observed", "stdout", "stderr"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "source": {
+              "type": "object",
+              "required": ["video", "caption", "alt"],
+              "additionalProperties": false,
+              "properties": {
+                "video": { "type": "string" },
+                "caption": { "type": "string" },
+                "alt": { "type": "string" }
+              }
+            },
+            "run_dir": { "type": "string" },
+            "argv": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": { "type": "string" }
+            },
+            "copies": {
+              "type": "array",
+              "minItems": 3,
+              "items": {
+                "type": "object",
+                "required": ["role", "source", "path", "sha256", "bytes"],
+                "additionalProperties": false,
+                "properties": {
+                  "role": { "type": "string", "enum": ["video", "caption", "alt"] },
+                  "source": { "type": "string" },
+                  "path": { "type": "string" },
+                  "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                  "bytes": { "type": "integer", "minimum": 0 }
+                }
+              }
+            },
+            "exit_status": { "type": ["integer", "null"] },
+            "signal": { "type": ["string", "null"] },
+            "outcome": {
+              "type": "string",
+              "enum": ["passed", "caught", "could_not_probe", "errored", "timed_out"]
+            },
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "observed": {
+              "type": "object",
+              "required": ["video_width", "video_height", "aspect", "container_duration_s", "size_mb", "caption_chars", "alt_chars", "fail_lines", "pass_marker", "poster", "poster_seek_s"],
+              "additionalProperties": false,
+              "properties": {
+                "video_width": { "type": ["integer", "null"] },
+                "video_height": { "type": ["integer", "null"] },
+                "aspect": { "type": ["number", "null"] },
+                "container_duration_s": { "type": ["number", "null"] },
+                "size_mb": { "type": ["number", "null"] },
+                "caption_chars": { "type": ["integer", "null"] },
+                "alt_chars": { "type": ["integer", "null"] },
+                "fail_lines": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "pass_marker": { "type": "boolean" },
+                "poster": {
+                  "type": ["object", "null"],
+                  "required": ["path", "sha256", "bytes", "jpeg", "width", "height"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "path": { "type": "string" },
+                    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                    "bytes": { "type": "integer", "minimum": 0 },
+                    "jpeg": { "type": "boolean" },
+                    "width": { "type": ["integer", "null"] },
+                    "height": { "type": ["integer", "null"] }
+                  }
+                },
+                "poster_seek_s": { "type": ["string", "null"] }
+              }
+            },
+            "stdout": { "type": "string" },
+            "stderr": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

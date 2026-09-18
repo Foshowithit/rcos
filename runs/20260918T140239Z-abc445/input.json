@@ -1,0 +1,104 @@
+{
+  "schema": "rcos-run/1",
+  "eval_id": "x-media-package-postable-v1",
+  "capability_id": "x-media-package",
+  "eval_sha256": "09bbcdea15f7239bce4fae3f67425ca141cdb06d176aa69e1a4a1d4087d20473",
+  "adapter_argv": null,
+  "fixtures": [
+    {
+      "name": "chalk-eval2.mp4",
+      "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+      "bytes": 88081
+    },
+    {
+      "name": "rcos-dispatch-eval-2-out.mp4",
+      "sha256": "a73ae94906f44192414348503fe2452abecd9c9ce2e239db5c80a279ad1d1dfd",
+      "bytes": 10165
+    },
+    {
+      "name": "shot-face-v2-r3.mp4",
+      "sha256": "596896b57a00f07ec6bb6324a16ff3706d81e6400f047b198af647314b296c84",
+      "bytes": 376623
+    },
+    {
+      "name": "portrait-crop-chalk.mp4",
+      "sha256": "475ca8c1dd8127633cd320cdb35737716e3f080bb1956e366ce42884cd57d5ac",
+      "bytes": 10611
+    },
+    {
+      "name": "duration-141s.mp4",
+      "sha256": "c242f703c4c24b2209a10d8fe4ed7ba04ca99d0d620bb2fe0824c7a1f3f07481",
+      "bytes": 39546
+    },
+    {
+      "name": "cap-eval1.txt",
+      "sha256": "afc36fd95d66e072a52c9185320f8647f2c6dd08c9215172fa1e078bb7f8cfe2",
+      "bytes": 152
+    },
+    {
+      "name": "alt-eval1.txt",
+      "sha256": "20e822f258b703ede87cc832d3df945b0790a11d27189530360a5cc8fe44c3de",
+      "bytes": 112
+    },
+    {
+      "name": "cap-eval2.txt",
+      "sha256": "7d417d923d317054ab842000ec12cc014a0558cf02198997c34ffb5c3253f9e8",
+      "bytes": 99
+    },
+    {
+      "name": "alt-eval2.txt",
+      "sha256": "3f59a8cc356e60ea744cd48c29812fd008cf77051d45a46f48a70ddd0ba35cfe",
+      "bytes": 99
+    },
+    {
+      "name": "cap-eval3.txt",
+      "sha256": "eb0c807b5f1ce8b92580c70abd8844dee4a0a34d220e308d47132231db6abfc0",
+      "bytes": 148
+    },
+    {
+      "name": "alt-eval3.txt",
+      "sha256": "bd831332240b37c4bc080b3268257620e6913783aa34d2f423e412dee46ce149",
+      "bytes": 117
+    },
+    {
+      "name": "cap-attack321.txt",
+      "sha256": "dcac91876e30961963a62bb98b22726c7aeef677f8b35d4f0cc4236ddca2e9c9",
+      "bytes": 322
+    },
+    {
+      "name": "cap-280.txt",
+      "sha256": "deb992ecaaf9e772cfbec1e74c9f9bef7c262c46a67dfea16c15d213be944434",
+      "bytes": 280
+    },
+    {
+      "name": "cap-281.txt",
+      "sha256": "ba561e2f2c776bda5315ab23c34ae46444df8986c966aaa839553e09b20ebf7c",
+      "bytes": 281
+    },
+    {
+      "name": "cap-empty.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "alt-empty.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "alt-1000.txt",
+      "sha256": "058c39df21df5cba37b7907387c81cc908a6dcc1cca74dfeb33d0a43aea98336",
+      "bytes": 1000
+    },
+    {
+      "name": "alt-1001.txt",
+      "sha256": "0dbf8ae9985870472dd530ac3b42ea4423369c5685f01c8d7da723c44b6ef591",
+      "bytes": 1001
+    }
+  ],
+  "created_at": "2026-09-18T14:02:39.642Z",
+  "capability_input": {
+    "path": "capability-input.json",
+    "sha256": "ba6a4f5c9033ad21b4da669f4a614cefacaf5c71f6e726b428108390ce658d4c"
+  }
+}

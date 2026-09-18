@@ -1,0 +1,5 @@
+video 1080x1080 aspect 1.000  duration 2.0s  size 0.4MB
+caption 148 chars
+alt-text 117 chars
+poster frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-slate_package/x-poster.jpg (run muse eyes gate on this)
+XCHECK_PASS

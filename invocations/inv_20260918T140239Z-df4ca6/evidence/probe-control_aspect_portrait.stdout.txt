@@ -1,0 +1,5 @@
+video 180x540 aspect 0.333  duration 3.0s  size 0.0MB
+caption 150 chars
+alt-text 112 chars
+poster frame -> /Users/adam26/zcode-rcos/invocations/inv_20260918T140239Z-df4ca6/work/probe-control_aspect_portrait/x-poster.jpg (run muse eyes gate on this)
+FAIL ASPECT 0.333 outside [0.5, 2.0]

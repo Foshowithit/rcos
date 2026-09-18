@@ -1,0 +1,182 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T141213Z-1974bc",
+  "gates": [
+    {
+      "id": "platform_limits_pass",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "platform_limits_pass"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS platform_limits_pass: chalk 960x540/3.0s, dispatch 1280x720/4.0s, slate 1080x1080/2.0s all XCHECK_PASS with their historical lines reproduced verbatim, poster line present\n",
+      "stderr": "",
+      "duration_ms": 29
+    },
+    {
+      "id": "long_caption_caught",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "long_caption_caught"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS long_caption_caught: the 321-char caption on the accepted chalk video is caught (exit 3) on the historical line, while the same video+caption150+alt112 passes\n",
+      "stderr": "",
+      "duration_ms": 26
+    },
+    {
+      "id": "caption_limit_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "caption_limit_bites"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS caption_limit_bites: 280 chars passes, 281 is caught, the empty caption is caught, all three on the chalk video with only the caption differing\n",
+      "stderr": "",
+      "duration_ms": 27
+    },
+    {
+      "id": "alt_gate_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "alt_gate_bites"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS alt_gate_bites: 1000 chars passes, 1001 is caught, empty alt text is caught as the accessibility gate, all on the chalk video with the accepted caption\n",
+      "stderr": "",
+      "duration_ms": 26
+    },
+    {
+      "id": "aspect_gate_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "aspect_gate_bites"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS aspect_gate_bites: the portrait crop (180x540, aspect 0.333) is caught on aspect alone, with duration, caption and alt text unchanged from the accepted chalk package\n",
+      "stderr": "",
+      "duration_ms": 28
+    },
+    {
+      "id": "duration_gate_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "duration_gate_bites"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS duration_gate_bites: the 141.0s clip is caught on duration alone (aspect 0.562 is in range, caption and alt text are the accepted ones)\n",
+      "stderr": "",
+      "duration_ms": 27
+    },
+    {
+      "id": "poster_extracted",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "poster_extracted"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS poster_extracted: all 12 probeable packages carry a poster whose file, bytes, JPEG dimensions and evidence copy match the claim; the unprobeable package carries none\n",
+      "stderr": "",
+      "duration_ms": 31
+    },
+    {
+      "id": "poster_offset_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "poster_offset_reproduced"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS poster_offset_reproduced: all 12 posters re-extract to their recorded bytes from their own video copies at the seek the duration implies; the three acceptance posters are the committed historical files\n",
+      "stderr": "",
+      "duration_ms": 415
+    },
+    {
+      "id": "cannot_probe_reported",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "cannot_probe_reported"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS cannot_probe_reported: a text file passed as a video reaches exit 4 with the PROBE_FAIL line and every container and text fact null\n",
+      "stderr": "",
+      "duration_ms": 29
+    },
+    {
+      "id": "checker_revision_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "checker_revision_pinned"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS checker_revision_pinned: checker hash is the pin 641ce906…, the named file resolves to capabilities/x-media-package/adapter/xcheck.py, exit codes [0,3,4]\n",
+      "stderr": "",
+      "duration_ms": 26
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/x-media-package-postable-v1/gates/check.js",
+        "artifact_identity_pinned"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS artifact_identity_pinned: all 18 fixtures are the pinned historical artifacts in the frozen record and the work dir; every package's three copies and its recorded argv name those files\n",
+      "stderr": "",
+      "duration_ms": 30
+    }
+  ]
+}

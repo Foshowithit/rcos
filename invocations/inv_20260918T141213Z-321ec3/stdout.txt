@@ -1,0 +1,14 @@
+checker sha256 641ce9064b696425  capabilities/x-media-package/adapter/xcheck.py
+  chalk_package: exit 0 (passed), poster 960x540, 89ms
+  dispatch_package: exit 0 (passed), poster 1280x720, 84ms
+  slate_package: exit 0 (passed), poster 1080x1080, 100ms
+  attack_long_caption: exit 3 (caught), poster 960x540, 82ms
+  control_caption_280: exit 0 (passed), poster 960x540, 83ms
+  control_caption_281: exit 3 (caught), poster 960x540, 90ms
+  control_caption_empty: exit 3 (caught), poster 960x540, 81ms
+  control_alt_empty: exit 3 (caught), poster 960x540, 83ms
+  control_alt_1000: exit 0 (passed), poster 960x540, 82ms
+  control_alt_1001: exit 3 (caught), poster 960x540, 83ms
+  control_aspect_portrait: exit 3 (caught), poster 180x540, 77ms
+  control_duration_141s: exit 3 (caught), poster 180x320, 72ms
+  control_not_a_video: exit 4 (could_not_probe), poster none, 47ms
