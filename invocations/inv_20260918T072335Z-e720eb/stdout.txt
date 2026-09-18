@@ -1,0 +1,8 @@
+checker sha256 29eb2d8f6f48677a  capabilities/audio-offline-verify/adapter/av_check.py
+  chalk2_voiced: exit 0 (passed), rms -35.113250, 136ms
+  chalk1_voiced: exit 0 (passed), rms -35.104884, 79ms
+  chalk2_wrong_envelope: exit 3 (caught), rms -35.113250, 77ms
+  face_silent_report: exit 0 (passed), rms -inf, 84ms
+  face_silent_must_sound: exit 3 (caught), rms -inf, 85ms
+  dispatch_absent_expect_none: exit 0 (passed), rms null, 52ms
+  dispatch_absent_must_sound: exit 3 (caught), rms null, 52ms

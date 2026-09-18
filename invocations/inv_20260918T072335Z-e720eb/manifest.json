@@ -1,0 +1,186 @@
+{
+  "schema": "rcos-invocation/1",
+  "invocation_id": "inv_20260918T072335Z-e720eb",
+  "capability_id": "audio-offline-verify",
+  "capability_version": "0.1.0",
+  "registry_status": "promoted",
+  "mode": "eval",
+  "status": "completed",
+  "status_basis": "adapter exited 0 and its output satisfied the declared contract",
+  "started_at": "2026-09-18T07:23:35.084Z",
+  "completed_at": "2026-09-18T07:23:35.962Z",
+  "duration_ms": 878,
+  "input": {
+    "path": "input.json",
+    "sha256": "1c2f75eec7bb84c460f29bbc1e0fdc100b8405f255145fc14e88be731fce5181",
+    "bytes": 1778
+  },
+  "output": {
+    "path": "output.json",
+    "sha256": "ef8f866f1346fcf9fb2ac196527d6f021dd22b76412da58860fef724731fb87b",
+    "bytes": 8341
+  },
+  "stdout": {
+    "path": "stdout.txt",
+    "sha256": "e6c66a14bf3a4140e6e45ab48a51d3793a019c4dd92d0cf9da91944eefa7837e",
+    "bytes": 498
+  },
+  "stderr": {
+    "path": "stderr.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "evidence": [
+    {
+      "path": "evidence/checker.sha256",
+      "sha256": "157c084745fee9c0c3cd51c607284c8f8fa33fc166046930970090bcb2afc88f",
+      "bytes": 120
+    },
+    {
+      "path": "evidence/probe-chalk1_voiced.argv.json",
+      "sha256": "2dcf70bcee7be8018f0eefc0bd30277fa193f1885ac06531ab975107be82010a",
+      "bytes": 224
+    },
+    {
+      "path": "evidence/probe-chalk1_voiced.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-chalk1_voiced.stdout.txt",
+      "sha256": "0d96178dabef7a6b81a3780399aa9285c744227547d86cb3f823ae6c434023cf",
+      "bytes": 207
+    },
+    {
+      "path": "evidence/probe-chalk2_voiced.argv.json",
+      "sha256": "517e9f555c798b05216d302b3024f7da972c197975b9a4d466d4c96432bbbaa6",
+      "bytes": 224
+    },
+    {
+      "path": "evidence/probe-chalk2_voiced.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-chalk2_voiced.stdout.txt",
+      "sha256": "37337ae1d463c6d3e725ecfb885726fb41ea612dd0c4709d7d58c889cb12231a",
+      "bytes": 207
+    },
+    {
+      "path": "evidence/probe-chalk2_wrong_envelope.argv.json",
+      "sha256": "da03f5ecc3a417500cde760c1d0b9d113cf7bbaef1eb57edbe1f0a0e115fabb6",
+      "bytes": 200
+    },
+    {
+      "path": "evidence/probe-chalk2_wrong_envelope.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-chalk2_wrong_envelope.stdout.txt",
+      "sha256": "d71730180713f375e4cfd51f0977d27efa5d5df6d5c6e4e39dd12bdf294370c7",
+      "bytes": 232
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_expect_none.argv.json",
+      "sha256": "0230caed12b87b02a6ea8aeebcf352322809c3b92646d05a564ed092f8e24274",
+      "bytes": 214
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_expect_none.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_expect_none.stdout.txt",
+      "sha256": "4aabf80af524f7a4be19219654d1fb397ace848c37a70cd30e1127dd048a61d5",
+      "bytes": 168
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_must_sound.argv.json",
+      "sha256": "1d089852f8168e884ce76b0d4a18e5cfd4e8eb197d3ead56192b41c5b267bf38",
+      "bytes": 150
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_must_sound.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_must_sound.stdout.txt",
+      "sha256": "a364762c2f1845a83e67a2cb685a5562cc9223b491b7aad34ebbcdf02c6a6f8f",
+      "bytes": 190
+    },
+    {
+      "path": "evidence/probe-face_silent_must_sound.argv.json",
+      "sha256": "9d22a0f2fea23336c9ff72fd1fcc6392a20f00f63fe87ab848a01e8f78649347",
+      "bytes": 170
+    },
+    {
+      "path": "evidence/probe-face_silent_must_sound.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-face_silent_must_sound.stdout.txt",
+      "sha256": "7f63b6bf92aa7ad66fe7516e7d13a0299dca75a6517ca1d9aec2ca67d495185b",
+      "bytes": 258
+    },
+    {
+      "path": "evidence/probe-face_silent_report.argv.json",
+      "sha256": "b612327f3f78e15d9e8005147edc7fde50281ee60a2ff4c8a126f8419c04ab26",
+      "bytes": 146
+    },
+    {
+      "path": "evidence/probe-face_silent_report.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-face_silent_report.stdout.txt",
+      "sha256": "ab57177d6c63782da599da7316d7919cb64b169f75fb490981ce49de9c8c166e",
+      "bytes": 207
+    }
+  ],
+  "adapter": {
+    "type": "command",
+    "entrypoint": "capabilities/audio-offline-verify/adapter/run.js",
+    "timeout_seconds": 120,
+    "exit_code": 0,
+    "signal": null,
+    "error": null
+  },
+  "contract": {
+    "path": "capabilities/audio-offline-verify/contract.json",
+    "declaration_errors": [],
+    "contract_errors": [],
+    "input": {
+      "status": "pass",
+      "errors": []
+    },
+    "output": {
+      "status": "pass",
+      "errors": []
+    }
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T07:23:35.962Z",
+  "eligibility_decision_id": "elig_20260918T072335Z-6df98b",
+  "eligibility_sha256": "8fe80dd0c126ce35abf537beb99b019a5af7e59533603bab0a7ed1bdc3749d6c",
+  "eligibility": {
+    "scope": "execute",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "path": "eligibility/elig_20260918T072335Z-6df98b/decision.json"
+  },
+  "selection_id": null,
+  "selection_sha256": null,
+  "selection": null,
+  "emitted_evidence": [],
+  "emission_skipped": [],
+  "integrity": {
+    "algo": "sha256",
+    "value": "6afee68c33255d8c75f67978701caeb1c33bf3efeb2d464bdcf6d4be27d09f0f"
+  }
+}
