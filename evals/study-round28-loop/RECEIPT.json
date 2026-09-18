@@ -1,0 +1,30 @@
+{
+  "capability": "creative-study-loop",
+  "date": "2026-09-18",
+  "gates": [
+    {
+      "evidence": "Backlog order followed: class E was the only THIN class (n=4 refs, every other measured class at n>=8) and DP re-queue still has no third lane; R28 section added to QUEUE.md with unit-order paragraph, class question (does the R3 four-sub-grammar map survive 4 replicates?), and 4 candidate rows (all official channels, Dell-search-verified 2026-09-18). No live-production override applied. 4 rows now marked receipt with measured annotations + Verdict R28 paragraph.",
+      "gate": "unit_pick_per_protocol",
+      "result": "pass"
+    },
+    {
+      "evidence": "All 8 R28-relevant protocol steps executed in order: QUEUE read + R28 rows added; 4/4 fetch+measure via rig/run_on_dell.sh (sequential, first-try); 4/4 sheets Read + sight-check (+1 dense montage); verify_receipts 111/111 PASS; PLAYBOOK class-E fold-in with studies/<slug>.json citations (no ours-row updates - no own film re-measured); QUEUE statuses + Verdict R28; evals x2 + RECEIPTs + audit; scoped workspace commit; memories + recap. No step skipped; round stayed inside the ~30-minute budget shape (no blocking, no padding).",
+      "gate": "round_completeness",
+      "result": "pass"
+    },
+    {
+      "evidence": "Class question answered with verdicts: riddle replicate DIFFERENTIATES (0.218/s class-fastest), host replicate DIFFERENTIATES (116s cold open, LRA 6.5 breaks gate), essay replicate DIFFERENTIATES (355.8s cold open, sat 0.859 corpus max), props replicate CONFIRMS (0.119/s, 2.2s hook open). Class now eight lanes, no convergence. Four R3 superlatives corrected with cited corpus data (see video-forensics-receipt RECEIPT prior_claim_corrections). Round log one-liner added at PLAYBOOK bottom + Verdict R28 in QUEUE.",
+      "gate": "learning_recorded",
+      "result": "pass"
+    },
+    {
+      "evidence": "Muse label-integrity lane run on all 4 sheets (free vision, no paid lane); optimism FAIL adjudicated to PASS-WITH-TAIL-CAVEAT with dense-montage exhibit + official-channel-coherent source block, per R13/R17 upload-tail precedent. No keys in any file; third-party clips/frames stayed in ~/tmp/creative-study on the Dell; no Dell repo writes; nothing pushed (local commits only).",
+      "gate": "standing_rules_kept",
+      "result": "pass"
+    }
+  ],
+  "notes": "Widening 2 of the post-target expansion (R27 class U n=4->8 was Widening 1). All 12 measured classes now at n>=8; DP re-queue still lane-blocked (YouTube + archive.org dead).",
+  "round": "R28 creative-study (Mac cell, cron)",
+  "task": "study-round28-loop",
+  "verdict": "ship"
+}

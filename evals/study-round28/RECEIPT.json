@@ -1,0 +1,40 @@
+{
+  "capability": "video-forensics-receipt",
+  "date": "2026-09-18",
+  "gates": [
+    {
+      "evidence": "4/4 Dell fetches first-try, sequential: explainer-teded-bridge (7yDmGnA8Hw0 TED-Ed official, 230s), explainer-scott-binary (KXJSjte_OAI Tom Scott official, 411s), explainer-kurzgesagt-optimism (MBRqu0YOH14 Kurzgesagt official, 446s), explainer-mould-portal (Fg0qy9L12_g Steve Mould official, 582s). No new class prefix needed (explainer- already in rig/summarize.py CLASSES from R3).",
+      "gate": "fetch_clean",
+      "result": "pass"
+    },
+    {
+      "evidence": "4/4 stock contact sheets Read sighted + one dense film-proper montage for optimism (first 350s, 24 tiles, sighted genuine). Frames match named sources (TED-Ed: bridge riddle vector night/countdown; Scott: bearded host + CRT museum set; Kurzgesagt: space-purple/orange cosmic vector; Mould: bench-macro + barber-pole + portal clip + #AD coda row).",
+      "gate": "sheet_read_sighted",
+      "result": "pass"
+    },
+    {
+      "evidence": "3/4 outright PASS via free opencode muse-spark-1.3-contributor-free vision lane (teded 40 tiles, scott 6 tiles, mould 41 tiles with #AD = same-upload coda noted not failed). Optimism stock sheet FAILed (tiles t357-411 = upload-tail ad + mint end-card, R13/R17 precedent) -> dense film-proper montage sighted genuine + receipt source block official-channel-coherent (MBRqu0YOH14/Optimistic Nihilism/20170726/446s/18.7M views, probe 445.753s matches) -> recorded PASS-WITH-TAIL-CAVEAT with montage kept as identity exhibit. Subtitle-tiebreak attempt abandoned honestly (no captions track retrievable on the Dell lane).",
+      "gate": "label_integrity_muse",
+      "result": "pass"
+    },
+    {
+      "evidence": "python3 rig/verify_receipts.py -> checked 111 receipts (105 reference + 6 own) - ALL DETERMINISTIC GATES PASS.",
+      "gate": "deterministic_receipts",
+      "result": "pass"
+    },
+    {
+      "evidence": "Class-E section retitled rounds 3+28, n=8 envelope table (all values studies/explainer-*.json cited; medians: duration 534, median shot 8.79, cps 0.06, first cut 41.3, motion 0.071, stillness 0.28, luma 0.30, sat 0.23, LUFS -15.6, LRA 4.7, n80 4), four lane bullets (riddle/host/essay/mechanics-demo), rules re-cut (sub-grammar list, 1-6s cut-lane vs 11-18s hold-lane pace, LRA 2.8-6.5, new rule 6 gating median-by-lane not first-cut).",
+      "gate": "playbook_fold_in_cited",
+      "result": "pass"
+    },
+    {
+      "evidence": "R3 class-E superlatives corrected against full-corpus rankings (all studies/*.json): (a) Egg 0.723 'most saturated film in the entire corpus' -> optimism 0.859 takes the corpus record from its own channel-mate. (b) 'edited explainers 2-6s' -> cut-lane band only (riddle 1.21, essay hold 17.9, Scott hold 11.31). (c) LUFS 'tightest mix band of any class' -> now SHARED with T (both 5.6 LU wide). (d) LRA gate 3-6 -> 2.8-6.5 but E keeps corpus-tightest LRA band (3.7 LU; next S 6.8). Cross-checks held: 3b1b 475.02s stays corpus-longest median (optimism first-cut 355.80s is corpus #2 first-cut); ours-fapcoin-v6 0.737 stays above Egg, so Egg was already #3-in-corpus when R3 wrote 'most saturated'. R27's U/E comparisons reconfirmed under new bands. No rig changes needed.",
+      "gate": "prior_claim_corrections",
+      "result": "pass"
+    }
+  ],
+  "notes": "Corrections are to prior-round PROSE, not to deterministic artifacts; all receipts pass. Optimism adjudication is the round's judgment call, fully evidenced above. Third-party media stayed on the Dell; only receipts + playbook text entered the repo.",
+  "round": "R28 creative-study (Mac cell, cron)",
+  "task": "study-round28",
+  "verdict": "ship"
+}
