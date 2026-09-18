@@ -1,0 +1,88 @@
+{
+  "schema": "rcos-invocation/1",
+  "invocation_id": "inv_20260918T014911Z-127ac8",
+  "capability_id": "agents-md-compactor",
+  "capability_version": "0.1.0",
+  "registry_status": "candidate",
+  "mode": "eval",
+  "status": "failed",
+  "status_basis": "adapter exited 1",
+  "started_at": "2026-09-18T01:49:11.852Z",
+  "completed_at": "2026-09-18T01:49:12.182Z",
+  "duration_ms": 330,
+  "input": {
+    "path": "input.json",
+    "sha256": "3a7340efca16e1dab72ac96b2242205ce3a654cc8774d3e3199a739bcfe87bf1",
+    "bytes": 100
+  },
+  "output": null,
+  "stdout": {
+    "path": "stdout.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "stderr": {
+    "path": "stderr.txt",
+    "sha256": "8f390cc25ef6e158c0e787401e361b18aead809626d363ed0bc94e88f1726049",
+    "bytes": 884
+  },
+  "evidence": [
+    {
+      "path": "evidence/executed-tool.py",
+      "sha256": "0955ad78cd4808dae85c5b74818839c2f1e1f5f4f4dfccdd0fa5a7cce85cc1e9",
+      "bytes": 6665
+    },
+    {
+      "path": "evidence/noarchive/AGENTS.after.md",
+      "sha256": "4a768f2d0b286ec6af9b8118bf54b8f387f75bb7944b912f1ec115c61529aa35",
+      "bytes": 1610
+    },
+    {
+      "path": "evidence/pass1/AGENTS.after.md",
+      "sha256": "b8f99cecb97ab009700d569cfa29ca74ac112183282a3651dd77ee89f6f3e951",
+      "bytes": 1299
+    },
+    {
+      "path": "evidence/pass1/AGENTS.before.md",
+      "sha256": "4a768f2d0b286ec6af9b8118bf54b8f387f75bb7944b912f1ec115c61529aa35",
+      "bytes": 1610
+    },
+    {
+      "path": "evidence/pass2/AGENTS.after.md",
+      "sha256": "b8f99cecb97ab009700d569cfa29ca74ac112183282a3651dd77ee89f6f3e951",
+      "bytes": 1299
+    },
+    {
+      "path": "evidence/pass2/AGENTS.before.md",
+      "sha256": "b8f99cecb97ab009700d569cfa29ca74ac112183282a3651dd77ee89f6f3e951",
+      "bytes": 1299
+    }
+  ],
+  "adapter": {
+    "type": "command",
+    "entrypoint": "capabilities/agents-md-compactor/adapter/run.js",
+    "timeout_seconds": 120,
+    "exit_code": 1,
+    "signal": null,
+    "error": null
+  },
+  "contract": {
+    "path": "capabilities/agents-md-compactor/contract.json",
+    "declaration_errors": [],
+    "contract_errors": [],
+    "input": {
+      "status": "pass",
+      "errors": []
+    },
+    "output": {
+      "status": "not-checked",
+      "errors": []
+    }
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T01:49:12.182Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "a13301e0c1a8431f2101782595071160910aae78082665b8526241de12521580"
+  }
+}

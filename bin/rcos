@@ -7,6 +7,7 @@ const path = require('node:path');
 const R = require('../lib/registry');
 const T = require('../lib/traces');
 const ER = require('../lib/evalrunner');
+const I = require('../lib/invocation');
 const { isValidDate } = require('../lib/validate');
 const { renderDashboard } = require('../lib/render');
 
@@ -21,6 +22,9 @@ const USAGE = [
   '  eval-run --eval <eval-id> [--submit --task <task>] [--context <text>] [--date YYYY-MM-DD]',
   '  eval-verify --run <run-id> [--json]',
   '  runs [--json]',
+  '  run <capability-id> --input <file.json> [--mode normal|eval|forensic] [--forensic <reason>] [--json]',
+  '  invocations [--json]',
+  '  invocation-verify --invocation <id> [--json]',
   '  traces [--capability <id>] [--json]',
   '  backfill-traces',
   '  promote --id <id>',
@@ -32,6 +36,10 @@ const USAGE = [
   '  render [--out <path>]',
   '  help'
 ].join('\n');
+
+// Commands that take a bare positional argument (the capability id). Everything
+// else rejects bare arguments so a typo cannot be silently ignored.
+const POSITIONAL_COMMANDS = ['run'];
 
 function homeDir() {
   return process.env.RCOS_HOME || path.join(os.homedir(), 'zcode-rcos');
@@ -61,7 +69,14 @@ function need(args, ...keys) {
 
 function main() {
   const cmd = process.argv[2];
-  const args = parseArgs(process.argv.slice(3));
+  const rest = process.argv.slice(3);
+  const hasPositional = rest.length > 0 && !rest[0].startsWith('--');
+  const positional = hasPositional ? rest[0] : null;
+  if (hasPositional && !POSITIONAL_COMMANDS.includes(cmd)) {
+    console.error('unexpected argument: ' + positional + '\n' + USAGE);
+    process.exit(1);
+  }
+  const args = parseArgs(hasPositional ? rest.slice(1) : rest);
   const home = homeDir();
   if (!cmd || cmd === 'help') { console.log(USAGE); process.exit(cmd ? 0 : 1); }
   try {
@@ -280,10 +295,64 @@ function main() {
         }
         break;
       }
+      // The execution primitive: name a capability, hand it input, let the
+      // kernel resolve and run its declared adapter. No reuse semantics (no
+      // trace, no reuse_count move) and no evaluation semantics (no verdict).
+      case 'run': {
+        if (!positional) { console.error('missing <capability-id>\n' + USAGE); process.exit(1); }
+        need(args, 'input');
+        let input;
+        try {
+          input = JSON.parse(fs.readFileSync(args.input, 'utf8'));
+        } catch (e) {
+          console.error('rcos: --input is not readable JSON: ' + e.message);
+          process.exit(2);
+        }
+        const mode = args.mode === undefined ? 'normal' : String(args.mode);
+        if (!I.MODES.includes(mode)) {
+          console.error('bad --mode, want one of ' + I.MODES.join('|'));
+          process.exit(2);
+        }
+        if (mode === 'forensic' && (args.forensic === undefined || args.forensic === true)) {
+          console.error('rcos: --mode forensic requires --forensic <reason> — an override nobody can mistake for production reuse');
+          process.exit(2);
+        }
+        const res = I.invokeCapability(home, positional, { input, mode, forensicReason: args.forensic });
+        if (!res.ok) { console.error('rcos: ' + res.error); process.exit(2); }
+        if (args.json) console.log(JSON.stringify(res.manifest, null, 2));
+        else {
+          console.log(res.invocation_id + '\t' + res.status + '\t' + res.capability_id + '\t' + res.manifest.adapter.exit_code);
+          console.log('basis: ' + res.basis);
+          console.log('artifacts: ' + res.dir);
+          if (mode === 'forensic') console.log('NOTE: forensic override (' + args.forensic + ') — this is not production reuse.');
+          if (mode === 'eval') console.log('NOTE: eval-mode invocation of a ' + res.manifest.registry_status + ' capability — development, not reuse.');
+        }
+        process.exit(res.status === 'completed' ? 0 : res.status === 'rejected' ? 2 : res.status === 'failed' ? 3 : 4);
+      }
+      case 'invocations': {
+        const rows = I.listInvocations(home);
+        if (args.json) { console.log(JSON.stringify(rows, null, 2)); break; }
+        if (rows.length === 0) { console.log('no invocations yet — `rcos run <capability-id> --input <file>` creates one'); break; }
+        for (const r of rows) {
+          console.log([r.invocation_id, r.status, r.capability_id, r.mode, r.completed_at].join('\t'));
+        }
+        break;
+      }
+      case 'invocation-verify': {
+        need(args, 'invocation');
+        const res = I.verifyInvocation(home, args.invocation);
+        if (args.json) console.log(JSON.stringify({ ok: res.ok, problems: res.problems, checked: res.checked }, null, 2));
+        else {
+          for (const p of res.problems) console.log('PROBLEM ' + p);
+          console.log(res.ok ? 'invocation ' + args.invocation + ' verified (' + res.checked + ' artifacts re-hashed)' : 'invocation verification FAILED');
+        }
+        if (!res.ok) process.exit(3);
+        break;
+      }
       case 'audit': {
         const reg = R.loadRegistry(home);
         const traces = T.loadTraces(home);
-        const res = R.auditRegistry(reg, new Date(), T.hasTraceFile(home) ? traces : null);
+        const res = R.auditRegistry(reg, new Date(), T.hasTraceFile(home) ? traces : null, { homeDir: home });
         for (const g of T.traceGaps(reg, traces)) res.warnings.push('trace gap: ' + g);
         if (args.json) console.log(JSON.stringify(res, null, 2));
         else {

@@ -1,0 +1,19 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T014935Z-c19a81",
+  "eval_id": "agents-md-compactor-v1",
+  "capability_id": "agents-md-compactor",
+  "started_at": "2026-09-18T01:49:35.063Z",
+  "finished_at": "2026-09-18T01:49:35.378Z",
+  "duration_ms": 315,
+  "invocation": {
+    "invocation_id": "inv_20260918T014935Z-6fd918",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260918T014935Z-6fd918",
+    "manifest_sha256": "0d9aa80ea74a491a56526cbe23e98fc17b419ea223dac3fb6ce3857927ef81ea",
+    "output_sha256": "3f10a3a1fd73f0c84c12dd82c53d302f335d81fdf4d490d62b1bf21d4a6f4a59"
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "node": "v24.15.0"
+}

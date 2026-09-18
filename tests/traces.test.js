@@ -14,6 +14,9 @@ function makeHome() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'rcos-traces-'));
   fs.mkdirSync(path.join(home, 'registry'), { recursive: true });
   fs.copyFileSync(SEED, path.join(home, 'registry', 'capability-registry.json'));
+  // audit resolves declared adapter entrypoints against the home, so the home
+  // needs the capability dirs the seed registry points at
+  fs.cpSync(path.join(__dirname, '..', 'capabilities'), path.join(home, 'capabilities'), { recursive: true });
   return home;
 }
 

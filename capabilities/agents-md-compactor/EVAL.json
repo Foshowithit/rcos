@@ -1,0 +1,12 @@
+{
+  "capability": "agents-md-compactor",
+  "promotion_gate": "2 shipped evals with lineage (mechanical x2-ship gate)",
+  "gates": [
+    { "id": "semantic-survival", "kind": "deterministic", "check": "every changelog entry that carries a bold headline still carries it after compaction, and no entry is dropped — the region before '## Changelog' and the '- \u26a0 *' policy lines are byte-identical" },
+    { "id": "range-and-order", "kind": "deterministic", "check": "only the changelog region changes, and surviving entries keep their original relative order" },
+    { "id": "idempotence", "kind": "deterministic", "check": "a second run over the first run's output changes nothing (same bytes)" },
+    { "id": "digest-construction", "kind": "deterministic", "check": "the digest block the tool writes is internally consistent with the entries it claims to summarize" },
+    { "id": "backup-before-write", "kind": "deterministic", "check": "a dated backup of the pre-compaction bytes exists in archive/ and matches the input" },
+    { "id": "frozen-tool", "kind": "deterministic", "check": "the tool bytes the adapter executed hash to the frozen literal 0955ad78cd4808dae85c5b74818839c2f1e1f5f4f4dfccdd0fa5a7cce85cc1e9 and equal the bytes the evaluation froze" }
+  ]
+}

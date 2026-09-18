@@ -1,0 +1,5 @@
+sandbox home: /Users/adam26/zcode-rcos/invocations/inv_20260918T014931Z-5b59dc/work/reuse-ledger-eval
+  sync_without_trace_log: exit 2, reuse_count 0
+  reuse_log_first: exit 0, reuse_count 1
+  reuse_log_append_blocked: exit 2, reuse_count 1
+  sync_reconverges: exit 0, reuse_count 1

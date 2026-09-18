@@ -1,0 +1,77 @@
+{
+  "schema": "rcos-invocation/1",
+  "invocation_id": "inv_20260918T014906Z-9069a8",
+  "capability_id": "reuse-ledger",
+  "capability_version": "0.1.0",
+  "registry_status": "candidate",
+  "mode": "eval",
+  "status": "completed",
+  "status_basis": "adapter exited 0 and its output satisfied the declared contract",
+  "started_at": "2026-09-18T01:49:06.530Z",
+  "completed_at": "2026-09-18T01:49:06.862Z",
+  "duration_ms": 332,
+  "input": {
+    "path": "input.json",
+    "sha256": "5b8890b4d7bd761ed3499c27cbcdd333d19670afd6db17ac414de9a39fdf999f",
+    "bytes": 181
+  },
+  "output": {
+    "path": "output.json",
+    "sha256": "46ca9fb4e3e5a51d7dc679f9a0a624c01110cc0324b95c983c7b2dfea1278d18",
+    "bytes": 2228
+  },
+  "stdout": {
+    "path": "stdout.txt",
+    "sha256": "11c8da8130f8d8134e9be7020da3df3660957f5f8719c955c45cbe12d60ee937",
+    "bytes": 283
+  },
+  "stderr": {
+    "path": "stderr.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "evidence": [
+    {
+      "path": "evidence/registry-after.json",
+      "sha256": "e7ad0240842f19ffd095f3828c9cc56868b23c7c7f2367fd896799e2ac6aba12",
+      "bytes": 1087
+    },
+    {
+      "path": "evidence/steps.json",
+      "sha256": "1b00459124ac193304be1ce87f3e05ebc2357c7c4cc259e4a39a4aa698c6f689",
+      "bytes": 1526
+    },
+    {
+      "path": "evidence/traces.jsonl",
+      "sha256": "1f02ba47e57787ff89240ed1768a043bc85caa474be5d36636fde28e13e71e78",
+      "bytes": 204
+    }
+  ],
+  "adapter": {
+    "type": "command",
+    "entrypoint": "capabilities/reuse-ledger/adapter/run.js",
+    "timeout_seconds": 120,
+    "exit_code": 0,
+    "signal": null,
+    "error": null
+  },
+  "contract": {
+    "path": "capabilities/reuse-ledger/contract.json",
+    "declaration_errors": [],
+    "contract_errors": [],
+    "input": {
+      "status": "pass",
+      "errors": []
+    },
+    "output": {
+      "status": "pass",
+      "errors": []
+    }
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T01:49:06.862Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "7b2a9118b0cc3b6be137c1b44378bfb61ef86bd3d4e8913658a9891d03e89046"
+  }
+}

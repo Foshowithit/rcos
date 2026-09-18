@@ -1,6 +1,7 @@
 'use strict';
-// Gates for agents-md-compactor-v1. Each gate reads the adapter's raw
-// observations (ledger.json, in the run's work dir) and decides whether the
+// Gates for agents-md-compactor-v1 (rcos-eval/2). Each gate reads the
+// CAPABILITY's recorded observation — $RCOS_INVOCATION_DIR/output.json, the
+// bytes the invocation kernel froze and hashed — and decides whether the
 // tool's OWN stated policy held. Exit 0 = pass, 3 = fail, 4 = cannot decide.
 //
 // Policy under test (from the tool's docstring):
@@ -20,11 +21,23 @@ const POLICY_RE = /^- \u26a0 \*/;
 const DIGEST_MAX = 220;
 const HEADLINE_MAX = 300;
 
-if (!fs.existsSync('ledger.json')) {
-  console.log('blocked: ledger.json not found in ' + process.cwd() + ' — the adapter did not run');
+// The tool under test is frozen: these bytes, and only these. Checked three
+// independent ways below — this literal, the eval's own fixture copy, and the
+// evidence the kernel recorded. The old form hashed one file against itself
+// and could not fail.
+const PINNED_TOOL_SHA256 = '0955ad78cd4808dae85c5b74818839c2f1e1f5f4f4dfccdd0fa5a7cce85cc1e9';
+
+const invocationDir = process.env.RCOS_INVOCATION_DIR;
+if (!invocationDir) {
+  console.log('blocked: RCOS_INVOCATION_DIR is not set — this gate judges an invocation, not a work dir');
   process.exit(4);
 }
-const ledger = JSON.parse(fs.readFileSync('ledger.json', 'utf8'));
+const obsPath = path.join(invocationDir, 'output.json');
+if (!fs.existsSync(obsPath)) {
+  console.log('blocked: ' + obsPath + ' not found — the capability produced no observation');
+  process.exit(4);
+}
+const ledger = JSON.parse(fs.readFileSync(obsPath, 'utf8'));
 
 function split(text) {
   const lines = text.split('\n');
@@ -141,13 +154,35 @@ function backupBeforeWrite() {
     : { ok: false, detail: problems.join(' | ') };
 }
 
-// Provenance of the thing under test: the tool that ran is the frozen fixture.
+// Provenance of the thing under test, pinned three ways: the literal hash of
+// the frozen tool, the eval's own frozen fixture (which the capability never
+// executes), and the evidence the kernel recorded for the bytes that ran.
 function frozenTool() {
-  const onDisk = sha256(fs.readFileSync(path.join(process.cwd(), 'tool.py')));
-  if (onDisk !== ledger.tool.sha256) {
-    return { ok: false, detail: 'tool.py on disk (' + onDisk.slice(0, 12) + ') is not the tool the adapter ran (' + ledger.tool.sha256.slice(0, 12) + ')' };
+  const problems = [];
+  const ran = ledger.tool.sha256;
+  if (ran !== PINNED_TOOL_SHA256) {
+    problems.push('the tool that ran (' + String(ran).slice(0, 12) + ') is not the pinned tool (' + PINNED_TOOL_SHA256.slice(0, 12) + ')');
   }
-  return { ok: true, detail: 'tool under test is the frozen fixture: ' + onDisk.slice(0, 12) + ' (' + ledger.tool.bytes + ' bytes)' };
+  if (ledger.tool.source !== 'capability') {
+    problems.push('the run was pointed at a tool by its input (source=' + ledger.tool.source + ') instead of the capability\'s own copy');
+  }
+  const runDir = process.env.RCOS_RUN_DIR;
+  const runInput = path.join(runDir || '', 'input.json');
+  if (!runDir || !fs.existsSync(runInput)) {
+    problems.push('the eval\'s frozen inputs (RCOS_RUN_DIR/input.json) are not readable');
+  } else {
+    const fx = (JSON.parse(fs.readFileSync(runInput, 'utf8')).fixtures || []).find((f) => f.name === 'compact_agents_md.py');
+    if (!fx) problems.push('this package no longer freezes compact_agents_md.py as its pin');
+    else if (fx.sha256 !== PINNED_TOOL_SHA256) {
+      problems.push('the eval\'s frozen pin (' + fx.sha256.slice(0, 12) + ') is not the pinned tool (' + PINNED_TOOL_SHA256.slice(0, 12) + ')');
+    }
+  }
+  const evTool = path.join(invocationDir, 'evidence', 'executed-tool.py');
+  if (!fs.existsSync(evTool)) problems.push('evidence/executed-tool.py missing');
+  else if (sha256(fs.readFileSync(evTool)) !== ran) problems.push('evidence/executed-tool.py is not the tool the observation says ran');
+  return problems.length === 0
+    ? { ok: true, detail: 'tool under test is the pinned tool ' + PINNED_TOOL_SHA256.slice(0, 12) + ' (' + ledger.tool.bytes + ' bytes), executed from the capability\'s own copy, matching the eval\'s frozen pin and the recorded evidence' }
+    : { ok: false, detail: problems.join(' | ') };
 }
 
 const GATES = {

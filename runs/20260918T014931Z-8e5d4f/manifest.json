@@ -1,0 +1,19 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T014931Z-8e5d4f",
+  "eval_id": "reuse-ledger-invariant-v1",
+  "capability_id": "reuse-ledger",
+  "started_at": "2026-09-18T01:49:31.419Z",
+  "finished_at": "2026-09-18T01:49:31.679Z",
+  "duration_ms": 260,
+  "invocation": {
+    "invocation_id": "inv_20260918T014931Z-5b59dc",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260918T014931Z-5b59dc",
+    "manifest_sha256": "e2e1e3a6d1c366112369fc3cff3fb657df13ce62f411f728af6bee5bcc971dc2",
+    "output_sha256": "789275c5426a343ae340b946316c3f88dac03300fa60be83285167052998990e"
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "node": "v24.15.0"
+}

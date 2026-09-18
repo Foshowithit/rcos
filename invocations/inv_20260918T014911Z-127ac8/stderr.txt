@@ -1,0 +1,15 @@
+/Users/adam26/zcode-rcos/capabilities/agents-md-compactor/adapter/run.js:157
+const observation = { schema: 'compactor-observation/1', tool, fixture, pass1, pass2, noarchive };
+                                                                                      ^
+
+ReferenceError: noarchive is not defined
+    at Object.<anonymous> (/Users/adam26/zcode-rcos/capabilities/agents-md-compactor/adapter/run.js:157:87)
+    at Module._compile (node:internal/modules/cjs/loader:1830:14)
+    at Object..js (node:internal/modules/cjs/loader:1961:10)
+    at Module.load (node:internal/modules/cjs/loader:1553:32)
+    at Module._load (node:internal/modules/cjs/loader:1355:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47
+
+Node.js v24.15.0

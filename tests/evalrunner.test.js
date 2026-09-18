@@ -13,21 +13,37 @@ const LEDGER_FIXTURE = path.join(REPO, 'evals', 'reuse-ledger-invariant-v1', 'fi
 const ER = require('../lib/evalrunner');
 const R = require('../lib/registry');
 
+// A home needs the capability dirs, not just the registry: a declared adapter is
+// executable only if its entrypoint resolves under the home, and the /2 packages
+// invoke the registered capability through the kernel.
+function installCapabilities(home) {
+  fs.cpSync(path.join(REPO, 'capabilities'), path.join(home, 'capabilities'), { recursive: true });
+}
+
 function makeHome() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'rcos-evalrunner-'));
   fs.mkdirSync(path.join(home, 'registry'), { recursive: true });
   fs.copyFileSync(SEED, path.join(home, 'registry', 'capability-registry.json'));
   fs.mkdirSync(path.join(home, 'evals'), { recursive: true });
+  installCapabilities(home);
   return home;
 }
 
 // Sandbox whose registry is the eval fixture (one promoted capability, zero
 // reuse) — lets the submit path be exercised without touching the real registry.
+// The /2 package names a REGISTERED capability to invoke, so the home carries
+// that capability's real declaration, taken from the live registry rather than
+// duplicated here: what the test pins is that the declaration RCOS ships is
+// executable, not a copy of it.
 function makeFixtureHome() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'rcos-evalrunner-fixture-'));
   fs.mkdirSync(path.join(home, 'registry'), { recursive: true });
-  fs.copyFileSync(LEDGER_FIXTURE, path.join(home, 'registry', 'capability-registry.json'));
+  const fixture = JSON.parse(fs.readFileSync(LEDGER_FIXTURE, 'utf8'));
+  const live = JSON.parse(fs.readFileSync(SEED, 'utf8')).capabilities.find((c) => c.id === 'reuse-ledger');
+  fixture.capabilities.push(Object.assign({}, live, { evals: [], reuse_count: 0, last_eval: null }));
+  fs.writeFileSync(path.join(home, 'registry', 'capability-registry.json'), JSON.stringify(fixture, null, 2) + '\n');
   fs.mkdirSync(path.join(home, 'evals'), { recursive: true });
+  installCapabilities(home);
   return home;
 }
 
@@ -45,9 +61,9 @@ function installRealEval(home, id) {
   fs.cpSync(path.join(REPO, 'evals', id), path.join(home, 'evals', id), { recursive: true });
 }
 
-// The kernel-invariant package evaluates a ledger invariant, not a registered
-// capability, so `--submit` (correctly) refuses it. Submit-path tests retarget a
-// copy at a capability the sandbox registry actually holds.
+// The kernel-invariant package names a capability the fixture registry does not
+// hold, so `--submit` (correctly) refuses it before spending a run. The
+// submit-path tests retarget a copy to see that refusal.
 function installRetargetedEval(home, id, capabilityId) {
   installRealEval(home, id);
   const p = path.join(home, 'evals', id, 'eval.json');
@@ -196,20 +212,32 @@ test('eval-run: a run directory is immutable, sealed, and refuses to be rewritte
 
 test('eval-run --submit: the run is the evidence, provenance is executed, reuse does NOT move', () => {
   const home = makeFixtureHome();
-  installRetargetedEval(home, 'reuse-ledger-invariant-v1', 'fixture-cap');
+  installRealEval(home, 'reuse-ledger-invariant-v1');
   const res = run(home, 'eval-run', '--eval', 'reuse-ledger-invariant-v1', '--submit', '--task', 't-exec-1');
   assert.equal(res.status, 0, res.stdout + res.stderr);
   assert.match(res.stdout, /provenance executed/);
   assert.match(res.stdout, /reuse_count unchanged/);
   const runId = res.stdout.match(/run (\S+):/)[1];
 
+  // The run reached the capability through the invocation kernel: the receipt
+  // names the invocation, and that invocation is a sealed artifact of its own.
+  const receipt = JSON.parse(fs.readFileSync(path.join(home, 'runs', runId, 'receipt.json'), 'utf8'));
+  assert.equal(receipt.capability_id, 'reuse-ledger');
+  assert.equal(receipt.invocation.status, 'completed');
+  assert.ok(fs.existsSync(path.join(home, receipt.invocation.dir, 'manifest.json')), 'invocation artifact written');
+
   const reg = JSON.parse(fs.readFileSync(path.join(home, 'registry', 'capability-registry.json'), 'utf8'));
-  const cap = reg.capabilities.find((c) => c.id === 'fixture-cap');
+  const cap = reg.capabilities.find((c) => c.id === 'reuse-ledger');
   const submitted = cap.evals.find((e) => e.task_id === 't-exec-1');
   assert.equal(submitted.verdict, 'ship');
   assert.equal(submitted.run_id, runId);
   assert.equal(submitted.provenance, 'executed');
-  assert.equal(cap.evals.find((e) => e.task_id === 't-seed-1').provenance, 'asserted');
+  // The probe capability the eval's own fixture registry carries is untouched:
+  // an eval run records evidence about the capability it evaluated, and about
+  // nothing else the sandbox happened to mention.
+  const probe = reg.capabilities.find((c) => c.id === 'fixture-cap');
+  assert.equal(probe.evals.find((e) => e.task_id === 't-seed-1').provenance, 'asserted');
+  assert.equal(probe.evals.length, 2);
   // An eval run is evidence about a capability, not proof it was invoked: the
   // trace records the verdict with source=null and the reuse cache stays put.
   assert.equal(cap.reuse_count, 0);
@@ -229,9 +257,12 @@ test('eval-run --submit refuses an unknown capability before spending a run', ()
   assert.match(missing.stderr, /unknown capability 'ghost-cap'/);
   assert.ok(!fs.existsSync(path.join(home, 'runs')) || fs.readdirSync(path.join(home, 'runs')).length === 0,
     'no run dir for a rejected submit');
-  // Without --submit the same package runs fine: evidence is not gated on
-  // registry membership.
-  assert.equal(run(home, 'eval-run', '--eval', 'reuse-ledger-invariant-v1').status, 0);
+  // Without --submit the package still runs — but the registry is load-bearing
+  // for evaluation too now: a capability that is not registered cannot be
+  // invoked, so the evaluation is BLOCKED rather than quietly passing.
+  const ghost = run(home, 'eval-run', '--eval', 'reuse-ledger-invariant-v1');
+  assert.equal(ghost.status, 4);
+  assert.match(ghost.stdout, /blocked — adapter could not execute: invocation could not start: no such capability 'ghost-cap'/);
 });
 
 test('provenance: manual eval-submit is asserted; audit warns while promoted caps are asserted-only', () => {
@@ -248,10 +279,20 @@ test('provenance: manual eval-submit is asserted; audit warns while promoted cap
   const mid = run(home, 'audit');
   assert.match(mid.stdout, /1\/1 promoted capabilities rest entirely on asserted evals/);
 
-  installRetargetedEval(home, 'reuse-ledger-invariant-v1', 'fixture-cap');
-  assert.equal(run(home, 'eval-run', '--eval', 'reuse-ledger-invariant-v1', '--submit', '--task', 't-exec-9').status, 0);
+  // Only an EXECUTED eval clears the warning, and only for the capability it
+  // actually evaluated: the ratio counts promoted capabilities, so evaluating a
+  // candidate leaves it exactly where it was.
+  installEval(home, 'pkg-exec-fixture', minimalSpec('pkg-exec-fixture'));
+  assert.equal(run(home, 'eval-run', '--eval', 'pkg-exec-fixture', '--submit', '--task', 't-exec-9').status, 0);
   const after = run(home, 'audit');
   assert.ok(!/rest entirely on asserted evals/.test(after.stdout), 'warning clears once an executed eval exists');
+
+  installRealEval(home, 'reuse-ledger-invariant-v1');
+  assert.equal(run(home, 'eval-run', '--eval', 'reuse-ledger-invariant-v1', '--submit', '--task', 't-exec-10').status, 0);
+  const reg2 = JSON.parse(fs.readFileSync(path.join(home, 'registry', 'capability-registry.json'), 'utf8'));
+  const candidate = reg2.capabilities.find((c) => c.id === 'reuse-ledger');
+  assert.equal(candidate.evals.find((e) => e.task_id === 't-exec-10').provenance, 'executed');
+  assert.equal(reg2.capabilities.find((c) => c.id === 'fixture-cap').evals.filter((e) => e.provenance === 'executed').length, 1);
 
   // Provenance is a closed vocabulary — a made-up value fails validation.
   const bad = JSON.parse(fs.readFileSync(path.join(home, 'registry', 'capability-registry.json'), 'utf8'));

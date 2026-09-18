@@ -1,0 +1,4 @@
+tool 0955ad78cd48 (6665 bytes) from capability
+pass1 exit=0 mutated=true backup=observations/pass1/archive/AGENTS-20260917-2149-pre-compact.md
+pass2 exit=0 mutated=false
+noarchive exit=1 mutated=false

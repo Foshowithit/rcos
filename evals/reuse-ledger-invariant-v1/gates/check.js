@@ -1,21 +1,54 @@
 #!/usr/bin/env node
 'use strict';
 
-// Gates for the reuse-ledger invariant. Each gate reads the adapter's frozen
-// ledger snapshot (ledger-after.json in the run's work dir) — never live state,
-// never the registry. Exit 0 = pass, 3 = fail, 4 = evidence unavailable.
+// Gates for the reuse-ledger invariant (rcos-eval/2). Each gate reads the
+// CAPABILITY's recorded observation — $RCOS_INVOCATION_DIR/output.json, the
+// bytes the invocation kernel froze and hashed — and re-hashes the evidence
+// recorded beside it. Never live state, never the registry, never the
+// capability's sandbox. Exit 0 = pass, 3 = fail, 4 = evidence unavailable.
 
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 
 const id = process.argv[2];
-const ledgerPath = path.join(process.cwd(), 'ledger-after.json');
-if (!fs.existsSync(ledgerPath)) {
-  console.error('missing ledger-after.json — the adapter did not produce evidence');
+const invocationDir = process.env.RCOS_INVOCATION_DIR;
+if (!invocationDir) {
+  console.error('blocked: RCOS_INVOCATION_DIR is not set — this gate judges an invocation, not a work dir');
   process.exit(4);
 }
-const L = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+const outputPath = path.join(invocationDir, 'output.json');
+if (!fs.existsSync(outputPath)) {
+  console.error('blocked: ' + outputPath + ' not found — the capability produced no observation');
+  process.exit(4);
+}
+const L = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
 const step = (name) => L.steps.find((s) => s.name === name);
+
+const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
+
+// An observation is only worth judging if the bytes it rests on agree with it.
+// A claim its own evidence contradicts is a FAIL, not "blocked": there IS
+// evidence, and it disagrees. Exit 4 stays for evidence that is absent.
+function evidenceProblems() {
+  const problems = [];
+  const regEv = path.join(invocationDir, 'evidence', 'registry-after.json');
+  const tracesEv = path.join(invocationDir, 'evidence', 'traces.jsonl');
+  const last = L.steps[L.steps.length - 1];
+  if (!fs.existsSync(regEv)) problems.push('evidence/registry-after.json missing');
+  else if (sha256(fs.readFileSync(regEv)) !== last.registry_sha256) {
+    problems.push('evidence/registry-after.json is not the registry the last step recorded');
+  }
+  if (!fs.existsSync(tracesEv)) problems.push('evidence/traces.jsonl missing');
+  else {
+    const rows = fs.readFileSync(tracesEv, 'utf8').split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l));
+    if (JSON.stringify(rows) !== JSON.stringify(L.traces)) {
+      problems.push('evidence/traces.jsonl does not match the trace rows in the observation');
+    }
+  }
+  return problems;
+}
+const EVIDENCE = evidenceProblems();
 
 const checks = {
   // sync must not zero a cache it cannot verify. Exit 2 is the refusal code.
@@ -61,6 +94,8 @@ if (!id || !checks[id]) {
   console.error('unknown gate id: ' + id + ' (known: ' + Object.keys(checks).join(', ') + ')');
   process.exit(4);
 }
-const res = checks[id]();
+const res = EVIDENCE.length > 0
+  ? { ok: false, detail: 'the observation contradicts its own evidence: ' + EVIDENCE.join(' | ') }
+  : checks[id]();
 console.log((res.ok ? 'PASS ' : 'FAIL ') + id + ': ' + res.detail);
 process.exit(res.ok ? 0 : 3);

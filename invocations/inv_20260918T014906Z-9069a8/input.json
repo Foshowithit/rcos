@@ -1,0 +1,5 @@
+{
+  "seed_registry": "/Users/adam26/zcode-rcos/evals/reuse-ledger-invariant-v1/fixtures/seed-registry.json",
+  "probe_capability": "fixture-cap",
+  "sandbox": "reuse-ledger-eval"
+}

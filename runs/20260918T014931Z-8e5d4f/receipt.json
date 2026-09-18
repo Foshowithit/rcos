@@ -1,0 +1,84 @@
+{
+  "schema": "rcos-run-receipt/1",
+  "run_id": "20260918T014931Z-8e5d4f",
+  "eval_id": "reuse-ledger-invariant-v1",
+  "capability_id": "reuse-ledger",
+  "verdict": "ship",
+  "verdict_basis": "all 4 required gates pass",
+  "gates": [
+    {
+      "id": "sync_refuses_without_trace_log",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "trace_append_moves_count",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "append_failure_leaves_registry_untouched",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "sync_reconverges_read_only",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    }
+  ],
+  "invocation": {
+    "invocation_id": "inv_20260918T014931Z-5b59dc",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260918T014931Z-5b59dc",
+    "manifest_sha256": "e2e1e3a6d1c366112369fc3cff3fb657df13ce62f411f728af6bee5bcc971dc2",
+    "output_sha256": "789275c5426a343ae340b946316c3f88dac03300fa60be83285167052998990e"
+  },
+  "artifacts": [
+    {
+      "path": "capability-input.json",
+      "sha256": "19561da352dbfcfcda8749e9bbca97fe251e779737cb787ce1fa60f92e1c3bf1",
+      "bytes": 174
+    },
+    {
+      "path": "checks.json",
+      "sha256": "886a3d4f2dbe54c2c4d29688db101d6f9c06bee1b1a49020ef14cfa1f6aa8bac",
+      "bytes": 2172
+    },
+    {
+      "path": "evidence/inputs/seed-registry.json",
+      "sha256": "2793c39709e024ffb5b99597506efb9719e6bd375f8d5db98e9e3b8752464bfd",
+      "bytes": 911
+    },
+    {
+      "path": "input.json",
+      "sha256": "21a8d7e7c806b2f9f29749afc8b8378e564bd45def08de066ca416c38d9bf9bf",
+      "bytes": 578
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "6f241725dfc1ae02194fb827d509dd9c3e8760114c581ea79eccf93655ab9553",
+      "bytes": 676
+    },
+    {
+      "path": "output.json",
+      "sha256": "a07bf602f84376259c50703d5c2bfe8456823c551cc51004430d6f2d0151b6b9",
+      "bytes": 340
+    },
+    {
+      "path": "work/seed-registry.json",
+      "sha256": "2793c39709e024ffb5b99597506efb9719e6bd375f8d5db98e9e3b8752464bfd",
+      "bytes": 911
+    }
+  ],
+  "created_at": "2026-09-18T01:49:31.679Z"
+}

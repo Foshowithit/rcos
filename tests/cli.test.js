@@ -19,6 +19,9 @@ function makeHome() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'rcos-cli-'));
   fs.mkdirSync(path.join(home, 'registry'), { recursive: true });
   fs.copyFileSync(SEED, path.join(home, 'registry', 'capability-registry.json'));
+  // A declared adapter is executable only if its entrypoint resolves under the
+  // home, and audit checks exactly that — so the home carries the capability dirs.
+  fs.cpSync(path.join(__dirname, '..', 'capabilities'), path.join(home, 'capabilities'), { recursive: true });
   return home;
 }
 

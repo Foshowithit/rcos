@@ -1,0 +1,5 @@
+{
+  "seed_registry": "/Users/adam26/zcode-rcos/runs/20260918T014931Z-8e5d4f/work/seed-registry.json",
+  "probe_capability": "fixture-cap",
+  "sandbox": "reuse-ledger-eval"
+}

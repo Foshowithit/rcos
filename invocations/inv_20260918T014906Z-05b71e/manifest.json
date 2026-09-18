@@ -1,0 +1,57 @@
+{
+  "schema": "rcos-invocation/1",
+  "invocation_id": "inv_20260918T014906Z-05b71e",
+  "capability_id": "reuse-ledger",
+  "capability_version": "0.1.0",
+  "registry_status": "candidate",
+  "mode": "normal",
+  "status": "blocked",
+  "status_basis": "status 'candidate' is not eligible for normal invocation (only promoted capabilities are); use --mode eval (development) or --mode forensic --forensic <reason> (explicit override)",
+  "started_at": "2026-09-18T01:49:06.495Z",
+  "completed_at": "2026-09-18T01:49:06.495Z",
+  "duration_ms": 0,
+  "input": {
+    "path": "input.json",
+    "sha256": "5b8890b4d7bd761ed3499c27cbcdd333d19670afd6db17ac414de9a39fdf999f",
+    "bytes": 181
+  },
+  "output": null,
+  "stdout": {
+    "path": "stdout.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "stderr": {
+    "path": "stderr.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "evidence": [],
+  "adapter": {
+    "type": "command",
+    "entrypoint": "capabilities/reuse-ledger/adapter/run.js",
+    "timeout_seconds": 120,
+    "exit_code": null,
+    "signal": null,
+    "error": null
+  },
+  "contract": {
+    "path": "capabilities/reuse-ledger/contract.json",
+    "declaration_errors": [],
+    "contract_errors": [],
+    "input": {
+      "status": "not-checked",
+      "errors": []
+    },
+    "output": {
+      "status": "not-checked",
+      "errors": []
+    }
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T01:49:06.495Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "88be51b4caa90e00f13aa66b97b41f99181777a8ed1849c8a1cf86cecd88694b"
+  }
+}

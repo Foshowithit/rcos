@@ -1,0 +1,26 @@
+{
+  "schema": "rcos-capability-contract/1",
+  "input": {
+    "type": "object",
+    "properties": {
+      "fixture": { "type": "string", "minLength": 1 },
+      "tool": { "type": "string", "minLength": 1 },
+      "observations": { "type": "string", "minLength": 1 }
+    },
+    "required": ["fixture"],
+    "additionalProperties": false
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "schema": { "type": "string", "enum": ["compactor-observation/1"] },
+      "tool": { "type": "object" },
+      "fixture": { "type": "object" },
+      "pass1": { "type": "object" },
+      "pass2": { "type": "object" },
+      "noarchive": { "type": "object" }
+    },
+    "required": ["schema", "tool", "fixture", "pass1", "pass2", "noarchive"],
+    "additionalProperties": false
+  }
+}

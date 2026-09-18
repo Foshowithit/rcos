@@ -1,0 +1,97 @@
+{
+  "schema": "rcos-invocation/1",
+  "invocation_id": "inv_20260918T014935Z-6fd918",
+  "capability_id": "agents-md-compactor",
+  "capability_version": "0.1.0",
+  "registry_status": "candidate",
+  "mode": "eval",
+  "status": "completed",
+  "status_basis": "adapter exited 0 and its output satisfied the declared contract",
+  "started_at": "2026-09-18T01:49:35.067Z",
+  "completed_at": "2026-09-18T01:49:35.220Z",
+  "duration_ms": 153,
+  "input": {
+    "path": "input.json",
+    "sha256": "d1d5a750b19020436def31f68a6c265eeae4dcbefac1cdb2348a82d4471859be",
+    "bytes": 96
+  },
+  "output": {
+    "path": "output.json",
+    "sha256": "3f10a3a1fd73f0c84c12dd82c53d302f335d81fdf4d490d62b1bf21d4a6f4a59",
+    "bytes": 11956
+  },
+  "stdout": {
+    "path": "stdout.txt",
+    "sha256": "8d26d56123f5aac9243e7d50fe44adb3a121bf6d11159b3655ea1e3641667ad2",
+    "bytes": 201
+  },
+  "stderr": {
+    "path": "stderr.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "evidence": [
+    {
+      "path": "evidence/executed-tool.py",
+      "sha256": "0955ad78cd4808dae85c5b74818839c2f1e1f5f4f4dfccdd0fa5a7cce85cc1e9",
+      "bytes": 6665
+    },
+    {
+      "path": "evidence/noarchive/AGENTS.after.md",
+      "sha256": "4a768f2d0b286ec6af9b8118bf54b8f387f75bb7944b912f1ec115c61529aa35",
+      "bytes": 1610
+    },
+    {
+      "path": "evidence/observations.json",
+      "sha256": "3f10a3a1fd73f0c84c12dd82c53d302f335d81fdf4d490d62b1bf21d4a6f4a59",
+      "bytes": 11956
+    },
+    {
+      "path": "evidence/pass1/AGENTS.after.md",
+      "sha256": "b8f99cecb97ab009700d569cfa29ca74ac112183282a3651dd77ee89f6f3e951",
+      "bytes": 1299
+    },
+    {
+      "path": "evidence/pass1/AGENTS.before.md",
+      "sha256": "4a768f2d0b286ec6af9b8118bf54b8f387f75bb7944b912f1ec115c61529aa35",
+      "bytes": 1610
+    },
+    {
+      "path": "evidence/pass2/AGENTS.after.md",
+      "sha256": "b8f99cecb97ab009700d569cfa29ca74ac112183282a3651dd77ee89f6f3e951",
+      "bytes": 1299
+    },
+    {
+      "path": "evidence/pass2/AGENTS.before.md",
+      "sha256": "b8f99cecb97ab009700d569cfa29ca74ac112183282a3651dd77ee89f6f3e951",
+      "bytes": 1299
+    }
+  ],
+  "adapter": {
+    "type": "command",
+    "entrypoint": "capabilities/agents-md-compactor/adapter/run.js",
+    "timeout_seconds": 120,
+    "exit_code": 0,
+    "signal": null,
+    "error": null
+  },
+  "contract": {
+    "path": "capabilities/agents-md-compactor/contract.json",
+    "declaration_errors": [],
+    "contract_errors": [],
+    "input": {
+      "status": "pass",
+      "errors": []
+    },
+    "output": {
+      "status": "pass",
+      "errors": []
+    }
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T01:49:35.220Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "1ee27fcf57b55f12c0fe8137af6c5575cecf1256104f5e3efc8218315032d514"
+  }
+}
