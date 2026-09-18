@@ -1,40 +1,40 @@
 {
-  "task": "study-round27",
   "capability": "video-forensics-receipt",
-  "verdict": "ship",
   "date": "2026-09-18",
-  "round": "R27 creative-study (Mac cell, cron)",
   "gates": [
     {
+      "evidence": "4/4 Dell fetches first-try, sequential: ui-notion-agents (R1cF4T4lgI4 Notion official, 90s), ui-vercel-v0 (By9wCB9IZp0 Vercel official, 48s), ui-replit-agent (IYiVPrxY8-Y Replit official, 204s), ui-dia-browser (YVOw0TAO9ok Browser Company official, 78s). Arc Search dropped pre-fetch (search lane returned games only), Dia substituted; prefix ui- already in rig/summarize.py CLASSES from R26.",
       "gate": "fetch_clean",
-      "result": "pass",
-      "evidence": "4/4 Dell fetches clean, first try, no blocks: ui-notion-agents (R1cF4T4lgI4, Notion official, 90.047s, 15.8M views — the held R26 spare), ui-vercel-v0 (By9wCB9IZp0, Vercel official, 47.508s), ui-replit-agent (IYiVPrxY8-Y, Replit official, 204.289s), ui-dia-browser (YVOw0TAO9ok, The Browser Company official, 77.833s); all 1280x720 AV1. Arc Search dropped from the candidate set (search lane returned games only), Dia substituted as Browser-Company replicate #2 — documented in QUEUE.md; ui- prefix already registered class U (R26)"
+      "result": "pass"
     },
     {
+      "evidence": "4/4 contact sheets Read sighted + dense montage for the 0-cut v0 film (stock sheet = 1 tile blind spot; 16-tile montage read: prompt-pill arc to dashboard generation to end cards). Frames match named sources (Notion: to-dos/agent chat/bug tracker; Replit: orange logo, host PiP over dark IDE; Dia: kitchen-apron ensemble, zucchini chat, NYT Cooking).",
       "gate": "sheet_read_sighted",
-      "result": "pass",
-      "evidence": "4 contact sheets Read + 1 dense montage = 5 sighted reads. ui-vercel-v0 stock sheet under-sampled to 1 tile (0-cut film, R15/R18 blind spot) -> dense montage (fps=1/3, scale=320:180, tile=8x2) read sighted: prompt-pill arc 'What will you ship?' -> 'A sleek pricing' -> 'A SaaS dashboard layout' -> in-frame dashboard generation -> v0.dev + Vercel end cards. Frames match named sources: Agents agent-chat/bug-tracker/transcript UI, Replit host PiP over dark IDE + Nearby Landmarks map, Dia filmed kitchen ensemble + zucchini-chat + NYT Cooking inserts"
+      "result": "pass"
     },
     {
+      "evidence": "4/4 identity PASS via free opencode muse-spark-1.3-contributor-free vision lane; Arc AND Dia both flagged brand-spot-not-demo = montage lane split recorded, not mislabel.",
       "gate": "label_integrity_muse",
-      "result": "pass",
-      "evidence": "4/4 identity PASS via free opencode muse-spark-1.3-contributor-free (Notion Agents, Vercel, Replit, Dia all named correctly); Arc AND Dia both flagged brand-spot-not-demo = montage lane, recorded as a lane split, not a mislabel"
+      "result": "pass"
     },
     {
+      "evidence": "python3 rig/verify_receipts.py -> checked 107 receipts (101 reference + 6 own) - ALL DETERMINISTIC GATES PASS.",
       "gate": "deterministic_receipts",
-      "result": "pass",
-      "evidence": "python3 rig/verify_receipts.py -> checked 107 receipts - ALL DETERMINISTIC GATES PASS (101 reference + 6 own); re-run after the R27 rig hygiene fix still 107/107"
+      "result": "pass"
     },
     {
+      "evidence": "class-U section retitled rounds 26-27, n=8 envelope table (all values studies/ui-*.json cited; medians: cut density 0.074, median shot 5.73, first cut 4.04, motion 0.064, stillness 0.44, sat 0.092, luma 0.759, LUFS -16.0, LRA 4.8, TP -1.55, n80 4), seven lane bullets, end-card 5/5 branded + 2 product-state closers, detector note strengthened with v0 proof object, limits.",
       "gate": "playbook_fold_in_cited",
-      "result": "pass",
-      "evidence": "class-U section retitled rounds 26-27, n=8, all numbers cited to studies/ui-*.json: envelope medians cut density 0.074 / median shot 5.73 / first cut 4.04 / motion 0.064 / stillness 0.44 / sat 0.092 / luma 0.759 / LUFS -16.0 / LRA 4.8 / TP -1.55 / n80 4; seven lane bullets (Linear, Replit host-led #2, Figma, Notion, v0 typing-build #2, Agents agent-screenplay, Arc, Dia); end-card 5/5 branded + 2 product-state closers (Replit map UI, Agents transcript UI); detector note strengthened with v0 as proof object"
+      "result": "pass"
     },
     {
+      "evidence": "Two R26 class-U superlatives corrected against full-corpus rankings (all studies/*.json): (a) LRA 'tightest 2.2-5.0' -> 2.2-9.7 at n=8 AND never corpus-tightest (class E refs 3.3-5.6 = 2.3 LU already narrower at R26; U third-tightest of 12 at n=8, tied T 7.5; widest A 21.2). (b) 'Notion 43.5s corpus-longest median' -> class-U-longest only (corpus: mc-1917-onecut 570.63s, explainer-3b1b-nn 475.02s); v0 47.508s takes class record. Cross-check passed: class-E LUFS-tightest superlative HOLDS (E 5.0 vs T 5.6). Rig hygiene: trumpf- prefix registered in rig/summarize.py CLASSES.",
       "gate": "prior_claim_corrections",
-      "result": "pass",
-      "evidence": "R26's two class-U superlatives corrected with cited corpus-wide rankings over all studies/*.json: (a) LRA 'tightest band 2.2-5.0' -> 2.2-9.7 at n=8 (Agents 9.7, Replit 7.6) AND never corpus-tightest — class E's reference band 3.3-5.6 (2.3 LU) was already narrower at R26; U at n=8 is third-tightest of the 12 measured class bands (E 2.8, S 6.8 tighter; T tied 7.5; widest A 21.2, C 20.4). (b) 'Notion 43.5s = corpus-longest median' was overstated — class-U-longest only (corpus-longest: mc-1917-onecut 570.63s, explainer-3b1b-nn 475.02s); v0 47.508s takes the class record. Cross-check that passed: class E's LUFS superlative 'tightest mix band of any class measured' HOLDS (E 5.0 LU wide, next T 5.6). Rig hygiene: registered the missing trumpf- prefix in rig/summarize.py CLASSES (receipt read as class-unknown to the tooling while class-I prose already counted it)"
+      "result": "pass"
     }
   ],
-  "notes": "No rig defects, no bad receipts; verdict ship. The corrections above are to prior-round PROSE claims, not to deterministic artifacts — all 107 receipts pass, and the corrected wording now sits in the class-U envelope table + round log with citations. v0's 0-cut single take cleared the R18 static-post suspicion via dense montage + muse. Third-party media stayed on the Dell (~/tmp/creative-study); only sheets (gitignored) + receipts + playbook text entered the workspace."
+  "notes": "Corrections are to prior-round PROSE, not to deterministic artifacts; all receipts pass. v0 0-cut cleared via dense montage + muse. Third-party media stayed on the Dell; only receipts + playbook text entered the repo.",
+  "round": "R27 creative-study (Mac cell, cron)",
+  "task": "study-round27",
+  "verdict": "ship"
 }
