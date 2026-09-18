@@ -15,6 +15,11 @@ Design: `docs/2026-09-14-zcode-rcos-design.md` (copy of the approved spec).
 - `bin/rcos runs [--json]` (list executed runs and their verdicts)
 - `bin/rcos eval-run --eval <eval-id> [--task <task>] [--submit]` (execute a package; exit 0 = ship, 3 = fix, 4 = blocked)
 - `bin/rcos eval-verify --run <run-id>` (re-hash a run's receipt and its artifacts)
+- `bin/rcos run <capability-id> --input <file.json> [--mode normal|eval|forensic] [--forensic <reason>]` (execute a registered capability through its declared adapter; eligibility is asked and recorded automatically first; exit 0 = completed, 2 = rejected, 3 = failed, 4 = blocked)
+- `bin/rcos eligibility <capability-id> [--purpose normal|eval|forensic] [--scope execute|compete] [--forensic <reason>] [--json]` (ask whether a capability may compete or execute in this context, and record the decision; exit 0 = eligible, 4 = not eligible)
+- `bin/rcos eligibility-verify --decision <id>` (re-check a decision's integrity, schema and canonical reason order)
+- `bin/rcos invocations [--json]`
+- `bin/rcos invocation-verify --invocation <id>` (re-hash every artifact the manifest lists)
 - `bin/rcos propose --id <id> --name <name> --kind <kind> [--version x.y.z] [--lineage <text>]`
 - `bin/rcos eval-submit --id <id> --task <task> --verdict ship|fix|blocked --run <run> [--date YYYY-MM-DD]`
 - `bin/rcos promote --id <id>` (x2-ship gate enforced)
@@ -65,3 +70,30 @@ Design: `docs/2026-09-14-zcode-rcos-design.md` (copy of the approved spec).
    is checked *before* the run is spent. A kernel-invariant eval that names no
    registered capability still runs and still writes its evidence to `runs/` —
    it just cannot be submitted.
+10. **Eligibility decides permission, never preference.** The question it answers
+    is whether a *named* capability is allowed to compete or execute in the
+    supplied context — never which capability is best. `eligibility(registry
+    entry, runtime state, caller context) -> decision` is a pure function: no
+    scoring, no ranking, no task interpretation, no adapter execution, no
+    registry mutation, no model call. The decision is a write-once
+    `rcos-eligibility/1` artifact under `eligibility/<decision-id>/` and carries
+    its own integrity hash, so it can be verified later without being recomputed.
+    The caller context vocabulary is closed and contains no task text, keywords,
+    domain, intent, similarity, score, ranking, preference, cost, latency or
+    reuse history — those keys are refused, not ignored, so "the payload cannot
+    influence the decision" is a property of the shape rather than a promise
+    about the code. Three purposes construct three distinct flag sets: `normal`
+    (promoted only, executed provenance, current ship), `eval` (candidates
+    admitted, quality not required — establishing quality is the point of an
+    eval), `forensic` (retired also admitted, with a recorded reason). Reasons
+    are reported in one canonical order — the order of the question each one
+    answers: identity → permission → executability (exactly one, most specific
+    first) → evidence reality → evidence quality (at most one) → context. All
+    simultaneous failures are reported, never just the first. The invocation
+    kernel **consumes** a decision and refuses to run without one; it keeps its
+    own execution-safety checks (entrypoint present/executable, contract
+    usable, input validated before any spawn), so an eligible decision authorises
+    a run without certifying that the capability is runnable. Freshness is
+    deliberately not invented: `eval_fresh` is `unknown` until a duration is
+    chosen, and `eval_stale` fires only from a state that states staleness
+    explicitly.

@@ -258,11 +258,13 @@ test('eval-run --submit refuses an unknown capability before spending a run', ()
   assert.ok(!fs.existsSync(path.join(home, 'runs')) || fs.readdirSync(path.join(home, 'runs')).length === 0,
     'no run dir for a rejected submit');
   // Without --submit the package still runs — but the registry is load-bearing
-  // for evaluation too now: a capability that is not registered cannot be
-  // invoked, so the evaluation is BLOCKED rather than quietly passing.
+  // for evaluation too: a capability that is not registered cannot be invoked,
+  // so the evaluation is BLOCKED rather than quietly passing. The refusal comes
+  // from the eligibility engine, which runs before the kernel: a ghost never
+  // reaches execution at all.
   const ghost = run(home, 'eval-run', '--eval', 'reuse-ledger-invariant-v1');
   assert.equal(ghost.status, 4);
-  assert.match(ghost.stdout, /blocked — adapter could not execute: invocation could not start: no such capability 'ghost-cap'/);
+  assert.match(ghost.stdout, /blocked — adapter could not execute: eligibility could not be decided: no such capability 'ghost-cap' in the registry/);
 });
 
 test('provenance: manual eval-submit is asserted; audit warns while promoted caps are asserted-only', () => {

@@ -1,0 +1,52 @@
+{
+  "schema": "rcos-eligibility/1",
+  "decision_id": "elig_20260918T025812Z-1385e0",
+  "scope": "execute",
+  "capability_id": "reuse-ledger",
+  "capability_version": "0.1.0",
+  "caller_context": {
+    "purpose": "normal",
+    "explicit_capability_id": "reuse-ledger",
+    "scope": "execute",
+    "forensic_reason": null,
+    "allow_candidate": false,
+    "allow_retired": false,
+    "require_executed_provenance": true,
+    "require_current_ship": true
+  },
+  "observed_state": {
+    "status": "candidate",
+    "executable": true,
+    "adapter": {
+      "declared": true,
+      "type": "command",
+      "type_supported": true,
+      "declaration_errors": [],
+      "entrypoint": "capabilities/reuse-ledger/adapter/run.js",
+      "entrypoint_present": true,
+      "entrypoint_executable": true,
+      "contract_declared": true,
+      "contract_usable": true,
+      "contract_errors": []
+    },
+    "provenance": "asserted",
+    "latest_eval_verdict": null,
+    "latest_eval_at": null,
+    "eval_fresh": "unknown",
+    "evals_total": 0,
+    "evals_executed": 0
+  },
+  "eligible": false,
+  "reasons": [
+    "candidate_not_allowed",
+    "provenance_asserted",
+    "no_ship_eval"
+  ],
+  "decided_at": "2026-09-18T02:58:12.533Z",
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T02:58:12.535Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "e805759e77d818028296d32fbc4baf3a71cff1bc32bbbf2e63180a3ebb7f9cc6"
+  }
+}

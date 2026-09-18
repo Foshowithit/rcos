@@ -8,6 +8,7 @@ const R = require('../lib/registry');
 const T = require('../lib/traces');
 const ER = require('../lib/evalrunner');
 const I = require('../lib/invocation');
+const E = require('../lib/eligibility');
 const { isValidDate } = require('../lib/validate');
 const { renderDashboard } = require('../lib/render');
 
@@ -23,6 +24,10 @@ const USAGE = [
   '  eval-verify --run <run-id> [--json]',
   '  runs [--json]',
   '  run <capability-id> --input <file.json> [--mode normal|eval|forensic] [--forensic <reason>] [--json]',
+  '      (eligibility is asked and recorded automatically before the kernel runs)',
+  '  eligibility <capability-id> [--purpose normal|eval|forensic] [--scope execute|compete]',
+  '              [--forensic <reason>] [--json]',
+  '  eligibility-verify --decision <id> [--json]',
   '  invocations [--json]',
   '  invocation-verify --invocation <id> [--json]',
   '  traces [--capability <id>] [--json]',
@@ -39,7 +44,7 @@ const USAGE = [
 
 // Commands that take a bare positional argument (the capability id). Everything
 // else rejects bare arguments so a typo cannot be silently ignored.
-const POSITIONAL_COMMANDS = ['run'];
+const POSITIONAL_COMMANDS = ['run', 'eligibility'];
 
 function homeDir() {
   return process.env.RCOS_HOME || path.join(os.homedir(), 'zcode-rcos');
@@ -298,6 +303,11 @@ function main() {
       // The execution primitive: name a capability, hand it input, let the
       // kernel resolve and run its declared adapter. No reuse semantics (no
       // trace, no reuse_count move) and no evaluation semantics (no verdict).
+      //
+      // The user does not manufacture an eligibility decision by hand: this
+      // command builds the caller context for the requested mode, the engine
+      // decides and records, and the kernel consumes that decision. A refusal
+      // is a recorded decision, not a bare error string.
       case 'run': {
         if (!positional) { console.error('missing <capability-id>\n' + USAGE); process.exit(1); }
         need(args, 'input');
@@ -317,17 +327,86 @@ function main() {
           console.error('rcos: --mode forensic requires --forensic <reason> — an override nobody can mistake for production reuse');
           process.exit(2);
         }
-        const res = I.invokeCapability(home, positional, { input, mode, forensicReason: args.forensic });
+        const dec = E.decideForHome(home, positional, {
+          purpose: mode,
+          scope: 'execute',
+          forensicReason: mode === 'forensic' ? String(args.forensic) : undefined
+        });
+        if (!dec.ok) { console.error('rcos: ' + dec.error); process.exit(2); }
+        if (!dec.eligible) {
+          console.log('ELIGIBLE: no');
+          console.log('REASONS:');
+          for (const r of dec.reasons) console.log('  ' + r);
+          console.log('decision: ' + dec.decision_id + '\t' + dec.dir);
+          console.error('rcos: refusing to invoke \'' + positional + '\' in ' + mode + ' mode');
+          process.exit(4);
+        }
+        const res = I.invokeCapability(home, positional, {
+          input, mode,
+          forensicReason: args.forensic,
+          eligibilityDecisionId: dec.decision_id
+        });
         if (!res.ok) { console.error('rcos: ' + res.error); process.exit(2); }
         if (args.json) console.log(JSON.stringify(res.manifest, null, 2));
         else {
           console.log(res.invocation_id + '\t' + res.status + '\t' + res.capability_id + '\t' + res.manifest.adapter.exit_code);
           console.log('basis: ' + res.basis);
+          console.log('eligibility: ' + dec.decision_id + ' (' + (dec.eligible ? 'yes' : 'no') + ')');
           console.log('artifacts: ' + res.dir);
           if (mode === 'forensic') console.log('NOTE: forensic override (' + args.forensic + ') — this is not production reuse.');
           if (mode === 'eval') console.log('NOTE: eval-mode invocation of a ' + res.manifest.registry_status + ' capability — development, not reuse.');
         }
         process.exit(res.status === 'completed' ? 0 : res.status === 'rejected' ? 2 : res.status === 'failed' ? 3 : 4);
+      }
+      // The policy question on its own, asked without invoking anything. This
+      // command exists so the decision can be inspected, and so an operator can
+      // see WHY a capability is not eligible — every applicable reason, in the
+      // canonical order, not just the first failure.
+      case 'eligibility': {
+        if (!positional) { console.error('missing <capability-id>\n' + USAGE); process.exit(1); }
+        const purpose = args.purpose === undefined ? 'normal' : String(args.purpose);
+        if (!E.PURPOSES.includes(purpose)) {
+          console.error('bad --purpose, want one of ' + E.PURPOSES.join('|'));
+          process.exit(2);
+        }
+        const scope = args.scope === undefined ? 'execute' : String(args.scope);
+        if (!E.SCOPES.includes(scope)) {
+          console.error('bad --scope, want one of ' + E.SCOPES.join('|'));
+          process.exit(2);
+        }
+        if (purpose === 'forensic' && (args.forensic === undefined || args.forensic === true)) {
+          console.error('rcos: --purpose forensic requires --forensic <reason> — an override nobody can mistake for production reuse');
+          process.exit(2);
+        }
+        const dec = E.decideForHome(home, positional, {
+          purpose,
+          scope,
+          forensicReason: purpose === 'forensic' ? String(args.forensic) : undefined
+        });
+        if (!dec.ok) { console.error('rcos: ' + dec.error); process.exit(2); }
+        if (args.json) console.log(JSON.stringify(dec.decision, null, 2));
+        else {
+          console.log('ELIGIBLE: ' + (dec.eligible ? 'yes' : 'no'));
+          if (dec.eligible) console.log('REASONS: (none)');
+          else {
+            console.log('REASONS:');
+            for (const r of dec.reasons) console.log('  ' + r);
+          }
+          if (purpose === 'forensic') console.log('override: ' + args.forensic + ' (recorded in the decision)');
+          console.log('decision: ' + dec.decision_id + '\t' + dec.dir);
+        }
+        process.exit(dec.eligible ? 0 : 4);
+      }
+      case 'eligibility-verify': {
+        need(args, 'decision');
+        const res = E.verifyDecision(home, args.decision);
+        if (args.json) console.log(JSON.stringify(res, null, 2));
+        else {
+          for (const p of res.problems) console.log('PROBLEM ' + p);
+          console.log(res.ok ? 'eligibility decision ' + args.decision + ' verified (' + res.checked + ' check(s))' : 'eligibility decision verification FAILED');
+        }
+        if (!res.ok) process.exit(3);
+        break;
       }
       case 'invocations': {
         const rows = I.listInvocations(home);

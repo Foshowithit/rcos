@@ -1,0 +1,52 @@
+{
+  "schema": "rcos-eligibility/1",
+  "decision_id": "elig_20260918T031230Z-a1733f",
+  "scope": "execute",
+  "capability_id": "agents-md-compactor",
+  "capability_version": "0.1.0",
+  "caller_context": {
+    "purpose": "normal",
+    "explicit_capability_id": "agents-md-compactor",
+    "scope": "execute",
+    "forensic_reason": null,
+    "allow_candidate": false,
+    "allow_retired": false,
+    "require_executed_provenance": true,
+    "require_current_ship": true
+  },
+  "observed_state": {
+    "status": "candidate",
+    "executable": true,
+    "adapter": {
+      "declared": true,
+      "type": "command",
+      "type_supported": true,
+      "declaration_errors": [],
+      "entrypoint": "capabilities/agents-md-compactor/adapter/run.js",
+      "entrypoint_present": true,
+      "entrypoint_executable": true,
+      "contract_declared": true,
+      "contract_usable": true,
+      "contract_errors": []
+    },
+    "provenance": "asserted",
+    "latest_eval_verdict": null,
+    "latest_eval_at": null,
+    "eval_fresh": "unknown",
+    "evals_total": 0,
+    "evals_executed": 0
+  },
+  "eligible": false,
+  "reasons": [
+    "candidate_not_allowed",
+    "provenance_asserted",
+    "no_ship_eval"
+  ],
+  "decided_at": "2026-09-18T03:12:30.925Z",
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T03:12:30.926Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "e43f94af803b4310ffcac46c2067314c0d952b856befc58c0159c5005ff562f4"
+  }
+}
