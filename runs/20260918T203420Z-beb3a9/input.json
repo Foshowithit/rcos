@@ -1,0 +1,54 @@
+{
+  "schema": "rcos-run/1",
+  "eval_id": "qr-camo-embed-grounding-v1",
+  "capability_id": "qr-camo-embed",
+  "eval_sha256": "60d669c52aa17426726a5bdff28a71395350f870f3dbf33a6f26646e1d7b695b",
+  "adapter_argv": null,
+  "fixtures": [
+    {
+      "name": "bearing-camo-src.png",
+      "sha256": "ec7f944766a3eda36d087657bf3647dd483d98782de68a09df392aaa6386300d",
+      "bytes": 2574318
+    },
+    {
+      "name": "dark-camo-src.png",
+      "sha256": "d48a416011b5c76ab768b393d1256bc57e9f0249be5c8d4aede4ddccc24b6d97",
+      "bytes": 3177670
+    },
+    {
+      "name": "pale-camo-src.png",
+      "sha256": "14b0c0672dc8912210bf4d6dcb6b29c456934e7fbc7acf0682db7f67cfccdf68",
+      "bytes": 354418
+    },
+    {
+      "name": "oracle-ship-header.png",
+      "sha256": "24de696df0bad3f0bab972eabbb715440fca8a666cbf403a61ae8e88214b8b6d",
+      "bytes": 868866
+    },
+    {
+      "name": "oracle-pale-header.png",
+      "sha256": "f8824bc41ca52808beacd341696e4cc94178752fe625d6e31b6bc754acfcc623",
+      "bytes": 428910
+    },
+    {
+      "name": "muse-eval6-ship.log",
+      "sha256": "d8f3e7c791ae99b5fa2e0d514ff6af0a2163c0777dd36ff45abb0bd0e01d5f6f",
+      "bytes": 387
+    },
+    {
+      "name": "muse-eval5-fail.log",
+      "sha256": "5f99e44383c39a25aee20274bbb2af472ee7edd7d4dd7cf90ccaad760f19b019",
+      "bytes": 622
+    },
+    {
+      "name": "prefix-orientation-make_header_v2.py",
+      "sha256": "110a747215f68395a363eaa6e1ecdd4f85bf2db34c7bd557473c0a087c3b27cc",
+      "bytes": 5554
+    }
+  ],
+  "created_at": "2026-09-18T20:34:20.811Z",
+  "capability_input": {
+    "path": "capability-input.json",
+    "sha256": "1480eab95299eba7df7634a7e1a914d3ebbc45e1198e06214cfddaf84ab69e99"
+  }
+}

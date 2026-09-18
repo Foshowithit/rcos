@@ -1,0 +1,1 @@
+payload too long: QR 495px does not fit the 1500x500 placement window

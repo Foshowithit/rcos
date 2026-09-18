@@ -1,0 +1,4 @@
+QR version 3, 37x37 modules
+placed at (905,20), smoothness score 32.2
+adaptive contrast: dark_gain top 0.68 (v1 used 0.52 flat)
+ALL SCANS PASS (stress ladder at minimal visible contrast)

@@ -1,0 +1,7 @@
+ship_bearing_frame [embed] exit=0 outcome=embedded out_files=1
+ship_bearing_frame_repeat [embed] exit=0 outcome=embedded out_files=1
+variant_short_url [embed] exit=0 outcome=embedded out_files=1
+overflow_hog_url [embed] exit=1 outcome=refused out_files=0
+dark_cover [embed] exit=0 outcome=embedded out_files=1
+pale_cover [embed] exit=0 outcome=embedded out_files=1
+observed 6 cases (script 8dc1960468b0, interpreter evidence/qr-venv/bin/python)

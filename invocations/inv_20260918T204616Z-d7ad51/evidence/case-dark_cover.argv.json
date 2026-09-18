@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "/private/tmp/qr-camo-cleanroom-9AQu/capabilities/qr-camo-embed/adapter/make_header_v2.py",
+    "https://archon.diy"
+  ],
+  "interpreter": "/Users/adam26/zcode-rcos/evidence/qr-venv/bin/python",
+  "cwd": "/tmp/qr-camo-cleanroom-9AQu/invocations/inv_20260918T204616Z-d7ad51/work/case-dark_cover",
+  "exit_status": 0,
+  "signal": null,
+  "duration_ms": 433
+}

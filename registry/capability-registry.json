@@ -216,7 +216,7 @@
           "task_id": "priority5-executed-grounding-qr-camo-embed",
           "verdict": "ship",
           "run_id": "20260918T204616Z-ddd708",
-          "provenance": "asserted"
+          "provenance": "executed"
         }
       ],
       "reuse_count": 4,

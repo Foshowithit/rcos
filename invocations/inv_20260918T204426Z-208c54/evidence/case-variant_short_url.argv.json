@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "/Users/adam26/zcode-rcos/capabilities/qr-camo-embed/adapter/make_header_v2.py",
+    "https://archon.diy/rcos"
+  ],
+  "interpreter": "/Users/adam26/zcode-rcos/evidence/qr-venv/bin/python",
+  "cwd": "/Users/adam26/zcode-rcos/invocations/inv_20260918T204426Z-208c54/work/case-variant_short_url",
+  "exit_status": 0,
+  "signal": null,
+  "duration_ms": 428
+}

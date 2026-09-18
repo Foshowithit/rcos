@@ -1,0 +1,230 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T204616Z-ddd708",
+  "gates": [
+    {
+      "id": "ship_frame_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "ship_frame_reproduced"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS ship_frame_reproduced: the ship case embedded exit 0 with the pinned placement/gain/ALL-SCANS stdout, read the pinned bearing cover, wrote exactly camo-qr-header.png (1500x500), and its bytes are the oracle fixture eval-6 shipped (24de696df0ba…)\n",
+      "stderr": "",
+      "duration_ms": 33
+    },
+    {
+      "id": "pale_cover_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "pale_cover_reproduced"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS pale_cover_reproduced: the pale case embedded exit 0 with the pinned (905,20)/score 32.2/gain-0.68 stdout, read the pinned pale cover, and its bytes reproduce the pale oracle fixture byte for byte (f8824bc41ca5…)\n",
+      "stderr": "",
+      "duration_ms": 31
+    },
+    {
+      "id": "stress_ladder_holds",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "stress_ladder_holds"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS stress_ladder_holds: the pinned ladder helper (zxing-only, on decoded arrays, mirroring the script's own stress_pass) decodes the ship output as https://archon.diy and every leg passes — disk, PNG round-trip, half-size, jpeg q78, jpeg q85\n",
+      "stderr": "",
+      "duration_ms": 170
+    },
+    {
+      "id": "variant_url_decodes",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "variant_url_decodes"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS variant_url_decodes: the variant case reproduced its pinned bytes (different from the ship oracle — the URL is in the payload), kept the pinned placement, and decodes as https://archon.diy/rcos with every ladder leg passing\n",
+      "stderr": "",
+      "duration_ms": 169
+    },
+    {
+      "id": "payload_overflow_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "payload_overflow_bites"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS payload_overflow_bites: the 45x45 payload refuses with exit 1, the exact \"payload too long\" stderr line, the version line as its only stdout, and no file left behind — the documented refusal path is real\n",
+      "stderr": "",
+      "duration_ms": 32
+    },
+    {
+      "id": "dark_cover_halo_lifts",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "dark_cover_halo_lifts"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS dark_cover_halo_lifts: measured on the real pixels: the ship embedding darkens its ring while the dark-cover embedding lifts it, the contrast split clears the 50-unit pin (prove run 78.18), the dark ring lands inside the scannable band, and the dark canvas sits far below the ship canvas\n",
+      "stderr": "",
+      "duration_ms": 279
+    },
+    {
+      "id": "pale_cover_signature",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "pale_cover_signature"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS pale_cover_signature: the pale cover output survives the full stress ladder and its geometry holds the measured signature: ring lifted (+15.77 at prove), ring luma near the pale canvas, box delta 2.51 — the muse SHIP verdict is sealed history this gate does not re-derive\n",
+      "stderr": "",
+      "duration_ms": 272
+    },
+    {
+      "id": "muse_receipts_sealed",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "muse_receipts_sealed"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS muse_receipts_sealed: the sealed muse receipts — eval-6 SHIP and eval-5 FAIL — are the pinned bytes in the package AND in evidence/qr-camo-embed/ under RCOS_HOME, verdict lines intact; the historical taste ruling stands, unedited and unrerun\n",
+      "stderr": "",
+      "duration_ms": 32
+    },
+    {
+      "id": "cv2_weaker_than_zxing",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "cv2_weaker_than_zxing"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS cv2_weaker_than_zxing: on identical re-serialized pixels the separation reproduces: both decoders hold at fade 0.10, at 0.15 zxing still reads while cv2 already misses, at 0.20 both miss — cv2 is strictly weaker here and stays out of the oracle seat\n",
+      "stderr": "",
+      "duration_ms": 359
+    },
+    {
+      "id": "orientation_fix_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "orientation_fix_bites"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS orientation_fix_bites: the script as eval-4/eval-5 ran it (pinned prefix fixture) refuses the same landscape cover the fixed script ships on: pinned (1045,20) placement line, exact refusal stderr, no output file — the orientation fix is a demonstrated behavior change, not prose\n",
+      "stderr": "",
+      "duration_ms": 476
+    },
+    {
+      "id": "determinism_repeat",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "determinism_repeat"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS determinism_repeat: the repeat case reproduces the ship case exactly — same stdout, same exit, byte-identical output equal to the oracle — determinism as observed, on committed covers, with no randomness in the script\n",
+      "stderr": "",
+      "duration_ms": 33
+    },
+    {
+      "id": "interpreter_declared",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "interpreter_declared"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS interpreter_declared: the interpreter is declared and re-proven: observation, deps.json and a live probe through the exact interpreter the cases ran all report the pinned versions (cv2 4.13.0, qrcode 8.2, zxingcpp 3.1.1, numpy 2.4.6, pillow 10.4.0, python 3.14.7), one interpreter across all six cases\n",
+      "stderr": "",
+      "duration_ms": 134
+    },
+    {
+      "id": "frozen_source_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "frozen_source_pinned"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS frozen_source_pinned: the frozen script, adapter, contract and all three measuring helpers are the pinned revisions on disk, evidence/frozen.sha256 carries the script + interpreter identity the run wrote, and all 6 cases ran that exact script with their own URL (check.js pins everything except itself — its identity rides the commit and the trace receipt)\n",
+      "stderr": "",
+      "duration_ms": 32
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/tmp/qr-camo-cleanroom-9AQu/evals/qr-camo-embed-grounding-v1/gates/check.js",
+        "artifact_identity_pinned"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS artifact_identity_pinned: the run is an execution of this exact package revision, all 8 pinned fixtures agree byte for byte across the package, the run work dir and the run evidence copy, and the run's request is pinned by hash with every case reading the run's own fixture copy\n",
+      "stderr": "",
+      "duration_ms": 41
+    }
+  ]
+}

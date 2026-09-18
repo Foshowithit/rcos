@@ -1,0 +1,255 @@
+{
+  "schema": "qr-camo-embed-observation/1",
+  "frozen": {
+    "script": {
+      "path": "capabilities/qr-camo-embed/adapter/make_header_v2.py",
+      "sha256": "8dc1960468b002dde416d8f27fa5f07fb97febcd015198674fc3f92c4550bdeb",
+      "usage": "make_header_v2.py [url] — reads ./camo-src.png, writes ./camo-qr-header.png, cwd-relative",
+      "documented_exit_codes": [
+        0,
+        1
+      ]
+    },
+    "interpreter": {
+      "path": "evidence/qr-venv/bin/python",
+      "version": "3.14.7",
+      "deps": {
+        "cv2": "4.13.0",
+        "qrcode": "8.2",
+        "zxingcpp": "3.1.1",
+        "numpy": "2.4.6",
+        "pillow": "10.4.0"
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "ship_bearing_frame",
+      "operation": "embed",
+      "source": {
+        "path": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/bearing-camo-src.png",
+        "sha256": "ec7f944766a3eda36d087657bf3647dd483d98782de68a09df392aaa6386300d",
+        "bytes": 2574318,
+        "png": {
+          "width": 1920,
+          "height": 1080,
+          "bit_depth": 8,
+          "color_type": 2
+        }
+      },
+      "url": "https://archon.diy",
+      "argv": [
+        "/Users/adam26/zcode-rcos/capabilities/qr-camo-embed/adapter/make_header_v2.py",
+        "https://archon.diy"
+      ],
+      "interpreter_path": "/Users/adam26/zcode-rcos/evidence/qr-venv/bin/python",
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "embedded",
+      "duration_ms": 436,
+      "stdout": "QR version 3, 37x37 modules\nplaced at (1065,60), smoothness score 25.5\nadaptive contrast: dark_gain top 0.8 (v1 used 0.52 flat)\nALL SCANS PASS (stress ladder at minimal visible contrast)\n",
+      "stderr": "",
+      "out_files": [
+        {
+          "path": "case-ship_bearing_frame/camo-qr-header.png",
+          "sha256": "24de696df0bad3f0bab972eabbb715440fca8a666cbf403a61ae8e88214b8b6d",
+          "bytes": 868866,
+          "png": {
+            "width": 1500,
+            "height": 500,
+            "bit_depth": 8,
+            "color_type": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "ship_bearing_frame_repeat",
+      "operation": "embed",
+      "source": {
+        "path": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/bearing-camo-src.png",
+        "sha256": "ec7f944766a3eda36d087657bf3647dd483d98782de68a09df392aaa6386300d",
+        "bytes": 2574318,
+        "png": {
+          "width": 1920,
+          "height": 1080,
+          "bit_depth": 8,
+          "color_type": 2
+        }
+      },
+      "url": "https://archon.diy",
+      "argv": [
+        "/Users/adam26/zcode-rcos/capabilities/qr-camo-embed/adapter/make_header_v2.py",
+        "https://archon.diy"
+      ],
+      "interpreter_path": "/Users/adam26/zcode-rcos/evidence/qr-venv/bin/python",
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "embedded",
+      "duration_ms": 449,
+      "stdout": "QR version 3, 37x37 modules\nplaced at (1065,60), smoothness score 25.5\nadaptive contrast: dark_gain top 0.8 (v1 used 0.52 flat)\nALL SCANS PASS (stress ladder at minimal visible contrast)\n",
+      "stderr": "",
+      "out_files": [
+        {
+          "path": "case-ship_bearing_frame_repeat/camo-qr-header.png",
+          "sha256": "24de696df0bad3f0bab972eabbb715440fca8a666cbf403a61ae8e88214b8b6d",
+          "bytes": 868866,
+          "png": {
+            "width": 1500,
+            "height": 500,
+            "bit_depth": 8,
+            "color_type": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "variant_short_url",
+      "operation": "embed",
+      "source": {
+        "path": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/bearing-camo-src.png",
+        "sha256": "ec7f944766a3eda36d087657bf3647dd483d98782de68a09df392aaa6386300d",
+        "bytes": 2574318,
+        "png": {
+          "width": 1920,
+          "height": 1080,
+          "bit_depth": 8,
+          "color_type": 2
+        }
+      },
+      "url": "https://archon.diy/rcos",
+      "argv": [
+        "/Users/adam26/zcode-rcos/capabilities/qr-camo-embed/adapter/make_header_v2.py",
+        "https://archon.diy/rcos"
+      ],
+      "interpreter_path": "/Users/adam26/zcode-rcos/evidence/qr-venv/bin/python",
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "embedded",
+      "duration_ms": 428,
+      "stdout": "QR version 3, 37x37 modules\nplaced at (1065,60), smoothness score 25.5\nadaptive contrast: dark_gain top 0.8 (v1 used 0.52 flat)\nALL SCANS PASS (stress ladder at minimal visible contrast)\n",
+      "stderr": "",
+      "out_files": [
+        {
+          "path": "case-variant_short_url/camo-qr-header.png",
+          "sha256": "7c5e75dd3fe63034739485f39d052ee5eced10ae7974b37de39197b99357e23f",
+          "bytes": 870813,
+          "png": {
+            "width": 1500,
+            "height": 500,
+            "bit_depth": 8,
+            "color_type": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "overflow_hog_url",
+      "operation": "embed",
+      "source": {
+        "path": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/bearing-camo-src.png",
+        "sha256": "ec7f944766a3eda36d087657bf3647dd483d98782de68a09df392aaa6386300d",
+        "bytes": 2574318,
+        "png": {
+          "width": 1920,
+          "height": 1080,
+          "bit_depth": 8,
+          "color_type": 2
+        }
+      },
+      "url": "https://foshowithit.github.io/hog-crankers",
+      "argv": [
+        "/Users/adam26/zcode-rcos/capabilities/qr-camo-embed/adapter/make_header_v2.py",
+        "https://foshowithit.github.io/hog-crankers"
+      ],
+      "interpreter_path": "/Users/adam26/zcode-rcos/evidence/qr-venv/bin/python",
+      "exit_status": 1,
+      "signal": null,
+      "outcome": "refused",
+      "duration_ms": 189,
+      "stdout": "QR version 5, 45x45 modules\n",
+      "stderr": "payload too long: QR 495px does not fit the 1500x500 placement window\n",
+      "out_files": []
+    },
+    {
+      "name": "dark_cover",
+      "operation": "embed",
+      "source": {
+        "path": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/dark-camo-src.png",
+        "sha256": "d48a416011b5c76ab768b393d1256bc57e9f0249be5c8d4aede4ddccc24b6d97",
+        "bytes": 3177670,
+        "png": {
+          "width": 2240,
+          "height": 1120,
+          "bit_depth": 8,
+          "color_type": 2
+        }
+      },
+      "url": "https://archon.diy",
+      "argv": [
+        "/Users/adam26/zcode-rcos/capabilities/qr-camo-embed/adapter/make_header_v2.py",
+        "https://archon.diy"
+      ],
+      "interpreter_path": "/Users/adam26/zcode-rcos/evidence/qr-venv/bin/python",
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "embedded",
+      "duration_ms": 442,
+      "stdout": "QR version 3, 37x37 modules\nplaced at (1065,20), smoothness score 40.9\nadaptive contrast: dark_gain top 0.8 (v1 used 0.52 flat)\nALL SCANS PASS (stress ladder at minimal visible contrast)\n",
+      "stderr": "",
+      "out_files": [
+        {
+          "path": "case-dark_cover/camo-qr-header.png",
+          "sha256": "5c310e719668670bfe022eb5c2793a546b819e633373fd07c72a50c38c68e309",
+          "bytes": 1020927,
+          "png": {
+            "width": 1500,
+            "height": 500,
+            "bit_depth": 8,
+            "color_type": 2
+          }
+        }
+      ]
+    },
+    {
+      "name": "pale_cover",
+      "operation": "embed",
+      "source": {
+        "path": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/pale-camo-src.png",
+        "sha256": "14b0c0672dc8912210bf4d6dcb6b29c456934e7fbc7acf0682db7f67cfccdf68",
+        "bytes": 354418,
+        "png": {
+          "width": 640,
+          "height": 960,
+          "bit_depth": 8,
+          "color_type": 2
+        }
+      },
+      "url": "https://archon.diy",
+      "argv": [
+        "/Users/adam26/zcode-rcos/capabilities/qr-camo-embed/adapter/make_header_v2.py",
+        "https://archon.diy"
+      ],
+      "interpreter_path": "/Users/adam26/zcode-rcos/evidence/qr-venv/bin/python",
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "embedded",
+      "duration_ms": 402,
+      "stdout": "QR version 3, 37x37 modules\nplaced at (905,20), smoothness score 32.2\nadaptive contrast: dark_gain top 0.68 (v1 used 0.52 flat)\nALL SCANS PASS (stress ladder at minimal visible contrast)\n",
+      "stderr": "",
+      "out_files": [
+        {
+          "path": "case-pale_cover/camo-qr-header.png",
+          "sha256": "f8824bc41ca52808beacd341696e4cc94178752fe625d6e31b6bc754acfcc623",
+          "bytes": 428910,
+          "png": {
+            "width": 1500,
+            "height": 500,
+            "bit_depth": 8,
+            "color_type": 2
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,227 @@
+{
+  "schema": "rcos-run-receipt/1",
+  "run_id": "20260918T203420Z-beb3a9",
+  "eval_id": "qr-camo-embed-grounding-v1",
+  "capability_id": "qr-camo-embed",
+  "verdict": "blocked",
+  "verdict_basis": "adapter could not execute: capability is not eligible in eval mode: not_executable",
+  "gates": [
+    {
+      "id": "ship_frame_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "pale_cover_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "stress_ladder_holds",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "variant_url_decodes",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "payload_overflow_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "dark_cover_halo_lifts",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "pale_cover_signature",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "muse_receipts_sealed",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "cv2_weaker_than_zxing",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "orientation_fix_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "determinism_repeat",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "interpreter_declared",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "frozen_source_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    }
+  ],
+  "invocation": null,
+  "eligibility": {
+    "decision_id": "elig_20260918T203420Z-63ee15",
+    "sha256": "d7f3851adf6d4c800208bf101539df9b70b47e967c72aa7a86db6d88db4fbed6",
+    "purpose": "eval",
+    "eligible": false,
+    "reasons": [
+      "not_executable"
+    ],
+    "dir": "eligibility/elig_20260918T203420Z-63ee15"
+  },
+  "artifacts": [
+    {
+      "path": "capability-input.json",
+      "sha256": "1480eab95299eba7df7634a7e1a914d3ebbc45e1198e06214cfddaf84ab69e99",
+      "bytes": 1291
+    },
+    {
+      "path": "checks.json",
+      "sha256": "8dcb0a14aed1380f1760f35bfe001e84f9ca4267a4fa4234b946561c96801317",
+      "bytes": 6357
+    },
+    {
+      "path": "evidence/inputs/bearing-camo-src.png",
+      "sha256": "ec7f944766a3eda36d087657bf3647dd483d98782de68a09df392aaa6386300d",
+      "bytes": 2574318
+    },
+    {
+      "path": "evidence/inputs/dark-camo-src.png",
+      "sha256": "d48a416011b5c76ab768b393d1256bc57e9f0249be5c8d4aede4ddccc24b6d97",
+      "bytes": 3177670
+    },
+    {
+      "path": "evidence/inputs/muse-eval5-fail.log",
+      "sha256": "5f99e44383c39a25aee20274bbb2af472ee7edd7d4dd7cf90ccaad760f19b019",
+      "bytes": 622
+    },
+    {
+      "path": "evidence/inputs/muse-eval6-ship.log",
+      "sha256": "d8f3e7c791ae99b5fa2e0d514ff6af0a2163c0777dd36ff45abb0bd0e01d5f6f",
+      "bytes": 387
+    },
+    {
+      "path": "evidence/inputs/oracle-pale-header.png",
+      "sha256": "f8824bc41ca52808beacd341696e4cc94178752fe625d6e31b6bc754acfcc623",
+      "bytes": 428910
+    },
+    {
+      "path": "evidence/inputs/oracle-ship-header.png",
+      "sha256": "24de696df0bad3f0bab972eabbb715440fca8a666cbf403a61ae8e88214b8b6d",
+      "bytes": 868866
+    },
+    {
+      "path": "evidence/inputs/pale-camo-src.png",
+      "sha256": "14b0c0672dc8912210bf4d6dcb6b29c456934e7fbc7acf0682db7f67cfccdf68",
+      "bytes": 354418
+    },
+    {
+      "path": "evidence/inputs/prefix-orientation-make_header_v2.py",
+      "sha256": "110a747215f68395a363eaa6e1ecdd4f85bf2db34c7bd557473c0a087c3b27cc",
+      "bytes": 5554
+    },
+    {
+      "path": "input.json",
+      "sha256": "e0cf6722c008ffb3225798850473151ab4ae476d79b9c7dc25157871e4afb6e9",
+      "bytes": 1690
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "d2438b49d70b2297c51fab4607935552bd830f9aa947662934b076d9fe121beb",
+      "bytes": 648
+    },
+    {
+      "path": "output.json",
+      "sha256": "d056a6ea013c4b3fa1e6c349ea0cecc6578e3df8c43c8172897ad4f205a83c2e",
+      "bytes": 320
+    },
+    {
+      "path": "work/bearing-camo-src.png",
+      "sha256": "ec7f944766a3eda36d087657bf3647dd483d98782de68a09df392aaa6386300d",
+      "bytes": 2574318
+    },
+    {
+      "path": "work/dark-camo-src.png",
+      "sha256": "d48a416011b5c76ab768b393d1256bc57e9f0249be5c8d4aede4ddccc24b6d97",
+      "bytes": 3177670
+    },
+    {
+      "path": "work/muse-eval5-fail.log",
+      "sha256": "5f99e44383c39a25aee20274bbb2af472ee7edd7d4dd7cf90ccaad760f19b019",
+      "bytes": 622
+    },
+    {
+      "path": "work/muse-eval6-ship.log",
+      "sha256": "d8f3e7c791ae99b5fa2e0d514ff6af0a2163c0777dd36ff45abb0bd0e01d5f6f",
+      "bytes": 387
+    },
+    {
+      "path": "work/oracle-pale-header.png",
+      "sha256": "f8824bc41ca52808beacd341696e4cc94178752fe625d6e31b6bc754acfcc623",
+      "bytes": 428910
+    },
+    {
+      "path": "work/oracle-ship-header.png",
+      "sha256": "24de696df0bad3f0bab972eabbb715440fca8a666cbf403a61ae8e88214b8b6d",
+      "bytes": 868866
+    },
+    {
+      "path": "work/pale-camo-src.png",
+      "sha256": "14b0c0672dc8912210bf4d6dcb6b29c456934e7fbc7acf0682db7f67cfccdf68",
+      "bytes": 354418
+    },
+    {
+      "path": "work/prefix-orientation-make_header_v2.py",
+      "sha256": "110a747215f68395a363eaa6e1ecdd4f85bf2db34c7bd557473c0a087c3b27cc",
+      "bytes": 5554
+    }
+  ],
+  "created_at": "2026-09-18T20:34:20.829Z"
+}

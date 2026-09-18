@@ -1,0 +1,48 @@
+{
+  "schema": "rcos-eligibility/1",
+  "decision_id": "elig_20260918T204616Z-f32cc2",
+  "scope": "execute",
+  "capability_id": "qr-camo-embed",
+  "capability_version": "1.0.0",
+  "caller_context": {
+    "purpose": "eval",
+    "explicit_capability_id": "qr-camo-embed",
+    "scope": "execute",
+    "forensic_reason": null,
+    "allow_candidate": true,
+    "allow_retired": false,
+    "require_executed_provenance": false,
+    "require_current_ship": false
+  },
+  "observed_state": {
+    "status": "promoted",
+    "executable": true,
+    "adapter": {
+      "declared": true,
+      "type": "command",
+      "type_supported": true,
+      "declaration_errors": [],
+      "entrypoint": "capabilities/qr-camo-embed/adapter/run.js",
+      "entrypoint_present": true,
+      "entrypoint_executable": true,
+      "contract_declared": true,
+      "contract_usable": true,
+      "contract_errors": []
+    },
+    "provenance": "asserted",
+    "latest_eval_verdict": null,
+    "latest_eval_at": null,
+    "eval_fresh": "unknown",
+    "evals_total": 6,
+    "evals_executed": 0
+  },
+  "eligible": true,
+  "reasons": [],
+  "decided_at": "2026-09-18T20:46:16.681Z",
+  "rcos_home": "/tmp/qr-camo-cleanroom-9AQu",
+  "created_at": "2026-09-18T20:46:16.692Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "890d9a34207a4233dba024467e807c1d65852e2f554678f3a9457e6b7ab9828a"
+  }
+}

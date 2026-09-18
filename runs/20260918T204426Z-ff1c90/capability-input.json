@@ -1,0 +1,40 @@
+{
+  "cases": [
+    {
+      "name": "ship_bearing_frame",
+      "operation": "embed",
+      "source": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/bearing-camo-src.png",
+      "url": "https://archon.diy"
+    },
+    {
+      "name": "ship_bearing_frame_repeat",
+      "operation": "embed",
+      "source": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/bearing-camo-src.png",
+      "url": "https://archon.diy"
+    },
+    {
+      "name": "variant_short_url",
+      "operation": "embed",
+      "source": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/bearing-camo-src.png",
+      "url": "https://archon.diy/rcos"
+    },
+    {
+      "name": "overflow_hog_url",
+      "operation": "embed",
+      "source": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/bearing-camo-src.png",
+      "url": "https://foshowithit.github.io/hog-crankers"
+    },
+    {
+      "name": "dark_cover",
+      "operation": "embed",
+      "source": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/dark-camo-src.png",
+      "url": "https://archon.diy"
+    },
+    {
+      "name": "pale_cover",
+      "operation": "embed",
+      "source": "/Users/adam26/zcode-rcos/runs/20260918T204426Z-ff1c90/work/pale-camo-src.png",
+      "url": "https://archon.diy"
+    }
+  ]
+}

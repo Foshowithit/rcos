@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "/Users/adam26/zcode-rcos/capabilities/qr-camo-embed/adapter/make_header_v2.py",
+    "https://foshowithit.github.io/hog-crankers"
+  ],
+  "interpreter": "/Users/adam26/zcode-rcos/evidence/qr-venv/bin/python",
+  "cwd": "/Users/adam26/zcode-rcos/invocations/inv_20260918T204426Z-208c54/work/case-overflow_hog_url",
+  "exit_status": 1,
+  "signal": null,
+  "duration_ms": 189
+}

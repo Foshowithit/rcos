@@ -1,0 +1,29 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T204616Z-ddd708",
+  "eval_id": "qr-camo-embed-grounding-v1",
+  "capability_id": "qr-camo-embed",
+  "started_at": "2026-09-18T20:46:16.681Z",
+  "finished_at": "2026-09-18T20:46:21.425Z",
+  "duration_ms": 4744,
+  "invocation": {
+    "invocation_id": "inv_20260918T204616Z-d7ad51",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260918T204616Z-d7ad51",
+    "manifest_sha256": "4b94e3eaf991c5f69002b04ff60ee5f37c640b15039b1d9ba3554569d79f4425",
+    "output_sha256": "661abdcb9782538eae6cdf15361607d89d041be8c678623756d45af19265da72",
+    "eligibility_decision_id": "elig_20260918T204616Z-f32cc2",
+    "eligibility_sha256": "39386b665136c5803dcb0bf2acbd3191612295ccebf3e6a71aa23fde3b234e52"
+  },
+  "eligibility": {
+    "decision_id": "elig_20260918T204616Z-f32cc2",
+    "sha256": "39386b665136c5803dcb0bf2acbd3191612295ccebf3e6a71aa23fde3b234e52",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "dir": "eligibility/elig_20260918T204616Z-f32cc2"
+  },
+  "rcos_home": "/tmp/qr-camo-cleanroom-9AQu",
+  "node": "v24.15.0"
+}
