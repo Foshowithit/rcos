@@ -678,6 +678,12 @@
           "verdict": "ship",
           "run_id": "study-round30",
           "provenance": "asserted"
+        },
+        {
+          "task_id": "study-round31",
+          "verdict": "ship",
+          "run_id": "study-round31",
+          "provenance": "asserted"
         }
       ],
       "reuse_count": 0,
@@ -873,6 +879,12 @@
           "task_id": "study-round30-loop",
           "verdict": "ship",
           "run_id": "study-round30-loop",
+          "provenance": "asserted"
+        },
+        {
+          "task_id": "study-round31",
+          "verdict": "ship",
+          "run_id": "study-round31-loop",
           "provenance": "asserted"
         }
       ],
@@ -1164,10 +1176,16 @@
           "task_id": "regeneration-after-change: figures re-rendered after registry moved 74->75 evals; second-code-path checker diffs sidecar vs fresh registry recompute",
           "verdict": "ship",
           "run_id": "fig-regen-75x20"
+        },
+        {
+          "task_id": "priority4-executed-grounding-receipt-figure-render",
+          "verdict": "ship",
+          "run_id": "20260918T161701Z-b19b7f",
+          "provenance": "executed"
         }
       ],
       "reuse_count": 0,
-      "last_eval": "2026-09-17",
+      "last_eval": "2026-09-18",
       "lineage": "OW Lab exhibit pass 09-17 (figures generated from artifacts) + figure-legibility-traps",
       "retirement": {
         "armed_at": "2026-09-17",
@@ -1180,6 +1198,12 @@
           "n": 20,
           "threshold": null
         }
+      },
+      "adapter": {
+        "type": "command",
+        "entrypoint": "capabilities/receipt-figure-render/adapter/run.js",
+        "timeout_seconds": 120,
+        "contract": "capabilities/receipt-figure-render/contract.json"
       }
     },
     {
