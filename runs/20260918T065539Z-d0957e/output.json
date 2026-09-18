@@ -1,0 +1,17 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T065539Z-d0957e",
+  "adapter": {
+    "status": "ok",
+    "reason": null,
+    "argv": [
+      "/Users/adam26/zcode-rcos/capabilities/audio-offline-verify/adapter/run.js"
+    ],
+    "exit_code": 0,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "duration_ms": 771
+  },
+  "produced": []
+}

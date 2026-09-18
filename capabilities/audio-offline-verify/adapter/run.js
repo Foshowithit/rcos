@@ -43,9 +43,19 @@ const checker = path.join(__dirname, 'av_check.py');
 if (!fs.existsSync(checker)) cannotRun('checker is missing beside the adapter: ' + checker);
 
 const checkerSha = crypto.createHash('sha256').update(fs.readFileSync(checker)).digest('hex');
-const checkerPath = home && checker.startsWith(home)
-  ? path.relative(home, checker).split(path.sep).join('/')
-  : checker;
+
+// A receipt should not depend on where the checkout lives, nor on whether one of
+// its roots is a symlink: node resolves this file's own directory, so __dirname
+// can arrive as /private/tmp/... while RCOS_HOME arrives as /tmp/.... Both sides
+// are therefore resolved before comparing, and a checker that is genuinely inside
+// RCOS_HOME is recorded relative to it.
+function realOr(p) { try { return fs.realpathSync(p); } catch (e) { return p; } }
+const checkerReal = realOr(checker);
+const homeReal = home ? realOr(home) : null;
+const underHome = homeReal && (checkerReal === homeReal || checkerReal.startsWith(homeReal + path.sep));
+const checkerPath = underHome
+  ? path.relative(homeReal, checkerReal).split(path.sep).join('/')
+  : checkerReal;
 
 // Per-probe wall clock: the RMS leg decodes the whole audio stream, so a
 // probe on a long file is slower than a header read. The kernel enforces the

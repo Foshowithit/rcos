@@ -1,0 +1,7 @@
+[
+  "/Users/adam26/zcode-rcos/runs/20260918T065539Z-d0957e/work/shot-face-v2-r3.mp4",
+  "--expect-video",
+  "h264",
+  "--expect-audio",
+  "aac"
+]

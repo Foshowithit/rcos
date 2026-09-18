@@ -32,6 +32,27 @@ const home = process.env.RCOS_HOME;
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 const hashFile = (p) => sha256(fs.readFileSync(p));
 const near = (a, b, tol) => typeof a === 'number' && Math.abs(a - b) <= tol;
+const realOr = (p) => { try { return fs.realpathSync(p); } catch (e) { return p; } };
+
+// The observation names its checker. A receipt has to stay judgeable when it is
+// read from a root other than the one it was written on, and a symlinked root
+// makes the same file nameable two ways (node resolves the adapter's own
+// directory, so /tmp/x/... can arrive as /private/tmp/x/...). Both notations are
+// therefore tried before a gate declares the checker unreadable — the claim
+// being tested is which FILE it names, not which string.
+function checkerCandidates(p) {
+  if (!p) return [];
+  if (path.isAbsolute(p)) {
+    return home ? [p, path.join(home, p.replace(/^[/\\]+/, ''))] : [p];
+  }
+  return home ? [path.join(home, p), p] : [p];
+}
+function resolveChecker(p) {
+  for (const c of checkerCandidates(p)) {
+    if (fs.existsSync(c)) return c;
+  }
+  return null;
+}
 
 // The revision this eval was authored against, and the fixture bytes it was
 // authored on. Both are constants HERE, in the eval package — not read from the
@@ -76,9 +97,10 @@ function evidenceProblems() {
       problems.push(base + '.argv.json is not the argv recorded in the observation');
     }
   }
-  const checker = home ? path.join(home, O.checker.path) : null;
-  if (!checker || !fs.existsSync(checker)) {
-    problems.push('the checker the observation names cannot be re-read: ' + (checker || O.checker.path));
+  const checker = resolveChecker(O.checker.path);
+  if (!checker) {
+    problems.push('the checker the observation names cannot be re-read: ' + (O.checker.path || '(none named)')
+      + ' (tried ' + checkerCandidates(O.checker.path).join(', ') + ')');
   } else if (hashFile(checker) !== O.checker.sha256) {
     problems.push('the checker on disk is no longer the checker that ran');
   }
@@ -246,17 +268,26 @@ const checks = {
   // This receipt is about ONE revision of the checker. The pin lives in this
   // package, so re-pinning after a legitimate change to av_check.py is an
   // authoring decision someone makes on purpose, not a silent carry-forward.
+  // The path is judged as a resolution, not as a string: what must hold is that
+  // the observation names THIS file, whether it spells it relative to RCOS_HOME
+  // or absolutely.
   checker_revision_pinned() {
     const problems = [];
     if (O.checker.sha256 !== CHECKER_PIN) problems.push('checker sha256 ' + O.checker.sha256 + ' is not the revision this eval was authored against (' + CHECKER_PIN.slice(0, 16) + '…)');
-    if (O.checker.path !== CHECKER_PATH) problems.push('checker path ' + JSON.stringify(O.checker.path) + ' (want ' + CHECKER_PATH + ')');
+    const named = resolveChecker(O.checker.path);
+    const expected = home ? path.join(home, CHECKER_PATH) : null;
+    if (!named || !expected || realOr(named) !== realOr(expected)) {
+      problems.push('checker path ' + JSON.stringify(O.checker.path) + ' does not resolve to ' + CHECKER_PATH
+        + (named ? ' — it resolves to ' + named : ''));
+    }
     if (JSON.stringify(O.checker.documented_exit_codes) !== JSON.stringify([0, 3, 4])) {
       problems.push('documented exit codes ' + JSON.stringify(O.checker.documented_exit_codes) + ' (want [0,3,4])');
     }
     return {
       ok: problems.length === 0,
       detail: problems.length ? problems.join(' | ')
-        : 'revision ' + CHECKER_PIN.slice(0, 16) + '… at ' + CHECKER_PATH + ', exit codes [0,3,4]'
+        : 'revision ' + CHECKER_PIN.slice(0, 16) + '… at ' + CHECKER_PATH + ' (named '
+          + (path.isAbsolute(O.checker.path) ? 'absolutely' : 'relative to RCOS_HOME') + '), exit codes [0,3,4]'
     };
   },
 
@@ -280,7 +311,12 @@ const checks = {
     for (const p of O.probes) {
       const base = path.basename(p.file);
       if (FIXTURES[base] === undefined) { problems.push('probe ' + p.name + ' read ' + base + ', which is not one of the four pinned artifacts'); continue; }
-      if (path.resolve(path.dirname(p.file)) !== path.resolve(work)) problems.push('probe ' + p.name + ' did not read from the run work dir');
+      // Same resolution-over-string rule as the checker: when RCOS_WORK_DIR is
+      // symlinked, an identical path spelled under /tmp and under /private/tmp
+      // is the same directory, and the gate must judge the directory, not the string.
+      if (realOr(path.resolve(path.dirname(p.file))) !== realOr(path.resolve(work))) {
+        problems.push('probe ' + p.name + ' did not read from the run work dir');
+      }
       if (!fs.existsSync(p.file)) { problems.push('probe ' + p.name + ': the file it read is gone'); continue; }
       if (hashFile(p.file) !== FIXTURES[base]) problems.push('probe ' + p.name + ' read bytes that are not the historical artifact');
     }

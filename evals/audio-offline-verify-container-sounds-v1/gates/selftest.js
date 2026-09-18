@@ -72,6 +72,24 @@ function scratchHomeWithEditedChecker() {
   return { home, sha: sha256(fs.readFileSync(dst)) };
 }
 
+// The 09-18 clean-room regression: on macOS $TMPDIR lives under /private while
+// node resolves the adapter's own directory, so an observation once named the
+// checker ABSOLUTELY under /private/tmp while the judging RCOS_HOME was /tmp.
+// A gate that joins RCOS_HOME onto whatever the observation records would look
+// in a doubled directory and declare the checker unreadable — failing every
+// gate on identical evidence. This control rebuilds that exact shape: the same
+// file, named through a symlinked root that spells RCOS_HOME differently, with
+// the judging RCOS_HOME unchanged.
+function observationNamedThroughSymlinkedRoot() {
+  const link = path.join(SCRATCH, 'home-link-c13');
+  try { fs.symlinkSync(HOME, link, 'dir'); } catch (e) { /* created once */ }
+  const d = freshInv('c13');
+  const o = loadObs(d);
+  o.checker.path = path.join(link, CHECKER_REL);
+  saveObs(d, o);
+  return { dir: d };
+}
+
 function runGates(invDir, opts) {
   const o = opts || {};
   const work = o.work || WORK;
@@ -158,7 +176,11 @@ const CONTROLS = [
 
   { name: 'no observation at all', broke: [], allBlocked: true,
     why: 'absent evidence is blocked, which is a different verdict from failed',
-    build: () => { const d = freshInv('c12'); fs.rmSync(path.join(d, 'output.json')); return { dir: d }; } }
+    build: () => { const d = freshInv('c12'); fs.rmSync(path.join(d, 'output.json')); return { dir: d }; } },
+
+  { name: 'same checker named absolutely through a symlinked root', broke: [],
+    why: 'a receipt must stay judgeable when the observation spells the root differently than the judging RCOS_HOME',
+    build: () => observationNamedThroughSymlinkedRoot() }
 ];
 
 console.log('self-test against run ' + target.runId + ' (observation copied, never edited)\n');

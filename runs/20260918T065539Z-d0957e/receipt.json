@@ -1,0 +1,145 @@
+{
+  "schema": "rcos-run-receipt/1",
+  "run_id": "20260918T065539Z-d0957e",
+  "eval_id": "audio-offline-verify-container-sounds-v1",
+  "capability_id": "audio-offline-verify",
+  "verdict": "ship",
+  "verdict_basis": "all 7 required gates pass",
+  "gates": [
+    {
+      "id": "voiced_passes",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "envelope_gate_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "silence_reported_not_asserted",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "mute_caught",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "absence_asserted_not_assumed",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "checker_revision_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    }
+  ],
+  "invocation": {
+    "invocation_id": "inv_20260918T065539Z-add64b",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260918T065539Z-add64b",
+    "manifest_sha256": "56246d1f44fd35b79ff5ccc15feaca38347757e5e0a7e61c9ef09291b79c8e17",
+    "output_sha256": "a183d96b621ae1f774721cfcf61fd5da64144401f546593bd65c24f9a943271e",
+    "eligibility_decision_id": "elig_20260918T065539Z-ad3452",
+    "eligibility_sha256": "b0eff67b21279be47c0a85a76399a38892273ab42ef6c3c61d2d06ad8c6543f3"
+  },
+  "eligibility": {
+    "decision_id": "elig_20260918T065539Z-ad3452",
+    "sha256": "b0eff67b21279be47c0a85a76399a38892273ab42ef6c3c61d2d06ad8c6543f3",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "dir": "eligibility/elig_20260918T065539Z-ad3452"
+  },
+  "artifacts": [
+    {
+      "path": "capability-input.json",
+      "sha256": "ee228f215016d36952f9acbc9ab8bfa30a5c92473c99a4950ae6fb79863d0b62",
+      "bytes": 1778
+    },
+    {
+      "path": "checks.json",
+      "sha256": "821039ddad48d391cc431fdd256277f4ce10c5cf5349627cd8804ac674139033",
+      "bytes": 3954
+    },
+    {
+      "path": "evidence/inputs/chalk-eval1.mp4",
+      "sha256": "905b54ff4e88ebbe26d49b5e83869fd04f9bf7cca72ff8083d01beab653c7b2e",
+      "bytes": 108935
+    },
+    {
+      "path": "evidence/inputs/chalk-eval2.mp4",
+      "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+      "bytes": 88081
+    },
+    {
+      "path": "evidence/inputs/rcos-dispatch-eval-2-out.mp4",
+      "sha256": "a73ae94906f44192414348503fe2452abecd9c9ce2e239db5c80a279ad1d1dfd",
+      "bytes": 10165
+    },
+    {
+      "path": "evidence/inputs/shot-face-v2-r3.mp4",
+      "sha256": "596896b57a00f07ec6bb6324a16ff3706d81e6400f047b198af647314b296c84",
+      "bytes": 376623
+    },
+    {
+      "path": "input.json",
+      "sha256": "41492e9518689302b18e2ac048ecbf599ca4f313801b983d84a66fbb0e45d7c0",
+      "bytes": 1072
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "713a59b9a9cf186c263b1691249021564bc95efc4af0e00c5e75f59b254474f5",
+      "bytes": 1131
+    },
+    {
+      "path": "output.json",
+      "sha256": "45c7ab2ad0ef69a2d32250723835760f89317fcdddc781a10e1ba940835d4ac7",
+      "bytes": 348
+    },
+    {
+      "path": "work/chalk-eval1.mp4",
+      "sha256": "905b54ff4e88ebbe26d49b5e83869fd04f9bf7cca72ff8083d01beab653c7b2e",
+      "bytes": 108935
+    },
+    {
+      "path": "work/chalk-eval2.mp4",
+      "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+      "bytes": 88081
+    },
+    {
+      "path": "work/rcos-dispatch-eval-2-out.mp4",
+      "sha256": "a73ae94906f44192414348503fe2452abecd9c9ce2e239db5c80a279ad1d1dfd",
+      "bytes": 10165
+    },
+    {
+      "path": "work/shot-face-v2-r3.mp4",
+      "sha256": "596896b57a00f07ec6bb6324a16ff3706d81e6400f047b198af647314b296c84",
+      "bytes": 376623
+    }
+  ],
+  "created_at": "2026-09-18T06:55:40.190Z"
+}
