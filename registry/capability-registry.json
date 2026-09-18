@@ -606,6 +606,12 @@
           "verdict": "ship",
           "run_id": "study-round19",
           "provenance": "asserted"
+        },
+        {
+          "task_id": "study-round20",
+          "verdict": "ship",
+          "run_id": "study-round20",
+          "provenance": "asserted"
         }
       ],
       "reuse_count": 0,
@@ -729,6 +735,12 @@
           "task_id": "study-round19",
           "verdict": "ship",
           "run_id": "study-round19",
+          "provenance": "asserted"
+        },
+        {
+          "task_id": "study-round20-loop",
+          "verdict": "ship",
+          "run_id": "study-round20-loop",
           "provenance": "asserted"
         }
       ],
@@ -994,6 +1006,42 @@
           "n": 20,
           "threshold": null
         }
+      }
+    },
+    {
+      "id": "reuse-ledger",
+      "name": "Reuse ledger invariant",
+      "kind": "script",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "step-1 invariant repair (057ac62, a5c6818): the stored reuse_count is a trace-derived cache with no manual increment path; the adapter re-proves the four invariants in a sandbox home",
+      "adapter": {
+        "type": "command",
+        "entrypoint": "capabilities/reuse-ledger/adapter/run.js",
+        "timeout_seconds": 120,
+        "contract": "capabilities/reuse-ledger/contract.json"
+      }
+    },
+    {
+      "id": "agents-md-compactor",
+      "name": "AGENTS.md compactor",
+      "kind": "script",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "~/.agents/tools/compact_agents_md.py frozen 2026-09-17 (sha256 0955ad78cd4808dae85c5b74818839c2f1e1f5f4f4dfccdd0fa5a7cce85cc1e9), vendored under capabilities/agents-md-compactor/tool/ so the adapter and the evaluation execute the same bytes",
+      "adapter": {
+        "type": "command",
+        "entrypoint": "capabilities/agents-md-compactor/adapter/run.js",
+        "timeout_seconds": 120,
+        "contract": "capabilities/agents-md-compactor/contract.json"
       }
     }
   ]
