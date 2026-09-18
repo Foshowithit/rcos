@@ -1,0 +1,807 @@
+{
+  "home": "/Users/adam26/zcode-rcos",
+  "registry_capabilities": 22,
+  "purposes": {
+    "normal": {
+      "eligible_count": 0,
+      "total": 22,
+      "eligible": [],
+      "histogram": {
+        "not_executable + provenance_asserted + no_ship_eval": 20,
+        "candidate_not_allowed + provenance_asserted + no_ship_eval": 2
+      },
+      "rows": [
+        {
+          "id": "filmstrip-verify",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "muse-image-lane",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "dell-gpu-dispatch",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "browser-verify-artifacts",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "qr-camo-embed",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "chalk-capture-recipe",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "hog-qa-suite",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "operator-ui-contract-test",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "webgl-film-capture",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "shadow-play-staging",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "character-forge",
+          "status": "promoted",
+          "version": "1.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "local-talking-heads",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "video-forensics-receipt",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "creative-study-loop",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "hunyuan3d-mlx-local",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "face-in-scene-shot",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "preview-server-verify",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "audio-offline-verify",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "x-media-package",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "receipt-figure-render",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "reuse-ledger",
+          "status": "candidate",
+          "version": "0.1.0",
+          "executable": true,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "candidate_not_allowed",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "agents-md-compactor",
+          "status": "candidate",
+          "version": "0.1.0",
+          "executable": true,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "candidate_not_allowed",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        }
+      ]
+    },
+    "eval": {
+      "eligible_count": 2,
+      "total": 22,
+      "eligible": [
+        "agents-md-compactor",
+        "reuse-ledger"
+      ],
+      "histogram": {
+        "not_executable": 20,
+        "(eligible)": 2
+      },
+      "rows": [
+        {
+          "id": "filmstrip-verify",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "muse-image-lane",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "dell-gpu-dispatch",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "browser-verify-artifacts",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "qr-camo-embed",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "chalk-capture-recipe",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "hog-qa-suite",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "operator-ui-contract-test",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "webgl-film-capture",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "shadow-play-staging",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "character-forge",
+          "status": "promoted",
+          "version": "1.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "local-talking-heads",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "video-forensics-receipt",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "creative-study-loop",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "hunyuan3d-mlx-local",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "face-in-scene-shot",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "preview-server-verify",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "audio-offline-verify",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "x-media-package",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "receipt-figure-render",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "reuse-ledger",
+          "status": "candidate",
+          "version": "0.1.0",
+          "executable": true,
+          "provenance": "asserted",
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "id": "agents-md-compactor",
+          "status": "candidate",
+          "version": "0.1.0",
+          "executable": true,
+          "provenance": "asserted",
+          "eligible": true,
+          "reasons": []
+        }
+      ]
+    },
+    "forensic": {
+      "eligible_count": 2,
+      "total": 22,
+      "eligible": [
+        "agents-md-compactor",
+        "reuse-ledger"
+      ],
+      "histogram": {
+        "not_executable": 20,
+        "(eligible)": 2
+      },
+      "rows": [
+        {
+          "id": "filmstrip-verify",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "muse-image-lane",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "dell-gpu-dispatch",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "browser-verify-artifacts",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "qr-camo-embed",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "chalk-capture-recipe",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "hog-qa-suite",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "operator-ui-contract-test",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "webgl-film-capture",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "shadow-play-staging",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "character-forge",
+          "status": "promoted",
+          "version": "1.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "local-talking-heads",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "video-forensics-receipt",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "creative-study-loop",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "hunyuan3d-mlx-local",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "face-in-scene-shot",
+          "status": "promoted",
+          "version": "1.0.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "preview-server-verify",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "audio-offline-verify",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "x-media-package",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "receipt-figure-render",
+          "status": "promoted",
+          "version": "0.1.0",
+          "executable": false,
+          "provenance": "asserted",
+          "eligible": false,
+          "reasons": [
+            "not_executable"
+          ]
+        },
+        {
+          "id": "reuse-ledger",
+          "status": "candidate",
+          "version": "0.1.0",
+          "executable": true,
+          "provenance": "asserted",
+          "eligible": true,
+          "reasons": []
+        },
+        {
+          "id": "agents-md-compactor",
+          "status": "candidate",
+          "version": "0.1.0",
+          "executable": true,
+          "provenance": "asserted",
+          "eligible": true,
+          "reasons": []
+        }
+      ]
+    }
+  }
+}

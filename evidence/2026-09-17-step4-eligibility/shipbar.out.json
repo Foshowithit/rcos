@@ -1,0 +1,373 @@
+{
+  "home": "/Users/adam26/zcode-rcos",
+  "checked_at": "2026-09-18T03:32:43.824Z",
+  "items": {
+    "1_pure_deterministic": {
+      "verdict": "PASS",
+      "evaluations": 66,
+      "repeat_identical": true,
+      "pure_functions_checked": [
+        "orderReasons",
+        "executabilityReason",
+        "buildContext",
+        "isPlainObject",
+        "validateContext",
+        "decide"
+      ],
+      "io_identifiers_found_in_pure_core": [],
+      "impure_by_design": [
+        "deriveRuntimeState (the read-only reader that produces the state the pure core consumes)"
+      ],
+      "canonical_order_from_shuffled_input": [
+        "retired",
+        "candidate_not_allowed",
+        "not_executable",
+        "no_ship_eval"
+      ],
+      "is_permutation_of_input": true,
+      "equals_rank_sorted_order": true
+    },
+    "2_zero_adapter_execution": {
+      "verdict": "PASS",
+      "process_launch_identifiers_in_eligibility_module": [],
+      "invocations_before": 7,
+      "note": "evaluate() was called 66 times above; the adapter side-effect surface is the invocation work dir, and no invocation dir was created",
+      "invocations_after": 7
+    },
+    "4_schema_rcos_eligibility_1": {
+      "verdict": "PASS",
+      "decisions_on_disk": 13,
+      "wrong_schema": [],
+      "schema": "rcos-eligibility/1"
+    },
+    "5_integrity_and_write_once": {
+      "verdict": "PASS",
+      "real_decisions_verified": 13,
+      "real_decisions_failing": [],
+      "rewrite_refused_with": "eligibility decision elig_20260918T033243Z-07f361 already exists — decisions are write-once and never rewritten",
+      "tampered_copy_detected": [
+        "decision integrity mismatch — the decision was edited after it was written"
+      ],
+      "probe_home_removed": true
+    },
+    "6_reason_codes": {
+      "verdict": "PASS",
+      "count": 14,
+      "codes": [
+        "eligible",
+        "unknown_capability",
+        "retired",
+        "candidate_not_allowed",
+        "unsupported_adapter",
+        "missing_adapter",
+        "missing_contract",
+        "not_executable",
+        "provenance_asserted",
+        "latest_eval_blocked",
+        "latest_eval_fix",
+        "no_ship_eval",
+        "eval_stale",
+        "forensic_reason_required"
+      ],
+      "rank_is_total_order_0_to_n": true,
+      "positive_name_is_rank_0_and_guarded_against_being_emitted": true
+    },
+    "7_multiple_failures_reported": {
+      "verdict": "PASS",
+      "live_decisions_with_3plus_reasons": [
+        {
+          "id": "elig_20260918T025812Z-1385e0",
+          "capability": "reuse-ledger",
+          "purpose": "normal",
+          "reasons": [
+            "candidate_not_allowed",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "elig_20260918T031230Z-a1733f",
+          "capability": "agents-md-compactor",
+          "purpose": "normal",
+          "reasons": [
+            "candidate_not_allowed",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "elig_20260918T031231Z-f5a24c",
+          "capability": "filmstrip-verify",
+          "purpose": "normal",
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "elig_20260918T031246Z-65a118",
+          "capability": "filmstrip-verify",
+          "purpose": "normal",
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "elig_20260918T032238Z-3d6a52",
+          "capability": "filmstrip-verify",
+          "purpose": "normal",
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        },
+        {
+          "id": "elig_20260918T032307Z-4ab493",
+          "capability": "filmstrip-verify",
+          "purpose": "normal",
+          "reasons": [
+            "not_executable",
+            "provenance_asserted",
+            "no_ship_eval"
+          ]
+        }
+      ],
+      "max_reasons_seen": 3
+    },
+    "8_kernel_has_no_policy": {
+      "verdict": "PASS",
+      "policy_term_occurrences": [],
+      "status_comparisons_in_kernel": [],
+      "kernel_imports_eligibility": true
+    },
+    "9_decision_required": {
+      "verdict": "PASS",
+      "naked_call_refused": true,
+      "error": "invocation requires an eligibility decision — construct a caller context and run the eligibility engine first (rcos run and eval-run do this for you), then pass its decision id",
+      "eligibility_exported_from_kernel": false
+    },
+    "11_three_caller_contexts": {
+      "verdict": "PASS",
+      "contexts": {
+        "normal": {
+          "purpose": "normal",
+          "explicit_capability_id": "reuse-ledger",
+          "scope": "execute",
+          "forensic_reason": null,
+          "allow_candidate": false,
+          "allow_retired": false,
+          "require_executed_provenance": true,
+          "require_current_ship": true
+        },
+        "eval": {
+          "purpose": "eval",
+          "explicit_capability_id": "reuse-ledger",
+          "scope": "execute",
+          "forensic_reason": null,
+          "allow_candidate": true,
+          "allow_retired": false,
+          "require_executed_provenance": false,
+          "require_current_ship": false
+        },
+        "forensic": {
+          "purpose": "forensic",
+          "explicit_capability_id": "reuse-ledger",
+          "scope": "execute",
+          "forensic_reason": "ship-bar verification",
+          "allow_candidate": true,
+          "allow_retired": true,
+          "require_executed_provenance": false,
+          "require_current_ship": false
+        }
+      },
+      "distinct_flag_sets": 3
+    },
+    "12_forbidden_inputs_inert": {
+      "verdict": "PASS",
+      "forbidden_key_errors": [
+        "caller context.task_text: forbidden — eligibility may not see task text, semantic intent, scores, rankings or reuse history"
+      ],
+      "unknown_key_errors": [
+        "caller context.score: forbidden — eligibility may not see task text, semantic intent, scores, rankings or reuse history"
+      ],
+      "forbidden_vocabulary_size": 23,
+      "context_vocabulary": [
+        "purpose",
+        "explicit_capability_id",
+        "allow_candidate",
+        "allow_retired",
+        "require_executed_provenance",
+        "require_current_ship",
+        "forensic_reason",
+        "scope"
+      ],
+      "same_reasons_with_no_payload": true
+    },
+    "3_zero_registry_mutation": {
+      "verdict": "PASS",
+      "before": "0379300de3fd72ca99ce82cc1f82aabafc196fb7946b6b966503ec538cd003a3",
+      "after": "0379300de3fd72ca99ce82cc1f82aabafc196fb7946b6b966503ec538cd003a3"
+    },
+    "14_registry_byte_stable": {
+      "verdict": "PASS",
+      "claim_checked": "this step moved no registry or trace byte, and any later divergence is additive asserted evals only",
+      "step_range": "bab54a7..187a61b",
+      "step_range_diff_for_registry_and_traces": "(empty — this step moved nothing)",
+      "live_registry_sha256": "0379300de3fd72ca99ce82cc1f82aabafc196fb7946b6b966503ec538cd003a3",
+      "live_divergence_from_step4": {
+        "live_sha256": "0379300de3fd72ca99ce82cc1f82aabafc196fb7946b6b966503ec538cd003a3",
+        "step4_sha256": "bb4c5fac731f5b84420d3fadc030d23d38b19289c8f1fd4193206f7577d9d259",
+        "differs_from_step4": true,
+        "divergence_is_additive_evals_only": true,
+        "problems": [],
+        "added_asserted_evals": true,
+        "moved_by": [
+          "5a4d0f9 evals: study-round22 x2 registry+traces (machine-written)"
+        ]
+      }
+    },
+    "15_suite_green": {
+      "verdict": "PASS",
+      "status": 0,
+      "counts": [
+        "ℹ tests 60",
+        "ℹ pass 60",
+        "ℹ fail 0",
+        "ℹ skipped 0"
+      ]
+    },
+    "13_reuse_eval_invariants": {
+      "verdict": "PASS",
+      "registry_reuse_counts_match_the_trace_ledger": true,
+      "mismatches": [],
+      "reuse_counts_derived_from_traces": {
+        "qr-camo-embed": 4,
+        "hog-qa-suite": 2,
+        "dell-gpu-dispatch": 1,
+        "chalk-capture-recipe": 1,
+        "muse-image-lane": 1
+      },
+      "reuse_ledger_after_an_eval_mode_invocation": 0,
+      "suite_green": true,
+      "note": "reuse_count stays a cache of the trace log (it is never the registry certifying itself), and the eval-mode dogfood invocation moved no counter"
+    },
+    "10_execution_safety_stays_in_kernel": {
+      "verdict": "PASS",
+      "eligibility_decision_was_eligible": true,
+      "control_status_through_the_same_decision": "completed",
+      "refusals_from_the_kernels_own_checks": [
+        {
+          "case": "entrypoint deleted after an eligible decision",
+          "expected": "blocked",
+          "sealed": true,
+          "status": "blocked",
+          "basis": "adapter entrypoint is missing: capabilities/reuse-ledger/adapter/run.js",
+          "adapter_exit_code": null
+        },
+        {
+          "case": "entrypoint not executable after an eligible decision",
+          "expected": "blocked",
+          "sealed": true,
+          "status": "blocked",
+          "basis": "adapter entrypoint is not executable: capabilities/reuse-ledger/adapter/run.js",
+          "adapter_exit_code": null
+        },
+        {
+          "case": "contract file deleted after an eligible decision",
+          "expected": "blocked",
+          "sealed": true,
+          "status": "blocked",
+          "basis": "declared contract is not usable: declared contract is missing: capabilities/reuse-ledger/contract.json",
+          "adapter_exit_code": null
+        },
+        {
+          "case": "input the contract refuses, after an eligible decision",
+          "expected": "rejected",
+          "sealed": true,
+          "status": "rejected",
+          "basis": "input did not satisfy the declared input contract: input.seed_registry: expected string, got integer",
+          "adapter_exit_code": null
+        }
+      ],
+      "probe_home_removed": true
+    }
+  },
+  "before": {
+    "registry_sha256": "0379300de3fd72ca99ce82cc1f82aabafc196fb7946b6b966503ec538cd003a3",
+    "invocations": [
+      "inv_20260918T014906Z-05b71e",
+      "inv_20260918T014906Z-9069a8",
+      "inv_20260918T014911Z-127ac8",
+      "inv_20260918T014925Z-d0d30a",
+      "inv_20260918T014931Z-5b59dc",
+      "inv_20260918T014935Z-6fd918",
+      "inv_20260918T031246Z-38cade"
+    ],
+    "decisions": [
+      "elig_20260918T025812Z-1385e0",
+      "elig_20260918T025812Z-d8be37",
+      "elig_20260918T025812Z-f9aaf6",
+      "elig_20260918T031230Z-756fa3",
+      "elig_20260918T031230Z-a1733f",
+      "elig_20260918T031231Z-7de90d",
+      "elig_20260918T031231Z-f5a24c",
+      "elig_20260918T031246Z-2520e3",
+      "elig_20260918T031246Z-65a118",
+      "elig_20260918T032238Z-3d6a52",
+      "elig_20260918T032238Z-658e07",
+      "elig_20260918T032239Z-d78f78",
+      "elig_20260918T032307Z-4ab493"
+    ],
+    "traces_sha256": "45212bb865cbe1c8cd72aa62055df3b179d77c36232c79754a483bb389fc436f"
+  },
+  "after": {
+    "registry_sha256": "0379300de3fd72ca99ce82cc1f82aabafc196fb7946b6b966503ec538cd003a3",
+    "invocations": [
+      "inv_20260918T014906Z-05b71e",
+      "inv_20260918T014906Z-9069a8",
+      "inv_20260918T014911Z-127ac8",
+      "inv_20260918T014925Z-d0d30a",
+      "inv_20260918T014931Z-5b59dc",
+      "inv_20260918T014935Z-6fd918",
+      "inv_20260918T031246Z-38cade"
+    ],
+    "decisions": [
+      "elig_20260918T025812Z-1385e0",
+      "elig_20260918T025812Z-d8be37",
+      "elig_20260918T025812Z-f9aaf6",
+      "elig_20260918T031230Z-756fa3",
+      "elig_20260918T031230Z-a1733f",
+      "elig_20260918T031231Z-7de90d",
+      "elig_20260918T031231Z-f5a24c",
+      "elig_20260918T031246Z-2520e3",
+      "elig_20260918T031246Z-65a118",
+      "elig_20260918T032238Z-3d6a52",
+      "elig_20260918T032238Z-658e07",
+      "elig_20260918T032239Z-d78f78",
+      "elig_20260918T032307Z-4ab493"
+    ],
+    "traces_sha256": "45212bb865cbe1c8cd72aa62055df3b179d77c36232c79754a483bb389fc436f"
+  },
+  "summary": {
+    "1_pure_deterministic": "PASS",
+    "2_zero_adapter_execution": "PASS",
+    "4_schema_rcos_eligibility_1": "PASS",
+    "5_integrity_and_write_once": "PASS",
+    "6_reason_codes": "PASS",
+    "7_multiple_failures_reported": "PASS",
+    "8_kernel_has_no_policy": "PASS",
+    "9_decision_required": "PASS",
+    "11_three_caller_contexts": "PASS",
+    "12_forbidden_inputs_inert": "PASS",
+    "3_zero_registry_mutation": "PASS",
+    "14_registry_byte_stable": "PASS",
+    "15_suite_green": "PASS",
+    "13_reuse_eval_invariants": "PASS",
+    "10_execution_safety_stays_in_kernel": "PASS"
+  },
+  "all_pass": true
+}

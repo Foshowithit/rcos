@@ -1,0 +1,532 @@
+{
+  "run": "eligibility-4",
+  "capability": null,
+  "subject": "zcode-rcos: the deterministic eligibility engine (GPT round-6 ruling, step 4). A standalone pure policy engine that answers whether a named capability is PERMITTED to compete or execute in a supplied context, writes that answer as a write-once decision artifact, and is consumed — never recreated — by the invocation kernel.",
+  "date": "2026-09-17",
+  "task": "rcos-eligibility-engine",
+  "spec": {
+    "file": "partsnap-rcos/GPT-REPLY-6-20260917.md (workspace/default, outside this repo)",
+    "sha256": "58a4c7df509e3f4fc2c4f51d8e41d1ce35608cc0772d94104962f5934d842d7d",
+    "ruling_verbatim": "extract the current mode ladder from the kernel, make eligibility a standalone pure policy engine with its own immutable decision artifact, and make the invocation kernel consume—not recreate—that decision. Step 4 ends there.",
+    "closing_directive_verbatim": "Define one canonical reason-ordering rule",
+    "invariant": "Eligibility decides whether a named capability is permitted to compete or execute in the supplied context. It never decides which capability is best. No semantic routing. No scoring. No ranking. No task interpretation.",
+    "signature": "eligibility(registry_entry, capability_runtime_state, caller_context) -> decision. No mutation, no adapter execution, no model call, no trace write."
+  },
+  "commit": "187a61b",
+  "commit_full": "187a61bc22b2c4c661b3f157ad109e82f0606088",
+  "base_commit": "bab54a7",
+  "verdict": "ship",
+  "verdict_basis": "Before this step the mode ladder lived inside the invocation kernel, so 'may this run' and 'make this run' were the same code path and the permission question had no artifact of its own. After it, permission is a pure function over a closed context vocabulary, every applicable reason is reported at once in a canonical order, the answer is a write-once self-verifying artifact, and the kernel refuses to execute without one while keeping its own execution-safety checks. Fifteen of fifteen ship-bar items pass against live evidence; 60/60 tests green; step 4 moved no registry or trace byte, proven by commit range rather than by a single measurement: git diff bab54a7 187a61b -- registry/ traces/ is empty. The registry sha recorded in this receipt is the value at that commit; the live registry has since moved only because an unrelated machine-written study loop added two asserted eval records on top. The one finding that does not flatter the step is left standing rather than papered over: normal-mode eligibility is 0/22 on the real registry, because none of the twenty promoted capabilities declares an adapter or rests on an RCOS-executed eval. Permission is not executability, and the engine is the first thing in this repo that says so out loud.",
+  "ship_bar": [
+    {
+      "id": 1,
+      "item": "Eligibility is a pure deterministic function.",
+      "status": "pass",
+      "evidence": "66 evaluations of the real registry across all three purposes. The pure core (orderReasons, executabilityReason, buildContext, isPlainObject, validateContext, decide) was extracted by source and contains zero I/O identifiers — no fs, no child_process, no Date, no Math.random. Repeating an identical evaluation returns byte-identical reasons. deriveRuntimeState is declared impure_by_design and excluded: it is the read-only reader that produces the state the pure core consumes. Canonical ordering was checked against a deliberately shuffled input: the output is a permutation of the input AND equals the rank-sorted order."
+    },
+    {
+      "id": 2,
+      "item": "Zero adapter execution occurs during eligibility.",
+      "status": "pass",
+      "evidence": "The eligibility module contains no process-launch identifiers. The adapter side-effect surface is the invocation work directory: invocations on disk were 7 before the 66 evaluations and 7 after, so no invocation dir was created."
+    },
+    {
+      "id": 3,
+      "item": "Zero registry mutation occurs.",
+      "status": "pass",
+      "evidence": "registry/capability-registry.json sha256 identical before and after the entire verification run (which included 66 evaluations and a full npm test): bb4c5fac731f5b84420d3fadc030d23d38b19289c8f1fd4193206f7577d9d259."
+    },
+    {
+      "id": 4,
+      "item": "Decisions use rcos-eligibility/1.",
+      "status": "pass",
+      "evidence": "All 9 decisions written by the step-4 build carry schema 'rcos-eligibility/1'; zero carry any other schema."
+    },
+    {
+      "id": 5,
+      "item": "Decisions are integrity-verifiable/write-once.",
+      "status": "pass",
+      "evidence": "All 13 decisions on disk verify clean under rcos eligibility-verify --decision: the 9 pinned in this commit and the 4 written by this receipt's own CLI dogfood. Write-once was proven in a scratch probe home rather than on a real artifact: re-deciding under an existing decision id is refused with 'eligibility decision elig_20260918T031803Z-93695a already exists — decisions are write-once and never rewritten', and a copy edited after writing is detected with 'decision integrity mismatch — the decision was edited after it was written'. The probe home was removed afterwards."
+    },
+    {
+      "id": 6,
+      "item": "Reason codes are enumerable and deterministic.",
+      "status": "pass",
+      "evidence": "14 codes, REASON_CODES.length === 14, and REASON_RANK is a total order 0..13 with no gaps or ties. Canonical order: eligible, unknown_capability, retired, candidate_not_allowed, unsupported_adapter, missing_adapter, missing_contract, not_executable, provenance_asserted, latest_eval_blocked, latest_eval_fix, no_ship_eval, eval_stale, forensic_reason_required. The order is the order of the question each reason answers: identity → permission → executability (most specific first, exactly one emitted) → evidence reality → evidence quality (at most one) → context. 'eligible' is rank 0 but is guarded against ever being emitted as a reason."
+    },
+    {
+      "id": 7,
+      "item": "Multiple simultaneous failures are all reported.",
+      "status": "pass",
+      "evidence": "Four live decisions report 3 reasons each, e.g. filmstrip-verify/normal → [not_executable, provenance_asserted, no_ship_eval] and reuse-ledger/normal → [candidate_not_allowed, provenance_asserted, no_ship_eval]. Max reasons observed on a live decision: 3. A caller learns every problem from one decision instead of fixing them one at a time."
+    },
+    {
+      "id": 8,
+      "item": "Kernel no longer contains registry-status/mode eligibility policy.",
+      "status": "pass",
+      "evidence": "The kernel was scanned line by line for the policy vocabulary (candidate_not_allowed, no_ship_eval, provenance_asserted, require_current_ship, allow_candidate, not eligible for normal invocation, eval_fresh): zero occurrences. It was also scanned for status comparisons (cap.status ===, status === '...'): zero occurrences. The kernel imports the eligibility module; it does not reimplement it."
+    },
+    {
+      "id": 9,
+      "item": "Kernel requires a valid eligible decision before execution.",
+      "status": "pass",
+      "evidence": "A naked invocation is refused with 'invocation requires an eligibility decision — construct a caller context and run the eligibility engine first (rcos run and eval-run do this for you), then pass its decision id'. The kernel exports no eligibility function of its own (Object.prototype.hasOwnProperty(invocation, 'eligibility') === false), so a caller cannot reach around the engine through the kernel. The manifest records the decision id and re-hashes the decision bytes; verifyInvocation checks them."
+    },
+    {
+      "id": 10,
+      "item": "Execution-safety checks remain inside the kernel.",
+      "status": "pass",
+      "evidence": "Proven by construction: a capability's decision comes back eligible:true, a control invocation through that same decision reaches 'completed', and then four sabotages each produce a SEALED refusal from the kernel's own checks with adapter_exit_code null — entrypoint deleted → blocked ('adapter entrypoint is missing'), entrypoint chmod 644 → blocked ('adapter entrypoint is not executable'), contract file deleted → blocked ('declared contract is not usable: declared contract is missing'), input the contract refuses → rejected ('input did not satisfy the declared input contract: input.seed_registry: expected string, got integer'). If any of those refusals had disappeared, eligibility would have quietly absorbed execution safety. All of it ran in a scratch probe home that was removed afterwards."
+    },
+    {
+      "id": 11,
+      "item": "run, eval-run, and forensic paths construct distinct caller contexts.",
+      "status": "pass",
+      "evidence": "Three distinct flag sets, verified live. normal → allow_candidate:false, allow_retired:false, require_executed_provenance:true, require_current_ship:true. eval → true/false/false/false. forensic → true/true/false/false plus a required forensic_reason. The CLI refuses a forensic run with no reason: 'rcos: --purpose forensic requires --forensic <reason> — an override nobody can mistake for production reuse' (exit 2)."
+    },
+    {
+      "id": 12,
+      "item": "reuse_count, task text, semantic intent, scores and rankings cannot affect eligibility.",
+      "status": "pass",
+      "evidence": "The caller-context vocabulary is closed at 8 keys (purpose, explicit_capability_id, allow_candidate, allow_retired, require_executed_provenance, require_current_ship, forensic_reason, scope). A 23-key forbidden vocabulary is refused rather than ignored: task_text → 'forbidden — eligibility may not see task text, semantic intent, scores, rankings or reuse history'; score → the same refusal. Unknown keys error too. The shape itself makes 'the payload cannot influence the decision' a property rather than a promise: a context carrying a task-like payload produces identical reasons to the same context carrying nothing."
+    },
+    {
+      "id": 13,
+      "item": "Existing reuse and eval invariants remain unchanged.",
+      "status": "pass",
+      "evidence": "Every stored reuse_count was cross-checked against T.deriveReuseCounts(T.loadTraces(HOME)): zero mismatches (the five legitimately non-zero counters are qr-camo-embed=4, hog-qa-suite=2, dell-gpu-dispatch=1, chalk-capture-recipe=1, muse-image-lane=1). reuse_count stays a cache of the trace log — never the registry certifying itself. The eval-mode dogfood invocation moved no counter: reuse-ledger's reuse_count is still 0."
+    },
+    {
+      "id": 14,
+      "item": "Registry stays byte-stable.",
+      "status": "pass",
+      "evidence": "Proven by commit range, which is immune to later unrelated commits: git diff --stat bab54a7 187a61b -- registry/ traces/ returns nothing, so this step moved no registry or trace byte at all. The registry sha at both the base commit and this commit is bb4c5fac731f5b84420d3fadc030d23d38b19289c8f1fd4193206f7577d9d259, and the traces sha is a6048ba985470c55dcd0a7aaa163611cf0d44b53bb53ca63ed20948a6f73291e. For completeness, the live files at receipt time are 0379300de3fd72ca99ce82cc1f82aabafc196fb7946b6b966503ec538cd003a3 and 45212bb865cbe1c8cd72aa62055df3b179d77c36232c79754a483bb389fc436f; they moved after this commit, in 5a4d0f9 (machine-written, study-round22), which appended one eval record each to video-forensics-receipt.evals and creative-study-loop.evals, both with provenance asserted. The capability count is still 22, and the sweep below was re-run against the live registry and is unchanged. This was checked mechanically rather than asserted: the ship-bar harness reads the step-4 registry out of git, walks both trees, and fails unless the capability count is identical, the id set is identical, every field other than evals is byte-identical, no eval record was removed, and every added record carries provenance asserted. It reports divergence_is_additive_evals_only: true with an empty problems list, and names the commit that moved it."
+    },
+    {
+      "id": 15,
+      "item": "Full existing suite remains green.",
+      "status": "pass",
+      "evidence": "npm test: 60 tests / 60 pass / 0 fail / 0 skipped across 10 files. Per file: capabilities 1, cli 4, eligibility 11, evalrunner 10, invocation 9, registry 8, render 2, seed 2, traces 8, validate 5."
+    }
+  ],
+  "canonical_reason_order": {
+    "rule": "Order the reasons by the order of the question each one answers: identity → permission → executability → evidence reality → evidence quality → context.",
+    "why_this_rule": "A reader of a decision should be able to stop at the first reason and know it is the most fundamental thing wrong, without the engine having to decide which reason 'matters most' — that would be a scoring judgment in a step that forbids scoring. Ordering by question-kind is structural, not preferential.",
+    "identity": [
+      "unknown_capability"
+    ],
+    "permission": [
+      "retired",
+      "candidate_not_allowed"
+    ],
+    "executability": [
+      "unsupported_adapter",
+      "missing_adapter",
+      "missing_contract",
+      "not_executable"
+    ],
+    "executability_rule": "Most specific first, and exactly ONE of these is ever emitted — they describe one underlying fact (this capability cannot be run here) at four levels of precision, so emitting several would report one problem as several.",
+    "evidence_reality": [
+      "provenance_asserted"
+    ],
+    "evidence_quality": [
+      "latest_eval_blocked",
+      "latest_eval_fix",
+      "no_ship_eval",
+      "eval_stale"
+    ],
+    "evidence_quality_rule": "At most one is emitted: they are successive readings of the same evidence, not independent failures.",
+    "context": [
+      "forensic_reason_required"
+    ],
+    "rank_0_note": "'eligible' occupies rank 0 so the enumeration is total and a caller can compare ranks without special-casing success. It is guarded against ever appearing in a reasons array."
+  },
+  "freshness": {
+    "decision": "Deliberately not invented.",
+    "detail": "eval_fresh is always the string 'unknown', and eval_stale can only fire from a runtime state that states staleness explicitly. No wall-clock comparison is made, because a freshness value nobody actually computed would be a fabrication inside a decision artifact — the one place the repo cannot afford one.",
+    "carried_forward": "Freshness becomes a real axis when a later step defines what 'current' means for an eval. Until then the engine reports that it does not know."
+  },
+  "decision_artifacts": {
+    "schema": "rcos-eligibility/1",
+    "path": "eligibility/<decision-id>/decision.json",
+    "write_once": true,
+    "integrity": "semantic sha256 over JSON.stringify(document minus its integrity block, null, 2) + '\\n' — deliberately NOT a byte hash, so reformatting is not treated as tampering while an edited verdict is",
+    "second_hash_layer": "The byte-level pin travels separately, in the invocation manifest: eligibility_decision_id + eligibility_sha256 + an eligibility {scope, purpose, eligible, reasons, path} block, all re-hashed by verifyInvocation. Two layers, deliberately different: one asks 'is this document internally consistent', the other asks 'are these the exact bytes that authorised this run'.",
+    "at_commit_time": 9,
+    "at_receipt_time": 13,
+    "note": "The 9 written by the step-4 build are pinned in commit 187a61b. Four more were created by this receipt's own CLI dogfood (elig_20260918T032238Z-3d6a52, elig_20260918T032238Z-658e07, elig_20260918T032239Z-d78f78, elig_20260918T032307Z-4ab493) and were swept into commit 5a4d0f9 by the unrelated machine-written study loop before this receipt could pin them, because that loop stages everything it finds. They are disclosed here rather than hidden; all 13 verify clean. Decisions accumulate; they are never rewritten.",
+    "inventory": [
+      {
+        "id": "elig_20260918T025812Z-1385e0",
+        "capability": "reuse-ledger",
+        "purpose": "normal",
+        "eligible": false,
+        "reasons": [
+          "candidate_not_allowed",
+          "provenance_asserted",
+          "no_ship_eval"
+        ]
+      },
+      {
+        "id": "elig_20260918T025812Z-d8be37",
+        "capability": "reuse-ledger",
+        "purpose": "forensic",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "id": "elig_20260918T025812Z-f9aaf6",
+        "capability": "reuse-ledger",
+        "purpose": "eval",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "id": "elig_20260918T031230Z-756fa3",
+        "capability": "agents-md-compactor",
+        "purpose": "eval",
+        "eligible": true,
+        "reasons": []
+      },
+      {
+        "id": "elig_20260918T031230Z-a1733f",
+        "capability": "agents-md-compactor",
+        "purpose": "normal",
+        "eligible": false,
+        "reasons": [
+          "candidate_not_allowed",
+          "provenance_asserted",
+          "no_ship_eval"
+        ]
+      },
+      {
+        "id": "elig_20260918T031231Z-7de90d",
+        "capability": "filmstrip-verify",
+        "purpose": "forensic",
+        "eligible": false,
+        "reasons": [
+          "not_executable"
+        ]
+      },
+      {
+        "id": "elig_20260918T031231Z-f5a24c",
+        "capability": "filmstrip-verify",
+        "purpose": "normal",
+        "eligible": false,
+        "reasons": [
+          "not_executable",
+          "provenance_asserted",
+          "no_ship_eval"
+        ]
+      },
+      {
+        "id": "elig_20260918T031246Z-2520e3",
+        "capability": "reuse-ledger",
+        "purpose": "eval",
+        "eligible": true,
+        "reasons": [],
+        "note": "the decision the real dogfood invocation consumed"
+      },
+      {
+        "id": "elig_20260918T031246Z-65a118",
+        "capability": "filmstrip-verify",
+        "purpose": "normal",
+        "eligible": false,
+        "reasons": [
+          "not_executable",
+          "provenance_asserted",
+          "no_ship_eval"
+        ]
+      }
+    ]
+  },
+  "dogfood_runs": [
+    {
+      "run": "sweep — every capability under every purpose",
+      "command": "read-only sweep via lib/eligibility (66 evaluations, writes no artifact)",
+      "normal": {
+        "eligible": 0,
+        "total": 22,
+        "histogram": {
+          "not_executable + provenance_asserted + no_ship_eval": 20,
+          "candidate_not_allowed + provenance_asserted + no_ship_eval": 2
+        }
+      },
+      "eval": {
+        "eligible": 2,
+        "total": 22,
+        "eligible_ids": [
+          "agents-md-compactor",
+          "reuse-ledger"
+        ],
+        "histogram": {
+          "not_executable": 20,
+          "(eligible)": 2
+        }
+      },
+      "forensic": {
+        "eligible": 2,
+        "total": 22,
+        "eligible_ids": [
+          "agents-md-compactor",
+          "reuse-ledger"
+        ],
+        "histogram": {
+          "not_executable": 20,
+          "(eligible)": 2
+        }
+      }
+    },
+    {
+      "run": "eligibility filmstrip-verify --purpose normal --json",
+      "exit": 4,
+      "result": "eligible:false, reasons [not_executable, provenance_asserted, no_ship_eval]",
+      "note": "the observability surface works: a non-eligible capability explains itself and exits 4"
+    },
+    {
+      "run": "eligibility reuse-ledger --purpose eval --json",
+      "exit": 0,
+      "result": "eligible:true, reasons [], allow_candidate:true, require_executed_provenance:false",
+      "note": "observed_state shows the candidate's adapter fully usable (type command, entrypoint present and executable, contract usable)"
+    },
+    {
+      "run": "eligibility reuse-ledger --purpose forensic   (no --forensic reason)",
+      "exit": 2,
+      "result": "rcos: --purpose forensic requires --forensic <reason> — an override nobody can mistake for production reuse",
+      "note": "the forensic override cannot be taken silently"
+    },
+    {
+      "run": "eligibility reuse-ledger --purpose forensic --forensic 'round-7 report' --json",
+      "exit": 0,
+      "result": "eligible:true, reasons [], allow_candidate:true, allow_retired:true, forensic_reason recorded in the caller context"
+    },
+    {
+      "run": "run filmstrip-verify --input <file>   (normal mode, non-eligible capability)",
+      "exit": 4,
+      "result": "prints ELIGIBLE: no + the three reasons + the decision id and path, then 'rcos: refusing to invoke filmstrip-verify in normal mode'",
+      "note": "the refusal is legible: the operator sees which decision refused them and where it lives"
+    },
+    {
+      "run": "eligibility-verify --decision elig_20260918T031246Z-2520e3",
+      "exit": 0,
+      "result": "eligibility decision elig_20260918T031246Z-2520e3 verified (1 check(s))"
+    },
+    {
+      "run": "invocation-verify --invocation inv_20260918T031246Z-38cade",
+      "exit": 0,
+      "result": "invocation inv_20260918T031246Z-38cade verified (7 artifacts re-hashed)"
+    },
+    {
+      "run": "audit",
+      "exit": 0,
+      "result": "audit clean (6 warnings, all pre-existing legacy findings, one of them new in this step)",
+      "new_warning_in_this_step": "WARN 20 promoted capability/capabilities fail default normal eligibility [not_executable, provenance_asserted, no_ship_eval]: filmstrip-verify, muse-image-lane, dell-gpu-dispatch, browser-verify-artifacts (+16 more)"
+    }
+  ],
+  "dogfood_invocations": [
+    {
+      "invocation_id": "inv_20260918T031246Z-38cade",
+      "capability": "reuse-ledger",
+      "mode": "eval",
+      "status": "completed",
+      "eligibility_decision_id": "elig_20260918T031246Z-2520e3",
+      "eligibility_eligible": true,
+      "note": "the only invocation in this repo that was authorised by a decision artifact. The six older ones predate the engine, carry eligibility_decision_id:null and have no eligibility block at all — they are honest legacy artifacts, not retro-fitted ones."
+    }
+  ],
+  "invocation_inventory": {
+    "total": 7,
+    "decision_consuming": 1,
+    "pre_eligibility": 6,
+    "pre_eligibility_ids": [
+      "inv_20260918T014906Z-05b71e",
+      "inv_20260918T014906Z-9069a8",
+      "inv_20260918T014911Z-127ac8",
+      "inv_20260918T014925Z-d0d30a",
+      "inv_20260918T014931Z-5b59dc",
+      "inv_20260918T014935Z-6fd918"
+    ]
+  },
+  "post_build_fix": {
+    "found_by": "running the CLI dogfood for this receipt",
+    "symptom": "rcos invocations --json reported decision:null for inv_20260918T031246Z-38cade even though its manifest carries eligibility_decision_id elig_20260918T031246Z-2520e3. The manifest was correct; listInvocations simply did not project the field, so the listing made a decision-consuming invocation indistinguishable from a pre-eligibility one — which is the exact distinction step 4 exists to create.",
+    "fix": "lib/invocation.js listInvocations now projects eligibility_decision_id and eligibility; tests/invocation.test.js asserts the listing shows the decision it consumed. Folded into 187a61b rather than left for later, because a receipt that says 'the newest invocation consumes a decision' while the CLI prints null is an inconsistency a reader would be right to distrust.",
+    "after": "the listing shows decision=elig_20260918T031246Z-2520e3 eligible=true for that row and null/n-a for the six legacy rows"
+  },
+  "registry": {
+    "path": "registry/capability-registry.json",
+    "sha256_at_this_commit": "bb4c5fac731f5b84420d3fadc030d23d38b19289c8f1fd4193206f7577d9d259",
+    "sha256_at_base_commit": "bb4c5fac731f5b84420d3fadc030d23d38b19289c8f1fd4193206f7577d9d259",
+    "capabilities": 22,
+    "promoted": 20,
+    "candidate": 2,
+    "executable": 2,
+    "byte_stable_across_this_step": true,
+    "byte_stability_proof": "git diff --stat bab54a7 187a61b -- registry/ traces/ is empty: this step moved no registry or trace byte. A commit-range proof is used instead of a before/after measurement because it attributes the absence of change to a specific range and cannot be invalidated by later unrelated commits.",
+    "sha256_live_at_receipt_time": "0379300de3fd72ca99ce82cc1f82aabafc196fb7946b6b966503ec538cd003a3",
+    "moved_after_this_commit_by": "5a4d0f9 (machine-written, study-round22)",
+    "what_moved": "one eval record appended to video-forensics-receipt.evals and one to creative-study-loop.evals; both carry provenance asserted, so neither counts as runtime evidence and the eligibility picture below is unchanged; capability count still 22",
+    "sweep_reverified_against_live_registry": true
+  },
+  "traces": {
+    "path": "traces/traces.jsonl",
+    "sha256_at_this_commit": "a6048ba985470c55dcd0a7aaa163611cf0d44b53bb53ca63ed20948a6f73291e",
+    "sha256_at_base_commit": "a6048ba985470c55dcd0a7aaa163611cf0d44b53bb53ca63ed20948a6f73291e",
+    "byte_stable_across_this_step": true,
+    "byte_stability_proof": "git diff --stat bab54a7 187a61b -- registry/ traces/ is empty: this step moved no registry or trace byte.",
+    "sha256_live_at_receipt_time": "45212bb865cbe1c8cd72aa62055df3b179d77c36232c79754a483bb389fc436f",
+    "moved_after_this_commit_by": "5a4d0f9 (machine-written, study-round22)"
+  },
+  "audit_after": [
+    "WARN 'reuse-ledger': candidate with zero evals",
+    "WARN 'agents-md-compactor': candidate with zero evals",
+    "WARN 22 capabilities: 2 executable, 20 non-executable (no runnable adapter declared)",
+    "WARN 20/20 promoted capabilities have no executable adapter — RCOS cannot invoke them from the registry: filmstrip-verify, muse-image-lane, dell-gpu-dispatch, browser-verify-artifacts, qr-camo-embed (+15 more) (legacy entries; no adapter or evidence is invented for them — see README)",
+    "WARN 20/20 promoted capabilities rest entirely on asserted evals — no runner-backed run yet",
+    "WARN 20 promoted capability/capabilities fail default normal eligibility [not_executable, provenance_asserted, no_ship_eval]: filmstrip-verify, muse-image-lane, dell-gpu-dispatch, browser-verify-artifacts (+16 more)"
+  ],
+  "sweep": {
+    "what": "a read-only sweep that asks the eligibility engine about every capability in the real registry under every purpose; it calls evaluate(), which returns a decision without persisting one, so the sweep writes no registry byte, no trace byte and no decision artifact",
+    "harness": "evidence/2026-09-17-step4-eligibility/sweep.js",
+    "output": "evidence/2026-09-17-step4-eligibility/sweep.out.json",
+    "registry_capabilities": 22,
+    "results": {
+      "normal": {
+        "eligible_count": 0,
+        "total": 22,
+        "eligible": [],
+        "histogram": {
+          "not_executable + provenance_asserted + no_ship_eval": 20,
+          "candidate_not_allowed + provenance_asserted + no_ship_eval": 2
+        }
+      },
+      "eval": {
+        "eligible_count": 2,
+        "total": 22,
+        "eligible": [
+          "agents-md-compactor",
+          "reuse-ledger"
+        ],
+        "histogram": {
+          "not_executable": 20,
+          "(eligible)": 2
+        }
+      },
+      "forensic": {
+        "eligible_count": 2,
+        "total": 22,
+        "eligible": [
+          "agents-md-compactor",
+          "reuse-ledger"
+        ],
+        "histogram": {
+          "not_executable": 20,
+          "(eligible)": 2
+        }
+      }
+    },
+    "reading": "under the default normal context nothing may execute and nothing may compete, which is the expected state: 20 capabilities are promoted but have no executable adapter, and the 2 that do have one are still candidates. Under eval and forensic the two executable capabilities become eligible and the other 20 stop at not_executable alone, because those contexts waive the provenance and ship-eval requirements but cannot waive executability.",
+    "reverified_after_study_loop_commits": "re-run after 5a4d0f9 moved the registry, and the numbers are identical — the study loop added only provenance-asserted eval records, and asserted evals are not runtime evidence"
+  },
+  "test_output": "60 tests / 60 pass / 0 fail / 0 skipped across 10 files (npm test = node --test tests/*.test.js). eligibility.test.js is new with 11 tests; invocation.test.js grew to 9; evalrunner.test.js was updated for decision consumption and stays at 10.",
+  "deltas": {
+    "new_files": [
+      "lib/eligibility.js",
+      "tests/eligibility.test.js",
+      "eligibility/elig_20260918T025812Z-1385e0/decision.json",
+      "eligibility/elig_20260918T025812Z-d8be37/decision.json",
+      "eligibility/elig_20260918T025812Z-f9aaf6/decision.json",
+      "eligibility/elig_20260918T031230Z-756fa3/decision.json",
+      "eligibility/elig_20260918T031230Z-a1733f/decision.json",
+      "eligibility/elig_20260918T031231Z-7de90d/decision.json",
+      "eligibility/elig_20260918T031231Z-f5a24c/decision.json",
+      "eligibility/elig_20260918T031246Z-2520e3/decision.json",
+      "eligibility/elig_20260918T031246Z-65a118/decision.json",
+      "invocations/inv_20260918T031246Z-38cade/ (manifest, input, output, stdout, stderr, evidence/registry-after.json, evidence/steps.json, evidence/traces.jsonl, work/)"
+    ],
+    "modified_files": [
+      "lib/invocation.js (the mode ladder removed; decision consumption added; listInvocations now projects the decision)",
+      "lib/evalrunner.js (constructs an eval caller context, runs the engine, passes the decision id into the kernel)",
+      "lib/registry.js (exposes the registry entry and the runtime state the engine reads)",
+      "bin/rcos (eligibility, eligibility-verify, invocations, invocation-verify commands; run passes a decision through)",
+      "tests/invocation.test.js",
+      "tests/evalrunner.test.js",
+      "README.md (commands + rule 10, 'Eligibility decides permission, never preference')"
+    ],
+    "behavior_changed": [
+      "Permission and execution are now separate acts: the kernel cannot run anything without a decision artifact naming it.",
+      "A caller learns every applicable reason from one decision instead of one failure at a time.",
+      "Task text, semantic intent, scores, rankings and reuse history are refused at the context boundary rather than ignored inside the logic.",
+      "Forensic mode demands a written reason and cannot be entered silently.",
+      "Legacy capabilities now have a machine-readable name for why they cannot run in normal mode, instead of the repo merely knowing it in prose.",
+      "A decision is a durable, self-verifying artifact, so 'why did this run' is answerable from disk after the fact."
+    ],
+    "not_built_deliberately": [
+      "selector",
+      "planner",
+      "semantic matching",
+      "capability ranking",
+      "LLM routing",
+      "task-to-capability inference",
+      "cost optimization",
+      "any authority model, truth envelope or dependency graph",
+      "any PartSnap logic",
+      "freshness computation (no clock is read; eval_fresh is 'unknown' by design)"
+    ]
+  },
+  "artifacts_note": "Hashes of every artifact this step touched, as they stand at commit 187a61b. The registry and traces entries are the step-4-commit values, which equal the base-commit values because this step moved neither file; the live values at receipt time differ and are recorded in the registry and traces blocks, with the commit that moved them and what moved.",
+  "artifacts": {
+    "bin/rcos": "673e62eeef6cdcfd698577a50dbc49d51eb384a9db10292523835f746b59d469",
+    "lib/eligibility.js": "f7acf30b8d886d831048fd818a33195333efbb35c043f65c10874e75757e1219",
+    "lib/invocation.js": "4652d3ed16aee6a9930f05f5abafb380ede3fdd84cce5456e15b1b460d6693e2",
+    "lib/evalrunner.js": "8f3dd63c923ea2e7b3bdbacdcc73e387097f7a97635f47ce2f33508f01876bef",
+    "lib/registry.js": "0aae708b0a1f834bed793b0106345b875caaef141686abb028bd3529948cc154",
+    "lib/traces.js": "20f984ff380af759eae5457d0bd7e131dd72a3948363165f54e31c0e00d69a7b",
+    "tests/eligibility.test.js": "1c063767c40cf28e660b65907851a58b1804baacf6ae7531e94f727cc8e33b1c",
+    "tests/invocation.test.js": "fcf29fa6827bd6e0f256b5b4a8cccafa0783638ad2866e885cf0ca6a5e700bde",
+    "tests/evalrunner.test.js": "65377c7c2991a5b6515074f668918f090a083723f8de29ad03d64d811d8fa487",
+    "README.md": "bfa66466f7c884252a562bae0af27075aa4b95d1211c3cea252ac46a6cf46f77",
+    "registry/capability-registry.json": "bb4c5fac731f5b84420d3fadc030d23d38b19289c8f1fd4193206f7577d9d259",
+    "traces/traces.jsonl": "a6048ba985470c55dcd0a7aaa163611cf0d44b53bb53ca63ed20948a6f73291e"
+  },
+  "verification_harness": {
+    "note": "One ship-bar check had to be corrected during receipt finalization, and it is disclosed here because a silently loosened check is worse than a failing one.",
+    "item": 14,
+    "was": "compared the live registry sha256 against a hardcoded step-4 value, which asserts that nothing has touched the registry since step 4. That is not what the ship bar asks and it is false in this repo, because an unrelated study loop commits on its own schedule; the check started failing for a reason that had nothing to do with this step.",
+    "now": "checks the claim the ship bar actually makes, in two parts: the step-4 commit range bab54a7..187a61b must show an empty diff for registry/ and traces/, and any later divergence must be provably additive asserted eval records (same capability count, same id set, every non-evals field byte-identical, no eval removed, every added eval asserted). It fails on anything else.",
+    "result": "PASS, with divergence_is_additive_evals_only true and an empty problems list",
+    "why_not_just_accept_it": "loosening a check so it passes is the failure mode this whole step exists to prevent, so the check was made stricter in the direction that matters (it now inspects the content of the divergence, which the old one never did) rather than weaker.",
+    "harness_files": [
+      "evidence/2026-09-17-step4-eligibility/shipbar-verify.js — the 15-item mechanical ship-bar verifier; writes evidence/2026-09-17-step4-eligibility/shipbar.out.json",
+      "evidence/2026-09-17-step4-eligibility/sweep.js — the read-only eligibility sweep; writes evidence/2026-09-17-step4-eligibility/sweep.out.json"
+    ],
+    "reproduce": "node evidence/2026-09-17-step4-eligibility/shipbar-verify.js and node evidence/2026-09-17-step4-eligibility/sweep.js, both from the repo root; each writes its result next to itself, so the receipt's mechanical claims are reproducible from tracked files rather than from a scratch directory"
+  },
+  "post_step4_activity": {
+    "why_this_block_exists": "An autonomous machine-written study loop commits to this repository on its own schedule and stages everything it finds. It fired twice on top of this step while the receipt was being written. Those commits are not part of step 4, but a reader will see them in the log, so they are disclosed and attributed here rather than left to look like step-4 work.",
+    "commits": [
+      {
+        "sha": "5603d3d",
+        "subject": "evals: study-round22 x2 RECEIPTs - class P opened (product launch), held-opener law, muse 3/3, 90 gates PASS",
+        "touches_step4_artifacts": false
+      },
+      {
+        "sha": "5a4d0f9",
+        "subject": "evals: study-round22 x2 registry+traces (machine-written)",
+        "touches_step4_artifacts": false,
+        "note": "Moved registry/capability-registry.json and traces/traces.jsonl, and swept in the 4 eligibility decisions this receipt's dogfood had just written. Verified additive-only to the registry: 12 insertions, both of them asserted eval records, capability count unchanged at 22."
+      }
+    ],
+    "effect_on_this_step": "None. Step 4 is commit 187a61b, and its commit range moved no registry or trace byte. The two asserted eval records added afterwards do not count as runtime evidence, so they cannot change any eligibility decision; the sweep was re-run against the live registry and returns the same 0/22, 2/22, 2/22.",
+    "sweep_reverified_at": "receipt finalization"
+  },
+  "pushed": false,
+  "merged": false,
+  "not_done": [
+    "No capability was made executable in this step. The 20 promoted legacy capabilities still declare no adapter, and no adapter was invented for them — that is a separate decision with its own evidence burden.",
+    "No selector, planner or ranking of any kind. The engine produces an eligible SET; choosing from that set is explicitly a later step and is explicitly not this one.",
+    "The compactor itself was not fixed. Its failing eval is now reported as a reason instead of being handled by prose.",
+    "Nothing was pushed. This repo has no remote; every commit in this chain is local only."
+  ],
+  "next_per_ruling": "Step 4 ends at the eligibility engine. The boundary is now REGISTRY + EVAL STATE → ELIGIBILITY → eligible set → [future selector] → INVOCATION KERNEL, with the selector slot deliberately empty. Steps 5-13 remain unstarted and were not begun."
+}
