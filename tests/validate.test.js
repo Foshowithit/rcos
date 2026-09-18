@@ -39,6 +39,31 @@ test('shipCount counts ship verdicts only', () => {
   assert.equal(V.shipCount(c), 1);
 });
 
+test('retirement is required for promoted caps and validated when present', () => {
+  const armed = {
+    armed_at: '2026-09-17', policy_version: 'rcos-retire/1',
+    decay: { window: 5, threshold: null }, neglect: { n: 20, threshold: null }
+  };
+  const ok = good(); ok.status = 'promoted'; ok.retirement = armed;
+  assert.deepEqual(V.validateRegistry({ registry_version: 'v1', capabilities: [ok] }), []);
+  // a candidate may carry no retirement at all
+  assert.deepEqual(V.validateRegistry({ registry_version: 'v1', capabilities: [good()] }), []);
+
+  const missing = good(); missing.status = 'promoted';
+  assert.match(V.validateRegistry({ registry_version: 'v1', capabilities: [missing] })[0], /retirement.*required when status is promoted/);
+
+  const badVersion = good(); badVersion.retirement = { ...armed, policy_version: 'rcos-retire/9' };
+  assert.match(V.validateRegistry({ registry_version: 'v1', capabilities: [badVersion] })[0], /policy_version/);
+  const badDate = good(); badDate.retirement = { ...armed, armed_at: '17-09-2026' };
+  assert.match(V.validateRegistry({ registry_version: 'v1', capabilities: [badDate] })[0], /armed_at/);
+  const badWindow = good(); badWindow.retirement = { ...armed, decay: { window: 0, threshold: null } };
+  assert.match(V.validateRegistry({ registry_version: 'v1', capabilities: [badWindow] })[0], /decay\.window/);
+  const badThreshold = good(); badThreshold.retirement = { ...armed, neglect: { n: 20, threshold: 'low' } };
+  assert.match(V.validateRegistry({ registry_version: 'v1', capabilities: [badThreshold] })[0], /neglect\.threshold/);
+  const noNeglect = good(); noNeglect.retirement = { ...armed, neglect: undefined };
+  assert.match(V.validateRegistry({ registry_version: 'v1', capabilities: [noNeglect] })[0], /neglect: must be an object/);
+});
+
 test('isValidDate accepts YYYY-MM-DD real dates only', () => {
   assert.equal(V.isValidDate('2026-09-14'), true);
   assert.equal(V.isValidDate('14-09-2026'), false);

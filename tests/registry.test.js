@@ -41,15 +41,59 @@ test('propose rejects duplicates and bad kinds; eval rejects bad verdicts and un
   assert.throws(() => R.submitEval(reg, 'demo-cap', { task_id: 't', verdict: 'maybe', run_id: 'r' }), /verdict must be/);
 });
 
-test('retire requires a reason; reuse increments', () => {
+test('retire requires a reason; reuse has no manual increment path', () => {
   const reg = R.loadRegistry(makeHome());
   R.proposeCapability(reg, { id: 'demo-cap', name: 'Demo', kind: 'script' });
   assert.throws(() => R.retireCapability(reg, 'demo-cap', '  '), /reason is required/);
   R.retireCapability(reg, 'demo-cap', 'superseded by demo-cap-2');
   assert.equal(reg.capabilities[0].status, 'retired');
-  R.logReuse(reg, 'demo-cap');
-  R.logReuse(reg, 'demo-cap');
+  // the old counter-bump API is gone on purpose: the only way to move the
+  // number is to append a trace and re-derive
+  assert.equal(typeof R.logReuse, 'undefined');
+  const traces = [
+    { capability: 'demo-cap', task_id: 't-1', source: 'reuse', backfilled: false },
+    { capability: 'demo-cap', task_id: 't-2', source: 'reuse', backfilled: false },
+    { capability: 'demo-cap', task_id: 't-3', source: 'reuse', backfilled: true },        // reconstructed FROM the registry — must not count
+    { capability: 'demo-cap', task_id: 't-4', source: 'synthesize', backfilled: false },  // not a reuse
+    { capability: 'demo-cap', task_id: 't-5', source: null, backfilled: false }           // no provenance
+  ];
+  assert.deepEqual(R.reuseDeltas(reg, traces), [{ id: 'demo-cap', stored: 0, derived: 2 }]);
+  R.syncDerivedReuse(reg, traces);
   assert.equal(reg.capabilities[0].reuse_count, 2);
+  assert.deepEqual(R.reuseDeltas(reg, traces), []); // idempotent
+});
+
+test('promotion refuses same-task repeats and a blank run id', () => {
+  const reg = R.loadRegistry(makeHome());
+  R.proposeCapability(reg, { id: 'demo-cap', name: 'Demo', kind: 'skill' });
+  R.submitEval(reg, 'demo-cap', { task_id: 'same-task', verdict: 'ship', run_id: 'r-1', date: '2026-09-14' });
+  R.submitEval(reg, 'demo-cap', { task_id: 'same-task', verdict: 'ship', run_id: 'r-2', date: '2026-09-14' });
+  assert.throws(() => R.promoteCapability(reg, 'demo-cap'), /DISTINCT task ids/);
+  // a whitespace run id is not an id: "no run id, no admission"
+  const cap = reg.capabilities[0];
+  cap.evals[1].task_id = 'other-task';
+  cap.evals[1].run_id = '   ';
+  assert.throws(() => R.promoteCapability(reg, 'demo-cap'), /no run id, no admission/);
+  cap.evals[1].run_id = 'r-2';
+  R.promoteCapability(reg, 'demo-cap');
+  assert.deepEqual(cap.admitted_after, ['same-task', 'other-task']);
+});
+
+test('promotion arms retirement; the armed policy carries no invented thresholds', () => {
+  const reg = R.loadRegistry(makeHome());
+  R.proposeCapability(reg, { id: 'demo-cap', name: 'Demo', kind: 'skill' });
+  R.submitEval(reg, 'demo-cap', { task_id: 't-1', verdict: 'ship', run_id: 'r-1', date: '2026-09-14' });
+  R.submitEval(reg, 'demo-cap', { task_id: 't-2', verdict: 'ship', run_id: 'r-2', date: '2026-09-14' });
+  R.promoteCapability(reg, 'demo-cap', '2026-09-17');
+  assert.deepEqual(reg.capabilities[0].retirement, {
+    armed_at: '2026-09-17',
+    policy_version: 'rcos-retire/1',
+    decay: { window: 5, threshold: null },
+    neglect: { n: 20, threshold: null }
+  });
+  // arming is idempotent and never overwrites an existing policy
+  R.armRetirement(reg.capabilities[0], '2026-12-31');
+  assert.equal(reg.capabilities[0].retirement.armed_at, '2026-09-17');
 });
 
 test('audit flags promoted-without-gate, decay, and staleness', () => {
@@ -68,6 +112,27 @@ test('audit flags promoted-without-gate, decay, and staleness', () => {
   assert.match(res.errors.join('\n'), /shady.*x2-ship/);
   assert.match(res.warnings.join('\n'), /decayer.*decaying/);
   assert.match(res.warnings.join('\n'), /oldie.*stale/);
+});
+
+test('audit errors on promoted-without-retirement and warns on a stale reuse cache', () => {
+  const reg = R.loadRegistry(makeHome());
+  R.proposeCapability(reg, { id: 'demo-cap', name: 'Demo', kind: 'skill' });
+  R.submitEval(reg, 'demo-cap', { task_id: 't-1', verdict: 'ship', run_id: 'r-1', date: '2026-09-14' });
+  R.submitEval(reg, 'demo-cap', { task_id: 't-2', verdict: 'ship', run_id: 'r-2', date: '2026-09-14' });
+  R.promoteCapability(reg, 'demo-cap', '2026-09-17');
+  delete reg.capabilities[0].retirement;
+  const res = R.auditRegistry(reg, new Date('2026-09-17T00:00:00Z'));
+  assert.equal(res.ok, false);
+  assert.match(res.errors.join('\n'), /demo-cap.*promoted without retirement armed/);
+
+  R.armRetirement(reg.capabilities[0], '2026-09-17');
+  reg.capabilities[0].reuse_count = 7; // a hand-edit, which is exactly what the cache must not silently tolerate
+  const withTraces = R.auditRegistry(reg, new Date('2026-09-17T00:00:00Z'), [{ capability: 'demo-cap', source: 'reuse', backfilled: false }]);
+  assert.equal(withTraces.ok, true);
+  assert.match(withTraces.warnings.join('\n'), /demo-cap.*reuse cache stale — stored 7, trace-derived 1/);
+  // no trace file at all = unverifiable, not wrong: the check is skipped
+  const noTraces = R.auditRegistry(reg, new Date('2026-09-17T00:00:00Z'), null);
+  assert.doesNotMatch(noTraces.warnings.join('\n'), /reuse cache stale/);
 });
 
 test('query filters by status and kind', () => {

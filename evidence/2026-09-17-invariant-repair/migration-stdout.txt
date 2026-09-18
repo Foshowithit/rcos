@@ -1,0 +1,32 @@
+traces: 82 lines, 9 reusable (source=reuse, not backfilled)
+reuse_count deltas: 8
+  muse-image-lane: stored 0 -> trace-derived 1
+  dell-gpu-dispatch: stored 0 -> trace-derived 1
+  qr-camo-embed: stored 0 -> trace-derived 4
+  chalk-capture-recipe: stored 0 -> trace-derived 1
+  hog-qa-suite: stored 0 -> trace-derived 2
+  operator-ui-contract-test: stored 1 -> trace-derived 0
+  video-forensics-receipt: stored 2 -> trace-derived 0
+  creative-study-loop: stored 2 -> trace-derived 0
+retirement armed on 20 promoted capability/capabilities (armed_at 2026-09-17)
+  filmstrip-verify
+  muse-image-lane
+  dell-gpu-dispatch
+  browser-verify-artifacts
+  qr-camo-embed
+  chalk-capture-recipe
+  hog-qa-suite
+  operator-ui-contract-test
+  webgl-film-capture
+  shadow-play-staging
+  character-forge
+  local-talking-heads
+  video-forensics-receipt
+  creative-study-loop
+  hunyuan3d-mlx-local
+  face-in-scene-shot
+  preview-server-verify
+  audio-offline-verify
+  x-media-package
+  receipt-figure-render
+wrote /Users/adam26/zcode-rcos/registry/capability-registry.json

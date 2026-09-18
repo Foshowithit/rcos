@@ -20,7 +20,9 @@ const USAGE = [
   '  backfill-traces',
   '  promote --id <id>',
   '  retire --id <id> --reason <text>',
-  '  reuse --id <id>',
+  '  reuse-log --id <id> --task <task> --run <run> --verdict ship|fix|blocked',
+  '            [--context <text>] [--seconds <n>]',
+  '  sync [--force] [--json]',
   '  audit [--json]',
   '  render [--out <path>]',
   '  help'
@@ -91,6 +93,7 @@ function main() {
           seconds: args.seconds === true || args.seconds === undefined ? undefined : Number(args.seconds),
           date: args.date || undefined
         });
+        R.syncDerivedReuse(reg, T.loadTraces(home));
         R.saveRegistry(home, reg);
         console.log('recorded ' + args.verdict + ' for \'' + args.id + '\' on ' + args.task + ' (+trace)');
         break;
@@ -145,18 +148,57 @@ function main() {
         console.log('retired \'' + args.id + '\'');
         break;
       }
-      case 'reuse': {
-        need(args, 'id');
+      // A reuse is a trace line, not a counter bump. The trace is appended
+      // FIRST and the registry field is then re-derived from the trace log, so
+      // the number can never move without evidence behind it.
+      case 'reuse-log': {
+        need(args, 'id', 'task', 'run', 'verdict');
         const reg = R.loadRegistry(home);
-        const cap = R.logReuse(reg, args.id);
+        const cap = R.findCapability(reg, args.id);
+        if (cap.status !== 'promoted') {
+          console.error('rcos: cannot log a reuse of \'' + args.id + '\': status is ' + cap.status + ', must be promoted');
+          process.exit(2);
+        }
+        T.appendTrace(home, {
+          capability: args.id, task_id: args.task, verdict: args.verdict,
+          context: args.context === true ? undefined : args.context,
+          source: 'reuse',
+          seconds: args.seconds === true || args.seconds === undefined ? undefined : Number(args.seconds),
+          date: args.date || undefined
+        });
+        R.syncDerivedReuse(reg, T.loadTraces(home));
         R.saveRegistry(home, reg);
-        console.log('\'' + args.id + '\' reuse_count=' + cap.reuse_count);
+        console.log('\'' + args.id + '\' reuse_count now ' + R.findCapability(reg, args.id).reuse_count +
+          ' (derived from traces; no manual increment path)');
+        break;
+      }
+      // Re-derives the reuse cache from the trace log. Read-only unless a delta
+      // exists — this is the repair path, not an increment path. With no trace
+      // log at all there is nothing to derive from, and zeroing the cache would
+      // destroy numbers we cannot replace, so it refuses unless forced.
+      case 'sync': {
+        const reg = R.loadRegistry(home);
+        if (!T.hasTraceFile(home) && !args.force) {
+          console.error('rcos: no trace log at ' + T.tracesPath(home) + ' — nothing to derive from; ' +
+            'refusing to zero the reuse cache (pass --force to reset it to 0)');
+          process.exit(2);
+        }
+        const deltas = R.reuseDeltas(reg, T.loadTraces(home));
+        if (args.json) { console.log(JSON.stringify(deltas, null, 2)); }
+        else if (deltas.length === 0) { console.log('reuse cache already matches traces'); }
+        else for (const d of deltas) console.log(d.id + ': stored ' + d.stored + ' -> trace-derived ' + d.derived);
+        if (deltas.length > 0) {
+          R.syncDerivedReuse(reg, T.loadTraces(home));
+          R.saveRegistry(home, reg);
+          if (!args.json) console.log('synced ' + deltas.length + ' capability/capabilities');
+        }
         break;
       }
       case 'audit': {
         const reg = R.loadRegistry(home);
-        const res = R.auditRegistry(reg);
-        for (const g of T.traceGaps(reg, T.loadTraces(home))) res.warnings.push('trace gap: ' + g);
+        const traces = T.loadTraces(home);
+        const res = R.auditRegistry(reg, new Date(), T.hasTraceFile(home) ? traces : null);
+        for (const g of T.traceGaps(reg, traces)) res.warnings.push('trace gap: ' + g);
         if (args.json) console.log(JSON.stringify(res, null, 2));
         else {
           for (const e of res.errors) console.log('ERROR ' + e);

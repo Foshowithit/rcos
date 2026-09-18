@@ -1,0 +1,75 @@
+{
+  "run": "invariant-repair-1",
+  "capability": null,
+  "subject": "zcode-rcos repo repair: reuse_count derived from traces, promotion gate repaired, retirement armed at admission (GPT round-3 ruling, step 1)",
+  "date": "2026-09-17",
+  "task": "rcos-invariant-repair",
+  "verdict": "ship",
+  "verdict_basis": "The registry's reuse_count can no longer move without evidence. Before this repair the only path was a manual counter bump (bin/rcos reuse --id <id>, lib/registry.js logReuse) with no trace line behind it, and promotion accepted any two ship evals including repeats of the same task. Both were fixed and are now enforced by tests rather than convention: reuse_count is re-derived from the append-only trace log (source=reuse, backfilled excluded) by a single writer with a read-only drift detector, reuse-log refuses non-promoted capabilities and appends the trace BEFORE the number moves, audit errors on a promoted capability without armed retirement and warns when the stored cache disagrees with the traces, and promotion refuses same-task repeats and blank run ids. The migration found the registry was wrong in both directions on 8 of 20 capabilities; that mismatch is recorded here rather than smoothed over. Full suite 30/30 green, audit clean, sync idempotent. Nothing was pushed or merged; the change is a local commit only.",
+  "gates": [
+    {
+      "gate": "derived-not-editable",
+      "evidence": "lib/registry.js exports reuseDeltas (read-only detector) and syncDerivedReuse (single writer); logReuse is gone and tests/registry.test.js asserts typeof R.logReuse === 'undefined'. lib/traces.js deriveReuseCounts counts only source==='reuse' && backfilled!==true. tests/seed.test.js asserts stored reuse_count === trace-derived count for every capability in the real registry against the real trace log (hard equality, not a warning)."
+    },
+    {
+      "gate": "no-manual-increment-path",
+      "evidence": "bin/rcos 'reuse' was replaced by 'reuse-log --id --task --run --verdict', which requires a task id, a run id and a verdict, refuses a capability whose status is not promoted (exit 2, 'must be promoted'), appends the trace first, then re-derives and saves. tests/traces.test.js asserts the refusal, the append order (rows[0].source === 'reuse'), and the printed line 'reuse_count now 1 (derived from traces; no manual increment path)'."
+    },
+    {
+      "gate": "promotion-gate-repair",
+      "evidence": "lib/registry.js promoteCapability requires 2 ship evals on 2 DISTINCT task ids ('Same-task repeats do not count — the point is transfer, not memorization') and re-checks that each ship eval carries a non-blank run_id ('No run id, no admission'). tests/registry.test.js asserts both refusals by regex and asserts admitted_after records both distinct task ids."
+    },
+    {
+      "gate": "retirement-armed-at-admission",
+      "evidence": "armRetirement(cap, date) is called by promoteCapability and returns early if already armed (idempotent). Policy is {armed_at, policy_version: 'rcos-retire/1', decay:{window:5,threshold:null}, neglect:{n:20,threshold:null}} — thresholds null on purpose per the upstream spec ('settle from pilot data'); an invented threshold is a check that cannot fail. lib/validate.js requires retirement for status=promoted and validates the shape whenever present; auditRegistry errors on promoted-without-retirement. tests/validate.test.js and tests/seed.test.js cover the shape, the missing case, and the version check."
+    },
+    {
+      "gate": "honest-migration",
+      "evidence": "The migration was wrong in both directions and the evidence bundle records both. 5 capabilities had reuse traces but a stored 0 (under-count: muse-image-lane 0->1, dell-gpu-dispatch 0->1, qr-camo-embed 0->4, chalk-capture-recipe 0->1, hog-qa-suite 0->2) and 3 had stored increments with no trace behind them (over-count: operator-ui-contract-test 1->0, video-forensics-receipt 2->0, creative-study-loop 2->0). 8 deltas of 20 capabilities. The 5 over-counted increments were zeroed, not preserved: they were logged under the old counter-only path, which left no trace, so no evidence exists that could justify them — and writing backfilled traces to justify them was deliberately NOT done, since backfilled rows are excluded from derivation by design and could not justify them anyway. migration-stdout.txt is the raw output; registry-before.json and registry-after.json are the full snapshots. Total reuse_count across the registry: 9, all trace-backed."
+    },
+    {
+      "gate": "no-loss-on-unverifiable-state",
+      "evidence": "bin/rcos sync refuses (exit 2) to zero the cache when no trace log exists at all ('nothing to derive from; refusing to zero the reuse cache (pass --force to reset it to 0)'), and audit skips the staleness warning in the same case. tests/traces.test.js builds a fixture whose stored value is 9 with no traces, asserts the refusal leaves it at 9, then appends one reuse trace and asserts sync repairs it to 1."
+    },
+    {
+      "gate": "green",
+      "evidence": "test-output.txt: npm test 30 tests / 30 pass / 0 fail. audit-after.txt: 'audit clean' exit 0 and 'reuse cache already matches traces' exit 0. The migration script is idempotent — a second run reports 'nothing to do — registry already repaired' (0 deltas, 0 armed)."
+    }
+  ],
+  "deltas": {
+    "traces_total": 82,
+    "traces_reusable": 9,
+    "capabilities_total": 20,
+    "capabilities_changed": 8,
+    "under_counted": {
+      "muse-image-lane": { "stored": 0, "derived": 1 },
+      "dell-gpu-dispatch": { "stored": 0, "derived": 1 },
+      "qr-camo-embed": { "stored": 0, "derived": 4 },
+      "chalk-capture-recipe": { "stored": 0, "derived": 1 },
+      "hog-qa-suite": { "stored": 0, "derived": 2 }
+    },
+    "over_counted_zeroed": {
+      "operator-ui-contract-test": { "stored": 1, "derived": 0 },
+      "video-forensics-receipt": { "stored": 2, "derived": 0 },
+      "creative-study-loop": { "stored": 2, "derived": 0 }
+    },
+    "retirement_armed": 20,
+    "reuse_count_total_after": 9
+  },
+  "artifacts": {
+    "registry_before_sha256": "7bef6861db35adfef880126b1cedd2055b5b4a807c3a1156268a4036163877cd",
+    "registry_after_sha256": "e02ce769ce1e986aa62a22be86e337e76c15ce44954f60e5533ffcbd14bcbe17",
+    "traces_sha256": "abd5c15496eeeb47532f3fb78e9f2b94ab3e2870267988d83310ac774f077d51",
+    "dashboard_sha256": "da77b0b0b3f548afcb952abed3ea5e35396a352cb291215ceeb65b783b4a1ace",
+    "migration_script": "scripts/repair-invariants-20260917.js",
+    "registry_before": "evidence/2026-09-17-invariant-repair/registry-before.json",
+    "registry_after": "evidence/2026-09-17-invariant-repair/registry-after.json",
+    "migration_output": "evidence/2026-09-17-invariant-repair/migration-stdout.txt",
+    "test_output": "evidence/2026-09-17-invariant-repair/test-output.txt",
+    "audit_output": "evidence/2026-09-17-invariant-repair/audit-after.txt"
+  },
+  "base_commit": "079f9e6",
+  "pushed": false,
+  "merged": false,
+  "open_conflict_flagged_not_resolved": "GPT's RCOS Core 1.0 piece 4 prescribes a deliberately stupid deterministic router. Adam's 09-05 HARD RULE bans deterministic routers. Not part of this step; escalate to GPT/Adam before any router work."
+}

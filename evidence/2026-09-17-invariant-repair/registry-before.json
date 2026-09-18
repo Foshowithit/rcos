@@ -25,19 +25,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-16",
-      "lineage": "zcode memory video-watch-protocol.md; proven on ep1-chalk + HOG demo video",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "zcode memory video-watch-protocol.md; proven on ep1-chalk + HOG demo video"
     },
     {
       "id": "muse-image-lane",
@@ -61,21 +49,9 @@
           "run_id": "evidence/muse-image-lane/eval-2/bearing_product.png (1600x1600 real PNG after sips WebP->PNG; muse gate SHIP x2 consensus; consumer = hunyuan3d-mlx-local eval-2 reference + bearing-film asset; 17s gen)"
         }
       ],
-      "reuse_count": 1,
+      "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "zcode memory muse-image-lane-20260913; shipped HOG gen2 art wave",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "zcode memory muse-image-lane-20260913; shipped HOG gen2 art wave"
     },
     {
       "id": "dell-gpu-dispatch",
@@ -99,21 +75,9 @@
           "run_id": "eval-2 SHIP: NVENC transcode of smptebars 1280x720x4s, -preset p7 -rc vbr -cq 26. Gates: gpu-encode PASS (2 nvenc log hits, EXIT=0), dell-only PASS, perceptual-match PASS (8 frames, aHash 0.000). Evidence: evidence/dell-gpu-dispatch/eval-2/"
         }
       ],
-      "reuse_count": 1,
+      "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "shared memory HARDWARE RULE 09-03; NVENC + Blender -t 16 proven",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "shared memory HARDWARE RULE 09-03; NVENC + Blender -t 16 proven"
     },
     {
       "id": "browser-verify-artifacts",
@@ -156,19 +120,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "zcode memory browser-verify-web-artifacts; DraftForge + dsh-operator-ui proofs",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "zcode memory browser-verify-web-artifacts; DraftForge + dsh-operator-ui proofs"
     },
     {
       "id": "qr-camo-embed",
@@ -213,21 +165,9 @@
           "run_id": "eval-6 SHIP on real photographic mid-tone cover (bearing-film frame f00325, mean L~109): g1 zxing-on-final-PNG PASS, g2 external jpeg-q85 PASS (dark_gain 0.80, placement smoothness 25.5), muse llm gate PASS verbatim 'reads as a watermark, not a pasted sticker... camouflaged but still findable'. Includes the eval-5 orientation fix (rotate only portrait sources). Evidence: evidence/qr-camo-embed/eval-6/"
         }
       ],
-      "reuse_count": 4,
+      "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "zcode memory qr-camo-embed-recipe; workspace/default/qr-camo-header",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "zcode memory qr-camo-embed-recipe; workspace/default/qr-camo-header"
     },
     {
       "id": "chalk-capture-recipe",
@@ -251,21 +191,9 @@
           "run_id": "eval-2 SHIP (variant scene: slate-blue board, 'Measure twice', ease-out chalk stroke, 180 frames/3s): font-warmup PASS (FONT_CHECK=true in capture.log); no-fallback-serif PASS (muse: 'all text is handwritten chalk style... no sharp serif feet'); av-sync PASS (video+audio both 0.000->3.000); no-slideshow PASS (muse on montage: 'continuous drawing motion, not unrelated stills'). Different duration/color/choreo from eval-1 proves the recipe, not one scene. Evidence: evidence/chalk-capture-recipe/eval-2/"
         }
       ],
-      "reuse_count": 1,
+      "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "ep1-chalk-v2 recipe outputs/ep1-chalk-v2/; Caveat warmup + fonts.load fix",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "ep1-chalk-v2 recipe outputs/ep1-chalk-v2/; Caveat warmup + fonts.load fix"
     },
     {
       "id": "hog-qa-suite",
@@ -289,21 +217,9 @@
           "run_id": "evidence/hog-qa-suite/eval-2: run-local.mjs 5/5 pass again, fps 61 all viewports, SUITE_PASS=true (second full pass same day)"
         }
       ],
-      "reuse_count": 2,
+      "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "game-fleet/qa/run-local.mjs; 5/5 waves shipped through it",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "game-fleet/qa/run-local.mjs; 5/5 waves shipped through it"
     },
     {
       "id": "operator-ui-contract-test",
@@ -327,21 +243,9 @@
           "run_id": "dogfood-check-2"
         }
       ],
-      "reuse_count": 0,
+      "reuse_count": 1,
       "last_eval": "2026-09-15",
-      "lineage": "dsh-operator-ui/scripts/check.js; required before every push since v0.1.1",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "dsh-operator-ui/scripts/check.js; required before every push since v0.1.1"
     },
     {
       "id": "webgl-film-capture",
@@ -367,19 +271,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-16",
-      "lineage": "fapcoin-webgl v7 (df071ee determinism proven) + SHORT8 v2 (aff2dc3) + char v3 (91246b5); cap.cjs CDP rig + pipeline8 + burn_cards_v3",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "fapcoin-webgl v7 (df071ee determinism proven) + SHORT8 v2 (aff2dc3) + char v3 (91246b5); cap.cjs CDP rig + pipeline8 + burn_cards_v3"
     },
     {
       "id": "shadow-play-staging",
@@ -405,19 +297,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-16",
-      "lineage": "charprobe + scene8 v2 realism (aff2dc3) + scene8_char v3 (91246b5): emissive paper + ShadowMaterial catcher + light-geography trap list",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "charprobe + scene8 v2 realism (aff2dc3) + scene8_char v3 (91246b5): emissive paper + ShadowMaterial catcher + light-geography trap list"
     },
     {
       "id": "character-forge",
@@ -443,19 +323,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-16",
-      "lineage": "Dell Archon workflow character-forge-v1; ritual_guy + seated_film + seated_film_down EVAL ships; numpy-bool gate fix",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "Dell Archon workflow character-forge-v1; ritual_guy + seated_film + seated_film_down EVAL ships; numpy-bool gate fix"
     },
     {
       "id": "local-talking-heads",
@@ -481,19 +349,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "KlingTeam/LivePortrait fork, Dell A3000 6GB, venv-isolated; hero_portrait 6s test 2026-09-17 (31s render, peak 2148MiB VRAM, mouth motion 6-40x bg, muse SHIP); SETUP-NOTES at Dell ~/tmp/headtest",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "KlingTeam/LivePortrait fork, Dell A3000 6GB, venv-isolated; hero_portrait 6s test 2026-09-17 (31s render, peak 2148MiB VRAM, mouth motion 6-40x bg, muse SHIP); SETUP-NOTES at Dell ~/tmp/headtest"
     },
     {
       "id": "video-forensics-receipt",
@@ -597,21 +453,9 @@
           "run_id": "study-round17"
         }
       ],
-      "reuse_count": 0,
+      "reuse_count": 2,
       "last_eval": "2026-09-18",
-      "lineage": "creative-study/rig/study_run.py; 2026-09-17 round-1: 17 reference clips + 3 own films measured on Dell (ffmpeg scene>0.30/0.50 cuts, ebur128 loudness, 1fps thumbnails -> color/motion, k-means palette, contact sheet); receipts at workspace/default/creative-study/studies/*.json",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "creative-study/rig/study_run.py; 2026-09-17 round-1: 17 reference clips + 3 own films measured on Dell (ffmpeg scene>0.30/0.50 cuts, ebur128 loudness, 1fps thumbnails -> color/motion, k-means palette, contact sheet); receipts at workspace/default/creative-study/studies/*.json"
     },
     {
       "id": "creative-study-loop",
@@ -710,21 +554,9 @@
           "run_id": "study-round17-loop"
         }
       ],
-      "reuse_count": 0,
+      "reuse_count": 2,
       "last_eval": "2026-09-18",
-      "lineage": "workspace/default/creative-study/{README,QUEUE,PLAYBOOK}.md + rig; round-1 2026-09-17 classes I/L/M measured, ours-films compared, targets written receipt-cited",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "workspace/default/creative-study/{README,QUEUE,PLAYBOOK}.md + rig; round-1 2026-09-17 classes I/L/M measured, ours-films compared, targets written receipt-cited"
     },
     {
       "id": "hunyuan3d-mlx-local",
@@ -750,19 +582,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "dgrauet/hunyuan3d-2.1-mlx + PR8 scheduler patch + prep_reference.py (rembg+recenter); hero_front -> textured.glb 2026-09-17 (shape 8-11min, texture 19min, RSS <=8.2GB, extents 0.77/1.99/0.48, 4096 PBR); venv ~/venvs/hunyuan3d-mlx; known: face close-ups collapse (route faces to local-talking-heads)",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "dgrauet/hunyuan3d-2.1-mlx + PR8 scheduler patch + prep_reference.py (rembg+recenter); hero_front -> textured.glb 2026-09-17 (shape 8-11min, texture 19min, RSS <=8.2GB, extents 0.77/1.99/0.48, 4096 PBR); venv ~/venvs/hunyuan3d-mlx; known: face close-ups collapse (route faces to local-talking-heads)"
     },
     {
       "id": "face-in-scene-shot",
@@ -798,19 +618,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "shot_face.html + build/shot-face-3s.mp4 (2026-09-17): LivePortrait frames as a live framed portrait on a study wall; PNG-sequence capture (no video decode in the CDP path); z-gap trap (coplanar planes z-fight); muse SHIP; consumer: fapcoin films",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "shot_face.html + build/shot-face-3s.mp4 (2026-09-17): LivePortrait frames as a live framed portrait on a study wall; PNG-sequence capture (no video decode in the CDP path); z-gap trap (coplanar planes z-fight); muse SHIP; consumer: fapcoin films"
     },
     {
       "id": "preview-server-verify",
@@ -846,19 +654,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "local-preview-port-split-brain (09-17: two servers split one port by address family, stale snapshot answered IPv4) + render --out silent-fail 09-17",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "local-preview-port-split-brain (09-17: two servers split one port by address family, stale snapshot answered IPv4) + render --out silent-fail 09-17"
     },
     {
       "id": "audio-offline-verify",
@@ -884,19 +680,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "sacred-heart yue2 scene-lock 09-17 + beats-lab Audius masters + face-in-scene anullsrc mux",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "sacred-heart yue2 scene-lock 09-17 + beats-lab Audius masters + face-in-scene anullsrc mux"
     },
     {
       "id": "x-media-package",
@@ -922,19 +706,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "hog-crankers X demo 09-14 + fapcoin v4 stage-1 masters + model-compare video pipeline",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "hog-crankers X demo 09-14 + fapcoin v4 stage-1 masters + model-compare video pipeline"
     },
     {
       "id": "receipt-figure-render",
@@ -960,19 +732,7 @@
       ],
       "reuse_count": 0,
       "last_eval": "2026-09-17",
-      "lineage": "OW Lab exhibit pass 09-17 (figures generated from artifacts) + figure-legibility-traps",
-      "retirement": {
-        "armed_at": "2026-09-17",
-        "policy_version": "rcos-retire/1",
-        "decay": {
-          "window": 5,
-          "threshold": null
-        },
-        "neglect": {
-          "n": 20,
-          "threshold": null
-        }
-      }
+      "lineage": "OW Lab exhibit pass 09-17 (figures generated from artifacts) + figure-legibility-traps"
     }
   ]
 }

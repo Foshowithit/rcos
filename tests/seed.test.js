@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const SEED = path.join(__dirname, '..', 'registry', 'capability-registry.json');
+const T = require('../lib/traces');
 
 // Registry-derived assertions: the registry is a living artifact (capabilities
 // are added every RCOS round), so tests assert INVARIANTS plus a seed floor,
@@ -29,10 +30,27 @@ test('registry parses and holds the seed invariants (statuses, lineage, promotio
       const ships = c.evals.filter((e) => e.verdict === 'ship').length;
       assert.ok(ships >= 2, c.id + ' promoted with >= 2 shipped evals (x2-ship gate)');
       assert.ok(c.admitted_after.length >= 2, c.id + ' promoted with >= 2 admitted_after');
+      const taskIds = new Set(c.evals.filter((e) => e.verdict === 'ship').map((e) => e.task_id));
+      assert.ok(taskIds.size >= 2, c.id + ' promoted on 2 DISTINCT ship task ids — same-task repeats do not count');
+      for (const e of c.evals) {
+        assert.ok(typeof e.run_id === 'string' && e.run_id.trim().length > 0, c.id + '/' + e.task_id + ' has a run id — no run id, no admission');
+      }
+      assert.ok(c.retirement, c.id + ' promoted with retirement armed (arm at admission, never later)');
+      assert.equal(c.retirement.policy_version, 'rcos-retire/1', c.id + ' retirement policy version');
     }
   }
 
   const op = reg.capabilities.find((c) => c.id === 'operator-ui-contract-test');
   assert.equal(op.status, 'promoted');
   assert.equal(op.admitted_after.length, 2);
+});
+
+// The hard invariant of the derived-reuse rule: what the registry stores must
+// equal what the trace log says. If this fails, run `bin/rcos sync`.
+test('stored reuse_count equals the trace-derived count for every capability', () => {
+  const reg = JSON.parse(fs.readFileSync(SEED, 'utf8'));
+  const counts = T.deriveReuseCounts(T.loadTraces(path.join(__dirname, '..')));
+  for (const c of reg.capabilities) {
+    assert.equal(c.reuse_count, counts[c.id] || 0, c.id + ' reuse_count is trace-derived, not hand-edited');
+  }
 });

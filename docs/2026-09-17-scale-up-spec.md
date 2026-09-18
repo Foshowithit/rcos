@@ -58,6 +58,9 @@ Pre-declared signals, computed from registry + traces only:
   portfolio-level version).
 - **G4 Reuse-vs-synthesize** — capabilities with `reuse_count == 0` after 60
   days of eligibility go to weekly-sweep review for retirement or merge.
+  (`reuse_count` is trace-derived as of the 09-17 invariant repair — this gate
+  reads the append-only log via the registry cache, and a hand-edit can no
+  longer move it.)
 - **G5 Drift** — a promoted capability whose last 2 traces are fix/blocked
   gets a red-team round before its next reuse (audit's decay warning made
   actionable).

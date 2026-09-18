@@ -32,7 +32,9 @@ Commit the audit result.
 > mine this week's real work across project dirs for behaviors that recurred
 > 3+ times with a stable shape, propose candidates through
 > `/Users/adam26/zcode-rcos/bin/rcos` with lineage (README + EVAL.json per
-> proposal), log reuses for existing capabilities, advance the sweep marker
+> proposal), log reuses for existing capabilities via
+> `bin/rcos reuse-log --id <id> --task <task> --run <run> --verdict ship|fix|blocked`
+> (a reuse is a trace, never a manual counter bump), advance the sweep marker
 > in `runbooks/.sweep-marker`, run `bin/rcos audit`, and commit one batch.
 > Curator proposes only — never evals, never promotes. Verdict = oracle +
 > RECEIPT, never prose. No keys in the repo. No Dell writes. No paid lanes.
@@ -52,15 +54,26 @@ Commit the audit result.
 
 ## Reuse triggers
 
-Log reuses immediately when the real work happens: `bin/rcos reuse --id <id>` from `/Users/adam26/zcode-rcos`, then a git commit.
+Log reuses immediately when the real work happens — a reuse is a **trace**, not
+a counter bump. From `/Users/adam26/zcode-rcos`:
+
+```
+bin/rcos reuse-log --id <id> --task <what the task actually was> \
+  --run <run id or receipt path> --verdict ship|fix|blocked [--context <text>]
+```
+
+`--task` and `--run` are the evidence: the number moves only because a trace
+line exists behind it. Then a git commit. The registry's `reuse_count` is a
+cache of the trace log — `bin/rcos sync` re-derives it and `bin/rcos audit`
+warns if it drifts.
 
 | capability | reuse event | command |
 |---|---|---|
-| `operator-ui-contract-test` | after every real `node scripts/check.js` pre-push run in dsh-operator-ui | `bin/rcos reuse --id operator-ui-contract-test` |
-| `filmstrip-verify` | after every real 6-frame video verification | `bin/rcos reuse --id filmstrip-verify` |
-| `browser-verify-artifacts` | after every real archived browser proof | `bin/rcos reuse --id browser-verify-artifacts` |
-| `muse-image-lane` | after every real lane image delivery | `bin/rcos reuse --id muse-image-lane` |
-| `dell-gpu-dispatch` | after every real Dell render dispatch | `bin/rcos reuse --id dell-gpu-dispatch` |
-| `qr-camo-embed` | after each real QR camo embed use | `bin/rcos reuse --id qr-camo-embed` |
-| `chalk-capture-recipe` | after each real chalk capture use | `bin/rcos reuse --id chalk-capture-recipe` |
-| `hog-qa-suite` | after each real HOG QA suite run | `bin/rcos reuse --id hog-qa-suite` |
+| `operator-ui-contract-test` | after every real `node scripts/check.js` pre-push run in dsh-operator-ui | `bin/rcos reuse-log --id operator-ui-contract-test --task <repo+what was checked> --run <check.js output or commit> --verdict ship` |
+| `filmstrip-verify` | after every real 6-frame video verification | `bin/rcos reuse-log --id filmstrip-verify --task <film+6 frames verified> --run <filmstrip path> --verdict ship` |
+| `browser-verify-artifacts` | after every real archived browser proof | `bin/rcos reuse-log --id browser-verify-artifacts --task <what was verified in-browser> --run <archive path> --verdict ship` |
+| `muse-image-lane` | after every real lane image delivery | `bin/rcos reuse-log --id muse-image-lane --task <prompt/subject> --run <image path> --verdict ship` |
+| `dell-gpu-dispatch` | after every real Dell render dispatch | `bin/rcos reuse-log --id dell-gpu-dispatch --task <render dispatched> --run <Dell job/output path> --verdict ship` |
+| `qr-camo-embed` | after each real QR camo embed use | `bin/rcos reuse-log --id qr-camo-embed --task <target image> --run <output path> --verdict ship` |
+| `chalk-capture-recipe` | after each real chalk capture use | `bin/rcos reuse-log --id chalk-capture-recipe --task <scene captured> --run <capture path> --verdict ship` |
+| `hog-qa-suite` | after each real HOG QA suite run | `bin/rcos reuse-log --id hog-qa-suite --task <suite run> --run <suite output> --verdict ship` |

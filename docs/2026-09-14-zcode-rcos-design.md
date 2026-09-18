@@ -24,7 +24,7 @@ A ports B's **eval-gate conventions** (RECEIPT.json verdicts, EVAL.json gates, x
 | DSH General seat — cognitive control | ZCode sessions (me) |
 | Archon — durable workflow DAGs | **Runbooks** (versioned md/yaml step-plans + acceptance gates) executed by subagents; recurrence via cron automations + idle-time runs; checkpointed by RECEIPT artifacts |
 | chow-eval-gate-v1 | `rcos` CLI gate — deterministic gates first, LLM tiebreak, RECEIPT verdicts |
-| capability registry (Dell) | `~/zcode-rcos/registry/capability-registry.json` — **same schema** (id/name/kind/version/status/admitted_after/evals/reuse_count/last_eval/retire_reason) |
+| capability registry (Dell) | `~/zcode-rcos/registry/capability-registry.json` — **same schema** (id/name/kind/version/status/admitted_after/evals/reuse_count/last_eval/retire_reason/retirement; `reuse_count` is a trace-derived cache, not independent truth) |
 | Single-writer Dell | Mac cell never writes the Dell; Dell stays chow-only. Read-only comparison allowed later |
 
 New `kind` values (schema-compatible — `kind` is a free string): `skill` · `subagent` · `script` · `runbook` · `automation`.
@@ -43,7 +43,7 @@ Home: `~/zcode-rcos/` (own git repo; every registry mutation = a commit = the au
   dashboard.html                      # `rcos render` — deterministic static view, opened for Adam
 ```
 
-- **`rcos` CLI** — `query / propose / eval-submit / promote / retire / audit / render`. Schema-validating; enforces the x2-ship gate mechanically (promotion with <2 SHIP receipts is refused); no keys ever stored.
+- **`rcos` CLI** — `query / propose / eval-submit / promote / retire / reuse-log / sync / audit / render`. Schema-validating; enforces the x2-ship gate mechanically (promotion with <2 SHIP receipts on 2 distinct task ids is refused); no keys ever stored.
 - **ZCode skill `rcos`** (`~/.zcode/skills/rcos/SKILL.md`) — the protocol in my own hands: when to propose, how to eval, how to log reuse.
 - **Subagents (separation of duties — builder ≠ judge, per Adam's doctrine):**
   - `zcode-rcos-curator` — weekly sweep: mine real work (git status across project dirs, ledgers, memory diff) for 3+ recurrences → propose candidates; runs decay audit.
@@ -57,10 +57,16 @@ Home: `~/zcode-rcos/` (own git repo; every registry mutation = a commit = the au
 real work happens (any face)
   → curator spots a 3+ recurrence  →  candidate registered (kind, impl pointer, EVAL.json)
   → judge runs evals               →  RECEIPT verdicts: ship | fix | blocked   (never prose)
-  → 2nd SHIP with lineage          →  PROMOTED (admitted_after recorded)
-  → promoted caps get reused (logged via CLI; reuse_count++)
+  → 2nd SHIP, distinct task id     →  PROMOTED (admitted_after recorded, retirement armed)
+  → promoted caps get reused (each reuse = a trace line via reuse-log;
+    reuse_count is DERIVED from the append-only trace log, never hand-incremented)
   → rolling evals decay            →  RETIRED (reason recorded)
 ```
+
+**Amended 2026-09-17 (invariant repair):** `reuse_count` was a mutable counter
+in the first build; the 09-17 repair made it a cache of the trace log with no
+manual increment path (see the 2026-09-17 evidence bundle), and promotion now
+requires 2 distinct task ids and arms retirement at admission.
 
 Worked example: Adam asks in ZCode Desktop for a weekly Shop-OS demo video. I register candidate `shopos-weekly-demo` (kind=automation, impl=CronCreate id + runbook + EVAL gates incl. Dell-side render receipt). Weekly runs emit RECEIPTs. Second SHIP → promoted, visible on GooeyPi lanes and `dashboard.html`. If quality decays two evals running → retired with reason.
 
@@ -72,6 +78,8 @@ Worked example: Adam asks in ZCode Desktop for a weekly Shop-OS demo video. I re
 4. **Oracle hygiene** — oracles live outside task worktrees.
 5. **Honest seeding** — proven past capabilities enter as `candidate` unless backed by ≥2 real past ship receipts; never retro-claim `promoted`.
 6. **No keys in the registry. No Dell writes. No paid lanes** (MAKE-DONT-BUY). No deterministic LLM-routing — the CLI is tooling; judgment stays with models.
+7. **Derived over editable** (added 09-17): anything the evidence can compute, the registry must not store as independent truth. `reuse_count` is derived from the append-only trace log; backfilled traces never count; `sync` repairs drift and refuses to zero an unverifiable cache.
+8. **Retirement armed at admission** (added 09-17): promotion without retirement is hoarding. The armed policy (`rcos-retire/1`) carries `null` thresholds until pilot data calibrates them — an invented threshold is a check that cannot fail.
 
 ## 7. Day-one seeding (honest, from ZCode's proven work)
 

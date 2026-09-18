@@ -1,0 +1,42 @@
+# npm test — 2026-09-17, post-repair (HEAD 079f9e6 + working tree)
+
+npm notice run zcode-rcos@0.1.0 test
+npm notice run node --test tests/*.test.js
+✔ every registry capability has a dir with README.md and a matching EVAL.json (12.017083ms)
+✔ query lists seed candidates; --json parses (61.595792ms)
+✔ propose -> eval-submit x2 -> promote works end to end (229.281292ms)
+✔ usage and domain errors use exit codes 1 and 2 (109.226292ms)
+✔ audit exits 0 on the seed; render writes a deterministic dashboard (82.73425ms)
+✔ propose -> eval x2 -> promote happy path (3.09875ms)
+✔ propose rejects duplicates and bad kinds; eval rejects bad verdicts and unknown ids (0.522041ms)
+✔ retire requires a reason; reuse has no manual increment path (0.842166ms)
+✔ promotion refuses same-task repeats and a blank run id (0.512542ms)
+✔ promotion arms retirement; the armed policy carries no invented thresholds (0.37925ms)
+✔ audit flags promoted-without-gate, decay, and staleness (0.5775ms)
+✔ audit errors on promoted-without-retirement and warns on a stale reuse cache (0.465625ms)
+✔ query filters by status and kind (0.327042ms)
+✔ dashboard is deterministic and summarizes the registry (1.943709ms)
+✔ promoted capabilities sort first with eval dots (0.265625ms)
+✔ registry parses and holds the seed invariants (statuses, lineage, promotion gate) (1.43575ms)
+✔ stored reuse_count equals the trace-derived count for every capability (1.86325ms)
+✔ appendTrace writes valid JSONL; loadTraces round-trips (4.571875ms)
+✔ appendTrace validates verdict/source and defaults nulls honestly (1.534459ms)
+✔ traceGaps: every seed eval missing before backfill, none after (75.237833ms)
+✔ cli eval-submit appends one trace; --context/--source/--seconds recorded; bad source exits 2 (100.749125ms)
+✔ cli traces reader filters and reports; audit warns on trace gaps until backfilled (143.618458ms)
+✔ deriveReuseCounts counts only live source=reuse lines (0.50725ms)
+✔ cli reuse-log moves the number only by appending evidence; candidates are refused (90.309291ms)
+✔ cli sync repairs a hand-edited cache, refuses to zero an unverifiable one (121.286084ms)
+✔ seed registry validates clean (0.809208ms)
+✔ rejects bad id, kind, version, retired-without-reason, duplicate ids (0.147042ms)
+✔ shipCount counts ship verdicts only (0.070167ms)
+✔ retirement is required for promoted caps and validated when present (0.188292ms)
+✔ isValidDate accepts YYYY-MM-DD real dates only (0.065708ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 587.020709

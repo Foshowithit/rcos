@@ -1,0 +1,9 @@
+# bin/rcos audit — 2026-09-17, post-repair
+
+audit clean
+exit=0
+
+# bin/rcos sync — 2026-09-17, post-repair
+
+reuse cache already matches traces
+exit=0
