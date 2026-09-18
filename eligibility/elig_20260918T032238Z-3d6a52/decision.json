@@ -1,0 +1,52 @@
+{
+  "schema": "rcos-eligibility/1",
+  "decision_id": "elig_20260918T032238Z-3d6a52",
+  "scope": "execute",
+  "capability_id": "filmstrip-verify",
+  "capability_version": "1.0.0",
+  "caller_context": {
+    "purpose": "normal",
+    "explicit_capability_id": "filmstrip-verify",
+    "scope": "execute",
+    "forensic_reason": null,
+    "allow_candidate": false,
+    "allow_retired": false,
+    "require_executed_provenance": true,
+    "require_current_ship": true
+  },
+  "observed_state": {
+    "status": "promoted",
+    "executable": false,
+    "adapter": {
+      "declared": false,
+      "type": null,
+      "type_supported": false,
+      "declaration_errors": [],
+      "entrypoint": null,
+      "entrypoint_present": false,
+      "entrypoint_executable": false,
+      "contract_declared": false,
+      "contract_usable": false,
+      "contract_errors": []
+    },
+    "provenance": "asserted",
+    "latest_eval_verdict": null,
+    "latest_eval_at": null,
+    "eval_fresh": "unknown",
+    "evals_total": 2,
+    "evals_executed": 0
+  },
+  "eligible": false,
+  "reasons": [
+    "not_executable",
+    "provenance_asserted",
+    "no_ship_eval"
+  ],
+  "decided_at": "2026-09-18T03:22:38.918Z",
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T03:22:38.919Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "986ec9c5cf33d7b2ddc38b8640f55aa68d7fdffbc7ffbdc983d24fba56b46af5"
+  }
+}
