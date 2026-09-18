@@ -1,0 +1,2 @@
+checker sha256 29eb2d8f6f48677a  capabilities/audio-offline-verify/adapter/av_check.py
+  chalk1-corpus-check: exit 0 (passed), rms -35.104884, 97ms

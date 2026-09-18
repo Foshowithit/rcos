@@ -1,0 +1,34 @@
+{
+  "schema": "rcos-run/1",
+  "eval_id": "audio-offline-verify-container-sounds-v1",
+  "capability_id": "audio-offline-verify",
+  "eval_sha256": "c2f5afb225dffc02bcce1d0e2e6717e31466ec971bbd78b212844544796be296",
+  "adapter_argv": null,
+  "fixtures": [
+    {
+      "name": "chalk-eval2.mp4",
+      "sha256": "c43aae245a1dc031c76a826e2053195a0bc61b998559d5d3a02c4a76a83e39bd",
+      "bytes": 88081
+    },
+    {
+      "name": "chalk-eval1.mp4",
+      "sha256": "905b54ff4e88ebbe26d49b5e83869fd04f9bf7cca72ff8083d01beab653c7b2e",
+      "bytes": 108935
+    },
+    {
+      "name": "shot-face-v2-r3.mp4",
+      "sha256": "596896b57a00f07ec6bb6324a16ff3706d81e6400f047b198af647314b296c84",
+      "bytes": 376623
+    },
+    {
+      "name": "rcos-dispatch-eval-2-out.mp4",
+      "sha256": "a73ae94906f44192414348503fe2452abecd9c9ce2e239db5c80a279ad1d1dfd",
+      "bytes": 10165
+    }
+  ],
+  "created_at": "2026-09-18T06:37:27.011Z",
+  "capability_input": {
+    "path": "capability-input.json",
+    "sha256": "1daf1706deae25c356b69f4af63b86a8942b3a610c0a5ef6a70f38769f914cd1"
+  }
+}

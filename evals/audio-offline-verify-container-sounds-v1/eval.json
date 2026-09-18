@@ -1,0 +1,110 @@
+{
+  "schema": "rcos-eval/2",
+  "eval_id": "audio-offline-verify-container-sounds-v1",
+  "capability_id": "audio-offline-verify",
+  "description": "The container/codec/duration checks and the must-sound floor can all fail, on the same four artifacts the entry's historical run_ids name: two voiced chalk muxes pass with must-sound on, a silent-by-design mux passes report-only and trips the floor when the same bytes are ASSERTED to sound, an audio-free dispatch mux passes when absence is declared and produces an honest FAIL when sound is claimed, and a true file placed outside its authoring envelope is caught by duration alone.",
+  "notes": [
+    "rcos-eval/2: this package declares NO adapter of its own. It names the registered",
+    "capability and the input document, and the run reaches the capability through the",
+    "invocation kernel — `rcos run audio-offline-verify --input ...` takes the identical",
+    "path. The thing being evaluated is the thing reuse will call.",
+    "",
+    "This replaces NOTHING. The two eval entries already on the registry entry",
+    " ('chalk-vo-and-silent-mux' and the chalk1+dispatch one) are historical assertions and",
+    "stay byte-for-byte as written; this receipt is a new record that links backward by",
+    "exercising the SAME checker (capabilities/audio-offline-verify/adapter/av_check.py,",
+    "sha256 29eb2d8f…, pinned in gates/check.js) on the SAME four fixture files the",
+    "historical logs name, whose sha256 are pinned in the artifact_identity_pinned gate.",
+    "",
+    "Every probe reproduces a line from a committed historical log rather than inventing",
+    "an expectation: evidence/audio-offline-verify/{eval-1,eval-2,eval-3-chalk1,eval-3-dispatch}.log",
+    "and attack/{mute-caught,no-audio-stream}.log. Two probes are authored controls with no",
+    "historical counterpart (chalk2_wrong_envelope, dispatch_absent_expect_none): the first",
+    "proves the duration gate bites on bytes that otherwise pass, the second exercises the",
+    "`--expect-audio none` branch that EVAL.json declares but the historical log never ran.",
+    "",
+    "The RMS pins carry a 0.5 dB tolerance. The historical values (-35.113250 and",
+    "-35.104884 dBFS) are what astats reported on this box's ffmpeg; a different ffmpeg",
+    "build may report a slightly different RMS for the same bytes. Container facts",
+    "(duration, codec, dimensions, sample rate, channel count) are exact pins — they are",
+    "metadata, not measurements.",
+    "",
+    "Recorded as-is, not corrected: the capability README's contract paragraph names the",
+    "flags `--min-s, --max-s` while the frozen checker implements `--min-duration,",
+    "--max-duration`. The eval passes the flags the SCRIPT accepts; the documentation",
+    "mismatch is a fact about the artifact, not something this package rewrites."
+  ],
+  "capability_mode": "eval",
+  "capability_input": {
+    "probes": [
+      {
+        "name": "chalk2_voiced",
+        "file": "{work}/chalk-eval2.mp4",
+        "expect_video": "h264",
+        "expect_audio": "aac",
+        "min_duration": 2.5,
+        "max_duration": 3.5,
+        "audio_must_sound": true
+      },
+      {
+        "name": "chalk1_voiced",
+        "file": "{work}/chalk-eval1.mp4",
+        "expect_video": "h264",
+        "expect_audio": "aac",
+        "min_duration": 3.5,
+        "max_duration": 4.5,
+        "audio_must_sound": true
+      },
+      {
+        "name": "chalk2_wrong_envelope",
+        "file": "{work}/chalk-eval2.mp4",
+        "expect_video": "h264",
+        "expect_audio": "aac",
+        "min_duration": 3.5,
+        "max_duration": 4.5
+      },
+      {
+        "name": "face_silent_report",
+        "file": "{work}/shot-face-v2-r3.mp4",
+        "expect_video": "h264",
+        "expect_audio": "aac"
+      },
+      {
+        "name": "face_silent_must_sound",
+        "file": "{work}/shot-face-v2-r3.mp4",
+        "expect_video": "h264",
+        "expect_audio": "aac",
+        "audio_must_sound": true
+      },
+      {
+        "name": "dispatch_absent_expect_none",
+        "file": "{work}/rcos-dispatch-eval-2-out.mp4",
+        "expect_video": "h264",
+        "expect_audio": "none",
+        "min_duration": 3.5,
+        "max_duration": 4.5
+      },
+      {
+        "name": "dispatch_absent_must_sound",
+        "file": "{work}/rcos-dispatch-eval-2-out.mp4",
+        "expect_video": "h264",
+        "audio_must_sound": true
+      }
+    ]
+  },
+  "fixtures": [
+    "chalk-eval2.mp4",
+    "chalk-eval1.mp4",
+    "shot-face-v2-r3.mp4",
+    "rcos-dispatch-eval-2-out.mp4"
+  ],
+  "gates": [
+    { "id": "voiced_passes", "type": "deterministic", "argv": ["node", "./gates/check.js", "voiced_passes"], "required": true },
+    { "id": "envelope_gate_bites", "type": "deterministic", "argv": ["node", "./gates/check.js", "envelope_gate_bites"], "required": true },
+    { "id": "silence_reported_not_asserted", "type": "deterministic", "argv": ["node", "./gates/check.js", "silence_reported_not_asserted"], "required": true },
+    { "id": "mute_caught", "type": "deterministic", "argv": ["node", "./gates/check.js", "mute_caught"], "required": true },
+    { "id": "absence_asserted_not_assumed", "type": "deterministic", "argv": ["node", "./gates/check.js", "absence_asserted_not_assumed"], "required": true },
+    { "id": "checker_revision_pinned", "type": "deterministic", "argv": ["node", "./gates/check.js", "checker_revision_pinned"], "required": true },
+    { "id": "artifact_identity_pinned", "type": "deterministic", "argv": ["node", "./gates/check.js", "artifact_identity_pinned"], "required": true }
+  ]
+}

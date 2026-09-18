@@ -1,0 +1,12 @@
+[
+  "/Users/adam26/zcode-rcos/runs/20260918T063737Z-a36cbc/work/chalk-eval2.mp4",
+  "--expect-video",
+  "h264",
+  "--expect-audio",
+  "aac",
+  "--min-duration",
+  "2.5",
+  "--max-duration",
+  "3.5",
+  "--audio-must-sound"
+]

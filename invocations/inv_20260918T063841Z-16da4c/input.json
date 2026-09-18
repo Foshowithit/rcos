@@ -1,0 +1,13 @@
+{
+  "probes": [
+    {
+      "name": "chalk1-corpus-check",
+      "file": "/Users/adam26/zcode-rcos/evidence/chalk-capture-recipe/eval-1/chalk-eval1.mp4",
+      "expect_video": "h264",
+      "expect_audio": "aac",
+      "min_duration": 3.5,
+      "max_duration": 4.5,
+      "audio_must_sound": true
+    }
+  ]
+}

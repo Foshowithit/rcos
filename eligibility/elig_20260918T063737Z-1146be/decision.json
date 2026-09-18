@@ -1,0 +1,48 @@
+{
+  "schema": "rcos-eligibility/1",
+  "decision_id": "elig_20260918T063737Z-1146be",
+  "scope": "execute",
+  "capability_id": "audio-offline-verify",
+  "capability_version": "0.1.0",
+  "caller_context": {
+    "purpose": "eval",
+    "explicit_capability_id": "audio-offline-verify",
+    "scope": "execute",
+    "forensic_reason": null,
+    "allow_candidate": true,
+    "allow_retired": false,
+    "require_executed_provenance": false,
+    "require_current_ship": false
+  },
+  "observed_state": {
+    "status": "promoted",
+    "executable": true,
+    "adapter": {
+      "declared": true,
+      "type": "command",
+      "type_supported": true,
+      "declaration_errors": [],
+      "entrypoint": "capabilities/audio-offline-verify/adapter/run.js",
+      "entrypoint_present": true,
+      "entrypoint_executable": true,
+      "contract_declared": true,
+      "contract_usable": true,
+      "contract_errors": []
+    },
+    "provenance": "asserted",
+    "latest_eval_verdict": null,
+    "latest_eval_at": null,
+    "eval_fresh": "unknown",
+    "evals_total": 2,
+    "evals_executed": 0
+  },
+  "eligible": true,
+  "reasons": [],
+  "decided_at": "2026-09-18T06:37:37.477Z",
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T06:37:37.483Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "2f7d2e3fe870113bd0b31978dcc08903153ddf8d0c3ea85369f4b4f4f9dd72b3"
+  }
+}

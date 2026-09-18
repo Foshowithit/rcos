@@ -1,0 +1,6 @@
+file /Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/chalk-eval2.mp4
+container duration 3.000s  streams: h264, aac
+video h264 960x540
+audio aac 44100Hz 1ch
+audio RMS -35.113250 dBFS
+AV_CHECK_PASS

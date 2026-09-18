@@ -1,0 +1,184 @@
+{
+  "schema": "rcos-invocation/1",
+  "invocation_id": "inv_20260918T063737Z-a993ef",
+  "capability_id": "audio-offline-verify",
+  "capability_version": "0.1.0",
+  "registry_status": "promoted",
+  "mode": "eval",
+  "status": "completed",
+  "status_basis": "adapter exited 0 and its output satisfied the declared contract",
+  "started_at": "2026-09-18T06:37:37.484Z",
+  "completed_at": "2026-09-18T06:37:38.278Z",
+  "duration_ms": 794,
+  "input": {
+    "path": "input.json",
+    "sha256": "8ba9d899416b87c8cd91c12537515cbeaeec6fa64cc89672377e51648618b9a1",
+    "bytes": 1778
+  },
+  "output": {
+    "path": "output.json",
+    "sha256": "aa33253fea2180be21c4a25104d57a51d97ac94ce88ce8544d952a81e499d664",
+    "bytes": 8340
+  },
+  "stdout": {
+    "path": "stdout.txt",
+    "sha256": "49982244b0168d9c8aed4bc782a555ae4d32ea37d5e78ca8a40c02a50e11270b",
+    "bytes": 497
+  },
+  "stderr": {
+    "path": "stderr.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "evidence": [
+    {
+      "path": "evidence/checker.sha256",
+      "sha256": "157c084745fee9c0c3cd51c607284c8f8fa33fc166046930970090bcb2afc88f",
+      "bytes": 120
+    },
+    {
+      "path": "evidence/probe-chalk1_voiced.argv.json",
+      "sha256": "4bdb90eca4463c27fd6c52b50b9c06086a21097b98a129a4a824d8ece6fb9794",
+      "bytes": 224
+    },
+    {
+      "path": "evidence/probe-chalk1_voiced.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-chalk1_voiced.stdout.txt",
+      "sha256": "c3a80d6882b917e4f8e1d9a0a25e7c549ea63770d48cea766770a9d1fcab58a4",
+      "bytes": 207
+    },
+    {
+      "path": "evidence/probe-chalk2_voiced.argv.json",
+      "sha256": "3ba255d16ef3e032e80413159a60d9e56001e4b5f49bad5b6323ad5bf308499e",
+      "bytes": 224
+    },
+    {
+      "path": "evidence/probe-chalk2_voiced.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-chalk2_voiced.stdout.txt",
+      "sha256": "22240a9d87d82867a81cdbcc404184b3e9c0266cb3c19d5d9a003c3d69b1ecd3",
+      "bytes": 207
+    },
+    {
+      "path": "evidence/probe-chalk2_wrong_envelope.argv.json",
+      "sha256": "badaec5e34fc4e015bcb2a0a44682bc091fdd36b920a1a8d31a0d9c6b581b1d9",
+      "bytes": 200
+    },
+    {
+      "path": "evidence/probe-chalk2_wrong_envelope.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-chalk2_wrong_envelope.stdout.txt",
+      "sha256": "00401372a1f5d3dab5ffda07a52f3af77024234fba5ddc219f72f3937f117e55",
+      "bytes": 232
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_expect_none.argv.json",
+      "sha256": "a76866e0a68f4852fc3bc55dbf89c45424e1ef81a9a3de5aa9663635c0a0eb7f",
+      "bytes": 214
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_expect_none.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_expect_none.stdout.txt",
+      "sha256": "61f0c33aeaed5c7841d286ea02d412622755d58e09efcce907406ae417985b7f",
+      "bytes": 168
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_must_sound.argv.json",
+      "sha256": "76b6fb4cb444d16e3a367c23e6287a6385572644c703bda3dd4b5895a43318e6",
+      "bytes": 150
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_must_sound.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-dispatch_absent_must_sound.stdout.txt",
+      "sha256": "f292dfda3c3adda8199acb1914d5eaa0651c2ad0777e61506dc34086bd7fd955",
+      "bytes": 190
+    },
+    {
+      "path": "evidence/probe-face_silent_must_sound.argv.json",
+      "sha256": "6711ce123c806ea61250547637df5dd340911be2d134f4d45d7bd7e1179f8d8d",
+      "bytes": 170
+    },
+    {
+      "path": "evidence/probe-face_silent_must_sound.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-face_silent_must_sound.stdout.txt",
+      "sha256": "1cc185deac3a2932fb9feb8ba02a55b5563b3bf940e59e41e2b4492752c06623",
+      "bytes": 258
+    },
+    {
+      "path": "evidence/probe-face_silent_report.argv.json",
+      "sha256": "57a457f0ae9a615bcfb7d43337d07390ada79260e9199be6ef6fb014de853ce7",
+      "bytes": 146
+    },
+    {
+      "path": "evidence/probe-face_silent_report.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-face_silent_report.stdout.txt",
+      "sha256": "9ca3e49bbf626e068cea26bec0a811db1f23a521f6fa43b31fadd4ef51204ebe",
+      "bytes": 207
+    }
+  ],
+  "adapter": {
+    "type": "command",
+    "entrypoint": "capabilities/audio-offline-verify/adapter/run.js",
+    "timeout_seconds": 120,
+    "exit_code": 0,
+    "signal": null,
+    "error": null
+  },
+  "contract": {
+    "path": "capabilities/audio-offline-verify/contract.json",
+    "declaration_errors": [],
+    "contract_errors": [],
+    "input": {
+      "status": "pass",
+      "errors": []
+    },
+    "output": {
+      "status": "pass",
+      "errors": []
+    }
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T06:37:38.278Z",
+  "eligibility_decision_id": "elig_20260918T063737Z-1146be",
+  "eligibility_sha256": "a9d3a53921e0c42e464ed096b8873a2e95c52382e161dec851c9d5f119d28f70",
+  "eligibility": {
+    "scope": "execute",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "path": "eligibility/elig_20260918T063737Z-1146be/decision.json"
+  },
+  "selection_id": null,
+  "selection_sha256": null,
+  "selection": null,
+  "integrity": {
+    "algo": "sha256",
+    "value": "9e5cf5e47895cf4423a38033255caadc09a9361743171a4a38784e33e78a8164"
+  }
+}

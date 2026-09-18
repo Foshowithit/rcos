@@ -1022,10 +1022,16 @@
           "task_id": "voiced receipt on a second artifact (chalk-eval1) with must-sound on; plus honest FAIL receipt: dispatch video has no audio stream",
           "verdict": "ship",
           "run_id": "av-chalk1-dispatchfail"
+        },
+        {
+          "task_id": "priority1-executed-grounding-audio-offline-verify",
+          "verdict": "ship",
+          "run_id": "20260918T063810Z-784f98",
+          "provenance": "executed"
         }
       ],
       "reuse_count": 0,
-      "last_eval": "2026-09-17",
+      "last_eval": "2026-09-18",
       "lineage": "sacred-heart yue2 scene-lock 09-17 + beats-lab Audius masters + face-in-scene anullsrc mux",
       "retirement": {
         "armed_at": "2026-09-17",
@@ -1038,6 +1044,12 @@
           "n": 20,
           "threshold": null
         }
+      },
+      "adapter": {
+        "type": "command",
+        "entrypoint": "capabilities/audio-offline-verify/adapter/run.js",
+        "timeout_seconds": 120,
+        "contract": "capabilities/audio-offline-verify/contract.json"
       }
     },
     {

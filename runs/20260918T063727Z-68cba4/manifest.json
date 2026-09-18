@@ -1,0 +1,22 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T063727Z-68cba4",
+  "eval_id": "audio-offline-verify-container-sounds-v1",
+  "capability_id": "audio-offline-verify",
+  "started_at": "2026-09-18T06:37:27.011Z",
+  "finished_at": "2026-09-18T06:37:27.022Z",
+  "duration_ms": 11,
+  "invocation": null,
+  "eligibility": {
+    "decision_id": "elig_20260918T063727Z-d4c12f",
+    "sha256": "f54aeb23f4e8e1e0c7457e04a92b3b4e2d8a832c20bc1d756746fcebe9d1e9cd",
+    "purpose": "eval",
+    "eligible": false,
+    "reasons": [
+      "not_executable"
+    ],
+    "dir": "eligibility/elig_20260918T063727Z-d4c12f"
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "node": "v24.15.0"
+}

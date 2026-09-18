@@ -1,0 +1,49 @@
+{
+  "schema": "audio-offline-verify-observation/1",
+  "checker": {
+    "path": "capabilities/audio-offline-verify/adapter/av_check.py",
+    "sha256": "29eb2d8f6f48677ad15d6123d23ae5fedeef68b04aa21b7ea0e5f88a6a8b7b6e",
+    "documented_exit_codes": [
+      0,
+      3,
+      4
+    ]
+  },
+  "probes": [
+    {
+      "name": "chalk1-corpus-check",
+      "file": "/Users/adam26/zcode-rcos/evidence/chalk-capture-recipe/eval-1/chalk-eval1.mp4",
+      "argv": [
+        "/Users/adam26/zcode-rcos/evidence/chalk-capture-recipe/eval-1/chalk-eval1.mp4",
+        "--expect-video",
+        "h264",
+        "--expect-audio",
+        "aac",
+        "--min-duration",
+        "3.5",
+        "--max-duration",
+        "4.5",
+        "--audio-must-sound"
+      ],
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 97,
+      "observed": {
+        "container_duration_s": 4,
+        "video_codec": "h264",
+        "video_width": 960,
+        "video_height": 540,
+        "audio_codec": "aac",
+        "audio_sample_rate": "44100",
+        "audio_channels": "1",
+        "rms_token": "-35.104884",
+        "rms_dbfs": -35.104884,
+        "fail_lines": [],
+        "pass_marker": true
+      },
+      "stdout": "file /Users/adam26/zcode-rcos/evidence/chalk-capture-recipe/eval-1/chalk-eval1.mp4\ncontainer duration 4.000s  streams: h264, aac\nvideo h264 960x540\naudio aac 44100Hz 1ch\naudio RMS -35.104884 dBFS\nAV_CHECK_PASS\n",
+      "stderr": ""
+    }
+  ]
+}

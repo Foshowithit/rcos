@@ -1,0 +1,6 @@
+[
+  "/Users/adam26/zcode-rcos/runs/20260918T063737Z-a36cbc/work/rcos-dispatch-eval-2-out.mp4",
+  "--expect-video",
+  "h264",
+  "--audio-must-sound"
+]

@@ -1,0 +1,125 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T063727Z-68cba4",
+  "gates": [
+    {
+      "id": "voiced_passes",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "voiced_passes"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "envelope_gate_bites",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "envelope_gate_bites"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "silence_reported_not_asserted",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "silence_reported_not_asserted"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "mute_caught",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "mute_caught"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "absence_asserted_not_assumed",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "absence_asserted_not_assumed"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "checker_revision_pinned",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "checker_revision_pinned"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "artifact_identity_pinned"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    }
+  ]
+}

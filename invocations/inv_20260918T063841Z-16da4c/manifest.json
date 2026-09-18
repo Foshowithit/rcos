@@ -1,0 +1,94 @@
+{
+  "schema": "rcos-invocation/1",
+  "invocation_id": "inv_20260918T063841Z-16da4c",
+  "capability_id": "audio-offline-verify",
+  "capability_version": "0.1.0",
+  "registry_status": "promoted",
+  "mode": "normal",
+  "status": "completed",
+  "status_basis": "adapter exited 0 and its output satisfied the declared contract",
+  "started_at": "2026-09-18T06:38:41.599Z",
+  "completed_at": "2026-09-18T06:38:41.728Z",
+  "duration_ms": 129,
+  "input": {
+    "path": "input.json",
+    "sha256": "aa3568cd3fa0886d46ad309d790d2604b98c3fae40bac64b6c411c78276411d4",
+    "bytes": 310
+  },
+  "output": {
+    "path": "output.json",
+    "sha256": "22d38843a131a777624fe22ef14b490e7bbebee7266e75e1feab6b7f2cf0e163",
+    "bytes": 1483
+  },
+  "stdout": {
+    "path": "stdout.txt",
+    "sha256": "7cfe9ad348a2fbc39d9adf5bf9787baebee72668e0314f53f05cd7264aa8c948",
+    "bytes": 148
+  },
+  "stderr": {
+    "path": "stderr.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "evidence": [
+    {
+      "path": "evidence/checker.sha256",
+      "sha256": "157c084745fee9c0c3cd51c607284c8f8fa33fc166046930970090bcb2afc88f",
+      "bytes": 120
+    },
+    {
+      "path": "evidence/probe-chalk1-corpus-check.argv.json",
+      "sha256": "93b4fe3f682a16d1ec046906e70c5617527d8a546b5125d4eabed34f5e57a351",
+      "bytes": 227
+    },
+    {
+      "path": "evidence/probe-chalk1-corpus-check.stderr.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/probe-chalk1-corpus-check.stdout.txt",
+      "sha256": "b118b1d9b1a56d8d7cd1240338e50108382bc7018643c9cac90da110aa9cded5",
+      "bytes": 210
+    }
+  ],
+  "adapter": {
+    "type": "command",
+    "entrypoint": "capabilities/audio-offline-verify/adapter/run.js",
+    "timeout_seconds": 120,
+    "exit_code": 0,
+    "signal": null,
+    "error": null
+  },
+  "contract": {
+    "path": "capabilities/audio-offline-verify/contract.json",
+    "declaration_errors": [],
+    "contract_errors": [],
+    "input": {
+      "status": "pass",
+      "errors": []
+    },
+    "output": {
+      "status": "pass",
+      "errors": []
+    }
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "created_at": "2026-09-18T06:38:41.728Z",
+  "eligibility_decision_id": "elig_20260918T063841Z-7ee8ae",
+  "eligibility_sha256": "a3eef1dd0f1ce5d0fc73510f0def5d5cec8abafa0baef95cfded1660821d9b19",
+  "eligibility": {
+    "scope": "execute",
+    "purpose": "normal",
+    "eligible": true,
+    "reasons": [],
+    "path": "eligibility/elig_20260918T063841Z-7ee8ae/decision.json"
+  },
+  "selection_id": null,
+  "selection_sha256": null,
+  "selection": null,
+  "integrity": {
+    "algo": "sha256",
+    "value": "40815895eb26c9cbf1e56d5b55cfbf753da4506a0a76fbdcb81b83f0f89e9d5c"
+  }
+}

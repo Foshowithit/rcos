@@ -1,0 +1,29 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T063810Z-784f98",
+  "eval_id": "audio-offline-verify-container-sounds-v1",
+  "capability_id": "audio-offline-verify",
+  "started_at": "2026-09-18T06:38:10.092Z",
+  "finished_at": "2026-09-18T06:38:10.875Z",
+  "duration_ms": 783,
+  "invocation": {
+    "invocation_id": "inv_20260918T063810Z-3c435d",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260918T063810Z-3c435d",
+    "manifest_sha256": "d482c57ad6934f8c43126a9bf7794b7c6b52aea162d6cf550c83c3b87d7cfb61",
+    "output_sha256": "9f07d4ab2e1440564375d6d0cdeec8bd64a7e791a73691c32a689f1b450bcca8",
+    "eligibility_decision_id": "elig_20260918T063810Z-100869",
+    "eligibility_sha256": "30851f2e150d89505d36171d48f647369f013a51a5482140c65014a1b47b5c25"
+  },
+  "eligibility": {
+    "decision_id": "elig_20260918T063810Z-100869",
+    "sha256": "30851f2e150d89505d36171d48f647369f013a51a5482140c65014a1b47b5c25",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "dir": "eligibility/elig_20260918T063810Z-100869"
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "node": "v24.15.0"
+}

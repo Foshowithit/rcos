@@ -1,0 +1,12 @@
+[
+  "/Users/adam26/zcode-rcos/evidence/chalk-capture-recipe/eval-1/chalk-eval1.mp4",
+  "--expect-video",
+  "h264",
+  "--expect-audio",
+  "aac",
+  "--min-duration",
+  "3.5",
+  "--max-duration",
+  "4.5",
+  "--audio-must-sound"
+]

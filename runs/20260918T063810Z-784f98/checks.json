@@ -1,0 +1,118 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T063810Z-784f98",
+  "gates": [
+    {
+      "id": "voiced_passes",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "voiced_passes"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS voiced_passes: chalk-eval2 -35.11325 dBFS / chalk-eval1 -35.104884 dBFS, both must-sound, both AV_CHECK_PASS\n",
+      "stderr": "",
+      "duration_ms": 28
+    },
+    {
+      "id": "envelope_gate_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "envelope_gate_bites"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS envelope_gate_bites: exit 3 on DURATION 3.000 outside [3.5, 4.5]; the identical bytes exit 0 inside the envelope\n",
+      "stderr": "",
+      "duration_ms": 26
+    },
+    {
+      "id": "silence_reported_not_asserted",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "silence_reported_not_asserted"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS silence_reported_not_asserted: exit 0 on a silent file with RMS -inf reported and not asserted (must-sound absent from argv)\n",
+      "stderr": "",
+      "duration_ms": 27
+    },
+    {
+      "id": "mute_caught",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "mute_caught"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS mute_caught: exit 3 with \"MUST_SOUND but RMS None dBFS below -60 floor (silent track)\" while the identical bytes exit 0 report-only: the assertion, not the file, caught it\n",
+      "stderr": "",
+      "duration_ms": 27
+    },
+    {
+      "id": "absence_asserted_not_assumed",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "absence_asserted_not_assumed"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS absence_asserted_not_assumed: declared absence passes (no audio stream, no RMS line); claimed sound from the same bytes fails \"MUST_SOUND but no audio stream\"\n",
+      "stderr": "",
+      "duration_ms": 28
+    },
+    {
+      "id": "checker_revision_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "checker_revision_pinned"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS checker_revision_pinned: revision 29eb2d8f6f48677a… at capabilities/audio-offline-verify/adapter/av_check.py, exit codes [0,3,4]\n",
+      "stderr": "",
+      "duration_ms": 27
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos/evals/audio-offline-verify-container-sounds-v1/gates/check.js",
+        "artifact_identity_pinned"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "PASS artifact_identity_pinned: 4 fixtures pinned to their historical sha256 in work/, evidence/inputs/ and the probe argv (7 probes)\n",
+      "stderr": "",
+      "duration_ms": 29
+    }
+  ]
+}

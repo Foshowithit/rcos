@@ -1,0 +1,248 @@
+{
+  "schema": "audio-offline-verify-observation/1",
+  "checker": {
+    "path": "capabilities/audio-offline-verify/adapter/av_check.py",
+    "sha256": "29eb2d8f6f48677ad15d6123d23ae5fedeef68b04aa21b7ea0e5f88a6a8b7b6e",
+    "documented_exit_codes": [
+      0,
+      3,
+      4
+    ]
+  },
+  "probes": [
+    {
+      "name": "chalk2_voiced",
+      "file": "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/chalk-eval2.mp4",
+      "argv": [
+        "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/chalk-eval2.mp4",
+        "--expect-video",
+        "h264",
+        "--expect-audio",
+        "aac",
+        "--min-duration",
+        "2.5",
+        "--max-duration",
+        "3.5",
+        "--audio-must-sound"
+      ],
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 97,
+      "observed": {
+        "container_duration_s": 3,
+        "video_codec": "h264",
+        "video_width": 960,
+        "video_height": 540,
+        "audio_codec": "aac",
+        "audio_sample_rate": "44100",
+        "audio_channels": "1",
+        "rms_token": "-35.113250",
+        "rms_dbfs": -35.11325,
+        "fail_lines": [],
+        "pass_marker": true
+      },
+      "stdout": "file /Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/chalk-eval2.mp4\ncontainer duration 3.000s  streams: h264, aac\nvideo h264 960x540\naudio aac 44100Hz 1ch\naudio RMS -35.113250 dBFS\nAV_CHECK_PASS\n",
+      "stderr": ""
+    },
+    {
+      "name": "chalk1_voiced",
+      "file": "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/chalk-eval1.mp4",
+      "argv": [
+        "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/chalk-eval1.mp4",
+        "--expect-video",
+        "h264",
+        "--expect-audio",
+        "aac",
+        "--min-duration",
+        "3.5",
+        "--max-duration",
+        "4.5",
+        "--audio-must-sound"
+      ],
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 81,
+      "observed": {
+        "container_duration_s": 4,
+        "video_codec": "h264",
+        "video_width": 960,
+        "video_height": 540,
+        "audio_codec": "aac",
+        "audio_sample_rate": "44100",
+        "audio_channels": "1",
+        "rms_token": "-35.104884",
+        "rms_dbfs": -35.104884,
+        "fail_lines": [],
+        "pass_marker": true
+      },
+      "stdout": "file /Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/chalk-eval1.mp4\ncontainer duration 4.000s  streams: h264, aac\nvideo h264 960x540\naudio aac 44100Hz 1ch\naudio RMS -35.104884 dBFS\nAV_CHECK_PASS\n",
+      "stderr": ""
+    },
+    {
+      "name": "chalk2_wrong_envelope",
+      "file": "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/chalk-eval2.mp4",
+      "argv": [
+        "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/chalk-eval2.mp4",
+        "--expect-video",
+        "h264",
+        "--expect-audio",
+        "aac",
+        "--min-duration",
+        "3.5",
+        "--max-duration",
+        "4.5"
+      ],
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 79,
+      "observed": {
+        "container_duration_s": 3,
+        "video_codec": "h264",
+        "video_width": 960,
+        "video_height": 540,
+        "audio_codec": "aac",
+        "audio_sample_rate": "44100",
+        "audio_channels": "1",
+        "rms_token": "-35.113250",
+        "rms_dbfs": -35.11325,
+        "fail_lines": [
+          "DURATION 3.000 outside [3.5, 4.5]"
+        ],
+        "pass_marker": false
+      },
+      "stdout": "file /Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/chalk-eval2.mp4\ncontainer duration 3.000s  streams: h264, aac\nvideo h264 960x540\naudio aac 44100Hz 1ch\naudio RMS -35.113250 dBFS\nFAIL DURATION 3.000 outside [3.5, 4.5]\n",
+      "stderr": ""
+    },
+    {
+      "name": "face_silent_report",
+      "file": "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/shot-face-v2-r3.mp4",
+      "argv": [
+        "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/shot-face-v2-r3.mp4",
+        "--expect-video",
+        "h264",
+        "--expect-audio",
+        "aac"
+      ],
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 88,
+      "observed": {
+        "container_duration_s": 2,
+        "video_codec": "h264",
+        "video_width": 1080,
+        "video_height": 1080,
+        "audio_codec": "aac",
+        "audio_sample_rate": "48000",
+        "audio_channels": "2",
+        "rms_token": "-inf",
+        "rms_dbfs": null,
+        "fail_lines": [],
+        "pass_marker": true
+      },
+      "stdout": "file /Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/shot-face-v2-r3.mp4\ncontainer duration 2.000s  streams: h264, aac\nvideo h264 1080x1080\naudio aac 48000Hz 2ch\naudio RMS -inf dBFS\nAV_CHECK_PASS\n",
+      "stderr": ""
+    },
+    {
+      "name": "face_silent_must_sound",
+      "file": "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/shot-face-v2-r3.mp4",
+      "argv": [
+        "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/shot-face-v2-r3.mp4",
+        "--expect-video",
+        "h264",
+        "--expect-audio",
+        "aac",
+        "--audio-must-sound"
+      ],
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 89,
+      "observed": {
+        "container_duration_s": 2,
+        "video_codec": "h264",
+        "video_width": 1080,
+        "video_height": 1080,
+        "audio_codec": "aac",
+        "audio_sample_rate": "48000",
+        "audio_channels": "2",
+        "rms_token": "-inf",
+        "rms_dbfs": null,
+        "fail_lines": [
+          "MUST_SOUND but RMS None dBFS below -60 floor (silent track)"
+        ],
+        "pass_marker": false
+      },
+      "stdout": "file /Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/shot-face-v2-r3.mp4\ncontainer duration 2.000s  streams: h264, aac\nvideo h264 1080x1080\naudio aac 48000Hz 2ch\naudio RMS -inf dBFS\nFAIL MUST_SOUND but RMS None dBFS below -60 floor (silent track)\n",
+      "stderr": ""
+    },
+    {
+      "name": "dispatch_absent_expect_none",
+      "file": "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/rcos-dispatch-eval-2-out.mp4",
+      "argv": [
+        "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/rcos-dispatch-eval-2-out.mp4",
+        "--expect-video",
+        "h264",
+        "--expect-audio",
+        "none",
+        "--min-duration",
+        "3.5",
+        "--max-duration",
+        "4.5"
+      ],
+      "exit_status": 0,
+      "signal": null,
+      "outcome": "passed",
+      "duration_ms": 55,
+      "observed": {
+        "container_duration_s": 4,
+        "video_codec": "h264",
+        "video_width": 1280,
+        "video_height": 720,
+        "audio_codec": null,
+        "audio_sample_rate": null,
+        "audio_channels": null,
+        "rms_token": null,
+        "rms_dbfs": null,
+        "fail_lines": [],
+        "pass_marker": true
+      },
+      "stdout": "file /Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/rcos-dispatch-eval-2-out.mp4\ncontainer duration 4.000s  streams: h264\nvideo h264 1280x720\nAV_CHECK_PASS\n",
+      "stderr": ""
+    },
+    {
+      "name": "dispatch_absent_must_sound",
+      "file": "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/rcos-dispatch-eval-2-out.mp4",
+      "argv": [
+        "/Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/rcos-dispatch-eval-2-out.mp4",
+        "--expect-video",
+        "h264",
+        "--audio-must-sound"
+      ],
+      "exit_status": 3,
+      "signal": null,
+      "outcome": "caught",
+      "duration_ms": 54,
+      "observed": {
+        "container_duration_s": 4,
+        "video_codec": "h264",
+        "video_width": 1280,
+        "video_height": 720,
+        "audio_codec": null,
+        "audio_sample_rate": null,
+        "audio_channels": null,
+        "rms_token": null,
+        "rms_dbfs": null,
+        "fail_lines": [
+          "MUST_SOUND but no audio stream"
+        ],
+        "pass_marker": false
+      },
+      "stdout": "file /Users/adam26/zcode-rcos/runs/20260918T063810Z-784f98/work/rcos-dispatch-eval-2-out.mp4\ncontainer duration 4.000s  streams: h264\nvideo h264 1280x720\nFAIL MUST_SOUND but no audio stream\n",
+      "stderr": ""
+    }
+  ]
+}
