@@ -1,0 +1,35 @@
+{
+  "task": "study-round27-loop",
+  "capability": "creative-study-loop",
+  "verdict": "ship",
+  "date": "2026-09-18",
+  "round": "R27 creative-study (Mac cell, cron)",
+  "gates": [
+    {
+      "gate": "widening_clause",
+      "result": "pass",
+      "evidence": "class U (youngest class, opened R26 for the Shop OS demo lane) widened n=4->8 under the live-production rule; all other classes at/above target. 4 rows queued with search-verified official channels before queuing (Notion Agents was the R26 held spare; v0/Replit/Dia new); one candidate dropped (Arc Search — search lane returned games only) and substituted, documented in QUEUE.md rather than blocked on"
+    },
+    {
+      "gate": "playbook_updated",
+      "result": "pass",
+      "evidence": "class-U section rewritten for rounds 26-27 (n=8 envelope table with every value cited to studies/ui-*.json; seven lane bullets; end-card 5/5 + 2; strengthened detector note; limits); R27 round-log entry prepended incl. both prior-claim corrections and the trumpf rig-hygiene note"
+    },
+    {
+      "gate": "queue_statuses_current",
+      "result": "pass",
+      "evidence": "4 R27 rows flipped to done with per-row observation annotations (Agents agent-screenplay NOT typing-build; v0 0-cut single take; Replit host-led #2 with 91s opener; Dia filmed-comedy montage); Verdict R27 line updated to carry both corrections"
+    },
+    {
+      "gate": "round_budget",
+      "result": "pass",
+      "evidence": "round stayed within the ~30-minute bound: 4 sequential Dell fetches first-try, one dense-montage workaround (v0) per the documented R15/R18 recipe, muse label check on the free lane; no source blocked"
+    },
+    {
+      "gate": "no_keys_no_paid_lanes",
+      "result": "pass",
+      "evidence": "free lanes only (Dell yt-dlp fetch, opencode muse-spark-1.3-contributor-free); no key bytes in any file; third-party media confined to Dell scratch ~/tmp/creative-study"
+    }
+  ],
+  "notes": "Loop ran end-to-end clean; verdict ship. Class U now has seven lanes at n=8 with no convergence — within a brand the MESSAGE picks the lane (Notion brand-essay = one hold, Agents feature = screenplay); typing-build and host-led both reproduce across brands. Two R26 superlatives were found overstated this round and corrected with cited corpus data (see video-forensics-receipt prior_claim_corrections gate) — the correction, not a defect in any artifact, is this round's honesty signal."
+}
