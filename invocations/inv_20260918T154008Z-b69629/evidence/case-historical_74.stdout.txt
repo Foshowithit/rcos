@@ -1,0 +1,1 @@
+rendered fig-verdicts.png fig-per-capability.png values.json (n=74 evals / 20 caps) -> /Users/adam26/zcode-rcos/invocations/inv_20260918T154008Z-b69629/work/case-historical_74/out

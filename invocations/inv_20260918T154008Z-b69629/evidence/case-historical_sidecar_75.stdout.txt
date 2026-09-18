@@ -1,0 +1,1 @@
+FIGURE_CHECK_PASS n=75 evals / 20 caps, sidecar matches fresh registry recompute

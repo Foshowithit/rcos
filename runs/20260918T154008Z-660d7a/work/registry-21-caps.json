@@ -1,0 +1,683 @@
+{
+  "registry_version": "v1",
+  "capabilities": [
+    {
+      "id": "filmstrip-verify",
+      "name": "Filmstrip video verification protocol",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "short8-char-v3-verify",
+        "short8-char-v3-firstbuild-verify"
+      ],
+      "evals": [
+        {
+          "task_id": "short8-char-v3-verify",
+          "verdict": "ship",
+          "run_id": "91246b5; 7-frame strip + volumedetect -29.0/-10.6 + motion 3.6/4.0 + cards matrix archived"
+        },
+        {
+          "task_id": "short8-char-v3-firstbuild-verify",
+          "verdict": "ship",
+          "run_id": "first v3 build 1.82GB: 7-frame strip + loudness + per-frame motion notes before rebuild"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-16",
+      "lineage": "zcode memory video-watch-protocol.md; proven on ep1-chalk + HOG demo video"
+    },
+    {
+      "id": "muse-image-lane",
+      "name": "Muse image generation lane",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "fapcoin-title-card-native",
+          "verdict": "ship",
+          "run_id": "fapcoin-webgl/charforge/title_card.png (2240x1120 native; 'FAPCOIN' + 'WE ALL HOLD IT IN THE END' both spelled correctly, muse-verified; vault key meta-muse.key; 10s)"
+        },
+        {
+          "task_id": "bearing-product-shot",
+          "verdict": "ship",
+          "run_id": "evidence/muse-image-lane/eval-2/bearing_product.png (1600x1600 real PNG after sips WebP->PNG; muse gate SHIP x2 consensus; consumer = hunyuan3d-mlx-local eval-2 reference + bearing-film asset; 17s gen)"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "zcode memory muse-image-lane-20260913; shipped HOG gen2 art wave"
+    },
+    {
+      "id": "dell-gpu-dispatch",
+      "name": "Dell GPU-first render/encode dispatch",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "dell-nvenc-2026-09-17-a",
+        "dell-nvenc-2026-09-17-b"
+      ],
+      "evals": [
+        {
+          "task_id": "dell-nvenc-2026-09-17-a",
+          "verdict": "ship",
+          "run_id": "eval-1 SHIP: NVENC transcode of testsrc2 640x360x3s on Dell via ssh chow, -preset p4 -b:v 2M. Gates: gpu-encode PASS (h264_nvenc encoder + stream map in log, EXIT=0), dell-only PASS (encode on Dell, Mac input-prep only), perceptual-match PASS (9 frames, mean aHash hamming 0.002). Evidence: evidence/dell-gpu-dispatch/eval-1/"
+        },
+        {
+          "task_id": "dell-nvenc-2026-09-17-b",
+          "verdict": "ship",
+          "run_id": "eval-2 SHIP: NVENC transcode of smptebars 1280x720x4s, -preset p7 -rc vbr -cq 26. Gates: gpu-encode PASS (2 nvenc log hits, EXIT=0), dell-only PASS, perceptual-match PASS (8 frames, aHash 0.000). Evidence: evidence/dell-gpu-dispatch/eval-2/"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "shared memory HARDWARE RULE 09-03; NVENC + Blender -t 16 proven"
+    },
+    {
+      "id": "browser-verify-artifacts",
+      "name": "Browser-verify web artifacts",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "charprobe-captures",
+          "verdict": "ship",
+          "run_id": "fapcoin-webgl probe_seated3 + probe_charscene: cap.cjs exit-3-on-console-error enforced, rendered proofs archived in-repo"
+        },
+        {
+          "task_id": "scene8-char-spotcaptures",
+          "verdict": "ship",
+          "run_id": "91246b5 gate/hero-final.png + probe frames: http-serve + zero console errors + rendered proof"
+        },
+        {
+          "task_id": "rcos-dashboard-verify",
+          "verdict": "fix",
+          "run_id": "evidence/browser-verify-artifacts/eval-3/ (dashboard.html verify: run1 caught real 404 via console/HTTP-status capture; run2 clean after favicon allowance + URL-level 404 logging; file:// attack SCHEME_REFUSED exit2; proof-dashboard.png 198KB)"
+        },
+        {
+          "task_id": "chalk-scene-font-assert",
+          "verdict": "ship",
+          "run_id": "evidence/browser-verify-artifacts/eval-4/ (scene.html + FONT_CHECK Caveat 400/700 + paint-call __cineFrame(0); BLANK_SCREEN check added after run1 caught all-white shot with deterministic all-green; CANVAS_SD 29.3; muse SHIP; 2 runs)"
+        },
+        {
+          "task_id": "chalk-scene-font-assert-r2",
+          "verdict": "ship",
+          "run_id": "evidence/browser-verify-artifacts/eval-4/proof-scene-r2.png (paint __cineFrame(120) mid-draw: CANVAS_SD 30.0, FONT_CHECK Caveat 400/700 green, muse SHIP; supersedes premature ship row on chalk-scene-font-assert whose llm gate KILLED at t=0)"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "zcode memory browser-verify-web-artifacts; DraftForge + dsh-operator-ui proofs"
+    },
+    {
+      "id": "qr-camo-embed",
+      "name": "QR camo embed recipe",
+      "kind": "script",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "qr-camo-header-2026-09-17-a",
+        "qr-camo-header-2026-09-17-b",
+        "qr-camo-header-2026-09-17-f"
+      ],
+      "evals": [
+        {
+          "task_id": "qr-camo-header-2026-09-17-a",
+          "verdict": "ship",
+          "run_id": "evidence/qr-camo-embed/eval-1: camo cover, payload optimizedworkflow.dev; g1 final-PNG zxing decode PASS; g2 jpeg-q85 re-encode decode PASS; 1500x500"
+        },
+        {
+          "task_id": "qr-camo-header-2026-09-17-a",
+          "verdict": "fix",
+          "run_id": "evidence/qr-camo-embed/eval-1 AMENDED: deterministic gates passed but muse eyes FAIL the documented invisible gate (finder squares + module grid clearly visible) \u2014 earlier ship on this task was recorded before all documented gates ran"
+        },
+        {
+          "task_id": "qr-camo-header-2026-09-17-b",
+          "verdict": "ship",
+          "run_id": "evidence/qr-camo-embed/eval-3: v2 adaptive blend on camo cover, payload optimizedworkflow.dev; stress ladder floor 0.52; g1 final-PNG zxing PASS; g2 external jpeg-q85 PASS; muse integrated-gate PASS"
+        },
+        {
+          "task_id": "qr-camo-header-2026-09-17-c",
+          "verdict": "fix",
+          "run_id": "evidence/qr-camo-embed/eval-4: v2 on SYNTHETIC pale cover; zxing ladder+gate aligned (fixed ladder that had silently accepted cv2-detector passes); deterministic PASS at 0.68 but muse integration FAIL \u2014 quiet-zone halo reads as a flat sage square on smooth pale covers"
+        },
+        {
+          "task_id": "qr-camo-header-2026-09-17-e",
+          "verdict": "fix",
+          "run_id": "AMENDED-COVER: eval-5 on REAL dark cover (w23-screen-v1 game art). Deterministic gates PASSED (zxing on final PNG + jpeg-q85 at dark_gain 0.74) but muse integration gate FAILED and I confirmed by eye: quiet-zone halo lifts to a flat light-gray box on dark art = sticker look. Also exposed adapter bug: rotate(-90) assumes portrait source, landscape sources come out upside-down. FINDINGS: (1) contract NARROWS to mid-tone photographic covers (~L 80-140) \u2014 dark covers put the halo in visibly wrong contrast; (2) orientation bug noted in README does-NOT-cover. Adapter unchanged; evidence in evidence/qr-camo-embed/eval-5/"
+        },
+        {
+          "task_id": "qr-camo-header-2026-09-17-f",
+          "verdict": "ship",
+          "run_id": "eval-6 SHIP on real photographic mid-tone cover (bearing-film frame f00325, mean L~109): g1 zxing-on-final-PNG PASS, g2 external jpeg-q85 PASS (dark_gain 0.80, placement smoothness 25.5), muse llm gate PASS verbatim 'reads as a watermark, not a pasted sticker... camouflaged but still findable'. Includes the eval-5 orientation fix (rotate only portrait sources). Evidence: evidence/qr-camo-embed/eval-6/"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "zcode memory qr-camo-embed-recipe; workspace/default/qr-camo-header"
+    },
+    {
+      "id": "chalk-capture-recipe",
+      "name": "Chalk explainer capture recipe",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "chalk-explainer-2026-09-17-a",
+        "chalk-explainer-2026-09-17-b"
+      ],
+      "evals": [
+        {
+          "task_id": "chalk-explainer-2026-09-17-a",
+          "verdict": "ship",
+          "run_id": "eval-1 SHIP (recipe rebuilt from documented pattern; /tmp original was wiped): 240-frame 4s scene. font-warmup PASS (capture.log: __cineFrame(0) warmup, fonts.load 400+700 both true, fonts.ready, FONT_CHECK=true assertion); no-fallback-serif PASS (muse: 'all text is handwritten chalk lettering... no sharp serif feet'); av-sync PASS (ffprobe video+audio both start 0.000 dur 4.000); no-slideshow PASS (muse on 2x2 montage: 'chalk line grows progressively... not unrelated stills'). Evidence: evidence/chalk-capture-recipe/eval-1/"
+        },
+        {
+          "task_id": "chalk-explainer-2026-09-17-b",
+          "verdict": "ship",
+          "run_id": "eval-2 SHIP (variant scene: slate-blue board, 'Measure twice', ease-out chalk stroke, 180 frames/3s): font-warmup PASS (FONT_CHECK=true in capture.log); no-fallback-serif PASS (muse: 'all text is handwritten chalk style... no sharp serif feet'); av-sync PASS (video+audio both 0.000->3.000); no-slideshow PASS (muse on montage: 'continuous drawing motion, not unrelated stills'). Different duration/color/choreo from eval-1 proves the recipe, not one scene. Evidence: evidence/chalk-capture-recipe/eval-2/"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "ep1-chalk-v2 recipe outputs/ep1-chalk-v2/; Caveat warmup + fonts.load fix"
+    },
+    {
+      "id": "hog-qa-suite",
+      "name": "HOG QA headless suite pattern",
+      "kind": "script",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "hog-qa-full-suite-2026-09-17-a",
+        "hog-qa-full-suite-2026-09-17-b"
+      ],
+      "evals": [
+        {
+          "task_id": "hog-qa-full-suite-2026-09-17-a",
+          "verdict": "ship",
+          "run_id": "evidence/hog-qa-suite/eval-1: run-local.mjs 5/5 pass, fps 61 all viewports, SUITE_PASS=true (reports/2026-09-17T22-15-34)"
+        },
+        {
+          "task_id": "hog-qa-full-suite-2026-09-17-b",
+          "verdict": "ship",
+          "run_id": "evidence/hog-qa-suite/eval-2: run-local.mjs 5/5 pass again, fps 61 all viewports, SUITE_PASS=true (second full pass same day)"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "game-fleet/qa/run-local.mjs; 5/5 waves shipped through it"
+    },
+    {
+      "id": "operator-ui-contract-test",
+      "name": "DSH plugin contract test pattern",
+      "kind": "script",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "dsh-operator-ui-push-readiness",
+        "dsh-operator-ui-post-phase1"
+      ],
+      "evals": [
+        {
+          "task_id": "dsh-operator-ui-push-readiness",
+          "verdict": "ship",
+          "run_id": "dogfood-check-1"
+        },
+        {
+          "task_id": "dsh-operator-ui-post-phase1",
+          "verdict": "ship",
+          "run_id": "dogfood-check-2"
+        }
+      ],
+      "reuse_count": 1,
+      "last_eval": "2026-09-15",
+      "lineage": "dsh-operator-ui/scripts/check.js; required before every push since v0.1.1"
+    },
+    {
+      "id": "webgl-film-capture",
+      "name": "Deterministic WebGL film capture pipeline (CDP rgba\u2192vflip\u2192cards\u2192mux)",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "v7-determinism",
+        "short8-char-v3-build"
+      ],
+      "evals": [
+        {
+          "task_id": "v7-determinism",
+          "verdict": "ship",
+          "run_id": "commit df071ee; byte-identical renders across Chrome launches (probe.cjs/cap.cjs determinism proof)"
+        },
+        {
+          "task_id": "short8-char-v3-build",
+          "verdict": "ship",
+          "run_id": "commit 91246b5; build/short8-char-2160.mp4: 6/6 cards max 154-229, 52.083s/1250f, -29.0dB, motion diffs 3.6-4.0"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-16",
+      "lineage": "fapcoin-webgl v7 (df071ee determinism proven) + SHORT8 v2 (aff2dc3) + char v3 (91246b5); cap.cjs CDP rig + pipeline8 + burn_cards_v3"
+    },
+    {
+      "id": "shadow-play-staging",
+      "name": "Backlit shadow-play staging + light geography",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "short8-v2-realism-pass",
+        "short8-char-v3-shadow"
+      ],
+      "evals": [
+        {
+          "task_id": "short8-v2-realism-pass",
+          "verdict": "ship",
+          "run_id": "commit aff2dc3; muse SHIP + 2am-viewer pass after 8 probe rounds (root cause: DoubleSide plane can't be backlit)"
+        },
+        {
+          "task_id": "short8-char-v3-shadow",
+          "verdict": "ship",
+          "run_id": "commit 91246b5; fap-director PASS + measured crown contrast 0->36-50 levels (sFrame shadow-eater fix + crown fill)"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-16",
+      "lineage": "charprobe + scene8 v2 realism (aff2dc3) + scene8_char v3 (91246b5): emissive paper + ShadowMaterial catcher + light-geography trap list"
+    },
+    {
+      "id": "character-forge",
+      "name": "Character forge: muse sheet \u2192 TripoSR \u2192 standup GLB",
+      "kind": "workflow",
+      "version": "1.1.0",
+      "status": "promoted",
+      "admitted_after": [
+        "dell-seated-film-run",
+        "dell-seated-down-run"
+      ],
+      "evals": [
+        {
+          "task_id": "dell-seated-film-run",
+          "verdict": "ship",
+          "run_id": "run6.log + /home/chow/chow-work/charforge/assets/seated_film.EVAL.json decision=ship (extents 1.289/1.8/0.8, 80642 faces)"
+        },
+        {
+          "task_id": "dell-seated-down-run",
+          "verdict": "ship",
+          "run_id": "run7.log + seated_film_down.EVAL.json decision=ship (workflow green end-to-end after numpy-bool gate fix)"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-16",
+      "lineage": "Dell Archon workflow character-forge-v1; ritual_guy + seated_film + seated_film_down EVAL ships; numpy-bool gate fix"
+    },
+    {
+      "id": "local-talking-heads",
+      "name": "Local talking heads (LivePortrait on the Dell, video-driven)",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "promoted",
+      "admitted_after": [
+        "hero-portrait-6s-liveportrait",
+        "sadtalker-audio-driven-ritual-line"
+      ],
+      "evals": [
+        {
+          "task_id": "hero-portrait-6s-liveportrait",
+          "verdict": "ship",
+          "run_id": "Dell ~/tmp/headtest/hero_portrait_talking_6s.mp4 (1280x1280 h264+aac 6.0s, 259f); motion measured mouth 31-47 vs bg 0.4-5.3 mean|d|; muse SHIP; copy at fapcoin-webgl/charforge/head/"
+        },
+        {
+          "task_id": "sadtalker-audio-driven-ritual-line",
+          "verdict": "ship",
+          "run_id": "Dell ~/tmp/sadtalker-test/2026_09_17_06.07.51.mp4 (1600sq 74f 2.96s+aac; Kokoro am_michael VO 'This is the ritual. Nobody has to know.'; mouth 10.9-22.3 vs bg 0.09-1.03 = 16-204x; 39s render, peak 2561MiB; muse SHIP); copy charforge/head/hero_sadtalker_ritual_3s.mp4"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "KlingTeam/LivePortrait fork, Dell A3000 6GB, venv-isolated; hero_portrait 6s test 2026-09-17 (31s render, peak 2148MiB VRAM, mouth motion 6-40x bg, muse SHIP); SETUP-NOTES at Dell ~/tmp/headtest"
+    },
+    {
+      "id": "video-forensics-receipt",
+      "name": "Video forensics receipt (reference-clip measurer)",
+      "kind": "script",
+      "version": "0.1.0",
+      "status": "promoted",
+      "admitted_after": [
+        "creative-study-round1-complete",
+        "creative-study-round2"
+      ],
+      "evals": [
+        {
+          "task_id": "creative-study-round1",
+          "verdict": "fix",
+          "run_id": "study-round1-batch"
+        },
+        {
+          "task_id": "creative-study-round1-complete",
+          "verdict": "ship",
+          "run_id": "study-round1-complete"
+        },
+        {
+          "task_id": "creative-study-round2",
+          "verdict": "ship",
+          "run_id": "study-round2"
+        },
+        {
+          "task_id": "creative-study-round3",
+          "verdict": "ship",
+          "run_id": "study-round3"
+        },
+        {
+          "task_id": "creative-study-round4",
+          "verdict": "ship",
+          "run_id": "study-round4"
+        },
+        {
+          "task_id": "creative-study-round5",
+          "verdict": "ship",
+          "run_id": "study-round5"
+        },
+        {
+          "task_id": "study-round6",
+          "verdict": "ship",
+          "run_id": "study-round6"
+        },
+        {
+          "task_id": "study-round7",
+          "verdict": "ship",
+          "run_id": "study-round7"
+        },
+        {
+          "task_id": "study-round8",
+          "verdict": "ship",
+          "run_id": "study-round8"
+        },
+        {
+          "task_id": "study-round9",
+          "verdict": "ship",
+          "run_id": "study-round9"
+        },
+        {
+          "task_id": "study-round10",
+          "verdict": "ship",
+          "run_id": "study-round10"
+        },
+        {
+          "task_id": "study-round11",
+          "verdict": "ship",
+          "run_id": "study-round11"
+        },
+        {
+          "task_id": "study-round12",
+          "verdict": "ship",
+          "run_id": "study-round12"
+        },
+        {
+          "task_id": "study-round13",
+          "verdict": "ship",
+          "run_id": "study-round13"
+        },
+        {
+          "task_id": "study-round14",
+          "verdict": "ship",
+          "run_id": "study-round14"
+        },
+        {
+          "task_id": "study-round15",
+          "verdict": "ship",
+          "run_id": "study-round15"
+        },
+        {
+          "task_id": "study-round16",
+          "verdict": "ship",
+          "run_id": "study-round16"
+        }
+      ],
+      "reuse_count": 2,
+      "last_eval": "2026-09-17",
+      "lineage": "creative-study/rig/study_run.py; 2026-09-17 round-1: 17 reference clips + 3 own films measured on Dell (ffmpeg scene>0.30/0.50 cuts, ebur128 loudness, 1fps thumbnails -> color/motion, k-means palette, contact sheet); receipts at workspace/default/creative-study/studies/*.json"
+    },
+    {
+      "id": "creative-study-loop",
+      "name": "Creative study loop (reference -> measured targets)",
+      "kind": "runbook",
+      "version": "0.1.0",
+      "status": "promoted",
+      "admitted_after": [
+        "creative-study-round1-loop",
+        "creative-study-round2-loop"
+      ],
+      "evals": [
+        {
+          "task_id": "creative-study-round1-loop",
+          "verdict": "ship",
+          "run_id": "study-round1-loop"
+        },
+        {
+          "task_id": "creative-study-round2-loop",
+          "verdict": "ship",
+          "run_id": "study-round2-loop"
+        },
+        {
+          "task_id": "creative-study-round3-loop",
+          "verdict": "ship",
+          "run_id": "study-round3-loop"
+        },
+        {
+          "task_id": "creative-study-round4-loop",
+          "verdict": "ship",
+          "run_id": "study-round4-loop"
+        },
+        {
+          "task_id": "creative-study-round5-loop",
+          "verdict": "ship",
+          "run_id": "study-round5-loop"
+        },
+        {
+          "task_id": "study-round6",
+          "verdict": "ship",
+          "run_id": "study-round6-loop"
+        },
+        {
+          "task_id": "study-round7",
+          "verdict": "ship",
+          "run_id": "study-round7-loop"
+        },
+        {
+          "task_id": "study-round8",
+          "verdict": "ship",
+          "run_id": "study-round8-loop"
+        },
+        {
+          "task_id": "study-round9",
+          "verdict": "ship",
+          "run_id": "study-round9-loop"
+        },
+        {
+          "task_id": "study-round10",
+          "verdict": "ship",
+          "run_id": "study-round10-loop"
+        },
+        {
+          "task_id": "study-round11-loop",
+          "verdict": "ship",
+          "run_id": "study-round11-loop"
+        },
+        {
+          "task_id": "study-round12",
+          "verdict": "ship",
+          "run_id": "study-round12-loop"
+        },
+        {
+          "task_id": "study-round13",
+          "verdict": "ship",
+          "run_id": "study-round13-loop"
+        },
+        {
+          "task_id": "study-round14",
+          "verdict": "ship",
+          "run_id": "study-round14-loop"
+        },
+        {
+          "task_id": "study-round15",
+          "verdict": "ship",
+          "run_id": "study-round15-loop"
+        },
+        {
+          "task_id": "study-round16",
+          "verdict": "ship",
+          "run_id": "study-round16-loop"
+        }
+      ],
+      "reuse_count": 2,
+      "last_eval": "2026-09-17",
+      "lineage": "workspace/default/creative-study/{README,QUEUE,PLAYBOOK}.md + rig; round-1 2026-09-17 classes I/L/M measured, ours-films compared, targets written receipt-cited"
+    },
+    {
+      "id": "hunyuan3d-mlx-local",
+      "name": "Local textured characters (Hunyuan3D-2.1 MLX on Mac)",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "hero-front-textured-e2e",
+          "verdict": "ship",
+          "run_id": "fapcoin-webgl/charforge/hunyuan/textured.glb (14.1MB, PBR 4096 albedo+MR, human extents, watertight shape; muse SHIP body / KILL face-closeup); agent report in shared AGENTS.md 09-17"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "dgrauet/hunyuan3d-2.1-mlx + PR8 scheduler patch + prep_reference.py (rembg+recenter); hero_front -> textured.glb 2026-09-17 (shape 8-11min, texture 19min, RSS <=8.2GB, extents 0.77/1.99/0.48, 4096 PBR); venv ~/venvs/hunyuan3d-mlx; known: face close-ups collapse (route faces to local-talking-heads)"
+    },
+    {
+      "id": "face-in-scene-shot",
+      "name": "Face-in-scene compositing (talking frames as deterministic scene texture)",
+      "kind": "runbook",
+      "version": "1.0.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "talking-portrait-insert-3s",
+          "verdict": "ship",
+          "run_id": "fapcoin-webgl/build/shot-face-3s.mp4 (3.0s 1080 h264+aac, motion 3.2-6.3, muse SHIP 'usable speaking-portrait insert'); commit 683ea74"
+        },
+        {
+          "task_id": "slate-study-portrait-run1",
+          "verdict": "fix",
+          "run_id": "node capture.mjs && ffmpeg h264 1080p24 2s + windowed motion gate"
+        },
+        {
+          "task_id": "slate-study-portrait-run2",
+          "verdict": "fix",
+          "run_id": "recess fix: portrait z -2.5 -> -2.542 behind frame front -2.535"
+        },
+        {
+          "task_id": "slate-study-portrait-run3",
+          "verdict": "ship",
+          "run_id": "portrait -2.531 / matte -2.5335 / AO halo plane; WINDOW-12 motion min 5.10 PASS; muse SHIP x2 consensus"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "shot_face.html + build/shot-face-3s.mp4 (2026-09-17): LivePortrait frames as a live framed portrait on a study wall; PNG-sequence capture (no video decode in the CDP path); z-gap trap (coplanar planes z-fight); muse SHIP; consumer: fapcoin films"
+    },
+    {
+      "id": "preview-server-verify",
+      "name": "Preview Server Verify",
+      "kind": "script",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "dashboard-serve-run1",
+          "verdict": "fix",
+          "run_id": "serve_verify.py . dashboard.html"
+        },
+        {
+          "task_id": "stale-dir-attack-run2",
+          "verdict": "fix",
+          "run_id": "attack: serve stale dir copy vs fresh expectation"
+        },
+        {
+          "task_id": "dashboard-and-scene-serve-run3",
+          "verdict": "ship",
+          "run_id": "eval-1 dashboard.html + eval-2 scene_v2.html, both --expect-sha256 pinned; attack receipt exit 3 STALE_OR_WRONG_BYTES"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "local-preview-port-split-brain (09-17: two servers split one port by address family, stale snapshot answered IPv4) + render --out silent-fail 09-17"
+    },
+    {
+      "id": "audio-offline-verify",
+      "name": "Audio Offline Verify",
+      "kind": "script",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "chalk-vo-and-silent-mux",
+          "verdict": "ship",
+          "run_id": "av_check.py: eval-1 chalk-eval2.mp4 must-sound PASS (h264+aac 3.0s RMS -35.1 dBFS); eval-2 shot-face-v2-r3.mp4 report-only PASS (RMS -inf by-design); attack mute file vs must-sound = exit 3"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "sacred-heart yue2 scene-lock 09-17 + beats-lab Audius masters + face-in-scene anullsrc mux"
+    },
+    {
+      "id": "x-media-package",
+      "name": "X Media Package",
+      "kind": "workflow",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [
+        {
+          "task_id": "chalk-and-dispatch-packages",
+          "verdict": "ship",
+          "run_id": "xcheck.py eval-1 chalk-eval2 (1.78 aspect, 3s) + eval-2 rcos-dispatch-eval-2-out (1280x720, 4s), both PASS w/ caption+alt; attack caption 321 chars = exit 3; muse poster gate SHIP"
+        }
+      ],
+      "reuse_count": 0,
+      "last_eval": "2026-09-17",
+      "lineage": "hog-crankers X demo 09-14 + fapcoin v4 stage-1 masters + model-compare video pipeline"
+    },
+    {
+      "id": "receipt-figure-render",
+      "name": "Receipt Figure Render",
+      "kind": "workflow",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "OW Lab exhibit pass 09-17 (figures generated from artifacts) + figure-legibility-traps"
+    },
+    {
+      "id": "audit-control-probe",
+      "name": "Audit control probe",
+      "kind": "workflow",
+      "version": "0.1.0",
+      "status": "candidate",
+      "admitted_after": [],
+      "evals": [],
+      "reuse_count": 0,
+      "last_eval": null,
+      "lineage": "authored for the figure-geometry gate: a capability with zero recorded evals"
+    }
+  ]
+}

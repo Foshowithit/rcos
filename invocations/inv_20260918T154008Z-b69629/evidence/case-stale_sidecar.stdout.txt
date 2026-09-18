@@ -1,0 +1,3 @@
+FAIL n_evals 75 != 74
+FAIL verdict_distribution {'ship': 66, 'fix': 9, 'blocked': 0} != {'ship': 65, 'fix': 9, 'blocked': 0}
+FAIL per_capability differs: {'receipt-figure-render': ({'ship': 1, 'fix': 0, 'blocked': 0}, {'ship': 0, 'fix': 0, 'blocked': 0})}

@@ -1,0 +1,29 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260918T154008Z-660d7a",
+  "eval_id": "receipt-figure-render-figures-v1",
+  "capability_id": "receipt-figure-render",
+  "started_at": "2026-09-18T15:40:08.865Z",
+  "finished_at": "2026-09-18T15:40:10.260Z",
+  "duration_ms": 1395,
+  "invocation": {
+    "invocation_id": "inv_20260918T154008Z-b69629",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260918T154008Z-b69629",
+    "manifest_sha256": "4f71f698924828bbaf958f0814147d38cc5edac1e68e8b2cb04d755d2a5a501d",
+    "output_sha256": "241cbe79a5fc6b16e8a7350b97931327e8fb819fe93619fcd9a4f07b1ba91ae5",
+    "eligibility_decision_id": "elig_20260918T154008Z-b6962e",
+    "eligibility_sha256": "6c3489e04f07d9f3c4764069b79864e6b9057ce02a54ee8af6248c069b46b492"
+  },
+  "eligibility": {
+    "decision_id": "elig_20260918T154008Z-b6962e",
+    "sha256": "6c3489e04f07d9f3c4764069b79864e6b9057ce02a54ee8af6248c069b46b492",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "dir": "eligibility/elig_20260918T154008Z-b6962e"
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos",
+  "node": "v24.15.0"
+}

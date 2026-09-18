@@ -1,0 +1,79 @@
+{
+  "schema": "rcos-run/1",
+  "eval_id": "receipt-figure-render-figures-v1",
+  "capability_id": "receipt-figure-render",
+  "eval_sha256": "304a7d5529e0e2f618c6da0e3972d0c9e9847d07d28b935fbdd27a5bb9cfb1d7",
+  "adapter_argv": null,
+  "fixtures": [
+    {
+      "name": "registry-74.json",
+      "sha256": "1439e88a327146cb8ed2a70ba261709abcdb9a6ab3c733ac8768e71296b12da9",
+      "bytes": 26595
+    },
+    {
+      "name": "registry-75-reconstructed.json",
+      "sha256": "5f30394f3fe89fd328c56c2067ef979f600fbb24a6d7d0268ba455480f8d6a09",
+      "bytes": 26915
+    },
+    {
+      "name": "registry-21-caps.json",
+      "sha256": "26f161eef96ec2bdea9652cf818bd3de13342059c6241b323b074cdb0b4be388",
+      "bytes": 26977
+    },
+    {
+      "name": "empty-registry.json",
+      "sha256": "c086eb5b4e010c6992a8b486a65433330c799c380fd0b55eeffcfac52668eefc",
+      "bytes": 67
+    },
+    {
+      "name": "malformed-registry.json",
+      "sha256": "2373d2c337a2c28a25ec53ee0a6c37cce9d6c0a8b13d7e399b07a97c05fd5ba0",
+      "bytes": 59
+    },
+    {
+      "name": "values-historical-74.json",
+      "sha256": "12420d1b726ba9b3f900f97d48181912ba7381cfc61571399a0ba78bd7f2f0f0",
+      "bytes": 1974
+    },
+    {
+      "name": "values-historical-75.json",
+      "sha256": "e871124f3808962e06bd6eabc43a90a351ecbf35721c17460816a596320907b7",
+      "bytes": 1974
+    },
+    {
+      "name": "values-tampered.json",
+      "sha256": "4d09e7b6be53156ccc8ca0b5da8556650802cf17f97250a80bebe19246a68098",
+      "bytes": 1382
+    },
+    {
+      "name": "values-cap-shifted.json",
+      "sha256": "8d52af02f04d1ca02be9d2b2c77463a30a34d6f7f853fa50be769fd75c4af9e0",
+      "bytes": 1975
+    },
+    {
+      "name": "oracle-fig-verdicts-74.png",
+      "sha256": "f432049f84175b65bebc149b46a0c7aa23ee768668e2b8feb8cdf7dc638b9288",
+      "bytes": 6610
+    },
+    {
+      "name": "oracle-fig-per-capability-74.png",
+      "sha256": "83e6f3d5a9379860efbab4066186e6f724680a4cb81d4a3d48835cf5d5ccefb0",
+      "bytes": 44703
+    },
+    {
+      "name": "oracle-fig-verdicts-75.png",
+      "sha256": "384e4fda1b8526f21032dd8917760d01c759d12e798a7c4c8cd3a7ec22d00aae",
+      "bytes": 6551
+    },
+    {
+      "name": "oracle-fig-per-capability-75.png",
+      "sha256": "1fb79b8c61005951362e01415b663a27781afc1b1a8a5098f4c88a5fb03fba57",
+      "bytes": 44610
+    }
+  ],
+  "created_at": "2026-09-18T15:40:08.865Z",
+  "capability_input": {
+    "path": "capability-input.json",
+    "sha256": "d30635c7dfee74ad14b1462b4b4de22be8f140a4563200a6c698e126fbd2284f"
+  }
+}

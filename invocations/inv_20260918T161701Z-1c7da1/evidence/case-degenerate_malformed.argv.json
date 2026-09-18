@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "/Users/adam26/zcode-rcos/capabilities/receipt-figure-render/adapter/receipt_figures.py",
+    "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/malformed-registry.json",
+    "/Users/adam26/zcode-rcos/invocations/inv_20260918T161701Z-1c7da1/work/case-degenerate_malformed/out"
+  ],
+  "cwd": "/Users/adam26/zcode-rcos/invocations/inv_20260918T161701Z-1c7da1/work",
+  "exit_status": 1,
+  "signal": null,
+  "duration_ms": 83
+}

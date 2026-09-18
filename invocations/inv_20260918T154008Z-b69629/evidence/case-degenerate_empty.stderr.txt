@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/Users/adam26/zcode-rcos/capabilities/receipt-figure-render/adapter/receipt_figures.py", line 69, in <module>
+    max_ev = max(1, max(sum(ct.values()) for _, ct, _ in per_cap))
+                    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: max() iterable argument is empty

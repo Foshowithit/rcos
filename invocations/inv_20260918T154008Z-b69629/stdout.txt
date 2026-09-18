@@ -1,0 +1,11 @@
+historical_74 [render] exit=0 outcome=rendered figures=2 sidecar=yes
+reconstructed_75 [render] exit=0 outcome=rendered figures=2 sidecar=yes
+authored_21 [render] exit=0 outcome=rendered figures=2 sidecar=yes
+degenerate_empty [render] exit=1 outcome=errored figures=1 sidecar=no
+degenerate_malformed [render] exit=1 outcome=errored figures=0 sidecar=no
+historical_sidecar_74 [check] exit=0 outcome=accepted figures=0 sidecar=no
+historical_sidecar_75 [check] exit=0 outcome=accepted figures=0 sidecar=no
+attack_tampered [check] exit=3 outcome=caught figures=0 sidecar=no fail_lines=1
+stale_sidecar [check] exit=3 outcome=caught figures=0 sidecar=no fail_lines=3
+attack_capability_shifted [check] exit=3 outcome=caught figures=0 sidecar=no fail_lines=1
+observed 10 cases (renderer d4acec846674, checker a4a51bfe7c95)

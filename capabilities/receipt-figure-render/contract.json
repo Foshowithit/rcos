@@ -1,0 +1,197 @@
+{
+  "schema": "rcos-capability-contract/1",
+  "capability_id": "receipt-figure-render",
+  "notes": [
+    "The declared way to invoke receipt-figure-render: a list of cases, each naming an operation and the documents it operates on.",
+    "operation=render runs the frozen receipt_figures.py over one registry; operation=check runs the frozen check_figures.py over one registry + one values sidecar.",
+    "The two operations are declared separately because they are two code paths over the same numbers: render writes the sidecar, check recomputes and diffs it.",
+    "Cross-field rules the schema subset cannot express (check requires values; render forbids it; case names must be unique) are enforced by the adapter and reported as exit 4, not as a schema violation."
+  ],
+  "input": {
+    "type": "object",
+    "required": ["cases"],
+    "additionalProperties": false,
+    "properties": {
+      "cases": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 32,
+        "items": {
+          "type": "object",
+          "required": ["name", "operation", "registry"],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40,
+              "pattern": "^[a-z0-9_]+$"
+            },
+            "operation": {
+              "type": "string",
+              "enum": ["render", "check"]
+            },
+            "registry": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "values": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          }
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["schema", "frozen", "cases"],
+    "additionalProperties": false,
+    "properties": {
+      "schema": {
+        "type": "string",
+        "enum": ["receipt-figure-render-observation/1"]
+      },
+      "frozen": {
+        "type": "object",
+        "required": ["renderer", "checker"],
+        "additionalProperties": false,
+        "properties": {
+          "renderer": {
+            "type": "object",
+            "required": ["path", "sha256", "usage", "documented_exit_codes"],
+            "additionalProperties": false,
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "usage": { "type": "string", "minLength": 1 },
+              "documented_exit_codes": {
+                "type": ["array", "null"],
+                "items": { "type": "integer", "minimum": 0, "maximum": 255 }
+              }
+            }
+          },
+          "checker": {
+            "type": "object",
+            "required": ["path", "sha256", "usage", "documented_exit_codes"],
+            "additionalProperties": false,
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "usage": { "type": "string", "minLength": 1 },
+              "documented_exit_codes": {
+                "type": ["array", "null"],
+                "items": { "type": "integer", "minimum": 0, "maximum": 255 }
+              }
+            }
+          }
+        }
+      },
+      "cases": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 32,
+        "items": {
+          "type": "object",
+          "required": [
+            "name", "operation", "registry", "input_values", "argv",
+            "exit_status", "signal", "outcome", "duration_ms",
+            "stdout", "stderr", "fail_lines", "out_files", "figures", "sidecar"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "operation": { "type": "string", "enum": ["render", "check"] },
+            "registry": {
+              "type": "object",
+              "required": ["path", "sha256", "bytes", "parsed", "n_capabilities", "n_evals"],
+              "additionalProperties": false,
+              "properties": {
+                "path": { "type": "string", "minLength": 1 },
+                "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                "bytes": { "type": "integer", "minimum": 0 },
+                "parsed": { "type": "boolean" },
+                "n_capabilities": { "type": ["integer", "null"], "minimum": 0 },
+                "n_evals": { "type": ["integer", "null"], "minimum": 0 }
+              }
+            },
+            "input_values": {
+              "type": ["object", "null"],
+              "required": ["path", "sha256", "bytes"],
+              "additionalProperties": false,
+              "properties": {
+                "path": { "type": "string", "minLength": 1 },
+                "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                "bytes": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "argv": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1, "maxLength": 4096 }
+            },
+            "exit_status": { "type": ["integer", "null"] },
+            "signal": { "type": ["string", "null"] },
+            "outcome": {
+              "type": "string",
+              "enum": ["rendered", "accepted", "caught", "errored", "not_run"]
+            },
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "stdout": { "type": "string", "maxLength": 20000 },
+            "stderr": { "type": "string", "maxLength": 20000 },
+            "fail_lines": {
+              "type": "array",
+              "maxItems": 64,
+              "items": { "type": "string", "maxLength": 2000 }
+            },
+            "out_files": {
+              "type": "array",
+              "maxItems": 64,
+              "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+            },
+            "figures": {
+              "type": "array",
+              "maxItems": 8,
+              "items": {
+                "type": "object",
+                "required": ["name", "path", "sha256", "bytes", "png"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+                  "path": { "type": "string", "minLength": 1 },
+                  "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                  "bytes": { "type": "integer", "minimum": 0 },
+                  "png": {
+                    "type": ["object", "null"],
+                    "required": ["width", "height", "bit_depth", "color_type"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "width": { "type": "integer", "minimum": 1 },
+                      "height": { "type": "integer", "minimum": 1 },
+                      "bit_depth": { "type": "integer", "minimum": 1, "maximum": 16 },
+                      "color_type": { "type": "integer", "minimum": 0, "maximum": 6 }
+                    }
+                  }
+                }
+              }
+            },
+            "sidecar": {
+              "type": ["object", "null"],
+              "required": ["path", "sha256", "bytes", "values"],
+              "additionalProperties": false,
+              "properties": {
+                "path": { "type": "string", "minLength": 1 },
+                "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                "bytes": { "type": "integer", "minimum": 0 },
+                "values": { "type": ["object", "null"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

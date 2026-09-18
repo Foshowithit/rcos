@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "/Users/adam26/zcode-rcos/capabilities/receipt-figure-render/adapter/check_figures.py",
+    "/Users/adam26/zcode-rcos/runs/20260918T154008Z-660d7a/work/registry-74.json",
+    "/Users/adam26/zcode-rcos/runs/20260918T154008Z-660d7a/work/values-cap-shifted.json"
+  ],
+  "cwd": "/Users/adam26/zcode-rcos/invocations/inv_20260918T154008Z-b69629/work",
+  "exit_status": 3,
+  "signal": null,
+  "duration_ms": 25
+}

@@ -1,0 +1,112 @@
+{
+  "source": "/Users/adam26/zcode-rcos/registry/capability-registry.json",
+  "n_capabilities": 20,
+  "n_evals": 74,
+  "verdict_distribution": {
+    "ship": 65,
+    "fix": 9,
+    "blocked": 0
+  },
+  "per_capability": {
+    "video-forensics-receipt": {
+      "ship": 16,
+      "fix": 1,
+      "blocked": 0
+    },
+    "creative-study-loop": {
+      "ship": 16,
+      "fix": 0,
+      "blocked": 0
+    },
+    "qr-camo-embed": {
+      "ship": 3,
+      "fix": 3,
+      "blocked": 0
+    },
+    "browser-verify-artifacts": {
+      "ship": 4,
+      "fix": 1,
+      "blocked": 0
+    },
+    "face-in-scene-shot": {
+      "ship": 2,
+      "fix": 2,
+      "blocked": 0
+    },
+    "preview-server-verify": {
+      "ship": 1,
+      "fix": 2,
+      "blocked": 0
+    },
+    "filmstrip-verify": {
+      "ship": 2,
+      "fix": 0,
+      "blocked": 0
+    },
+    "muse-image-lane": {
+      "ship": 2,
+      "fix": 0,
+      "blocked": 0
+    },
+    "dell-gpu-dispatch": {
+      "ship": 2,
+      "fix": 0,
+      "blocked": 0
+    },
+    "chalk-capture-recipe": {
+      "ship": 2,
+      "fix": 0,
+      "blocked": 0
+    },
+    "hog-qa-suite": {
+      "ship": 2,
+      "fix": 0,
+      "blocked": 0
+    },
+    "operator-ui-contract-test": {
+      "ship": 2,
+      "fix": 0,
+      "blocked": 0
+    },
+    "webgl-film-capture": {
+      "ship": 2,
+      "fix": 0,
+      "blocked": 0
+    },
+    "shadow-play-staging": {
+      "ship": 2,
+      "fix": 0,
+      "blocked": 0
+    },
+    "character-forge": {
+      "ship": 2,
+      "fix": 0,
+      "blocked": 0
+    },
+    "local-talking-heads": {
+      "ship": 2,
+      "fix": 0,
+      "blocked": 0
+    },
+    "hunyuan3d-mlx-local": {
+      "ship": 1,
+      "fix": 0,
+      "blocked": 0
+    },
+    "audio-offline-verify": {
+      "ship": 1,
+      "fix": 0,
+      "blocked": 0
+    },
+    "x-media-package": {
+      "ship": 1,
+      "fix": 0,
+      "blocked": 0
+    },
+    "receipt-figure-render": {
+      "ship": 0,
+      "fix": 0,
+      "blocked": 0
+    }
+  }
+}

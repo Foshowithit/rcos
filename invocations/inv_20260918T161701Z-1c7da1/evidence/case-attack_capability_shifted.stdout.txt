@@ -1,0 +1,1 @@
+FAIL per_capability differs: {'chalk-capture-recipe': ({'ship': 3, 'fix': 0, 'blocked': 0}, {'ship': 2, 'fix': 0, 'blocked': 0}), 'muse-image-lane': ({'ship': 1, 'fix': 0, 'blocked': 0}, {'ship': 2, 'fix': 0, 'blocked': 0})}

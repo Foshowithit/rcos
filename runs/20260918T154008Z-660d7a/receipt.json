@@ -1,0 +1,284 @@
+{
+  "schema": "rcos-run-receipt/1",
+  "run_id": "20260918T154008Z-660d7a",
+  "eval_id": "receipt-figure-render-figures-v1",
+  "capability_id": "receipt-figure-render",
+  "verdict": "ship",
+  "verdict_basis": "all 14 required gates pass",
+  "gates": [
+    {
+      "id": "historical_74_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "reconstructed_75_oracle_match",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "authored_21_geometry",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "historical_sidecars_accepted",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "fresh_sidecars_accepted",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "fresh_sidecar_reproduces_historical",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "tampered_sidecar_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "stale_sidecar_reported",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "capability_shift_bites",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "degenerate_inputs_reported",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "geometry_tracks_frozen_registry",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "cap_count_does_not_move_geometry",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "frozen_source_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    }
+  ],
+  "invocation": {
+    "invocation_id": "inv_20260918T154008Z-b69629",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260918T154008Z-b69629",
+    "manifest_sha256": "4f71f698924828bbaf958f0814147d38cc5edac1e68e8b2cb04d755d2a5a501d",
+    "output_sha256": "241cbe79a5fc6b16e8a7350b97931327e8fb819fe93619fcd9a4f07b1ba91ae5",
+    "eligibility_decision_id": "elig_20260918T154008Z-b6962e",
+    "eligibility_sha256": "6c3489e04f07d9f3c4764069b79864e6b9057ce02a54ee8af6248c069b46b492"
+  },
+  "eligibility": {
+    "decision_id": "elig_20260918T154008Z-b6962e",
+    "sha256": "6c3489e04f07d9f3c4764069b79864e6b9057ce02a54ee8af6248c069b46b492",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "dir": "eligibility/elig_20260918T154008Z-b6962e"
+  },
+  "artifacts": [
+    {
+      "path": "capability-input.json",
+      "sha256": "d30635c7dfee74ad14b1462b4b4de22be8f140a4563200a6c698e126fbd2284f",
+      "bytes": 2302
+    },
+    {
+      "path": "checks.json",
+      "sha256": "defcc54e6cd8ae140e610d9653b9d7ac43fa011917bfc74efc45005c9eb62ed3",
+      "bytes": 8764
+    },
+    {
+      "path": "evidence/inputs/empty-registry.json",
+      "sha256": "c086eb5b4e010c6992a8b486a65433330c799c380fd0b55eeffcfac52668eefc",
+      "bytes": 67
+    },
+    {
+      "path": "evidence/inputs/malformed-registry.json",
+      "sha256": "2373d2c337a2c28a25ec53ee0a6c37cce9d6c0a8b13d7e399b07a97c05fd5ba0",
+      "bytes": 59
+    },
+    {
+      "path": "evidence/inputs/oracle-fig-per-capability-74.png",
+      "sha256": "83e6f3d5a9379860efbab4066186e6f724680a4cb81d4a3d48835cf5d5ccefb0",
+      "bytes": 44703
+    },
+    {
+      "path": "evidence/inputs/oracle-fig-per-capability-75.png",
+      "sha256": "1fb79b8c61005951362e01415b663a27781afc1b1a8a5098f4c88a5fb03fba57",
+      "bytes": 44610
+    },
+    {
+      "path": "evidence/inputs/oracle-fig-verdicts-74.png",
+      "sha256": "f432049f84175b65bebc149b46a0c7aa23ee768668e2b8feb8cdf7dc638b9288",
+      "bytes": 6610
+    },
+    {
+      "path": "evidence/inputs/oracle-fig-verdicts-75.png",
+      "sha256": "384e4fda1b8526f21032dd8917760d01c759d12e798a7c4c8cd3a7ec22d00aae",
+      "bytes": 6551
+    },
+    {
+      "path": "evidence/inputs/registry-21-caps.json",
+      "sha256": "26f161eef96ec2bdea9652cf818bd3de13342059c6241b323b074cdb0b4be388",
+      "bytes": 26977
+    },
+    {
+      "path": "evidence/inputs/registry-74.json",
+      "sha256": "1439e88a327146cb8ed2a70ba261709abcdb9a6ab3c733ac8768e71296b12da9",
+      "bytes": 26595
+    },
+    {
+      "path": "evidence/inputs/registry-75-reconstructed.json",
+      "sha256": "5f30394f3fe89fd328c56c2067ef979f600fbb24a6d7d0268ba455480f8d6a09",
+      "bytes": 26915
+    },
+    {
+      "path": "evidence/inputs/values-cap-shifted.json",
+      "sha256": "8d52af02f04d1ca02be9d2b2c77463a30a34d6f7f853fa50be769fd75c4af9e0",
+      "bytes": 1975
+    },
+    {
+      "path": "evidence/inputs/values-historical-74.json",
+      "sha256": "12420d1b726ba9b3f900f97d48181912ba7381cfc61571399a0ba78bd7f2f0f0",
+      "bytes": 1974
+    },
+    {
+      "path": "evidence/inputs/values-historical-75.json",
+      "sha256": "e871124f3808962e06bd6eabc43a90a351ecbf35721c17460816a596320907b7",
+      "bytes": 1974
+    },
+    {
+      "path": "evidence/inputs/values-tampered.json",
+      "sha256": "4d09e7b6be53156ccc8ca0b5da8556650802cf17f97250a80bebe19246a68098",
+      "bytes": 1382
+    },
+    {
+      "path": "input.json",
+      "sha256": "86d64834614e05ee1f9ceb2afb5edd067bae97e1ccf50e1ff51651b73365cbe0",
+      "bytes": 2516
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "d90edba931a9181d2f0f22e4d9b9d60364fa55a5b8fe4fe68668ac82fc07be28",
+      "bytes": 1125
+    },
+    {
+      "path": "output.json",
+      "sha256": "c1631e2699e661397c0f0e4d2aeea20593c98d01f65b166f7b3be18c05ef831d",
+      "bytes": 349
+    },
+    {
+      "path": "work/empty-registry.json",
+      "sha256": "c086eb5b4e010c6992a8b486a65433330c799c380fd0b55eeffcfac52668eefc",
+      "bytes": 67
+    },
+    {
+      "path": "work/malformed-registry.json",
+      "sha256": "2373d2c337a2c28a25ec53ee0a6c37cce9d6c0a8b13d7e399b07a97c05fd5ba0",
+      "bytes": 59
+    },
+    {
+      "path": "work/oracle-fig-per-capability-74.png",
+      "sha256": "83e6f3d5a9379860efbab4066186e6f724680a4cb81d4a3d48835cf5d5ccefb0",
+      "bytes": 44703
+    },
+    {
+      "path": "work/oracle-fig-per-capability-75.png",
+      "sha256": "1fb79b8c61005951362e01415b663a27781afc1b1a8a5098f4c88a5fb03fba57",
+      "bytes": 44610
+    },
+    {
+      "path": "work/oracle-fig-verdicts-74.png",
+      "sha256": "f432049f84175b65bebc149b46a0c7aa23ee768668e2b8feb8cdf7dc638b9288",
+      "bytes": 6610
+    },
+    {
+      "path": "work/oracle-fig-verdicts-75.png",
+      "sha256": "384e4fda1b8526f21032dd8917760d01c759d12e798a7c4c8cd3a7ec22d00aae",
+      "bytes": 6551
+    },
+    {
+      "path": "work/registry-21-caps.json",
+      "sha256": "26f161eef96ec2bdea9652cf818bd3de13342059c6241b323b074cdb0b4be388",
+      "bytes": 26977
+    },
+    {
+      "path": "work/registry-74.json",
+      "sha256": "1439e88a327146cb8ed2a70ba261709abcdb9a6ab3c733ac8768e71296b12da9",
+      "bytes": 26595
+    },
+    {
+      "path": "work/registry-75-reconstructed.json",
+      "sha256": "5f30394f3fe89fd328c56c2067ef979f600fbb24a6d7d0268ba455480f8d6a09",
+      "bytes": 26915
+    },
+    {
+      "path": "work/values-cap-shifted.json",
+      "sha256": "8d52af02f04d1ca02be9d2b2c77463a30a34d6f7f853fa50be769fd75c4af9e0",
+      "bytes": 1975
+    },
+    {
+      "path": "work/values-historical-74.json",
+      "sha256": "12420d1b726ba9b3f900f97d48181912ba7381cfc61571399a0ba78bd7f2f0f0",
+      "bytes": 1974
+    },
+    {
+      "path": "work/values-historical-75.json",
+      "sha256": "e871124f3808962e06bd6eabc43a90a351ecbf35721c17460816a596320907b7",
+      "bytes": 1974
+    },
+    {
+      "path": "work/values-tampered.json",
+      "sha256": "4d09e7b6be53156ccc8ca0b5da8556650802cf17f97250a80bebe19246a68098",
+      "bytes": 1382
+    }
+  ],
+  "created_at": "2026-09-18T15:40:10.260Z"
+}

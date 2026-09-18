@@ -1,0 +1,59 @@
+{
+  "cases": [
+    {
+      "name": "historical_74",
+      "operation": "render",
+      "registry": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/registry-74.json"
+    },
+    {
+      "name": "reconstructed_75",
+      "operation": "render",
+      "registry": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/registry-75-reconstructed.json"
+    },
+    {
+      "name": "authored_21",
+      "operation": "render",
+      "registry": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/registry-21-caps.json"
+    },
+    {
+      "name": "degenerate_empty",
+      "operation": "render",
+      "registry": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/empty-registry.json"
+    },
+    {
+      "name": "degenerate_malformed",
+      "operation": "render",
+      "registry": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/malformed-registry.json"
+    },
+    {
+      "name": "historical_sidecar_74",
+      "operation": "check",
+      "registry": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/registry-74.json",
+      "values": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/values-historical-74.json"
+    },
+    {
+      "name": "historical_sidecar_75",
+      "operation": "check",
+      "registry": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/registry-75-reconstructed.json",
+      "values": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/values-historical-75.json"
+    },
+    {
+      "name": "attack_tampered",
+      "operation": "check",
+      "registry": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/registry-74.json",
+      "values": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/values-tampered.json"
+    },
+    {
+      "name": "stale_sidecar",
+      "operation": "check",
+      "registry": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/registry-74.json",
+      "values": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/values-historical-75.json"
+    },
+    {
+      "name": "attack_capability_shifted",
+      "operation": "check",
+      "registry": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/registry-74.json",
+      "values": "/Users/adam26/zcode-rcos/runs/20260918T161701Z-b19b7f/work/values-cap-shifted.json"
+    }
+  ]
+}
