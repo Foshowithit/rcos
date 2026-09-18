@@ -1,0 +1,247 @@
+{
+  "run": "invocation-kernel-3",
+  "capability": null,
+  "subject": "zcode-rcos: the invocation kernel (GPT round-5 ruling, step 3). A registry capability can now declare a runnable adapter and RCOS itself can invoke it: rcos run <capability-id> --input f.json resolves the entry, checks eligibility for the mode, validates the input contract before any process starts, runs the declared entrypoint exactly once, validates the output contract, and seals a write-once invocations/<inv_id>/ artifact. One kernel, different callers: the eval runner was converged onto the same path, so the thing being evaluated is now the thing reuse will call.",
+  "date": "2026-09-17",
+  "task": "rcos-invocation-kernel",
+  "spec": {
+    "file": "partsnap-rcos/GPT-REPLY-5-20260917.md (workspace/default, outside this repo)",
+    "sha256": "79913c449784b9d38dd730e21bb0efb077522c5a54607c552fda12fdd937e477",
+    "invariant": "If an RCOS registry entry claims to be a reusable capability, RCOS itself must know how to invoke that capability from its declared adapter and validate the result against its contract."
+  },
+  "commit": "654fe3b",
+  "base_commit": "2b64294",
+  "verdict": "ship",
+  "verdict_basis": "Before this step RCOS could describe capabilities but not execute them. For RCOS itself a registry entry was a string, a status and a count: the only way anything ran was for an eval package to carry its own private adapter, so the thing being evaluated was never the thing reuse would call. The kernel closes exactly that gap. lib/invocation.js runs a seven-step pipeline in a fixed order: eligibility for the mode (normal runs promoted capabilities only; eval admits candidates for development; retired entries need an explicit recorded forensic override), adapter declaration, contract declaration, entrypoint (exists, is a file, is executable), input contract BEFORE any process starts, one adapter spawn, output contract. Every branch ends in finish(), which writes the invocation artifact and a manifest that hashes itself, so a refusal is still an inspectable sealed record rather than a missing file. The four states are mechanical and deliberately not the eval vocabulary: completed (the adapter ran and its output satisfies the declared contract), rejected (the input was refused before execution), failed (the execution completed unsuccessfully - including exit 0 with malformed or contract-violating output), blocked (RCOS could not legitimately begin: no adapter, missing or non-executable entrypoint, unusable contract, ineligible status, missing dependency). Run result is not a judgement: the kernel never decides whether a capability is good, and the eval runner's verdict machinery is unchanged - deriveVerdict still has a single writer and the exit-code contract is still 0/3/4. What changed is where the adapter comes from: an rcos-eval/2 package names a registered capability plus capability_input and is forbidden a private adapter (declaring one is a validation error), and each run receipt now carries an invocation block naming the invocation id, its status, its mode and its manifest hash. Two defects were caught and fixed before shipping rather than papered over: the first draft resolved the capability with the throwing R.findCapability, which made the structured 'no such capability' refusal branch dead code (now an inline non-throwing lookup, pinned by test), and the eval runner's --submit test had been passing without installing the eval package it claimed to submit. Dogfooded on both real capabilities: reuse-ledger -> completed -> eval ship with 4/4 gates, agents-md-compactor -> completed -> eval fix with 5/6 gates (the broken compactor runs perfectly and still fails evaluation - the exact property the ruling asked for). 20 of the registry's 22 capabilities remain non-executable and the audit now says so out loud (2 executable / 20 non-executable, 20/20 promoted with no adapter, 20/20 resting on asserted evals) without inventing a single adapter or piece of evidence; the historical promoted entries were left byte-identical. `rcos run` moved no reuse counter and no registry byte. Full suite 49/49 green. Nothing pushed and nothing merged; local commits only, and the repo has no remote.",
+  "ship_bar": [
+    {
+      "id": 1,
+      "item": "a registry capability can declare a runnable adapter",
+      "status": "pass",
+      "evidence": "capabilities/reuse-ledger/ and capabilities/agents-md-compactor/ each carry contract.json + adapter/run.js (mode 0755, shebang) + tool + README + EVAL.json; the registry entries declare {type: 'command', entrypoint: 'capabilities/<id>/adapter/run.js', timeout_seconds: 30}; lib/adapter.js validates the declaration (ADAPTER_TYPES = ['command'] only, deliberately) and resolves entrypoints home-relative with '..' refused; audit counts 2 executable."
+    },
+    {
+      "id": 2,
+      "item": "rcos run <id> resolves and executes it",
+      "status": "pass",
+      "evidence": "invocations/inv_20260918T014906Z-9069a8 (reuse-ledger, mode eval): status completed, adapter.exit_code 0, contract.input pass, contract.output pass, output.json + evidence/ sealed; CLI exit 0. Same for both capabilities across 4 completed invocations."
+    },
+    {
+      "id": 3,
+      "item": "invalid input is deterministically rejected before adapter execution",
+      "status": "pass",
+      "evidence": "tests/invocation.test.js 'input the declared contract refuses is rejected before the adapter runs' - four cases (wrong type, unknown field under additionalProperties:false, missing required, non-object) each assert status rejected, manifest.adapter.exit_code === null, no work/ran.marker (the adapter's own side effect never happened) and a verifiable artifact; CLI exit 2."
+    },
+    {
+      "id": 4,
+      "item": "malformed output fails after execution",
+      "status": "pass",
+      "evidence": "tests/invocation.test.js 'exit 0 with output the contract does not accept is a failure, never a completion' - an adapter exiting 0 with an extra field is failed ('violates the declared output contract ... output.extra: unknown field'), and an adapter exiting 0 writing nothing is failed ('wrote no output at $RCOS_OUTPUT'); both keep exit_code 0 recorded and the work marker present, proving the run happened; CLI exit 3."
+    },
+    {
+      "id": 5,
+      "item": "missing or broken adapter yields a structured blocked/failed result",
+      "status": "pass",
+      "evidence": "tests/invocation.test.js covers five unusable declarations (no adapter, missing entrypoint, non-executable entrypoint, absent contract file, malformed contract) - all blocked with a specific basis, exit_code null, no marker, still a sealed verifiable artifact; adapter exit 4 -> blocked ('adapter reported it could not run (exit 4)'), any other non-zero -> failed; unknown capability id and unknown mode return {ok:false, error} and never mint an invocation."
+    },
+    {
+      "id": 6,
+      "item": "invocation artifacts are write-once and integrity-checkable",
+      "status": "pass",
+      "evidence": "invocations/<inv_id>/ is created with a non-recursive mkdir so EEXIST is the write-once signal; an explicit id that already exists throws 'already exists - invocations are write-once and never rewritten', a malformed id throws 'bad invocation id'. verifyInvocation re-hashes input/output/stdout/stderr + every evidence file, flags files present but unlisted, and checks the manifest's self-hash. All six dogfood invocations verify clean today ('verified (N artifacts re-hashed)', N = 3..11). Tampering tests: an appended stdout.txt, a planted stray.json and an edited manifest.json are each detected."
+    },
+    {
+      "id": 7,
+      "item": "rcos run does not increment reuse_count",
+      "status": "pass",
+      "evidence": "tests/invocation.test.js 'executing a capability moves no reuse counter and no registry byte': registry bytes byte-identical after a completed run, reuse_count unchanged, no traces/ directory created. Observed live too: registry sha256 7a8f0a32... identical before and after all six invocations and both eval runs. rcos run is the execution primitive; reuse semantics (trace append + reuse_count) still belong to rcos reuse only."
+    },
+    {
+      "id": 8,
+      "item": "eval-run can evaluate at least one capability through the same invocation kernel",
+      "status": "pass",
+      "evidence": "runs/20260918T014931Z-8e5d4f/receipt.json carries invocation {invocation_id: inv_20260918T014931Z-5b59dc, status: completed, mode: eval, manifest_sha256: e2e1e3a6..., output_sha256: 789275c5...}; runs/20260918T014935Z-c19a81/receipt.json carries inv_20260918T014935Z-6fd918 (manifest_sha256 0d9aa80e..., output_sha256 3f10a3a1...). Both eval packages are rcos-eval/2 and declare capability_input instead of a private adapter; declaring an adapter in /2 is a validation error, so the runner has no second way to invoke anything."
+    },
+    {
+      "id": 9,
+      "item": "reuse-ledger still ships through that path",
+      "status": "pass",
+      "evidence": "runs/20260918T014931Z-8e5d4f: verdict ship, 4/4 required gates pass (sync_refuses_without_trace_log, trace_append_moves_count, append_failure_leaves_registry_untouched, sync_reconverges_read_only) - the same four gates that passed in step 2, now exercising the registered capability instead of a private adapter."
+    },
+    {
+      "id": 10,
+      "item": "agents-md-compactor still executes successfully but evaluates FIX",
+      "status": "pass",
+      "evidence": "invocation inv_20260918T014935Z-6fd918: status completed, adapter exit 0, output contract pass, 11 artifacts sealed. Its eval run 20260918T014935Z-c19a81: verdict fix, 5/6 gates pass, semantic-survival fails - the headline amputation defect is still real and independently reproduced. An invocation succeeding proves execution, not quality."
+    },
+    {
+      "id": 11,
+      "item": "audit detects non-executable promoted/asserted entries without inventing adapters or evidence",
+      "status": "pass",
+      "evidence": "rcos audit now reports: '22 capabilities: 2 executable, 20 non-executable (no runnable adapter declared)'; '20/20 promoted capabilities have no executable adapter - RCOS cannot invoke them from the registry: filmstrip-verify, muse-image-lane, dell-gpu-dispatch, browser-verify-artifacts, qr-camo-embed (+15 more) (legacy entries; no adapter or evidence is invented for them)'; '20/20 promoted capabilities rest entirely on asserted evals'. Warnings, not errors, per the ruling - the historical entries were neither retired nor demoted during step 3, and no adapter or evidence was manufactured for them."
+    },
+    {
+      "id": 12,
+      "item": "the registry remains byte-stable unless an intentional migration explicitly changes it",
+      "status": "pass",
+      "evidence": "sha256 7a8f0a3235f3f26052827eacd749f2c4fc0be8304d76504a8caabc01a38dd2c8 before and after every invocation and both eval runs; the only registry change in this step is the intentional migration migrations/2026-09-17-step3-adapters.py adding the two candidate entries with their adapter declarations (22 capabilities, 20 promoted + 2 candidate). That migration landed in git inside the study loop's machine-state commit 2b64294; nothing else in the registry moved, and the byte-identity property is pinned by test."
+    }
+  ],
+  "dogfood_invocations": [
+    {
+      "invocation_id": "inv_20260918T014906Z-05b71e",
+      "capability_id": "reuse-ledger",
+      "mode": "normal",
+      "status": "blocked",
+      "basis": "status 'candidate' is not eligible for normal invocation (only promoted capabilities are)",
+      "note": "the negative case: a candidate cannot be run by production reuse"
+    },
+    {
+      "invocation_id": "inv_20260918T014906Z-9069a8",
+      "capability_id": "reuse-ledger",
+      "mode": "eval",
+      "status": "completed",
+      "basis": "adapter exited 0; input and output contracts pass"
+    },
+    {
+      "invocation_id": "inv_20260918T014911Z-127ac8",
+      "capability_id": "agents-md-compactor",
+      "mode": "eval",
+      "status": "failed",
+      "basis": "adapter exited 1",
+      "note": "pre-fix run, kept as evidence that a failing adapter is failed and not blocked"
+    },
+    {
+      "invocation_id": "inv_20260918T014925Z-d0d30a",
+      "capability_id": "agents-md-compactor",
+      "mode": "eval",
+      "status": "completed",
+      "basis": "adapter exited 0; input and output contracts pass"
+    },
+    {
+      "invocation_id": "inv_20260918T014931Z-5b59dc",
+      "capability_id": "reuse-ledger",
+      "mode": "eval",
+      "status": "completed",
+      "basis": "adapter exited 0; input and output contracts pass",
+      "eval_run": "runs/20260918T014931Z-8e5d4f",
+      "eval_verdict": "ship"
+    },
+    {
+      "invocation_id": "inv_20260918T014935Z-6fd918",
+      "capability_id": "agents-md-compactor",
+      "mode": "eval",
+      "status": "completed",
+      "basis": "adapter exited 0; input and output contracts pass",
+      "eval_run": "runs/20260918T014935Z-c19a81",
+      "eval_verdict": "fix"
+    }
+  ],
+  "dogfood_runs": [
+    {
+      "run_id": "20260918T014931Z-8e5d4f",
+      "eval_id": "reuse-ledger-invariant-v1",
+      "capability_id": "reuse-ledger",
+      "verdict": "ship",
+      "required_gates": 4,
+      "failed_gates": 0,
+      "invocation_id": "inv_20260918T014931Z-5b59dc",
+      "invocation_manifest_sha256": "e2e1e3a6d1c366112369fc3cff3fb657df13ce62f411f728af6bee5bcc971dc2",
+      "invocation_output_sha256": "789275c5426a343ae340b946316c3f88dac03300fa60be83285167052998990e",
+      "submitted": false,
+      "submitted_reason": "not submitted - the capability is a candidate and the ruling's dogfood asked for execution + evaluation through the kernel, not promotion"
+    },
+    {
+      "run_id": "20260918T014935Z-c19a81",
+      "eval_id": "agents-md-compactor-v1",
+      "capability_id": "agents-md-compactor",
+      "verdict": "fix",
+      "required_gates": 6,
+      "failed_gates": 1,
+      "failed_gate_ids": [
+        "semantic-survival"
+      ],
+      "invocation_id": "inv_20260918T014935Z-6fd918",
+      "invocation_manifest_sha256": "0d9aa80ea74a491a56526cbe23e98fc17b419ea223dac3fb6ce3857927ef81ea",
+      "invocation_output_sha256": "3f10a3a1fd73f0c84c12dd82c53d302f335d81fdf4d490d62b1bf21d4a6f4a59",
+      "submitted": false,
+      "submitted_reason": "not submitted - the fix verdict is a fact about the tool, not a promotion event; fixing the compactor is a separate decision"
+    }
+  ],
+  "registry": {
+    "path": "registry/capability-registry.json",
+    "sha256": "7a8f0a3235f3f26052827eacd749f2c4fc0be8304d76504a8caabc01a38dd2c8",
+    "capabilities": 22,
+    "promoted": 20,
+    "candidate": 2,
+    "executable": 2,
+    "byte_stable_across_this_step": true
+  },
+  "audit_after": [
+    "WARN 'reuse-ledger': candidate with zero evals",
+    "WARN 'agents-md-compactor': candidate with zero evals",
+    "WARN 22 capabilities: 2 executable, 20 non-executable (no runnable adapter declared)",
+    "WARN 20/20 promoted capabilities have no executable adapter - RCOS cannot invoke them from the registry: filmstrip-verify, muse-image-lane, dell-gpu-dispatch, browser-verify-artifacts, qr-camo-embed (+15 more) (legacy entries; no adapter or evidence is invented for them - see README)",
+    "WARN 20/20 promoted capabilities rest entirely on asserted evals - no runner-backed run yet (define evals/<id>/ packages and run `rcos eval-run --eval <id> --task <t> --submit`)",
+    "audit clean"
+  ],
+  "test_output": "49 tests / 49 pass / 0 fail across 9 files (npm test = node --test tests/*.test.js). New: tests/invocation.test.js, 9 tests, 382 lines.",
+  "deltas": {
+    "new_files": [
+      "lib/adapter.js (226 lines): adapter declaration validation (type=command), the rcos-capability-contract/1 shape check, and the deterministic contract subset (enum/type/minLength/maxLength/pattern/minimum/maximum/minItems/maxItems/items/required/properties/additionalProperties:false)",
+      "lib/invocation.js: the kernel - eligibility by mode, contract checks either side of exactly one spawn, write-once invocation dir, self-hashing manifest, verifyInvocation, listInvocations",
+      "tests/invocation.test.js (382 lines, 9 tests)",
+      "capabilities/reuse-ledger/ (README, EVAL.json, contract.json, adapter/run.js, tool/)",
+      "capabilities/agents-md-compactor/ (README, EVAL.json, contract.json, adapter/run.js, tool/compact_agents_md.py)",
+      "migrations/2026-09-17-step3-adapters.py (the intentional registry migration: two candidate entries + adapter declarations)",
+      "invocations/ (six dogfood invocations, tracked in full including work/, matching the existing runs/ precedent)"
+    ],
+    "modified_files": [
+      "bin/rcos: run, invocations, invocation-verify; exit ladder for run 0/2/3/4 mirroring completed/rejected/failed/blocked",
+      "lib/evalrunner.js: rcos-eval/2 (capability + capability_input, private adapter forbidden), invokes through the kernel, records the invocation block in the run manifest and receipt, mapInvocationStatus",
+      "lib/validate.js + lib/registry.js: optional adapter field validation, resolveEntrypoint checks, audit executability + provenance warnings",
+      "evals/reuse-ledger-invariant-v1/ and evals/agents-md-compactor-v1/: converted to /2, private adapter/run.js deleted, gates rewritten to judge the capability's output",
+      "tests/cli.test.js, tests/evalrunner.test.js, tests/traces.test.js: fixtures updated for the executable registry entries"
+    ],
+    "behavior_changed": [
+      "A registered capability can now be executed by RCOS itself; before, only an eval package with a private adapter could run anything.",
+      "An eval package can no longer smuggle its own adapter in /2 - it must name a registered capability.",
+      "Exit 0 with contract-violating output is failed, not completed.",
+      "A refusal (ineligible status, bad declaration, bad input) now leaves a sealed artifact instead of an error message.",
+      "rcos run deliberately moves no reuse counter and writes no trace.",
+      "audit now reports executability and provenance ratios as warnings."
+    ],
+    "not_built_deliberately": [
+      "semantic router, LLM selection, planner",
+      "authority classes, truth hierarchy",
+      "simulation, PartSnap ontology",
+      "retry intelligence, fallback routing, automatic capability acquisition",
+      "adapter types beyond command (python/http/mcp/workflow/model stay future declarations, not frameworks)"
+    ]
+  },
+  "artifacts": {
+    "bin/rcos": "ed5d61177d3e3569882cb5bbfec6c7972fc36cd00378375bd92e0dfdd77011b4",
+    "lib/adapter.js": "3abcddb45f642deee5d6e24ff092806a36ec25c6c1308bd6927c17f147e754e2",
+    "lib/invocation.js": "148af8c128d71a086c280bfc77a907317b4f431863355b5fedf4432382ec2dc9",
+    "lib/evalrunner.js": "714a033029d9200365a504c8a1eece2b882141221fd9f021c9110578e5ab31d1",
+    "lib/registry.js": "e52f05c07fc1ff162e1dc3cfa57fb41d0b939b27b10ce1626bd514b39aadf0ce",
+    "lib/validate.js": "1966548e0e943403189b6eaaaeeb77643fe3a07c09c73117e09ba87a090237cc",
+    "tests/invocation.test.js": "7978d8914793e42f5e2523fc9386fd7df68860f26ef6bca0b5249e9963534cd1",
+    "capabilities/reuse-ledger/contract.json": "7a414788a216dce4e3deaf411d2f83f2d42c53070029006e33a5b6065f833cb9",
+    "capabilities/reuse-ledger/adapter/run.js": "c57f510d809f59f982ca26b7f8f17c6cf49b6f7b9bb9822b7fd8139e15473f8b",
+    "capabilities/agents-md-compactor/contract.json": "7da97833b68a9c461810bbc3466a305637ce4d269a49e8bd9d0ef6ea126cdd5f",
+    "capabilities/agents-md-compactor/adapter/run.js": "cb9ca0cf6a180a24619b2196791cba0283ff4a6184daa7337816a619f8eecec5",
+    "migrations/2026-09-17-step3-adapters.py": "9fa2c5d25ec678412960cc43a8e1ffcfdf1757e642d2e6e83492772b05ec8545",
+    "evals/reuse-ledger-invariant-v1/eval.json": "8475a417d8957492931073cd65e879418f19c7619aaa86ab95b3e1d6188e3955",
+    "evals/agents-md-compactor-v1/eval.json": "0cf3fb6d0af200145c0146dc8db9d4d1f04e6e3b86b76b194ca2b55e481d98bc"
+  },
+  "pushed": false,
+  "merged": false,
+  "not_done": [
+    "The 20 promoted capabilities still have no runnable adapter. That is now visible (audit warns) and untouched by design - writing adapters for them is a separate, later decision, and inventing them here would have been exactly the dishonesty the ruling warned against.",
+    "The compactor's semantic-survival defect is still unfixed; it evaluates fix, correctly.",
+    "The two capabilities remain candidates; nothing was promoted.",
+    "No reuse_count moved; traces/ unchanged by this step."
+  ],
+  "next_per_ruling": "Step 4 = the deterministic eligibility engine (which capabilities may serve a stated need), then the spine REGISTRY -> EVAL RUNNER (quality) -> ELIGIBILITY -> SELECTOR/PLANNER -> INVOCATION KERNEL -> ADAPTER -> REAL WORLD. The PartSnap freeze stays in place until that spine exists."
+}
