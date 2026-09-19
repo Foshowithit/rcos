@@ -1,0 +1,15 @@
+[Stage 1] image      : ref_518.png
+[Stage 1] output     : out_shape/shape.glb
+[Stage 1] weights    : dgrauet/hunyuan3d-2.1-mlx (fp16 default)
+[Stage 1] peak RSS at start: 0.05 GB
+[Stage 1] pipeline ready in 2.0s (peak RSS 7.23 GB)
+Hierarchical Volume Decoding [r65]: 274625 points
+Hierarchical Volume Decoding [r129]: 373485 points (of 2146689 total)
+Hierarchical Volume Decoding [r257]: 1488269 points (of 16974593 total)
+[Stage 1] generated in 648.5s (286384 verts, 572904 faces)
+[Stage 1] extents    : [1.97885025 1.98754156 0.37871361]
+[Stage 1] bounds     : [[-0.9946253299713135, -0.9971956014633179, -0.19342494010925293], [0.9842249155044556, 0.9903459548950195, 0.185288667678833]]
+[Stage 1] watertight : True
+[Stage 1] peak RSS   : 8.32 GB
+[Stage 1] saved      : out_shape/shape.glb (9.8 MB)
+[TIMING] shape load 2.0s + infer 648.5s = 650.5s total

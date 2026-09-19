@@ -1,0 +1,246 @@
+{
+  "schema": "rcos-capability-contract/1",
+  "capability_id": "hunyuan3d-mlx-local",
+  "notes": [
+    "Declared invocation for the hunyuan3d-mlx-local capability (image -> textured",
+    "3D asset, Mac-local, fully offline, $0). The adapter executes the three frozen",
+    "stage scripts beside this contract — prep_reference.py, run_shape.py,",
+    "run_texture.py (the exact bytes the promoted tool home ships, pinned by",
+    "sha256 in the observation) — as one chain per case in its own scratch",
+    "directory: it copies the case's source image to ref_source.png (the name prep",
+    "reads), runs prep -> shape -> texture with cwd-relative paths, and records",
+    "what the scripts did. The adapter never re-implements a stage, never opens a",
+    "GLB it did not measure by header alone, and never judges the output: every",
+    "value in the observation is an argv, one of the scripts' own output streams,",
+    "a header fact of a file a stage read or wrote, or an environment identity",
+    "measured at run time.",
+    "",
+    "Exit-code semantics of the ADAPTER (not the scripts): 0 = ran and wrote the",
+    "observation; 4 = could not run (missing kernel env, malformed input,",
+    "duplicate case names, unreadable source file, no usable interpreter, or a",
+    "failing dependency probe). The CHAIN's documented exit codes are 0 (every",
+    "stage succeeded) and 1, which covers a stage's own refusal AND any uncaught",
+    "Python error (traceback): prep_reference.py exits 1 on an unreadable source",
+    "(e.g. PIL UnidentifiedImageError on a 0-byte PNG) and run_shape.py/run_texture.py",
+    "exit 2 on wrong arity. The adapter stops the chain at the first nonzero stage,",
+    "records outcome=refused for that case without pre-judging what the stage hit,",
+    "and lets the gates tell refusal kinds apart by the exact stream lines.",
+    "",
+    "Interpreter resolution, in order: $RCOS_HUNYUAN_PYTHON if set, else",
+    "~/venvs/hunyuan3d-mlx/bin/python under the current user's home. The",
+    "interpreter and its dependency versions are measured by a one-shot probe",
+    "(python, mlx, numpy, trimesh, rembg, pillow) before any case and recorded in",
+    "the observation. The interpreter, the upstream hunyuan3d-2.1-mlx checkout",
+    "($RCOS_HUNYUAN_REPO, else ~/tools/hunyuan3d-2.1-mlx) and the HF weights",
+    "snapshot are ENVIRONMENT, not committed capability bytes; no absolute user",
+    "path is embedded in these committed lines. A missing or broken environment is",
+    "cannotRun (exit 4), never a fabricated case record.",
+    "",
+    "Case sources are images; the contract accepts any readable file so the",
+    "refusal path itself is exercisable (see the empty_source_refused case in the",
+    "grounding eval — a 0-byte PNG the prep stage must reject). Whether a",
+    "generated asset is artistically acceptable is the owner's llm-gate call",
+    "recorded in the registry history, not re-decided here.",
+    "",
+    "Duration: one e2e case takes ~15-16 min on the pinned Mac (shape ~493s +",
+    "texture ~404s + prep ~15s). The registry adapter timeout is sized for three",
+    "cases plus overhead."
+  ],
+  "input": {
+    "type": "object",
+    "required": ["cases"],
+    "additionalProperties": false,
+    "properties": {
+      "cases": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 8,
+        "items": {
+          "type": "object",
+          "required": ["name", "operation", "source"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string", "pattern": "^[a-z0-9_]+$", "minLength": 1, "maxLength": 40 },
+            "operation": { "type": "string", "enum": ["e2e"] },
+            "source": { "type": "string", "minLength": 1, "maxLength": 1024 }
+          }
+        }
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["schema", "frozen", "cases"],
+    "additionalProperties": false,
+    "properties": {
+      "schema": { "type": "string", "enum": ["hunyuan3d-mlx-local-observation/1"] },
+      "frozen": {
+        "type": "object",
+        "required": ["scripts", "interpreter", "upstream"],
+        "additionalProperties": false,
+        "properties": {
+          "scripts": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "required": ["name", "path", "sha256", "usage"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string", "pattern": "^[a-z0-9_.]+$", "minLength": 1, "maxLength": 64 },
+                "path": { "type": "string", "minLength": 1, "maxLength": 1024 },
+                "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                "usage": { "type": "string", "minLength": 1, "maxLength": 2048 }
+              }
+            }
+          },
+          "interpreter": {
+            "type": "object",
+            "required": ["path", "version", "deps"],
+            "additionalProperties": false,
+            "properties": {
+              "path": { "type": "string", "minLength": 1, "maxLength": 1024 },
+              "version": { "type": "string", "minLength": 1, "maxLength": 64 },
+              "deps": {
+                "type": "object",
+                "required": ["mlx", "numpy", "trimesh", "rembg", "pillow"],
+                "additionalProperties": false,
+                "properties": {
+                  "mlx": { "type": "string", "minLength": 1, "maxLength": 64 },
+                  "numpy": { "type": "string", "minLength": 1, "maxLength": 64 },
+                  "trimesh": { "type": "string", "minLength": 1, "maxLength": 64 },
+                  "rembg": { "type": "string", "minLength": 1, "maxLength": 64 },
+                  "pillow": { "type": "string", "minLength": 1, "maxLength": 64 }
+                }
+              }
+            }
+          },
+          "upstream": {
+            "type": "object",
+            "required": ["repo", "repo_head", "patch_sha256", "weights"],
+            "additionalProperties": false,
+            "properties": {
+              "repo": { "type": "string", "minLength": 1, "maxLength": 1024 },
+              "repo_head": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" },
+              "patch_sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+              "weights": {
+                "type": "object",
+                "required": ["repo_id", "snapshot"],
+                "additionalProperties": false,
+                "properties": {
+                  "repo_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+                  "snapshot": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "cases": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 8,
+        "items": {
+          "type": "object",
+          "required": ["name", "operation", "source", "stages", "outcome", "duration_ms", "out_files"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string", "pattern": "^[a-z0-9_]+$", "minLength": 1, "maxLength": 40 },
+            "operation": { "type": "string", "enum": ["e2e"] },
+            "source": {
+              "type": "object",
+              "required": ["path", "sha256", "bytes", "png", "glb"],
+              "additionalProperties": false,
+              "properties": {
+                "path": { "type": "string", "minLength": 1, "maxLength": 1024 },
+                "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                "bytes": { "type": "integer", "minimum": 0 },
+                "png": {
+                  "type": ["object", "null"],
+                  "required": ["width", "height", "bit_depth", "color_type"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "width": { "type": "integer", "minimum": 1 },
+                    "height": { "type": "integer", "minimum": 1 },
+                    "bit_depth": { "type": "integer", "minimum": 1, "maximum": 16 },
+                    "color_type": { "type": "integer", "minimum": 0, "maximum": 6 }
+                  }
+                },
+                "glb": {
+                  "type": ["object", "null"],
+                  "required": ["version", "json_bytes", "asset_version", "generator"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "version": { "type": "integer", "minimum": 1 },
+                    "json_bytes": { "type": "integer", "minimum": 1 },
+                    "asset_version": { "type": ["string", "null"], "minLength": 0, "maxLength": 32 },
+                    "generator": { "type": ["string", "null"], "minLength": 0, "maxLength": 200 }
+                  }
+                }
+              }
+            },
+            "stages": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "required": ["stage", "argv", "exit_status", "signal", "duration_ms", "stdout", "stderr"],
+                "additionalProperties": false,
+                "properties": {
+                  "stage": { "type": "string", "enum": ["prep", "shape", "texture"] },
+                  "argv": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 1024 }, "minItems": 2, "maxItems": 8 },
+                  "exit_status": { "type": ["integer", "null"], "minimum": 0, "maximum": 255 },
+                  "signal": { "type": ["string", "null"], "minLength": 1, "maxLength": 32 },
+                  "duration_ms": { "type": "integer", "minimum": 0 },
+                  "stdout": { "type": "string", "maxLength": 20000 },
+                  "stderr": { "type": "string", "maxLength": 20000 }
+                }
+              }
+            },
+            "outcome": { "type": "string", "enum": ["embedded", "refused", "timed_out", "errored"] },
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "out_files": {
+              "type": "array",
+              "minItems": 0,
+              "maxItems": 16,
+              "items": {
+                "type": "object",
+                "required": ["path", "sha256", "bytes", "png", "glb"],
+                "additionalProperties": false,
+                "properties": {
+                  "path": { "type": "string", "minLength": 1, "maxLength": 1024 },
+                  "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                  "bytes": { "type": "integer", "minimum": 0 },
+                  "png": {
+                    "type": ["object", "null"],
+                    "required": ["width", "height", "bit_depth", "color_type"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "width": { "type": "integer", "minimum": 1 },
+                      "height": { "type": "integer", "minimum": 1 },
+                      "bit_depth": { "type": "integer", "minimum": 1, "maximum": 16 },
+                      "color_type": { "type": "integer", "minimum": 0, "maximum": 6 }
+                    }
+                  },
+                  "glb": {
+                    "type": ["object", "null"],
+                    "required": ["version", "json_bytes", "asset_version", "generator"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "version": { "type": "integer", "minimum": 1 },
+                      "json_bytes": { "type": "integer", "minimum": 1 },
+                      "asset_version": { "type": ["string", "null"], "minLength": 0, "maxLength": 32 },
+                      "generator": { "type": ["string", "null"], "minLength": 0, "maxLength": 200 }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

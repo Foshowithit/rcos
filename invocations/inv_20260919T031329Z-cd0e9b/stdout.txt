@@ -1,0 +1,4 @@
+bearing_product_e2e [e2e] outcome=errored stages=prep:null out_files=2 10.5s
+bearing_product_e2e_repeat [e2e] outcome=embedded stages=prep:0,shape:0,texture:0 out_files=8 952.9s
+empty_source_refused [e2e] outcome=refused stages=prep:1 out_files=0 1.9s
+observed 3 cases (scripts 248a9251/b103eb76/83152585, interpreter 3.12.13/mlx 0.32.2, head 5fe21945)

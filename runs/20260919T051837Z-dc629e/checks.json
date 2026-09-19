@@ -1,0 +1,230 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260919T051837Z-dc629e",
+  "gates": [
+    {
+      "id": "prep_reference_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "prep_reference_reproduced"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] prep_reference_reproduced: ok prep stdout byte-exact, both prep artifacts reproduce\n",
+      "stderr": "",
+      "duration_ms": 105
+    },
+    {
+      "id": "shape_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "shape_reproduced"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] shape_reproduced: ok shape stdout pins + both shape artifacts reproduce\n",
+      "stderr": "",
+      "duration_ms": 91
+    },
+    {
+      "id": "shape_topology_measured",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "shape_topology_measured"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] shape_topology_measured: ok helper topology matches script stdout counts\n[gate] shape_topology_measured: ok shape.glb helper measurement matches pins (286384v/572904f watertight)\n",
+      "stderr": "",
+      "duration_ms": 814
+    },
+    {
+      "id": "texture_artifacts_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "texture_artifacts_reproduced"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] texture_artifacts_reproduced: ok texture stdout pins + all four texture artifacts reproduce\n",
+      "stderr": "",
+      "duration_ms": 94
+    },
+    {
+      "id": "texture_measurements",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "texture_measurements"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] texture_measurements: ok textured.glb helper measurement + png facts match pins (25633v/40000f, 2 images)\n",
+      "stderr": "",
+      "duration_ms": 789
+    },
+    {
+      "id": "e2e_repeat_consistent",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "e2e_repeat_consistent"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] e2e_repeat_consistent: ok repeat case: all 8 artifacts byte-identical + deterministic stdout lines identical\n",
+      "stderr": "",
+      "duration_ms": 84
+    },
+    {
+      "id": "empty_source_refused",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "empty_source_refused"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] empty_source_refused: ok 0-byte source refused: prep exit 1, empty stdout, UnidentifiedImageError, nothing downstream ran\n",
+      "stderr": "",
+      "duration_ms": 83
+    },
+    {
+      "id": "torch_free_asserted",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "torch_free_asserted"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] torch_free_asserted: ok torch-free: assert lines in frozen bytes, stages exited 0, deps carry no torch\n",
+      "stderr": "",
+      "duration_ms": 85
+    },
+    {
+      "id": "source_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "source_identity_pinned"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] source_identity_pinned: ok upstream identity re-derived live: head, patch (byte-equal to fixture), snapshot\n",
+      "stderr": "",
+      "duration_ms": 136
+    },
+    {
+      "id": "interpreter_declared",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "interpreter_declared"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] interpreter_declared: ok live interpreter probe matches declared pins (python 3.12.13, mlx 0.32.2)\n",
+      "stderr": "",
+      "duration_ms": 131
+    },
+    {
+      "id": "frozen_source_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "frozen_source_pinned"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] frozen_source_pinned: ok frozen sources on disk, in observation, and in evidence all match pins\n",
+      "stderr": "",
+      "duration_ms": 89
+    },
+    {
+      "id": "budgets_within_declared",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "budgets_within_declared"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] budgets_within_declared: ok all stages within declared budgets, peak RSS <= 10 GB, no signals\n",
+      "stderr": "",
+      "duration_ms": 83
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "artifact_identity_pinned"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] artifact_identity_pinned: ok freeze layer verified: eval bytes, fixtures triple-located, 8/8 artifacts pinned per e2e case\n",
+      "stderr": "",
+      "duration_ms": 91
+    },
+    {
+      "id": "oracle_eval2_lineage",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "oracle_eval2_lineage"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "[gate] oracle_eval2_lineage: ok all 8 pins byte-match the committed eval-2 oracle (2026-09-17) and were re-proven by the 2026-09-18 probe before this package existed\n",
+      "stderr": "",
+      "duration_ms": 107
+    }
+  ]
+}

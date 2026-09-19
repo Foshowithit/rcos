@@ -1,0 +1,19 @@
+{
+  "cases": [
+    {
+      "name": "bearing_product_e2e",
+      "operation": "e2e",
+      "source": "/Users/adam26/zcode-rcos-wt-p6/runs/20260919T051837Z-dc629e/work/bearing-ref.png"
+    },
+    {
+      "name": "bearing_product_e2e_repeat",
+      "operation": "e2e",
+      "source": "/Users/adam26/zcode-rcos-wt-p6/runs/20260919T051837Z-dc629e/work/bearing-ref.png"
+    },
+    {
+      "name": "empty_source_refused",
+      "operation": "e2e",
+      "source": "/Users/adam26/zcode-rcos-wt-p6/runs/20260919T051837Z-dc629e/work/empty-source.png"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+rembg       -> ref_518_full.png (1600, 1600)
+opaque frac : 0.4300
+recentered  -> ref_518.png (518x518)

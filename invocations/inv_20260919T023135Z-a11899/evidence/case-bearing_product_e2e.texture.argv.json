@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/run_texture.py",
+    "out_shape/shape.glb",
+    "ref_518.png",
+    "out_tex"
+  ],
+  "interpreter": "/Users/adam26/venvs/hunyuan3d-mlx/bin/python",
+  "cwd": "/Users/adam26/zcode-rcos-wt-p6/invocations/inv_20260919T023135Z-a11899/work/case-bearing_product_e2e",
+  "exit_status": 0,
+  "signal": null,
+  "duration_ms": 469992
+}

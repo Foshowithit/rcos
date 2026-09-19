@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/prep_reference.py",
+    "ref_source.png",
+    "ref_518.png"
+  ],
+  "interpreter": "/Users/adam26/venvs/hunyuan3d-mlx/bin/python",
+  "cwd": "/Users/adam26/zcode-rcos-wt-p6/invocations/inv_20260919T031329Z-cd0e9b/work/case-bearing_product_e2e",
+  "exit_status": null,
+  "signal": "SIGABRT",
+  "duration_ms": 10462
+}

@@ -1,0 +1,17 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260919T014732Z-205625",
+  "adapter": {
+    "status": "failed",
+    "reason": "capability invocation failed: adapter exited 0 but its output violates the declared output contract: output.cases[0].source.glb: unknown field (contract declares additionalProperties: false); output.cases[1].source.glb: unknown field (contract declares additionalProperties: false); output.cases[2].source.glb: unknown field (contract declares additionalProperties: false)",
+    "argv": [
+      "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/run.js"
+    ],
+    "exit_code": 0,
+    "signal": null,
+    "stdout": "",
+    "stderr": "",
+    "duration_ms": 2167590
+  },
+  "produced": []
+}

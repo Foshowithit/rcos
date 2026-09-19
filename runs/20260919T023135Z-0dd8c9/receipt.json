@@ -1,0 +1,184 @@
+{
+  "schema": "rcos-run-receipt/1",
+  "run_id": "20260919T023135Z-0dd8c9",
+  "eval_id": "hunyuan3d-mlx-local-grounding-v1",
+  "capability_id": "hunyuan3d-mlx-local",
+  "verdict": "fix",
+  "verdict_basis": "1 of 14 required gates fail: budgets_within_declared",
+  "gates": [
+    {
+      "id": "prep_reference_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "shape_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "shape_topology_measured",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "texture_artifacts_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "texture_measurements",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "e2e_repeat_consistent",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "empty_source_refused",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "torch_free_asserted",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "source_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "interpreter_declared",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "frozen_source_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "budgets_within_declared",
+      "type": "deterministic",
+      "required": true,
+      "status": "fail",
+      "exit_code": 3
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    },
+    {
+      "id": "oracle_eval2_lineage",
+      "type": "deterministic",
+      "required": true,
+      "status": "pass",
+      "exit_code": 0
+    }
+  ],
+  "invocation": {
+    "invocation_id": "inv_20260919T023135Z-a11899",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260919T023135Z-a11899",
+    "manifest_sha256": "c849d817362399feaafde3d5d3095d019e32d29213f864475c3bf0833572d3aa",
+    "output_sha256": "615e30f5f833ea108d96b206222d4610d6c8e5144f569cd44cc8a1cc81ecb003",
+    "eligibility_decision_id": "elig_20260919T023135Z-723ad0",
+    "eligibility_sha256": "3d189f02b7cdc64f2a33eee29994d5ab07dbd0737d7ead0928239737d8747e9e"
+  },
+  "eligibility": {
+    "decision_id": "elig_20260919T023135Z-723ad0",
+    "sha256": "3d189f02b7cdc64f2a33eee29994d5ab07dbd0737d7ead0928239737d8747e9e",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "dir": "eligibility/elig_20260919T023135Z-723ad0"
+  },
+  "artifacts": [
+    {
+      "path": "capability-input.json",
+      "sha256": "db8fbdd0f28dab4ce61d43e3dc4f7b8a4f0abea5a6fccd06603483596f59afac",
+      "bytes": 554
+    },
+    {
+      "path": "checks.json",
+      "sha256": "31db4dc1dbc78b494b4125228d34f00985a6f7a8250761fc4de75522c355e1de",
+      "bytes": 7626
+    },
+    {
+      "path": "evidence/inputs/bearing-ref.png",
+      "sha256": "94f1e7347fc9156cd82587df5b321e90ed745ca20b9c6b7325384bd436b766cf",
+      "bytes": 1524333
+    },
+    {
+      "path": "evidence/inputs/empty-source.png",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/inputs/pipeline_mlx-PR8.patch",
+      "sha256": "784a2344d4b8e5e3f28fb88e9a5ac751b271976e36a7b3d80902052e3c9b37bf",
+      "bytes": 2357
+    },
+    {
+      "path": "input.json",
+      "sha256": "76b44dae1df9b8aa1d91c40ef63f85014d46a1bc7f60bbbf85950682c8f0a009",
+      "bytes": 898
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "e8ae45fd3d64bbe58afad8085f63497ff830231b87fc1de944c42754c1c9826a",
+      "bytes": 1132
+    },
+    {
+      "path": "output.json",
+      "sha256": "2b7f827a00455f2570e952155fc7abfe5f902d0c095555065c95bb8cd757c840",
+      "bytes": 357
+    },
+    {
+      "path": "work/bearing-ref.png",
+      "sha256": "94f1e7347fc9156cd82587df5b321e90ed745ca20b9c6b7325384bd436b766cf",
+      "bytes": 1524333
+    },
+    {
+      "path": "work/empty-source.png",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "work/pipeline_mlx-PR8.patch",
+      "sha256": "784a2344d4b8e5e3f28fb88e9a5ac751b271976e36a7b3d80902052e3c9b37bf",
+      "bytes": 2357
+    }
+  ],
+  "created_at": "2026-09-19T03:07:34.485Z"
+}

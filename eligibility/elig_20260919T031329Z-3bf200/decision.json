@@ -1,0 +1,48 @@
+{
+  "schema": "rcos-eligibility/1",
+  "decision_id": "elig_20260919T031329Z-3bf200",
+  "scope": "execute",
+  "capability_id": "hunyuan3d-mlx-local",
+  "capability_version": "1.0.0",
+  "caller_context": {
+    "purpose": "eval",
+    "explicit_capability_id": "hunyuan3d-mlx-local",
+    "scope": "execute",
+    "forensic_reason": null,
+    "allow_candidate": true,
+    "allow_retired": false,
+    "require_executed_provenance": false,
+    "require_current_ship": false
+  },
+  "observed_state": {
+    "status": "promoted",
+    "executable": true,
+    "adapter": {
+      "declared": true,
+      "type": "command",
+      "type_supported": true,
+      "declaration_errors": [],
+      "entrypoint": "capabilities/hunyuan3d-mlx-local/adapter/run.js",
+      "entrypoint_present": true,
+      "entrypoint_executable": true,
+      "contract_declared": true,
+      "contract_usable": true,
+      "contract_errors": []
+    },
+    "provenance": "executed",
+    "latest_eval_verdict": "fix",
+    "latest_eval_at": "2026-09-19",
+    "eval_fresh": "unknown",
+    "evals_total": 5,
+    "evals_executed": 3
+  },
+  "eligible": true,
+  "reasons": [],
+  "decided_at": "2026-09-19T03:13:29.795Z",
+  "rcos_home": "/Users/adam26/zcode-rcos-wt-p6",
+  "created_at": "2026-09-19T03:13:29.800Z",
+  "integrity": {
+    "algo": "sha256",
+    "value": "1c6ab0daaf7ed6d8158a7768266a440643c5d485cfa326aa48ecc82d6f618f1a"
+  }
+}

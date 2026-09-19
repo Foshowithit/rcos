@@ -1,0 +1,184 @@
+{
+  "schema": "rcos-run-receipt/1",
+  "run_id": "20260919T014732Z-205625",
+  "eval_id": "hunyuan3d-mlx-local-grounding-v1",
+  "capability_id": "hunyuan3d-mlx-local",
+  "verdict": "blocked",
+  "verdict_basis": "adapter failed: capability invocation failed: adapter exited 0 but its output violates the declared output contract: output.cases[0].source.glb: unknown field (contract declares additionalProperties: false); output.cases[1].source.glb: unknown field (contract declares additionalProperties: false); output.cases[2].source.glb: unknown field (contract declares additionalProperties: false)",
+  "gates": [
+    {
+      "id": "prep_reference_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "shape_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "shape_topology_measured",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "texture_artifacts_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "texture_measurements",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "e2e_repeat_consistent",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "empty_source_refused",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "torch_free_asserted",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "source_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "interpreter_declared",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "frozen_source_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "budgets_within_declared",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    },
+    {
+      "id": "oracle_eval2_lineage",
+      "type": "deterministic",
+      "required": true,
+      "status": "blocked",
+      "exit_code": null
+    }
+  ],
+  "invocation": {
+    "invocation_id": "inv_20260919T014732Z-758ada",
+    "status": "failed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260919T014732Z-758ada",
+    "manifest_sha256": "6f9b2d744634b686b06741845f21ff592e05d1343ce2c1a55c60a2a2007753df",
+    "output_sha256": "7cedc8c80f8abe858c85ecb67b732a7071cbd12d1ac64214b578b7e1c16be7db",
+    "eligibility_decision_id": "elig_20260919T014732Z-404cd5",
+    "eligibility_sha256": "3eb7ddc4f1eabe2eea1331b4760bab674631a5fb393335e4c4602be0f80b5ddf"
+  },
+  "eligibility": {
+    "decision_id": "elig_20260919T014732Z-404cd5",
+    "sha256": "3eb7ddc4f1eabe2eea1331b4760bab674631a5fb393335e4c4602be0f80b5ddf",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "dir": "eligibility/elig_20260919T014732Z-404cd5"
+  },
+  "artifacts": [
+    {
+      "path": "capability-input.json",
+      "sha256": "d13d670371ac6ee5d86c13d462fe479c0877164a96d49dc8316bcef32737a83f",
+      "bytes": 554
+    },
+    {
+      "path": "checks.json",
+      "sha256": "d18069abfa5e33838ac5c675457d9ad221cd030c3d0e6fdf51caa4573e611bed",
+      "bytes": 6553
+    },
+    {
+      "path": "evidence/inputs/bearing-ref.png",
+      "sha256": "94f1e7347fc9156cd82587df5b321e90ed745ca20b9c6b7325384bd436b766cf",
+      "bytes": 1524333
+    },
+    {
+      "path": "evidence/inputs/empty-source.png",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "evidence/inputs/pipeline_mlx-PR8.patch",
+      "sha256": "784a2344d4b8e5e3f28fb88e9a5ac751b271976e36a7b3d80902052e3c9b37bf",
+      "bytes": 2357
+    },
+    {
+      "path": "input.json",
+      "sha256": "3919d41006fe891a31f02124ddfd8e90bf40b63d0d840e1cc8645096aa6a39c8",
+      "bytes": 898
+    },
+    {
+      "path": "manifest.json",
+      "sha256": "5ec1f6eb196c7647886b046c90208a0d7a4d79613624d915ad7752b966bfa9dc",
+      "bytes": 1129
+    },
+    {
+      "path": "output.json",
+      "sha256": "d0fb19a2e8fb9f14ea5f7ab5db2f6c78a65a98bded0053ff79c0640b62c112fa",
+      "bytes": 731
+    },
+    {
+      "path": "work/bearing-ref.png",
+      "sha256": "94f1e7347fc9156cd82587df5b321e90ed745ca20b9c6b7325384bd436b766cf",
+      "bytes": 1524333
+    },
+    {
+      "path": "work/empty-source.png",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "work/pipeline_mlx-PR8.patch",
+      "sha256": "784a2344d4b8e5e3f28fb88e9a5ac751b271976e36a7b3d80902052e3c9b37bf",
+      "bytes": 2357
+    }
+  ],
+  "created_at": "2026-09-19T02:23:40.118Z"
+}

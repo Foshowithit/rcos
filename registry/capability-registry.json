@@ -1020,10 +1020,40 @@
           "task_id": "image-to-3D bearing: muse product shot -> prep_518 -> shape -> texture; gate on geometry extents + watertight + texture embed, then sighted",
           "verdict": "ship",
           "run_id": "hunyuan-eval2-bearing"
+        },
+        {
+          "task_id": "priority6-executed-grounding-hunyuan3d-mlx-local",
+          "verdict": "blocked",
+          "run_id": "20260919T014601Z-167c39",
+          "provenance": "executed"
+        },
+        {
+          "task_id": "priority6-executed-grounding-hunyuan3d-mlx-local",
+          "verdict": "blocked",
+          "run_id": "20260919T014732Z-205625",
+          "provenance": "executed"
+        },
+        {
+          "task_id": "priority6-executed-grounding-hunyuan3d-mlx-local",
+          "verdict": "fix",
+          "run_id": "20260919T023135Z-0dd8c9",
+          "provenance": "executed"
+        },
+        {
+          "task_id": "priority6-executed-grounding-hunyuan3d-mlx-local",
+          "verdict": "blocked",
+          "run_id": "20260919T031329Z-a43707",
+          "provenance": "executed"
+        },
+        {
+          "task_id": "priority6-executed-grounding-hunyuan3d-mlx-local",
+          "verdict": "ship",
+          "run_id": "20260919T051837Z-dc629e",
+          "provenance": "executed"
         }
       ],
       "reuse_count": 0,
-      "last_eval": "2026-09-17",
+      "last_eval": "2026-09-19",
       "lineage": "dgrauet/hunyuan3d-2.1-mlx + PR8 scheduler patch + prep_reference.py (rembg+recenter); hero_front -> textured.glb 2026-09-17 (shape 8-11min, texture 19min, RSS <=8.2GB, extents 0.77/1.99/0.48, 4096 PBR); venv ~/venvs/hunyuan3d-mlx; known: face close-ups collapse (route faces to local-talking-heads)",
       "retirement": {
         "armed_at": "2026-09-17",
@@ -1036,6 +1066,12 @@
           "n": 20,
           "threshold": null
         }
+      },
+      "adapter": {
+        "type": "command",
+        "entrypoint": "capabilities/hunyuan3d-mlx-local/adapter/run.js",
+        "timeout_seconds": 3600,
+        "contract": "capabilities/hunyuan3d-mlx-local/contract.json"
       }
     },
     {

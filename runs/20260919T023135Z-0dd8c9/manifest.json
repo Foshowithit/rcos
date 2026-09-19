@@ -1,0 +1,29 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260919T023135Z-0dd8c9",
+  "eval_id": "hunyuan3d-mlx-local-grounding-v1",
+  "capability_id": "hunyuan3d-mlx-local",
+  "started_at": "2026-09-19T02:31:35.612Z",
+  "finished_at": "2026-09-19T03:07:34.485Z",
+  "duration_ms": 2158873,
+  "invocation": {
+    "invocation_id": "inv_20260919T023135Z-a11899",
+    "status": "completed",
+    "mode": "eval",
+    "dir": "invocations/inv_20260919T023135Z-a11899",
+    "manifest_sha256": "c849d817362399feaafde3d5d3095d019e32d29213f864475c3bf0833572d3aa",
+    "output_sha256": "615e30f5f833ea108d96b206222d4610d6c8e5144f569cd44cc8a1cc81ecb003",
+    "eligibility_decision_id": "elig_20260919T023135Z-723ad0",
+    "eligibility_sha256": "3d189f02b7cdc64f2a33eee29994d5ab07dbd0737d7ead0928239737d8747e9e"
+  },
+  "eligibility": {
+    "decision_id": "elig_20260919T023135Z-723ad0",
+    "sha256": "3d189f02b7cdc64f2a33eee29994d5ab07dbd0737d7ead0928239737d8747e9e",
+    "purpose": "eval",
+    "eligible": true,
+    "reasons": [],
+    "dir": "eligibility/elig_20260919T023135Z-723ad0"
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos-wt-p6",
+  "node": "v24.15.0"
+}

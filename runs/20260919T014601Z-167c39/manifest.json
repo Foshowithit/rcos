@@ -1,0 +1,22 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260919T014601Z-167c39",
+  "eval_id": "hunyuan3d-mlx-local-grounding-v1",
+  "capability_id": "hunyuan3d-mlx-local",
+  "started_at": "2026-09-19T01:46:01.180Z",
+  "finished_at": "2026-09-19T01:46:01.193Z",
+  "duration_ms": 13,
+  "invocation": null,
+  "eligibility": {
+    "decision_id": "elig_20260919T014601Z-b318b9",
+    "sha256": "2166953e04c2c7f6c780387e0ba31ecff159784133a4aa3aee46b51cec277011",
+    "purpose": "eval",
+    "eligible": false,
+    "reasons": [
+      "not_executable"
+    ],
+    "dir": "eligibility/elig_20260919T014601Z-b318b9"
+  },
+  "rcos_home": "/Users/adam26/zcode-rcos-wt-p6",
+  "node": "v24.15.0"
+}

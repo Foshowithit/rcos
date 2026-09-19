@@ -1,0 +1,9 @@
+{
+  "repo": "tools/hunyuan3d-2.1-mlx",
+  "repo_head": "5fe21945b790fbb7fb28c510e89babd7b9feabe6",
+  "patch_sha256": "784a2344d4b8e5e3f28fb88e9a5ac751b271976e36a7b3d80902052e3c9b37bf",
+  "weights": {
+    "repo_id": "dgrauet/hunyuan3d-2.1-mlx",
+    "snapshot": "5b1cf9ae1114c0b046d9385fd4f5ac6570df5287"
+  }
+}

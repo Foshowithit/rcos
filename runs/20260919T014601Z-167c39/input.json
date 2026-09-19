@@ -1,0 +1,29 @@
+{
+  "schema": "rcos-run/1",
+  "eval_id": "hunyuan3d-mlx-local-grounding-v1",
+  "capability_id": "hunyuan3d-mlx-local",
+  "eval_sha256": "963147986676e15dab433bd29db98a288d8aa5ab9bb37074a0cab96dfca37d87",
+  "adapter_argv": null,
+  "fixtures": [
+    {
+      "name": "bearing-ref.png",
+      "sha256": "94f1e7347fc9156cd82587df5b321e90ed745ca20b9c6b7325384bd436b766cf",
+      "bytes": 1524333
+    },
+    {
+      "name": "empty-source.png",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "pipeline_mlx-PR8.patch",
+      "sha256": "784a2344d4b8e5e3f28fb88e9a5ac751b271976e36a7b3d80902052e3c9b37bf",
+      "bytes": 2357
+    }
+  ],
+  "created_at": "2026-09-19T01:46:01.180Z",
+  "capability_input": {
+    "path": "capability-input.json",
+    "sha256": "5c12fbdc6992d63f602b60a2e7d467bf5e77a6e130340ed646e59aadc5081378"
+  }
+}

@@ -1,0 +1,342 @@
+{
+  "schema": "hunyuan3d-mlx-local-observation/1",
+  "frozen": {
+    "scripts": [
+      {
+        "name": "prep_reference.py",
+        "path": "capabilities/hunyuan3d-mlx-local/adapter/prep_reference.py",
+        "sha256": "248a925110f717e7006c3d581c90acd955cedef3437e1ad2a34e834f030a7ce0",
+        "usage": "prep_reference.py <src> <dst> — rembg + recenter to 518x518; writes <dst>_full.png then <dst>"
+      },
+      {
+        "name": "run_shape.py",
+        "path": "capabilities/hunyuan3d-mlx-local/adapter/run_shape.py",
+        "sha256": "b103eb76a0ad021d37a56db99f235aa26c3d3ea2c49a968685deae9de72d320e",
+        "usage": "run_shape.py <ref.png> <out_dir> — seeded MLX shape gen; writes out_dir/shape.glb + white_mesh_remesh.obj"
+      },
+      {
+        "name": "run_texture.py",
+        "path": "capabilities/hunyuan3d-mlx-local/adapter/run_texture.py",
+        "sha256": "83152585cec0538b9b76439747066b968d8a32123c72155ce1de14c146bb318b",
+        "usage": "run_texture.py <mesh.glb> <ref.png> <out_dir> — MLX PBR texture; writes out_dir/{textured.obj,textured.glb,material.mtl,paint_pbr.png}"
+      }
+    ],
+    "interpreter": {
+      "path": "~/venvs/hunyuan3d-mlx/bin/python",
+      "version": "3.12.13",
+      "deps": {
+        "mlx": "0.32.2",
+        "numpy": "2.5.3",
+        "trimesh": "5.1.0",
+        "rembg": "2.0.84",
+        "pillow": "12.3.0"
+      }
+    },
+    "upstream": {
+      "repo": "tools/hunyuan3d-2.1-mlx",
+      "repo_head": "5fe21945b790fbb7fb28c510e89babd7b9feabe6",
+      "patch_sha256": "784a2344d4b8e5e3f28fb88e9a5ac751b271976e36a7b3d80902052e3c9b37bf",
+      "weights": {
+        "repo_id": "dgrauet/hunyuan3d-2.1-mlx",
+        "snapshot": "5b1cf9ae1114c0b046d9385fd4f5ac6570df5287"
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "bearing_product_e2e",
+      "operation": "e2e",
+      "source": {
+        "path": "/Users/adam26/zcode-rcos-wt-p6/runs/20260919T051837Z-dc629e/work/bearing-ref.png",
+        "sha256": "94f1e7347fc9156cd82587df5b321e90ed745ca20b9c6b7325384bd436b766cf",
+        "bytes": 1524333,
+        "png": {
+          "width": 1600,
+          "height": 1600,
+          "bit_depth": 8,
+          "color_type": 2
+        },
+        "glb": null
+      },
+      "stages": [
+        {
+          "stage": "prep",
+          "argv": [
+            "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/prep_reference.py",
+            "ref_source.png",
+            "ref_518.png"
+          ],
+          "exit_status": 0,
+          "signal": null,
+          "duration_ms": 11119,
+          "stdout": "rembg       -> ref_518_full.png (1600, 1600)\nopaque frac : 0.4300\nrecentered  -> ref_518.png (518x518)\n",
+          "stderr": ""
+        },
+        {
+          "stage": "shape",
+          "argv": [
+            "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/run_shape.py",
+            "ref_518.png",
+            "out_shape"
+          ],
+          "exit_status": 0,
+          "signal": null,
+          "duration_ms": 473564,
+          "stdout": "[Stage 1] image      : ref_518.png\n[Stage 1] output     : out_shape/shape.glb\n[Stage 1] weights    : dgrauet/hunyuan3d-2.1-mlx (fp16 default)\n[Stage 1] peak RSS at start: 0.05 GB\n[Stage 1] pipeline ready in 2.3s (peak RSS 7.23 GB)\nHierarchical Volume Decoding [r65]: 274625 points\nHierarchical Volume Decoding [r129]: 373485 points (of 2146689 total)\nHierarchical Volume Decoding [r257]: 1488269 points (of 16974593 total)\n[Stage 1] generated in 470.6s (286384 verts, 572904 faces)\n[Stage 1] extents    : [1.97885025 1.98754156 0.37871361]\n[Stage 1] bounds     : [[-0.9946253299713135, -0.9971956014633179, -0.19342494010925293], [0.9842249155044556, 0.9903459548950195, 0.185288667678833]]\n[Stage 1] watertight : True\n[Stage 1] peak RSS   : 7.25 GB\n[Stage 1] saved      : out_shape/shape.glb (9.8 MB)\n[TIMING] shape load 2.3s + infer 470.6s = 472.9s total\n",
+          "stderr": "\rFetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]\rFetching 5 files: 100%|██████████| 5/5 [00:00<00:00, 3259.99it/s]\n"
+        },
+        {
+          "stage": "texture",
+          "argv": [
+            "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/run_texture.py",
+            "out_shape/shape.glb",
+            "ref_518.png",
+            "out_tex"
+          ],
+          "exit_status": 0,
+          "signal": null,
+          "duration_ms": 375747,
+          "stdout": "[Stage 2] mesh       : out_shape/shape.glb\n[Stage 2] reference  : ref_518.png\n[Stage 2] output     : out_tex/textured.obj (+ .glb)\n[Stage 2] cfg: max_selected_view_num=6 resolution=512 texture_size=4096 render_size=2048 mlx_diffusion=True mlx_superres=True\nLoading VAE...\nLoading DINOv2...\nLoading UNet...\n  Loaded 1054/1061 main UNet weights (remaining keys load into text embeds + DINO proj below)\nLoading dual-stream reference UNet...\n  Loaded 686/686 dual UNet weights\nAll components loaded.\nMLX diffusion model loaded.\nMLX super-resolution loaded (/Users/adam26/.cache/huggingface/hub/models--dgrauet--hunyuan3d-2.1-mlx/snapshots/5b1cf9ae1114c0b046d9385fd4f5ac6570df5287/realesrgan_x4plus.safetensors).\n[Stage 2] pipeline ready in 0.5s (peak RSS 0.28 GB)\n  Encoding conditions...\n  Extracting DINO features...\n  Extracting reference features...\n  Denoising (15 steps, 6 views, CFG=3.0)...\n    step 0/15: t=999, range=9.3\n    step 5/15: t=666, range=11.5\n    step 10/15: t=332, range=18.8\n    step 14/15: t=66, range=21.8\n  Decoding...\n    decoded 6/12\n    decoded 12/12\n[Stage 2] texture synthesized in 371.5s\n[Stage 2] peak RSS   : 5.44 GB\n[TIMING] texture load 0.5s + synth 371.5s = 372.0s total\n",
+          "stderr": "\rFetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]\rFetching 5 files: 100%|██████████| 5/5 [00:00<00:00, 3663.15it/s]\nWarning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n"
+        }
+      ],
+      "outcome": "embedded",
+      "duration_ms": 861080,
+      "out_files": [
+        {
+          "path": "case-bearing_product_e2e/out_shape/shape.glb",
+          "sha256": "f2fb09c68beaa2eb9831d3aae1daaf22b5d674ff3adf964a4506e8321c45d13d",
+          "bytes": 10312244,
+          "png": null,
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e/out_shape/white_mesh_remesh.obj",
+          "sha256": "8281e26b613e4b14553f6189dfa026c18424238bd3bca505af63fd50d763d275",
+          "bytes": 1457537,
+          "png": null,
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e/out_tex/material.mtl",
+          "sha256": "cfd4f7af57dda806ca62a969663ec0a92565e6a2a50fad4b4b4836eefaebf2e9",
+          "bytes": 196,
+          "png": null,
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e/out_tex/paint_pbr.png",
+          "sha256": "958c266c1693a0164a41bcf20d91909d722ba9865c046dfc7dc8f005d5a38dd1",
+          "bytes": 5762579,
+          "png": {
+            "width": 4096,
+            "height": 4096,
+            "bit_depth": 8,
+            "color_type": 2
+          },
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e/out_tex/textured.glb",
+          "sha256": "c3f7e95fda71960da64d79d3fd85f26cbefa51321944038ac02ba31654718b91",
+          "bytes": 9795304,
+          "png": null,
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e/out_tex/textured.obj",
+          "sha256": "726033af6ccb02ab6d1012ab6344f60c6f48028e6afd8389287b96dc27f272eb",
+          "bytes": 2986016,
+          "png": null,
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e/ref_518_full.png",
+          "sha256": "0c8afb96584c61d8dfc8451f42122c9ad9bc6d9f71cbbb4b6a7d8306eaa82144",
+          "bytes": 1439507,
+          "png": {
+            "width": 1600,
+            "height": 1600,
+            "bit_depth": 8,
+            "color_type": 6
+          },
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e/ref_518.png",
+          "sha256": "ae1b04aa652f3e832aa440d5263e07ecfca287302e6334c039c0ff529ca210c8",
+          "bytes": 211299,
+          "png": {
+            "width": 518,
+            "height": 518,
+            "bit_depth": 8,
+            "color_type": 2
+          },
+          "glb": null
+        }
+      ]
+    },
+    {
+      "name": "bearing_product_e2e_repeat",
+      "operation": "e2e",
+      "source": {
+        "path": "/Users/adam26/zcode-rcos-wt-p6/runs/20260919T051837Z-dc629e/work/bearing-ref.png",
+        "sha256": "94f1e7347fc9156cd82587df5b321e90ed745ca20b9c6b7325384bd436b766cf",
+        "bytes": 1524333,
+        "png": {
+          "width": 1600,
+          "height": 1600,
+          "bit_depth": 8,
+          "color_type": 2
+        },
+        "glb": null
+      },
+      "stages": [
+        {
+          "stage": "prep",
+          "argv": [
+            "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/prep_reference.py",
+            "ref_source.png",
+            "ref_518.png"
+          ],
+          "exit_status": 0,
+          "signal": null,
+          "duration_ms": 10404,
+          "stdout": "rembg       -> ref_518_full.png (1600, 1600)\nopaque frac : 0.4300\nrecentered  -> ref_518.png (518x518)\n",
+          "stderr": ""
+        },
+        {
+          "stage": "shape",
+          "argv": [
+            "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/run_shape.py",
+            "ref_518.png",
+            "out_shape"
+          ],
+          "exit_status": 0,
+          "signal": null,
+          "duration_ms": 590863,
+          "stdout": "[Stage 1] image      : ref_518.png\n[Stage 1] output     : out_shape/shape.glb\n[Stage 1] weights    : dgrauet/hunyuan3d-2.1-mlx (fp16 default)\n[Stage 1] peak RSS at start: 0.05 GB\n[Stage 1] pipeline ready in 2.1s (peak RSS 7.23 GB)\nHierarchical Volume Decoding [r65]: 274625 points\nHierarchical Volume Decoding [r129]: 373485 points (of 2146689 total)\nHierarchical Volume Decoding [r257]: 1488269 points (of 16974593 total)\n[Stage 1] generated in 588.1s (286384 verts, 572904 faces)\n[Stage 1] extents    : [1.97885025 1.98754156 0.37871361]\n[Stage 1] bounds     : [[-0.9946253299713135, -0.9971956014633179, -0.19342494010925293], [0.9842249155044556, 0.9903459548950195, 0.185288667678833]]\n[Stage 1] watertight : True\n[Stage 1] peak RSS   : 8.31 GB\n[Stage 1] saved      : out_shape/shape.glb (9.8 MB)\n[TIMING] shape load 2.1s + infer 588.1s = 590.2s total\n",
+          "stderr": "\rFetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]\rFetching 5 files: 100%|██████████| 5/5 [00:00<00:00, 3903.13it/s]\n"
+        },
+        {
+          "stage": "texture",
+          "argv": [
+            "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/run_texture.py",
+            "out_shape/shape.glb",
+            "ref_518.png",
+            "out_tex"
+          ],
+          "exit_status": 0,
+          "signal": null,
+          "duration_ms": 584969,
+          "stdout": "[Stage 2] mesh       : out_shape/shape.glb\n[Stage 2] reference  : ref_518.png\n[Stage 2] output     : out_tex/textured.obj (+ .glb)\n[Stage 2] cfg: max_selected_view_num=6 resolution=512 texture_size=4096 render_size=2048 mlx_diffusion=True mlx_superres=True\nLoading VAE...\nLoading DINOv2...\nLoading UNet...\n  Loaded 1054/1061 main UNet weights (remaining keys load into text embeds + DINO proj below)\nLoading dual-stream reference UNet...\n  Loaded 686/686 dual UNet weights\nAll components loaded.\nMLX diffusion model loaded.\nMLX super-resolution loaded (/Users/adam26/.cache/huggingface/hub/models--dgrauet--hunyuan3d-2.1-mlx/snapshots/5b1cf9ae1114c0b046d9385fd4f5ac6570df5287/realesrgan_x4plus.safetensors).\n[Stage 2] pipeline ready in 0.6s (peak RSS 0.28 GB)\n  Encoding conditions...\n  Extracting DINO features...\n  Extracting reference features...\n  Denoising (15 steps, 6 views, CFG=3.0)...\n    step 0/15: t=999, range=9.3\n    step 5/15: t=666, range=11.5\n    step 10/15: t=332, range=18.8\n    step 14/15: t=66, range=21.8\n  Decoding...\n    decoded 6/12\n    decoded 12/12\n[Stage 2] texture synthesized in 580.2s\n[Stage 2] peak RSS   : 5.47 GB\n[TIMING] texture load 0.6s + synth 580.2s = 580.9s total\n",
+          "stderr": "\rFetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]\rFetching 5 files: 100%|██████████| 5/5 [00:00<00:00, 2401.41it/s]\nWarning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n"
+        }
+      ],
+      "outcome": "embedded",
+      "duration_ms": 1186505,
+      "out_files": [
+        {
+          "path": "case-bearing_product_e2e_repeat/out_shape/shape.glb",
+          "sha256": "f2fb09c68beaa2eb9831d3aae1daaf22b5d674ff3adf964a4506e8321c45d13d",
+          "bytes": 10312244,
+          "png": null,
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e_repeat/out_shape/white_mesh_remesh.obj",
+          "sha256": "8281e26b613e4b14553f6189dfa026c18424238bd3bca505af63fd50d763d275",
+          "bytes": 1457537,
+          "png": null,
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e_repeat/out_tex/material.mtl",
+          "sha256": "cfd4f7af57dda806ca62a969663ec0a92565e6a2a50fad4b4b4836eefaebf2e9",
+          "bytes": 196,
+          "png": null,
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e_repeat/out_tex/paint_pbr.png",
+          "sha256": "958c266c1693a0164a41bcf20d91909d722ba9865c046dfc7dc8f005d5a38dd1",
+          "bytes": 5762579,
+          "png": {
+            "width": 4096,
+            "height": 4096,
+            "bit_depth": 8,
+            "color_type": 2
+          },
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e_repeat/out_tex/textured.glb",
+          "sha256": "c3f7e95fda71960da64d79d3fd85f26cbefa51321944038ac02ba31654718b91",
+          "bytes": 9795304,
+          "png": null,
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e_repeat/out_tex/textured.obj",
+          "sha256": "726033af6ccb02ab6d1012ab6344f60c6f48028e6afd8389287b96dc27f272eb",
+          "bytes": 2986016,
+          "png": null,
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e_repeat/ref_518_full.png",
+          "sha256": "0c8afb96584c61d8dfc8451f42122c9ad9bc6d9f71cbbb4b6a7d8306eaa82144",
+          "bytes": 1439507,
+          "png": {
+            "width": 1600,
+            "height": 1600,
+            "bit_depth": 8,
+            "color_type": 6
+          },
+          "glb": null
+        },
+        {
+          "path": "case-bearing_product_e2e_repeat/ref_518.png",
+          "sha256": "ae1b04aa652f3e832aa440d5263e07ecfca287302e6334c039c0ff529ca210c8",
+          "bytes": 211299,
+          "png": {
+            "width": 518,
+            "height": 518,
+            "bit_depth": 8,
+            "color_type": 2
+          },
+          "glb": null
+        }
+      ]
+    },
+    {
+      "name": "empty_source_refused",
+      "operation": "e2e",
+      "source": {
+        "path": "/Users/adam26/zcode-rcos-wt-p6/runs/20260919T051837Z-dc629e/work/empty-source.png",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0,
+        "png": null,
+        "glb": null
+      },
+      "stages": [
+        {
+          "stage": "prep",
+          "argv": [
+            "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/prep_reference.py",
+            "ref_source.png",
+            "ref_518.png"
+          ],
+          "exit_status": 1,
+          "signal": null,
+          "duration_ms": 1789,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/prep_reference.py\", line 97, in <module>\n    main()\n  File \"/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/prep_reference.py\", line 79, in main\n    Image.open(src).convert(\"RGB\"),\n    ^^^^^^^^^^^^^^^\n  File \"/Users/adam26/venvs/hunyuan3d-mlx/lib/python3.12/site-packages/PIL/Image.py\", line 3715, in open\n    raise UnidentifiedImageError(msg)\nPIL.UnidentifiedImageError: cannot identify image file 'ref_source.png'\n"
+        }
+      ],
+      "outcome": "refused",
+      "duration_ms": 1791,
+      "out_files": []
+    }
+  ]
+}

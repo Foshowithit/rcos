@@ -1,0 +1,244 @@
+{
+  "schema": "rcos-run/1",
+  "run_id": "20260919T014732Z-205625",
+  "gates": [
+    {
+      "id": "prep_reference_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "prep_reference_reproduced"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "shape_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "shape_reproduced"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "shape_topology_measured",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "shape_topology_measured"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "texture_artifacts_reproduced",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "texture_artifacts_reproduced"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "texture_measurements",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "texture_measurements"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "e2e_repeat_consistent",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "e2e_repeat_consistent"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "empty_source_refused",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "empty_source_refused"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "torch_free_asserted",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "torch_free_asserted"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "source_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "source_identity_pinned"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "interpreter_declared",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "interpreter_declared"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "frozen_source_pinned",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "frozen_source_pinned"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "budgets_within_declared",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "budgets_within_declared"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "artifact_identity_pinned",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "artifact_identity_pinned"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    },
+    {
+      "id": "oracle_eval2_lineage",
+      "type": "deterministic",
+      "required": true,
+      "argv": [
+        "node",
+        "/Users/adam26/zcode-rcos-wt-p6/evals/hunyuan3d-mlx-local-grounding-v1/gates/check.js",
+        "oracle_eval2_lineage"
+      ],
+      "status": "blocked",
+      "exit_code": null,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "duration_ms": 0,
+      "note": "not run: adapter did not execute"
+    }
+  ]
+}

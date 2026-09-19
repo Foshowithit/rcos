@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/prep_reference.py", line 97, in <module>
+    main()
+  File "/Users/adam26/zcode-rcos-wt-p6/capabilities/hunyuan3d-mlx-local/adapter/prep_reference.py", line 79, in main
+    Image.open(src).convert("RGB"),
+    ^^^^^^^^^^^^^^^
+  File "/Users/adam26/venvs/hunyuan3d-mlx/lib/python3.12/site-packages/PIL/Image.py", line 3715, in open
+    raise UnidentifiedImageError(msg)
+PIL.UnidentifiedImageError: cannot identify image file 'ref_source.png'
