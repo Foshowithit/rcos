@@ -1,0 +1,8 @@
+CONTROL PASS c0-unmutated (14/14 on copy)
+CONTROL PASS c1-artifact-flip (artifact_identity_pinned bit: [gate] artifact_identity_pinned: no bearing_product_e2e artifact pin mismatch: out_shape/shape.glb)
+CONTROL PASS c2-stdout-edit (shape_reproduced bit: [gate] shape_reproduced: no shape stdout missing /^\[Stage 1\] generated in \d+\.\d+s \(286384 verts, 572904 f)
+CONTROL PASS c3-wrong-python (interpreter_declared bit: [gate] interpreter_declared: no interpreter probe failed: Traceback (most recent call last):)
+CONTROL PASS c4-deps-tamper (torch_free_asserted bit: [gate] torch_free_asserted: no deps.json {"python":"3.12.13","mlx":"9.9.9","numpy":"2.5.3","trimesh":"5.1.0",")
+CONTROL PASS c5-fixture-absent (artifact_identity_pinned bit: gate crashed: Error: ENOENT: no such file or directory, open '/tmp/hunyuan-selftest/c5/run/evidence/inputs/bea)
+CONTROL PASS c6-refusal-scrub (empty_source_refused bit: [gate] empty_source_refused: no refusal exit 0 != 1)
+SELFTEST TOTAL: 7 controls behaved as declared, 0 did not

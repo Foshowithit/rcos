@@ -1,0 +1,31 @@
+{
+  "schema": "hunyuan3d-mlx-selftest-exec/1",
+  "what": "fresh captured execution of evals/hunyuan3d-mlx-local-grounding-v1/gates/selftest.sh against the committed run bytes; record requested by GPT seal re-check 2026-09-19 (round 3)",
+  "command": "/tmp/p6-cleanroom-2/evals/hunyuan3d-mlx-local-grounding-v1/gates/selftest.sh /tmp/p6-record2-view",
+  "cwd": "/tmp/p6-record2-exec",
+  "commit_sha": "b9956c20391195a3beef80544be300ab89b5d1cc",
+  "selftest_sha256": "3f83ed9cf39d7d855afac83bfdd571ccb0464c7bce96fc4a23e19f28d70521bd",
+  "executed_at": "2026-09-19T16:00:49Z",
+  "finished_at": "2026-09-19T16:01:08Z",
+  "exit_code": 0,
+  "stdout_file": "stdout.txt",
+  "stderr_file": "stderr.txt",
+  "stdout_sha256": "78d0db11b1885032e7fc65812e4a3025998dfc613e0e1ccd2d805706c75f5dc8",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "referenced_base_run_id": "20260919T051837Z-dc629e",
+  "referenced_base_invocation_id": "inv_20260919T051837Z-8687d9",
+  "result": "SELFTEST TOTAL: 7 controls behaved as declared, 0 did not",
+  "controls": {
+    "honest_green": "c0-unmutated: copy of the committed ship run passes all 14 gates",
+    "mutation_controls_refused": 6,
+    "list": [
+      "c1-artifact-flip -> artifact_identity_pinned rc3",
+      "c2-stdout-edit -> shape_reproduced rc3",
+      "c3-wrong-python -> interpreter_declared rc3",
+      "c4-deps-tamper -> torch_free_asserted rc3",
+      "c5-fixture-absent -> artifact_identity_pinned rc4 (crash refused)",
+      "c6-refusal-scrub -> empty_source_refused rc3"
+    ]
+  },
+  "notes": "selftest.sh executed from a fresh clean-room clone of commit b9956c2 (clone HEAD verified b9956c20391195a3beef80544be300ab89b5d1cc; committed selftest.sh sha256 3f83ed9cf39d7d855afac83bfdd571ccb0464c7bce96fc4a23e19f28d70521bd). Merged source-run view assembled from CLONE bytes per the header's documented commands (cp -R runs/<id>/. <view>/ && cp -R invocations/<inv>/. <view>/invocation/) with the frozen invocation argv paths relocated to the view copy, per the script's own relocation step. Temporary sandboxes are not retained; only this execution record. The run tested the bytes of commit b9956c2; this child adds evidence files only and leaves selftest-exec-20260919T051837Z-dc629e/ byte-unchanged."
+}
